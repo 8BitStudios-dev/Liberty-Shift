@@ -106,7 +106,9 @@ export const store = {
   },
 
   creaRichiesta({ cedo, cerco, usaPriorita }) {
-    const errori = validateRequest({ cedo, cerco }, this.shiftsById());
+    const errori = validateRequest(
+      { cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
+    );
     if (errori.length) return { errori };
     if (usaPriorita && this.creditoPriorita() < 1) {
       return { errori: ['Non hai crediti priorità disponibili questo mese.'] };

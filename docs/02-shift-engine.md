@@ -14,20 +14,28 @@ if cerco OFF     -> turno OFF ? 100 : 0
 if turno OFF     -> 0            (cerchi un turno, non un giorno libero)
 if evitaChiusura e turno di chiusura -> 0
 
-SPECIFIC:  delta = |Δinizio| + |Δfine|
-           delta == 0            -> 100
-           delta <= 120 min      -> 100 - delta/2   (massimo 95)
+SPECIFIC:  scarto = max(|Δinizio|, |Δfine|)
+           scarto == 0           -> 100
+           scarto <= 90 min      -> 100 - 40 * (scarto / 90)   (100 -> 60)
            altrimenti            -> 0
 
 RANGE:     dentro i limiti       -> 100
-           sforo <= 60 min       -> 70 - sforo/4
+           sforo <= 90 min       -> 70 - 20 * (sforo / 90)     (70 -> 50)
            altrimenti            -> 0
 
 ANY:                             -> 100
 ```
 
-La tolleranza (`nearMissMinutes: 60`) è il parametro da tarare per primo con i
-turni reali dello store: decide quanti "quasi match" vedi.
+La tolleranza è **90 minuti** (`nearMissMinutes`), fissata sugli orari reali
+dello store.
+
+Sul CERCO specifico si guarda lo **scarto maggiore** fra inizio e fine, non la
+loro somma: un turno spostato di un'ora in blocco ha scarto 60, non 120, e
+sommare i due scostamenti penalizzava due volte lo stesso spostamento.
+
+Ogni confronto sull'orario di fine passa da `fineMinuti()`, che riporta la fine
+di una notte sulla scala del giorno di inizio. Un 22:00–06:30 non può quindi
+spacciarsi per un turno che finisce presto.
 
 ## Le due sorgenti di match
 

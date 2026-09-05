@@ -1,7 +1,7 @@
 import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
 import { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } from './components.js';
-import { hasPriority, shiftLabel, isOpen, isClosing } from '../core/model.js';
+import { hasPriority, shiftLabel, isOpen, etichettaFascia } from '../core/model.js';
 import { RULES, WANT_MODE } from '../core/rules.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
@@ -164,7 +164,7 @@ export function dettaglioGiorno(data) {
     <div class="giorno-dettaglio">
       <p class="tuo-turno">
         Il tuo turno: <strong>${mio ? shiftLabel(mio) : 'non inserito'}</strong>
-        ${raw(mio && isClosing(mio) ? '<span class="tag">chiusura</span>' : '')}
+        ${raw(mio && etichettaFascia(mio) ? `<span class="tag">${etichettaFascia(mio)}</span>` : '')}
       </p>
       <h3>${richieste.length} ${richieste.length === 1 ? 'richiesta' : 'richieste'}</h3>
       ${raw(richieste.length
@@ -290,7 +290,7 @@ export function turni() {
       return html`
         <button class="riga-turno" data-act="modifica-turno" data-data="${data}">
           <span class="giorno-nome">${formatDay(data)}</span>
-          <span class="turno-valore ${s?.tipo === 'OFF' ? 'off' : ''}">${s ? shiftLabel(s) : '— da inserire'}</span>
+          <span class="turno-valore ${s?.tipo === 'OFF' ? 'off' : ''}">${s ? shiftLabel(s) : '— da inserire'}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
           <span class="chevron">›</span>
         </button>`;
     }).join('');

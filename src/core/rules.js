@@ -6,14 +6,21 @@ export const RULES = {
   // Settimana Apple: sabato -> venerdì (0 = domenica ... 6 = sabato)
   weekStartsOn: 6,
 
-  // Un turno che finisce da qui in poi è considerato "chiusura".
-  closingFrom: '20:30',
+  // Orari dello store. Il negozio vende dalle 10 alle 20; prima e dopo si
+  // lavora comunque (apertura, pulizia, visual), da qui la fascia più larga.
+  store: {
+    apre: '10:00',
+    chiude: '20:00',
+    primoIngresso: '08:00',
+    ultimaUscita: '21:00',
+  },
 
-  // Un turno che inizia entro qui è considerato "mattina".
-  morningUntil: '10:00',
+  // "Chiusura" e "mattina" si ricavano dagli orari qui sopra: chiude chi
+  // resta oltre l'orario di chiusura, è di mattina chi entra entro
+  // l'apertura. Nessuna soglia separata da tenere allineata a mano.
 
   // Tolleranza per i quasi-match sugli orari (minuti).
-  nearMissMinutes: 60,
+  nearMissMinutes: 90,
 
   // Soglie di classificazione del match.
   matchThreshold: 85,     // >= verde

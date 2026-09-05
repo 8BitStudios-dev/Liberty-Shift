@@ -4,9 +4,15 @@
 
 import { RULES, STATUS, WANT_MODE } from './rules.js';
 import { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey } from './time.js';
-import { isClosing, isMorning, contractCheck, isOpen, hasPriority, shiftLabel, wantLabel } from './model.js';
+import { isClosing, isMorning, contractCheck, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
+
+/** Fine del CERCO sulla scala del giorno di inizio, notti comprese. */
+function fineCerco(cerco) {
+  const fine = minutes(cerco.end);
+  return fine <= minutes(cerco.start) ? fine + 1440 : fine;
+}
 
 /**
  * Quanto un turno reale soddisfa un lato CERCO.
@@ -34,15 +40,17 @@ export function satisfies(cerco, shift) {
   let score = 0;
   switch (cerco.mode) {
     case WANT_MODE.SPECIFIC: {
+      // Scarto = il più grande dei due scostamenti, confrontato con la
+      // tolleranza. Sommarli penalizzava due volte lo stesso spostamento.
       const dStart = Math.abs(minutes(shift.start) - minutes(cerco.start));
-      const dEnd = Math.abs(minutes(shift.end) - minutes(cerco.end));
-      const delta = dStart + dEnd;
-      if (delta === 0) {
+      const dEnd = Math.abs(fineMinuti(shift) - fineCerco(cerco));
+      const scarto = Math.max(dStart, dEnd);
+      if (scarto === 0) {
         score = 100;
         reasons.push(`orario identico a quello che cerchi (${cerco.start}–${cerco.end})`);
-      } else if (delta <= RULES.nearMissMinutes * 2) {
-        score = clamp(100 - delta / 2, 0, 95);
-        reasons.push(`orario vicino al tuo (${shiftLabel(shift)} contro ${cerco.start}–${cerco.end})`);
+      } else if (scarto <= RULES.nearMissMinutes) {
+        score = Math.round(100 - 40 * (scarto / RULES.nearMissMinutes));
+        reasons.push(`${scarto} minuti di scarto dal tuo orario (${shiftLabel(shift)} contro ${cerco.start}–${cerco.end})`);
       } else {
         score = 0;
         reasons.push('orario troppo lontano da quello richiesto');
@@ -51,8 +59,8 @@ export function satisfies(cerco, shift) {
     }
     case WANT_MODE.RANGE: {
       const violazioni = [];
-      if (cerco.entroLe && minutes(shift.end) > minutes(cerco.entroLe)) {
-        violazioni.push(minutes(shift.end) - minutes(cerco.entroLe));
+      if (cerco.entroLe && fineMinuti(shift) > minutes(cerco.entroLe)) {
+        violazioni.push(fineMinuti(shift) - minutes(cerco.entroLe));
       }
       if (cerco.dalleOre && minutes(shift.start) < minutes(cerco.dalleOre)) {
         violazioni.push(minutes(cerco.dalleOre) - minutes(shift.start));
@@ -62,7 +70,9 @@ export function satisfies(cerco, shift) {
         reasons.push(`rientra nella fascia che hai indicato (${wantLabel(cerco)})`);
       } else {
         const sforo = Math.max(...violazioni);
-        score = sforo <= RULES.nearMissMinutes ? clamp(70 - sforo / 4) : 0;
+        score = sforo <= RULES.nearMissMinutes
+          ? Math.round(70 - 20 * (sforo / RULES.nearMissMinutes))
+          : 0;
         if (score > 0) reasons.push(`fuori fascia di ${sforo} minuti, ma vicino`);
         else reasons.push('fuori dalla fascia oraria richiesta');
       }
@@ -76,10 +86,24 @@ export function satisfies(cerco, shift) {
   return { score: clamp(score), reasons };
 }
 
-/** Validazione di una richiesta prima della pubblicazione (cap. 6 e 18). */
-export function validateRequest({ cedo, cerco }, shiftsById) {
+/**
+ * Validazione di una richiesta prima della pubblicazione (cap. 6 e 18).
+ * `shifts`, se passato, abilita anche il controllo di doppio impegno.
+ */
+export function validateRequest({ cedo, cerco, userId }, shiftsById, shifts = null) {
   const errori = [];
   const shift = shiftsById[cedo?.shiftId];
+
+  // Non puoi prendere un turno in un giorno in cui lavori già: ne avresti due.
+  // Il CERCO di tipo OFF è escluso, lì la semantica è ancora da definire.
+  if (shifts && cerco?.data && cerco.mode !== WANT_MODE.OFF) {
+    const mio = shifts.find((s) => s.userId === (userId ?? cedo?.userId) && s.data === cerco.data);
+    if (mio && mio.tipo === 'WORK') {
+      errori.push(
+        `Il ${formatDay(cerco.data)} hai già un turno (${shiftLabel(mio)}): non puoi prenderne un altro. Se vuoi liberarti quel giorno, cedi quello.`,
+      );
+    }
+  }
   if (!shift) errori.push('Devi scegliere un turno da cedere fra i tuoi.');
   if (!cerco?.data) errori.push('Devi indicare cosa cerchi in cambio.');
   if (shift && cerco?.data) {

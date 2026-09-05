@@ -38,8 +38,12 @@ chiesto, non una preferenza permanente.
 | `start`, `end` | `'HH:MM'` o `null` | null quando OFF |
 
 Un solo turno per persona per giorno: `salvaTurno` sovrascrive quello esistente
-in quella data. "Chiusura" e "mattina" non sono campi, si ricavano dall'orario:
-cambiare la soglia in `rules.js` riclassifica tutto lo storico senza migrazioni.
+in quella data.
+
+Le notti visual non hanno un campo dedicato: un turno con `end <= start`
+scavalca la mezzanotte, e `isNotturno()` lo riconosce. Stessa logica per
+"chiusura", "mattina" e "apertura", tutte ricavate dagli orari dello store in
+`rules.js`: cambiare gli orari riclassifica lo storico senza migrazioni.
 
 ## Request
 

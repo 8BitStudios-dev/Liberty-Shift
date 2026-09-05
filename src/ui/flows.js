@@ -5,7 +5,7 @@ import { html, raw, toast } from './dom.js';
 import { store } from '../core/store.js';
 import { findMatches, validateRequest, satisfies } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS } from '../core/rules.js';
-import { shiftLabel, wantLabel, hasPriority, isClosing } from '../core/model.js';
+import { shiftLabel, wantLabel, hasPriority, etichettaFascia } from '../core/model.js';
 import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
 import { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } from './components.js';
 
@@ -69,7 +69,7 @@ function passoCedo() {
   const righe = miei.map((s) => html`
     <button class="riga-turno ${s.id === draft.cedoShiftId ? 'scelto' : ''}" data-act="scegli-cedo" data-id="${s.id}">
       <span class="giorno-nome">${formatDay(s.data)}</span>
-      <span class="turno-valore">${shiftLabel(s)}${raw(isClosing(s) ? ' <span class="tag">chiusura</span>' : '')}</span>
+      <span class="turno-valore">${shiftLabel(s)}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
       <span class="chevron">${s.id === draft.cedoShiftId ? '✓' : '›'}</span>
     </button>`).join('');
 
@@ -93,10 +93,15 @@ function passoCerco() {
     .filter((d) => d !== cedo.data);
 
   const pillole = giorni.map((d) => {
-    const passato = d < todayISO();
+    const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === d);
+    const occupato = mio?.tipo === 'WORK' && draft.cerco.mode !== WANT_MODE.OFF;
+    const bloccata = d < todayISO() || occupato;
+    const titolo = occupato ? `Quel giorno lavori già (${shiftLabel(mio)})` : '';
     return html`
-      <button class="pill ${draft.cerco.data === d ? 'attivo' : ''}" data-act="scegli-data" data-data="${d}" ${raw(passato ? 'disabled' : '')}>
+      <button class="pill ${draft.cerco.data === d ? 'attivo' : ''}" data-act="scegli-data" data-data="${d}"
+              title="${titolo}" ${raw(bloccata ? 'disabled' : '')}>
         ${formatDay(d)}
+        <em>${mio ? shiftLabel(mio) : 'niente'}</em>
       </button>`;
   }).join('');
 
@@ -136,6 +141,7 @@ function passoCerco() {
       gli scambi fra settimane diverse non sono ammessi.
     </p>
     <div class="pillole">${raw(pillole)}</div>
+    <p class="testo-tenue">Sotto ogni giorno c'è quello che hai tu: i giorni in cui lavori già sono spenti, prenderesti due turni.</p>
     <h3>Quanto sei rigido?</h3>
     <div class="chips">${raw(modi)}</div>
     ${raw(campi)}
@@ -153,7 +159,7 @@ function passoCerco() {
 function passoRiepilogo() {
   const finto = { userId: store.state.currentUserId, cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile }, cerco: draft.cerco };
   const credito = store.creditoPriorita();
-  const errori = validateRequest(finto, store.shiftsById());
+  const errori = validateRequest(finto, store.shiftsById(), store.state.shifts);
 
   return html`
     ${raw(barra('Controlla e pubblica', 3))}

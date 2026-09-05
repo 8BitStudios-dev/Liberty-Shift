@@ -12,19 +12,19 @@ const PERSONE = [
     id: 'u_lorenzo', nome: 'Lorenzo', cognomeIniziale: 'B', ruolo: 'Expert', contratto: 'FT', admin: true,
     preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
     disponibilita: [true, false, true, true, false, true, false],
-    settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:30'], ['09:00', '14:00']]),
+    settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '14:00']]),
   },
   {
     id: 'u_martina', nome: 'Martina', cognomeIniziale: 'R', ruolo: 'Specialist', contratto: 'PT', admin: false,
     preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
     disponibilita: [true, true, true, true, false, true, true],
-    settimana: W([o, ['12:00', '19:00'], ['10:00', '19:00'], ['11:00', '20:30'], o, ['09:00', '18:00'], ['14:00', '20:30']]),
+    settimana: W([o, ['12:00', '19:00'], ['10:00', '19:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], ['14:00', '21:00']]),
   },
   {
     id: 'u_luca', nome: 'Luca', cognomeIniziale: 'B', ruolo: 'Expert', contratto: 'FT', admin: false,
     preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: false },
     disponibilita: [false, true, true, false, true, true, true],
-    settimana: W([['14:00', '20:30'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
+    settimana: W([['13:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
   },
   {
     id: 'u_giulia', nome: 'Giulia', cognomeIniziale: 'M', ruolo: 'Specialist', contratto: 'PT', admin: false,
@@ -33,16 +33,17 @@ const PERSONE = [
     settimana: W([['14:00', '20:00'], o, ['11:00', '17:00'], o, ['09:00', '15:00'], ['10:00', '16:00'], o]),
   },
   {
+    // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
     id: 'u_marco', nome: 'Marco', cognomeIniziale: 'T', ruolo: 'Genius', contratto: 'FT', admin: false,
     preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
     disponibilita: [true, true, false, true, true, true, true],
-    settimana: W([['09:00', '18:00'], ['11:00', '20:30'], o, ['09:00', '14:00'], o, ['12:00', '20:30'], ['10:00', '19:00']]),
+    settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '14:00'], o, ['22:00', '06:30'], o]),
   },
   {
     id: 'u_sara', nome: 'Sara', cognomeIniziale: 'P', ruolo: 'Specialist', contratto: 'PT', admin: false,
     preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
     disponibilita: [true, true, true, true, true, true, true],
-    settimana: W([o, ['10:00', '16:00'], ['09:00', '15:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
+    settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
   },
 ];
 
@@ -106,7 +107,7 @@ export function seed() {
       cedo: { shiftId: turno('u_giulia', addDays(w0, 4)).id, altriShiftIds: [], flessibile: false },
       cerco: { data: addDays(w0, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
     },
-    // Marco ha speso la sua priorità del mese.
+    // Marco cede la notte visual e ha speso la sua priorità del mese.
     {
       id: 'rq_marco_1', userId: 'u_marco', createdAt: iso(2), status: STATUS.APERTA,
       prioritaFinoA: new Date(ora.getTime() + 46 * 3600 * 1000).toISOString(),

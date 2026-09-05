@@ -2,7 +2,7 @@
 // Nessuna classe: oggetti semplici, serializzabili, pronti per qualsiasi backend.
 
 import { RULES, STATUS, WANT_MODE } from './rules.js';
-import { minutes, hours, todayISO } from './time.js';
+import { minutes, todayISO } from './time.js';
 
 /**
  * User
@@ -36,17 +36,62 @@ export function newId(prefix) {
   return `${prefix}_${Date.now().toString(36)}${counter.toString(36)}`;
 }
 
-export function isClosing(shift) {
-  return shift.tipo === 'WORK' && minutes(shift.end) >= minutes(RULES.closingFrom);
+/**
+ * Le notti visual scavalcano la mezzanotte: 22:00–06:00 finisce il giorno
+ * dopo. Tutti i confronti sull'orario di fine passano di qui, così un turno
+ * notturno non risulta mai "corto" o "che finisce presto".
+ */
+export function isNotturno(shift) {
+  return shift?.tipo === 'WORK' && minutes(shift.end) <= minutes(shift.start);
 }
 
+/** Minuti di fine sulla scala del giorno di inizio (può superare 1440). */
+export function fineMinuti(shift) {
+  return minutes(shift.end) + (isNotturno(shift) ? 1440 : 0);
+}
+
+export function durataOre(shift) {
+  if (!shift || shift.tipo === 'OFF') return 0;
+  return (fineMinuti(shift) - minutes(shift.start)) / 60;
+}
+
+/** Chiude chi resta oltre l'orario di chiusura del negozio. */
+export function isClosing(shift) {
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.end) > minutes(RULES.store.chiude);
+}
+
+/** È di mattina chi entra entro l'apertura del negozio. */
 export function isMorning(shift) {
-  return shift.tipo === 'WORK' && minutes(shift.start) <= minutes(RULES.morningUntil);
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.start) <= minutes(RULES.store.apre);
+}
+
+/** Il turno inizia prima dell'apertura: allestimento, pulizia, consegne. */
+export function isPreApertura(shift) {
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.start) < minutes(RULES.store.apre);
+}
+
+/** Etichetta breve per il tipo di turno, quando c'è qualcosa da dire. */
+export function etichettaFascia(shift) {
+  if (isNotturno(shift)) return 'notte';
+  if (isClosing(shift)) return 'chiusura';
+  if (isPreApertura(shift)) return 'apertura';
+  return null;
+}
+
+/** Il turno esce dalla fascia normale dello store senza essere una notte. */
+export function fuoriFascia(shift) {
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.start) < minutes(RULES.store.primoIngresso)
+    || minutes(shift.end) > minutes(RULES.store.ultimaUscita);
 }
 
 export function shiftLabel(shift) {
   if (!shift) return '—';
-  return shift.tipo === 'OFF' ? 'OFF' : `${shift.start}–${shift.end}`;
+  if (shift.tipo === 'OFF') return 'OFF';
+  return isNotturno(shift) ? `${shift.start}–${shift.end} (+1)` : `${shift.start}–${shift.end}`;
 }
 
 export function wantLabel(cerco) {
@@ -78,7 +123,7 @@ export function contractOf(user) {
 export function contractCheck(user, shift) {
   if (!shift || shift.tipo === 'OFF') return { ok: true };
   const c = contractOf(user);
-  const durata = hours(shift.start, shift.end);
+  const durata = durataOre(shift);
   if (durata > c.maxShiftHours) {
     return {
       ok: false,

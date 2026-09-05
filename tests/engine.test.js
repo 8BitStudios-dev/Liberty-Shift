@@ -5,7 +5,7 @@ import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
 import { satisfies, validateRequest, findMatches, disponibileIl } from '../src/core/engine.js';
 import { WANT_MODE, RULES } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
-import { isClosing, contractCheck } from '../src/core/model.js';
+import { isClosing, contractCheck, isNotturno, durataOre, etichettaFascia } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
 
@@ -150,4 +150,77 @@ test('nessun match con se stessi', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
   assert.ok(!findMatches(richiesta, s).some((m) => m.userId === 'u_marco'));
+});
+
+// --- notti visual e orari dello store ----------------------------------
+
+test('una notte visual dura le ore giuste invece che negative', () => {
+  const notte = shift('2026-09-17', '22:00', '06:30');
+  assert.ok(isNotturno(notte));
+  assert.equal(durataOre(notte), 8.5);
+  assert.equal(durataOre(shift('2026-09-17', '11:00', '20:00')), 9);
+});
+
+test('una notte non è una chiusura né una mattina', () => {
+  const notte = shift('2026-09-17', '22:00', '06:30');
+  assert.ok(!isClosing(notte));
+  assert.equal(etichettaFascia(notte), 'notte');
+  assert.equal(etichettaFascia(shift('2026-09-17', '12:00', '21:00')), 'chiusura');
+  assert.equal(etichettaFascia(shift('2026-09-17', '08:00', '14:00')), 'apertura');
+  assert.equal(etichettaFascia(shift('2026-09-17', '11:00', '19:00')), null);
+});
+
+test('chiude chi resta oltre l\'orario di chiusura del negozio', () => {
+  assert.ok(isClosing(shift('2026-09-18', '12:00', '20:30')));
+  assert.ok(!isClosing(shift('2026-09-18', '11:00', '20:00')));
+});
+
+test('una notte non passa per un turno che finisce presto', () => {
+  const cerco = { data: '2026-09-17', mode: WANT_MODE.RANGE, entroLe: '20:00' };
+  // 06:30 letto ingenuamente sarebbe "entro le 20:00": non deve succedere.
+  assert.equal(satisfies(cerco, shift('2026-09-17', '22:00', '06:30')).score, 0);
+});
+
+test('la tolleranza di 90 minuti vale sullo scarto maggiore, non sulla somma', () => {
+  const cerco = { data: '2026-09-18', mode: WANT_MODE.SPECIFIC, start: '10:00', end: '19:00' };
+  assert.equal(satisfies(cerco, shift('2026-09-18', '11:30', '20:30')).score, 60); // 90 minuti
+  assert.equal(satisfies(cerco, shift('2026-09-18', '11:45', '20:45')).score, 0);  // 105 minuti
+  assert.equal(RULES.nearMissMinutes, 90);
+});
+
+// --- doppio impegno ----------------------------------------------------
+
+test('non si può cercare un turno in un giorno in cui si lavora già', () => {
+  const mio = { id: 'a', userId: 'u1', data: '2026-09-12', tipo: 'WORK', start: '11:00', end: '20:00' };
+  const altro = { id: 'b', userId: 'u1', data: '2026-09-13', tipo: 'WORK', start: '09:00', end: '18:00' };
+  const errori = validateRequest(
+    { userId: 'u1', cedo: { shiftId: 'a' }, cerco: { data: '2026-09-13', mode: WANT_MODE.ANY } },
+    { a: mio, b: altro },
+    [mio, altro],
+  );
+  assert.ok(errori.some((e) => e.includes('hai già un turno')));
+});
+
+test('cercare un giorno in cui si è OFF resta valido', () => {
+  const mio = { id: 'a', userId: 'u1', data: '2026-09-12', tipo: 'WORK', start: '11:00', end: '20:00' };
+  const libero = { id: 'b', userId: 'u1', data: '2026-09-13', tipo: 'OFF', start: null, end: null };
+  assert.deepEqual(
+    validateRequest(
+      { userId: 'u1', cedo: { shiftId: 'a' }, cerco: { data: '2026-09-13', mode: WANT_MODE.ANY } },
+      { a: mio, b: libero },
+      [mio, libero],
+    ),
+    [],
+  );
+});
+
+test('Marco cede la notte visual e trova comunque una disponibilità', () => {
+  const s = seed();
+  const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
+  const notte = s.shifts.find((x) => x.id === richiesta.cedo.shiftId);
+  assert.ok(isNotturno(notte));
+  const match = findMatches(richiesta, s);
+  assert.ok(match.length > 0);
+  // Chi la prende è Part Time: 8.5 ore di notte fanno scattare l'avviso.
+  assert.ok(match.some((m) => m.avvisi.length > 0));
 });

@@ -35,15 +35,37 @@ informativo: compare nella card ma per ora non allarga il matching.
 | `ANY` | qualsiasi turno in quella data | sempre, se è un turno lavorato |
 | `OFF` | quel giorno libero | il turno dell'altra persona è un OFF |
 
-## R6 — Chiusura
-**Assunzione**: è chiusura un turno che finisce alle **20:30 o dopo**
-(`closingFrom`). Il flag "non voglio la chiusura" è un filtro netto: un turno
-di chiusura non compare fra i match, non compare con punteggio basso.
+## R6 — Orari dello store
+Il negozio vende dalle **10:00 alle 20:00**. I turni però vanno dalle **08:00
+alle 21:00**: prima e dopo l'orario di vendita si lavora comunque (apertura,
+pulizia, visual). In `RULES.store`.
 
-## R7 — Mattina
-**Assunzione**: è un turno di mattina quello che inizia entro le **10:00**
-(`morningUntil`). Qui l'effetto è morbido: sposta il punteggio di pochi punti,
-non esclude nessuno.
+Da qui si ricavano due classificazioni, senza soglie separate da tenere
+allineate a mano:
+
+- **chiusura**: il turno finisce **dopo** l'orario di chiusura, quindi oltre le
+  20:00. Un 11:00–20:00 finisce col negozio e non è una chiusura; un
+  12:00–21:00 sì.
+- **mattina**: il turno inizia entro l'apertura, quindi alle 10:00 o prima.
+
+Il flag "non voglio la chiusura" è un filtro netto: un turno di chiusura non
+compare fra i match, non compare con punteggio basso. La preferenza "mattina"
+invece è morbida, sposta il punteggio di pochi punti.
+
+Un turno che esce dalla fascia 08:00–21:00 senza essere una notte viene
+segnalato in fase di inserimento, ma non bloccato: i casi particolari esistono.
+
+## R7 — Notti visual
+Un turno il cui orario di fine è **minore o uguale** a quello di inizio
+scavalca la mezzanotte: 22:00–06:30 sono 8,5 ore che finiscono il giorno dopo.
+
+Tutti i confronti sull'orario di fine passano da `fineMinuti()`, che riporta la
+fine sulla scala del giorno di inizio. Senza questo, una notte risulterebbe di
+durata negativa e passerebbe per un turno "che finisce entro le 20:00", visto
+che 06:30 è prima delle 20:00.
+
+Una notte non è mai classificata come chiusura né come mattina: è una categoria
+a sé, etichettata "notte" nell'interfaccia.
 
 ## R8 — OFF
 Un OFF e un turno lavorato non sono intercambiabili in nessuna direzione:
@@ -107,3 +129,11 @@ Solo chi ha dato un segnale:
 2. una disponibilità dichiarata nel profilo per quella settimana.
 
 Chi non ha fatto né l'una né l'altra cosa non viene mai mostrato.
+
+## R16 — Niente doppio impegno
+Non puoi cercare un turno in un giorno in cui lavori già: ne avresti due. La
+regola è applicata due volte, in fase di validazione e nella scelta dei giorni,
+dove quelli occupati sono spenti con il motivo a vista.
+
+**Eccezione**: il CERCO di tipo OFF, dove la semantica è ancora da definire
+(vedi `05-decisioni-aperte.md`).

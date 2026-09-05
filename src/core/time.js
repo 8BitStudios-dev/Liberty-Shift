@@ -32,10 +32,6 @@ export function minutes(hhmm) {
   return h * 60 + m;
 }
 
-export function hours(start, end) {
-  return (minutes(end) - minutes(start)) / 60;
-}
-
 /**
  * Settimana Apple: sabato -> venerdì.
  * Restituisce la data ISO del sabato che apre la settimana: è la chiave

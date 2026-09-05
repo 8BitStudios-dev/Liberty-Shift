@@ -3,6 +3,8 @@ import { store } from '../core/store.js';
 import * as V from './views.js';
 import * as F from './flows.js';
 import { formatDay } from '../core/time.js';
+import { durataOre, isNotturno, fuoriFascia, etichettaFascia } from '../core/model.js';
+import { RULES } from '../core/rules.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -163,9 +165,10 @@ const AZIONI = {
         <button class="chip ${s?.tipo === 'OFF' ? 'attivo' : ''}" data-tipo="OFF">OFF</button>
       </div>
       <div class="campi-orario" data-orari ${raw(s?.tipo === 'OFF' ? 'hidden' : '')}>
-        <label>Dalle <input type="time" data-campo="start" value="${s?.start || '09:00'}"></label>
-        <label>Alle <input type="time" data-campo="end" value="${s?.end || '18:00'}"></label>
-      </div>`, {
+        <label>Dalle <input type="time" data-campo="start" value="${s?.start || '10:00'}"></label>
+        <label>Alle <input type="time" data-campo="end" value="${s?.end || '19:00'}"></label>
+      </div>
+      <p class="testo-tenue" data-nota-turno></p>`, {
       azioni: `<button class="btn primario largo" data-act="salva-turno" data-data="${data}">Salva</button>
                ${s ? `<button class="btn pericolo largo" data-act="elimina-turno" data-id="${s.id}">Elimina</button>` : ''}`,
     });
@@ -174,7 +177,32 @@ const AZIONI = {
       w.el.dataset.tipo = btn.dataset.tipo;
       w.el.querySelectorAll('[data-tipo]').forEach((b) => b.classList.toggle('attivo', b === btn));
       w.el.querySelector('[data-orari]').hidden = btn.dataset.tipo === 'OFF';
+      nota();
     }));
+
+    // Il turno che scavalca la mezzanotte va detto subito, altrimenti sembra
+    // un errore di battitura.
+    const nota = () => {
+      const p = w.el.querySelector('[data-nota-turno]');
+      if (w.el.dataset.tipo === 'OFF') { p.textContent = ''; return; }
+      const finto = {
+        tipo: 'WORK',
+        start: w.el.querySelector('[data-campo="start"]').value,
+        end: w.el.querySelector('[data-campo="end"]').value,
+      };
+      if (!finto.start || !finto.end) { p.textContent = ''; return; }
+      const durata = durataOre(finto).toFixed(1).replace('.0', '');
+      if (isNotturno(finto)) {
+        p.textContent = `Notte: finisce alle ${finto.end} del giorno dopo, ${durata} ore.`;
+      } else if (fuoriFascia(finto)) {
+        p.textContent = `${durata} ore, fuori dalla fascia ${RULES.store.primoIngresso}–${RULES.store.ultimaUscita}. Controlla gli orari.`;
+      } else {
+        p.textContent = `${durata} ore${etichettaFascia(finto) ? ` · ${etichettaFascia(finto)}` : ''}.`;
+      }
+    };
+    w.el.querySelectorAll('[data-campo="start"], [data-campo="end"]')
+      .forEach((i) => i.addEventListener('input', nota));
+    nota();
   },
 
   'salva-turno': (_, el) => {

@@ -11,7 +11,7 @@ mettersi d'accordo. Il cambio vero si fa poi nell'app ufficiale.
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 17 test sul motore di matching
+npm test        # 25 test sul motore di matching
 ```
 
 Nessuna dipendenza, nessun build step: moduli ES aperti direttamente dal
@@ -46,7 +46,9 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 - Inserimento manuale dei turni, calendario mensile con dettaglio giorno
 - Creazione richiesta CEDO + CERCO con i tre livelli di flessibilità e OFF
 - Regola della settimana Apple applicata alla sorgente: i giorni di un'altra
-  settimana non compaiono proprio
+  settimana non compaiono proprio, e nemmeno quelli in cui lavori già
+- Orari dello store (vendita 10–20, turni 08–21) e notti visual che scavalcano
+  la mezzanotte
 - Matching su due sorgenti, richieste pubblicate e disponibilità di profilo,
   con punteggio e spiegazione in italiano
 - Proposta, accettazione bilaterale, "Cambio inserito", scadenza automatica
