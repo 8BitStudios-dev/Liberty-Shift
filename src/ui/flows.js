@@ -1,0 +1,346 @@
+// Flussi: creazione richiesta (Cambio Rapido incluso), match, proposta,
+// accettazione bilaterale.
+
+import { html, raw, toast } from './dom.js';
+import { store } from '../core/store.js';
+import { findMatches, validateRequest, satisfies } from '../core/engine.js';
+import { RULES, WANT_MODE, STATUS } from '../core/rules.js';
+import { shiftLabel, wantLabel, hasPriority, isClosing } from '../core/model.js';
+import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
+import { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } from './components.js';
+
+export const draft = {
+  intent: null,
+  step: 1,
+  cedoShiftId: null,
+  flessibile: false,
+  cerco: { data: null, mode: WANT_MODE.ANY, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' },
+  usaPriorita: false,
+  errori: [],
+};
+
+export function resetDraft(intent = null) {
+  draft.intent = intent;
+  draft.step = intent ? 2 : 1;
+  draft.cedoShiftId = null;
+  draft.flessibile = false;
+  draft.cerco = { data: null, mode: intent === 'CEDERE' ? WANT_MODE.ANY : WANT_MODE.SPECIFIC, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' };
+  draft.usaPriorita = false;
+  draft.errori = [];
+}
+
+// ------------------------------------------------------- CAMBIO RAPIDO
+
+export function scelta() {
+  return html`
+    <header class="testata"><h1>⚡ Cambio rapido</h1></header>
+    <p class="occhiello">Cosa vuoi fare?</p>
+    <button class="tile scelta rosso" data-act="intent" data-intent="CEDERE">
+      <span class="tile-icona">🔴</span>
+      <span><strong>Cedere un turno</strong><em>Ho un turno che non riesco a fare e cerco chi lo prende</em></span>
+    </button>
+    <button class="tile scelta verde" data-act="intent" data-intent="CERCARE">
+      <span class="tile-icona">🟢</span>
+      <span><strong>Cercare un turno</strong><em>Voglio un giorno preciso e offro uno dei miei in cambio</em></span>
+    </button>
+    <button class="tile scelta blu" data-act="intent" data-intent="SCAMBIO">
+      <span class="tile-icona">🔄</span>
+      <span><strong>Scambio specifico</strong><em>So già quale combinazione voglio</em></span>
+    </button>
+    <p class="testo-tenue nota-regola">
+      In ogni caso la richiesta avrà sempre due lati: quello che cedi e quello che cerchi.
+      È la regola che tiene in piedi tutto il resto.
+    </p>`;
+}
+
+// -------------------------------------------------- COSTRUZIONE RICHIESTA
+
+export function nuovo() {
+  if (draft.step === 1) return scelta();
+  if (draft.step === 2) return passoCedo();
+  if (draft.step === 3) return passoCerco();
+  return passoRiepilogo();
+}
+
+function passoCedo() {
+  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
+    .filter((s) => s.tipo === 'WORK');
+
+  const righe = miei.map((s) => html`
+    <button class="riga-turno ${s.id === draft.cedoShiftId ? 'scelto' : ''}" data-act="scegli-cedo" data-id="${s.id}">
+      <span class="giorno-nome">${formatDay(s.data)}</span>
+      <span class="turno-valore">${shiftLabel(s)}${raw(isClosing(s) ? ' <span class="tag">chiusura</span>' : '')}</span>
+      <span class="chevron">${s.id === draft.cedoShiftId ? '✓' : '›'}</span>
+    </button>`).join('');
+
+  return html`
+    ${raw(barra('Quale turno cedi?', 1))}
+    ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
+    : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}
+    <label class="switch">
+      <input type="checkbox" data-act="flessibile" ${raw(draft.flessibile ? 'checked' : '')}>
+      <span>Sono disponibile a cedere anche altri turni</span>
+    </label>
+    <div class="barra-azioni">
+      <button class="btn primario largo" data-act="step" data-step="3" ${raw(draft.cedoShiftId ? '' : 'disabled')}>Continua</button>
+    </div>`;
+}
+
+function passoCerco() {
+  const cedo = store.shift(draft.cedoShiftId);
+  const wk = appleWeekKey(cedo.data);
+  const giorni = Array.from({ length: 7 }, (_, i) => addDays(wk, i))
+    .filter((d) => d !== cedo.data);
+
+  const pillole = giorni.map((d) => {
+    const passato = d < todayISO();
+    return html`
+      <button class="pill ${draft.cerco.data === d ? 'attivo' : ''}" data-act="scegli-data" data-data="${d}" ${raw(passato ? 'disabled' : '')}>
+        ${formatDay(d)}
+      </button>`;
+  }).join('');
+
+  const modi = [
+    [WANT_MODE.SPECIFIC, 'Orario preciso'],
+    [WANT_MODE.RANGE, 'Fascia oraria'],
+    [WANT_MODE.ANY, 'Qualsiasi turno'],
+    [WANT_MODE.OFF, 'OFF'],
+  ].map(([k, label]) => html`
+    <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
+
+  let campi = '';
+  if (draft.cerco.mode === WANT_MODE.SPECIFIC) {
+    campi = html`
+      <div class="campi-orario">
+        <label>Dalle <input type="time" data-campo="start" value="${draft.cerco.start}"></label>
+        <label>Alle <input type="time" data-campo="end" value="${draft.cerco.end}"></label>
+      </div>`;
+  } else if (draft.cerco.mode === WANT_MODE.RANGE) {
+    campi = html`
+      <div class="campi-orario">
+        <label>Che finisca entro <input type="time" data-campo="entroLe" value="${draft.cerco.entroLe}"></label>
+        <label>Che inizi dopo <input type="time" data-campo="dalleOre" value="${draft.cerco.dalleOre}"></label>
+      </div>`;
+  }
+
+  const escludi = draft.cerco.mode === WANT_MODE.OFF ? '' : html`
+    <label class="switch">
+      <input type="checkbox" data-act="evita-chiusura" ${raw(draft.cerco.evitaChiusura ? 'checked' : '')}>
+      <span>Non voglio un turno di chiusura</span>
+    </label>`;
+
+  return html`
+    ${raw(barra('Cosa cerchi in cambio?', 2))}
+    <p class="testo-tenue avviso-box">
+      Solo i giorni della stessa settimana Apple di ${formatDay(cedo.data)} (sabato → venerdì):
+      gli scambi fra settimane diverse non sono ammessi.
+    </p>
+    <div class="pillole">${raw(pillole)}</div>
+    <h3>Quanto sei rigido?</h3>
+    <div class="chips">${raw(modi)}</div>
+    ${raw(campi)}
+    ${raw(escludi)}
+    <label class="campo">
+      <span>Messaggio (facoltativo)</span>
+      <textarea data-campo="note" rows="2" placeholder="Es. anche 12–20 mi andrebbe bene">${draft.cerco.note}</textarea>
+    </label>
+    <div class="barra-azioni">
+      <button class="btn secondario" data-act="step" data-step="2">Indietro</button>
+      <button class="btn primario" data-act="step" data-step="4" ${raw(draft.cerco.data ? '' : 'disabled')}>Continua</button>
+    </div>`;
+}
+
+function passoRiepilogo() {
+  const finto = { userId: store.state.currentUserId, cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile }, cerco: draft.cerco };
+  const credito = store.creditoPriorita();
+  const errori = validateRequest(finto, store.shiftsById());
+
+  return html`
+    ${raw(barra('Controlla e pubblica', 3))}
+    <div class="card">
+      ${raw(coppiaCedoCerco(finto))}
+      ${raw(draft.cerco.note ? `<p class="nota-utente">“${draft.cerco.note}”</p>` : '')}
+    </div>
+
+    <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
+      <input type="checkbox" data-act="priorita" ${raw(draft.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
+      <span>⭐ Usa la priorità del mese (${credito} disponibile, dura ${RULES.priority.durationHours}h)</span>
+    </label>
+    <p class="testo-tenue">La priorità non si può aggiungere dopo e non torna indietro se cancelli la richiesta.</p>
+
+    ${raw(errori.length ? `<div class="errori">${errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>` : '')}
+    ${raw(draft.errori.length ? `<div class="errori">${draft.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>` : '')}
+
+    <div class="barra-azioni">
+      <button class="btn secondario" data-act="step" data-step="3">Indietro</button>
+      <button class="btn primario" data-act="pubblica" ${raw(errori.length ? 'disabled' : '')}>Pubblica e cerca match</button>
+    </div>
+    <p class="testo-tenue">Una volta pubblicata la richiesta non si modifica: si cancella e se ne fa un'altra.</p>`;
+}
+
+function barra(titolo, passo) {
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">✕</button>
+      <h1>${titolo}</h1>
+      <span class="passo">${passo}/3</span>
+    </header>
+    <div class="progresso"><i style="width:${(passo / 3) * 100}%"></i></div>`;
+}
+
+// ---------------------------------------------------------------- MATCH
+
+export function match(params) {
+  const r = store.request(params.id);
+  if (!r) return vuoto('Richiesta non trovata', 'Forse è stata chiusa.');
+  const risultati = findMatches(r, store.state);
+  const pieni = risultati.filter((m) => m.tipo === 'MATCH');
+  const potenziali = risultati.filter((m) => m.tipo === 'POTENZIALE');
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Possibili match</h1>
+    </header>
+    <div class="card riepilogo">${raw(coppiaCedoCerco(r, { compatto: true }))}</div>
+
+    ${raw(pieni.length ? `<h2 class="titolo-gruppo">🟢 Match (${pieni.length})</h2>${pieni.map(cardMatch).join('')}` : '')}
+    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map(cardMatch).join('')}` : '')}
+    ${raw(risultati.length ? '' : vuoto(
+    'Ancora nessuno',
+    'Nessun collega ha pubblicato una richiesta compatibile né dichiarato disponibilità su quel giorno. La richiesta resta in bacheca.',
+    '<button class="btn secondario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
+  ))}
+    <p class="testo-tenue">Chi non ha dato nessun segnale di interesse non compare: l'app non manda richieste a caso.</p>`;
+}
+
+// ---------------------------------------------------- DETTAGLIO RICHIESTA
+
+export function dettaglio(params) {
+  const r = store.request(params.id);
+  if (!r) return vuoto('Richiesta non trovata', 'Forse è stata chiusa o è scaduta.');
+  const autore = store.user(r.userId);
+  const mio = r.userId === store.state.currentUserId;
+  const proposte = store.proposteDi(r.id).filter((p) => p.status !== 'RIFIUTATA');
+  const me = store.state.currentUserId;
+
+  const blocchiProposte = proposte.map((p) => {
+    const da = store.user(p.daUserId);
+    const offerto = store.shift(p.shiftOffertoId);
+    const coinvolto = p.daUserId === me || p.aUserId === me;
+    const hoAccettato = p.accettataDa.includes(me);
+    const accordo = p.status === 'ACCORDO';
+
+    const azioni = accordo
+      ? html`
+        <div class="accordo">
+          <strong>🟢 Scambio concordato</strong>
+          <p>Ora effettua il cambio nell'app ufficiale dei turni. Questa app non lo fa al posto tuo.</p>
+          ${raw(p.cambioInserito
+    ? '<span class="tag">cambio inserito</span>'
+    : `<button class="btn primario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>`)}
+        </div>`
+      : coinvolto && !hoAccettato
+        ? html`
+          <div class="barra-azioni">
+            <button class="btn primario" data-act="accetta" data-id="${p.id}">Accetta</button>
+            <button class="btn secondario" data-act="rifiuta" data-id="${p.id}">Rifiuta</button>
+          </div>`
+        : html`<p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>`;
+
+    return html`
+      <article class="card proposta">
+        <header class="card-head">
+          <span class="avatar">${iniziali(da)}</span>
+          <div><strong>${nomeUtente(da)}</strong><div class="meta">ha proposto uno scambio</div></div>
+        </header>
+        <p>Ti darebbe <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
+        ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
+        <div class="accettazioni">${raw(p.accettataDa.map((u) => `<span class="tag ok">${nomeUtente(store.user(u))} ha accettato</span>`).join(''))}</div>
+        ${raw(azioni)}
+      </article>`;
+  }).join('');
+
+  const hoGiaProposto = proposte.some((p) => p.daUserId === me);
+  const accordoRaggiunto = r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA;
+  const azioneAutore = mio
+    ? (accordoRaggiunto ? '' : html`
+      <div class="barra-azioni">
+        <button class="btn secondario" data-act="vai" data-to="#/match?id=${r.id}">Rivedi i match</button>
+        <button class="btn pericolo" data-act="cancella" data-id="${r.id}">Cancella richiesta</button>
+      </div>`)
+    : r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA || hoGiaProposto || !turniOfferibili(r).length
+      ? ''
+      : html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`;
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="indietro">‹</button>
+      <h1>Cambio turno</h1>
+    </header>
+    <article class="card ${hasPriority(r) ? 'prioritaria' : ''}">
+      <header class="card-head">
+        <span class="avatar">${iniziali(autore)}</span>
+        <div>
+          <strong>${hasPriority(r) ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
+          <div class="meta">${autore.ruolo} · ${RULES.contracts[autore.contratto].label}</div>
+        </div>
+      </header>
+      ${raw(coppiaCedoCerco(r))}
+      ${raw(r.cerco.note ? `<p class="nota-utente">“${r.cerco.note}”</p>` : '')}
+      <div class="meta">${raw(badgeStato(r.status))} · pubblicata ${formatDay(r.createdAt.slice(0, 10))}</div>
+    </article>
+    ${raw(blocchiProposte)}
+    ${raw(azioneAutore)}`;
+}
+
+/** I turni che posso davvero offrire su una richiesta. */
+export function turniOfferibili(request) {
+  return store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
+    .filter((s) => satisfies(request.cerco, s).score > 0);
+}
+
+/** Contenuto della sheet "proponi scambio". */
+export function formProposta(request, shiftSuggerito) {
+  // Si può offrire solo qualcosa che soddisfa davvero il CERCO: se cercano
+  // un OFF, un turno lavorato non serve a niente.
+  const opzioni = turniOfferibili(request);
+
+  if (!opzioni.length) {
+    return html`
+      <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
+      <p class="avviso">⚠️ Il ${formatDay(request.cerco.data)} non hai niente che corrisponda a quello che ${nomeUtente(store.user(request.userId))} sta cercando.</p>
+      <p class="testo-tenue">Aggiorna i tuoi turni se il calendario non è allineato, oppure lascia perdere questo scambio.</p>`;
+  }
+
+  return html`
+    <p>Stai proponendo uno scambio a <strong>${nomeUtente(store.user(request.userId))}</strong>.</p>
+    <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
+    <label class="campo">
+      <span>Il turno che offri</span>
+      <select class="select" data-campo="shift">
+        ${opzioni.map((s) => raw(
+    `<option value="${s.id}" ${s.id === shiftSuggerito ? 'selected' : ''}>${formatDay(s.data)} · ${shiftLabel(s)}</option>`,
+  ))}
+      </select>
+    </label>
+    <label class="campo">
+      <span>Messaggio (facoltativo)</span>
+      <textarea data-campo="messaggio" rows="2" placeholder="Es. per me va bene anche 12–20"></textarea>
+    </label>
+    <p class="testo-tenue">Proponendo accetti già da parte tua: serve anche l'accettazione dell'altra persona.</p>`;
+}
+
+export function pubblica() {
+  const { errori, richiesta } = store.creaRichiesta({
+    cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile },
+    cerco: draft.cerco,
+    usaPriorita: draft.usaPriorita,
+  });
+  if (errori) {
+    draft.errori = errori;
+    return null;
+  }
+  toast('Richiesta pubblicata');
+  return richiesta;
+}
