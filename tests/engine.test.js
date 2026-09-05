@@ -5,7 +5,10 @@ import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
 import { satisfies, validateRequest, findMatches, disponibileIl } from '../src/core/engine.js';
 import { WANT_MODE, RULES } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
-import { isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno } from '../src/core/model.js';
+import {
+  isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
+  durataTurnoDi, impattoMonteOre, shiftLabel,
+} from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
 
@@ -266,4 +269,53 @@ test('Marco cede la notte visual e trova comunque una disponibilità', () => {
   assert.ok(match.length > 0);
   // Chi la prende è Part Time: 8.5 ore di notte fanno scattare l'avviso.
   assert.ok(match.some((m) => m.avvisi.length > 0));
+});
+
+// --- durata del turno per persona e monte ore --------------------------
+
+test('la durata del turno è della persona, non del contratto', () => {
+  const pt5 = { contratto: 'PT', durataTurno: 5 };
+  const pt6 = { contratto: 'PT', durataTurno: 6 };
+  assert.equal(durataTurnoDi(pt5), 5);
+  assert.equal(durataTurnoDi(pt6), 6);
+  // Lo stesso turno di chiusura diventa due cose diverse.
+  assert.equal(trasformaTurno(shift('2026-09-18', '11:00', '20:00'), pt5).start, '15:00');
+  assert.equal(trasformaTurno(shift('2026-09-18', '11:00', '20:00'), pt6).start, '14:00');
+});
+
+test('senza durata dichiarata si ricade sul valore del contratto', () => {
+  assert.equal(durataTurnoDi({ contratto: 'FT' }), RULES.durataTurnoDefault.FT);
+  assert.equal(durataTurnoDi({ contratto: 'PT' }), RULES.durataTurnoDefault.PT);
+});
+
+test('uno scambio fra due turni interi non tocca il monte ore', () => {
+  const s = seed();
+  const lorenzo = s.users.find((u) => u.id === 'u_lorenzo');
+  const suo = s.shifts.find((x) => x.userId === 'u_lorenzo' && x.tipo === 'WORK');
+  const altrui = s.shifts.find((x) => x.userId === 'u_martina'
+    && x.tipo === 'WORK' && appleWeekKey(x.data) === appleWeekKey(suo.data));
+  const impatto = impattoMonteOre(lorenzo, suo, altrui, s.shifts);
+  assert.equal(impatto.cambia, false); // riceve un turno già adattato alla sua durata
+});
+
+test('scambiare un turno con un OFF sposta il monte ore e viene detto', () => {
+  const s = seed();
+  const luca = s.users.find((u) => u.id === 'u_luca');
+  const suo = s.shifts.find((x) => x.userId === 'u_luca' && x.tipo === 'WORK');
+  const off = s.shifts.find((x) => x.userId === 'u_sara' && x.tipo === 'OFF'
+    && appleWeekKey(x.data) === appleWeekKey(suo.data));
+  const impatto = impattoMonteOre(luca, suo, off, s.shifts);
+  assert.equal(impatto.cambia, true);
+  assert.ok(impatto.dopo < impatto.prima);
+  assert.match(impatto.avviso, /settimana passa da/);
+});
+
+test('i dati di esempio sono coerenti: ogni turno dura quanto il contratto di chi lo fa', () => {
+  const s = seed();
+  for (const u of s.users) {
+    const suoi = s.shifts.filter((x) => x.userId === u.id && x.tipo === 'WORK' && !isNotturno(x));
+    for (const t of suoi) {
+      assert.equal(durataOre(t), durataTurnoDi(u), `${u.nome} ha ${shiftLabel(t)} ma fa turni da ${durataTurnoDi(u)}h`);
+    }
+  }
 });

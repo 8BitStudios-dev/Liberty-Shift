@@ -26,8 +26,16 @@ due lati.
 1. **Quale turno cedi** — solo i tuoi turni lavorati futuri.
 2. **Cosa cerchi** — i giorni proposti sono **solo quelli della stessa
    settimana Apple**: la regola R2 non è un messaggio d'errore, è l'assenza
-   dell'opzione sbagliata. Poi il livello di flessibilità e l'eventuale
-   esclusione della chiusura.
+   dell'opzione sbagliata. Anche i giorni in cui lavori già sono spenti, con
+   sotto scritto cosa hai quel giorno. Poi il livello di flessibilità e
+   l'eventuale esclusione della chiusura.
+
+   Con **orario preciso** non si digitano gli orari: si sceglie fra i turni che
+   quel giorno esistono davvero in store, mostrati senza nome, ciascuno con
+   accanto **le ore che faresti tu** col tuo contratto. È il punto in cui
+   digitare a mano tradisce: un Part Time che copia "11:00–20:00" dal turno di
+   un Full Time sta chiedendo ore che non farebbe mai, e non troverebbe nessun
+   match. Chi vuole comunque scrivere a mano può, con l'avvertenza in chiaro.
 3. **Controlla e pubblica** — anteprima della coppia CEDO/CERCO e scelta sulla
    priorità. Subito dopo la pubblicazione si atterra sui match.
 

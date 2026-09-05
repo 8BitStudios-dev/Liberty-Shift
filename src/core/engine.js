@@ -4,7 +4,7 @@
 
 import { RULES, STATUS, WANT_MODE } from './rules.js';
 import { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey } from './time.js';
-import { isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti, trasformaTurno, turnoAdattato } from './model.js';
+import { isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 
@@ -175,8 +175,8 @@ export function findMatches(request, ctx) {
       `e cerca proprio ${formatDay(mioCedo.data)} · ${wantLabel(altra.cerco)}`,
     ];
     const avvisi = [];
-    for (const [chi, turno] of [[autore, suoCedo], [controparte, mioCedo]]) {
-      const t = trasformaTurno(turno, chi);
+    for (const [chi, cede, riceve] of [[autore, mioCedo, suoCedo], [controparte, suoCedo, mioCedo]]) {
+      const t = trasformaTurno(riceve, chi);
       if (t.trasformato) {
         score -= RULES.adattamentoPenalty;
         reasons.push(chi.id === autore.id
@@ -184,6 +184,8 @@ export function findMatches(request, ctx) {
           : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
       }
       if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
+      const ore = impattoMonteOre(chi, cede, riceve, ctx.shifts);
+      if (ore.avviso) avvisi.push(`${chi.id === autore.id ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
     }
     if (score < RULES.potentialThreshold) continue;
 
@@ -234,8 +236,8 @@ export function findMatches(request, ctx) {
     if (!suoImpegno) reasons.push(`${formatDay(mioCedo.data)} non risulta occupato nel suo calendario`);
 
     const avvisi = [];
-    for (const [chi, turno] of [[autore, suoTurno], [u, mioCedo]]) {
-      const t = trasformaTurno(turno, chi);
+    for (const [chi, cede, riceve] of [[autore, mioCedo, suoTurno], [u, suoTurno, mioCedo]]) {
+      const t = trasformaTurno(riceve, chi);
       if (t.trasformato) {
         score -= RULES.adattamentoPenalty;
         reasons.push(chi.id === autore.id
@@ -243,6 +245,8 @@ export function findMatches(request, ctx) {
           : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
       }
       if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
+      const ore = impattoMonteOre(chi, cede, riceve, ctx.shifts);
+      if (ore.avviso) avvisi.push(`${chi.id === autore.id ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
     }
     score = clamp(Math.round(score), 0, RULES.availabilityScoreCap);
     if (score < RULES.potentialThreshold) continue;

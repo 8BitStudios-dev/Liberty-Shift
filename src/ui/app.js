@@ -79,6 +79,13 @@ const AZIONI = {
   'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },
   'scegli-data': (_, el) => { F.draft.cerco.data = el.dataset.data; render(); },
   modo: (_, el) => { F.draft.cerco.mode = el.dataset.modo; render(); },
+  'scegli-orario': (_, el) => {
+    F.draft.cerco.start = el.dataset.start;
+    F.draft.cerco.end = el.dataset.end;
+    F.draft.cerco.daTurno = el.dataset.originale;
+    render();
+  },
+  'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },
   flessibile: (e) => { F.draft.flessibile = e.target.checked; },
   'evita-chiusura': (e) => { F.draft.cerco.evitaChiusura = e.target.checked; },
   priorita: (e) => { F.draft.usaPriorita = e.target.checked; },
@@ -134,6 +141,8 @@ const AZIONI = {
   },
 
   pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); },
+  'durata-turno': (e) => { store.impostaContratto({ durataTurno: Number(e.target.value) }); render(); },
+  'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
 
   reset: () => {
     if (!confirm('Ripristinare i dati di esempio? Perdi tutto quello che hai inserito.')) return;

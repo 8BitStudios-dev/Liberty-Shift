@@ -239,6 +239,11 @@ export const store = {
     this.commit();
   },
 
+  impostaContratto(patch) {
+    Object.assign(this.me, patch);
+    this.commit();
+  },
+
   impostaPreferenze(patch) {
     Object.assign(this.me.preferenze, patch);
     this.commit();

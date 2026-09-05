@@ -16,6 +16,7 @@ export const draft = {
   flessibile: false,
   cerco: { data: null, mode: WANT_MODE.ANY, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' },
   usaPriorita: false,
+  orarioManuale: false,
   errori: [],
 };
 
@@ -26,6 +27,7 @@ export function resetDraft(intent = null) {
   draft.flessibile = false;
   draft.cerco = { data: null, mode: intent === 'CEDERE' ? WANT_MODE.ANY : WANT_MODE.SPECIFIC, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' };
   draft.usaPriorita = false;
+  draft.orarioManuale = false;
   draft.errori = [];
 }
 
@@ -115,11 +117,7 @@ function passoCerco() {
 
   let campi = '';
   if (draft.cerco.mode === WANT_MODE.SPECIFIC) {
-    campi = html`
-      <div class="campi-orario">
-        <label>Dalle <input type="time" data-campo="start" value="${draft.cerco.start}"></label>
-        <label>Alle <input type="time" data-campo="end" value="${draft.cerco.end}"></label>
-      </div>`;
+    campi = campiOrarioPreciso();
   } else if (draft.cerco.mode === WANT_MODE.RANGE) {
     campi = html`
       <div class="campi-orario">
@@ -154,6 +152,58 @@ function passoCerco() {
       <button class="btn secondario" data-act="step" data-step="2">Indietro</button>
       <button class="btn primario" data-act="step" data-step="4" ${raw(draft.cerco.data ? '' : 'disabled')}>Continua</button>
     </div>`;
+}
+
+/**
+ * Il CERCO con orario preciso non si digita: si sceglie fra i turni che quel
+ * giorno esistono davvero in store, mostrati senza nome. Digitare gli orari
+ * a mano è la trappola per chi ha un contratto diverso: un Part Time che
+ * copia "11:00–20:00" dal turno di un Full Time sta chiedendo ore che non
+ * farebbe mai. Qui sceglie il turno e l'app calcola le sue ore.
+ */
+function campiOrarioPreciso() {
+  const me = store.me;
+  if (!draft.cerco.data) {
+    return html`<p class="testo-tenue">Scegli prima il giorno.</p>`;
+  }
+
+  const visti = new Set();
+  const turni = store.state.shifts
+    .filter((s) => s.data === draft.cerco.data && s.tipo === 'WORK' && s.userId !== me.id)
+    .filter((s) => {
+      const chiave = `${s.start}-${s.end}`;
+      if (visti.has(chiave)) return false;
+      visti.add(chiave);
+      return true;
+    })
+    .sort((a, b) => a.start.localeCompare(b.start));
+
+  const righe = turni.map((s) => {
+    const t = trasformaTurno(s, me);
+    const scelto = draft.cerco.start === t.start && draft.cerco.end === t.end;
+    return html`
+      <button class="riga-turno ${scelto ? 'scelto' : ''}" data-act="scegli-orario"
+              data-start="${t.start}" data-end="${t.end}" data-originale="${shiftLabel(s)}">
+        <span class="giorno-nome">${shiftLabel(s)}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
+        <span class="turno-valore">${t.trasformato ? `tu faresti ${t.start}–${t.end}` : 'stesso orario per te'}</span>
+        <span class="chevron">${scelto ? '✓' : '›'}</span>
+      </button>`;
+  }).join('');
+
+  return html`
+    ${raw(turni.length ? `
+      <p class="testo-tenue">Turni che ci sono quel giorno in store. Scegli quello che ti interessa: l'orario a destra è quello che faresti tu, con il tuo contratto.</p>
+      <div class="lista-turni">${righe}</div>` : '')}
+    <label class="switch">
+      <input type="checkbox" data-act="orario-manuale" ${raw(draft.orarioManuale ? 'checked' : '')}>
+      <span>Nessuno di questi, scrivo io l'orario</span>
+    </label>
+    ${raw(draft.orarioManuale || !turni.length ? `
+      <div class="campi-orario">
+        <label>Dalle <input type="time" data-campo="start" value="${draft.cerco.start}"></label>
+        <label>Alle <input type="time" data-campo="end" value="${draft.cerco.end}"></label>
+      </div>
+      <p class="testo-tenue">Scrivi le ore che faresti tu, non quelle del turno di chi te lo cede.</p>` : '')}`;
 }
 
 function passoRiepilogo() {

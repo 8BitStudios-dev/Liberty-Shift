@@ -76,6 +76,10 @@ L'adattamento costa 5 punti e viene spiegato fra le ragioni del match. Restano
 segnalati senza essere risolti: le notti e gli adattamenti che uscirebbero dalla
 fascia oraria dello store.
 
+Sul monte ore settimanale (R17) il motore fa un conto a parte: uno scambio fra
+turni interi è a somma zero, ma se c'è di mezzo un OFF le ore si spostano, e
+allora l'avviso dice di quanto, per entrambe le persone.
+
 ## Classificazione finale
 
 | Punteggio | Esito |
@@ -96,5 +100,4 @@ su WhatsApp.
 - scambi a tre (A→B→C);
 - scambi multipli (cedo due turni, ne prendo uno);
 - storico per pesare chi ha già ricevuto favori;
-- limite sul monte ore settimanale, oggi si guarda solo il singolo turno;
 - disponibilità a fasce orarie nel profilo, oggi è per giornata intera.

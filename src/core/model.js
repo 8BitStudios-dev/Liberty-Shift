@@ -2,7 +2,7 @@
 // Nessuna classe: oggetti semplici, serializzabili, pronti per qualsiasi backend.
 
 import { RULES, STATUS, WANT_MODE } from './rules.js';
-import { minutes, todayISO } from './time.js';
+import { minutes, todayISO, appleWeekKey } from './time.js';
 
 /**
  * User
@@ -115,6 +115,15 @@ export function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
 }
 
+/** Durata standard del turno di una persona: 9 per un FT, 5 o 6 per un PT. */
+export function durataTurnoDi(user) {
+  return user?.durataTurno ?? RULES.durataTurnoDefault[user?.contratto] ?? 9;
+}
+
+export function etichettaContratto(user) {
+  return `${contractOf(user).label} · turni da ${durataTurnoDi(user)}h · ${user?.oreSettimanali ?? '—'}h a settimana`;
+}
+
 function hhmm(min) {
   const m = ((min % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -144,7 +153,7 @@ export function trasformaTurno(shift, ricevente) {
     return { start: shift?.start, end: shift?.end, trasformato: false };
   }
 
-  const durataTarget = contractOf(ricevente).durataTurno;
+  const durataTarget = durataTurnoDi(ricevente);
   const durataAttuale = durataOre(shift);
   const base = {
     start: shift.start, end: shift.end, durata: durataAttuale, trasformato: false,
@@ -189,6 +198,44 @@ export function turnoAdattato(shift, ricevente) {
   const t = trasformaTurno(shift, ricevente);
   if (!t.trasformato) return shift;
   return { ...shift, start: t.start, end: t.end };
+}
+
+/** Ore lavorate da una persona in una settimana Apple. */
+export function oreSettimana(userId, weekKey, shifts) {
+  return shifts
+    .filter((s) => s.userId === userId && s.tipo === 'WORK' && appleWeekKey(s.data) === weekKey)
+    .reduce((tot, s) => tot + durataOre(s), 0);
+}
+
+/**
+ * Effetto di uno scambio sul monte ore settimanale.
+ * Uno scambio fra due turni standard è a somma zero, perché ciascuno riceve
+ * un turno già adattato alla propria durata. Il conto cambia soprattutto
+ * quando c'è di mezzo un OFF: lì una persona lavora un turno in meno e
+ * l'altra uno in più.
+ */
+export function impattoMonteOre(user, cedo, ricevuto, shifts) {
+  const weekKey = appleWeekKey(cedo.data);
+  const prima = oreSettimana(user.id, weekKey, shifts);
+  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, user));
+  const contratto = user.oreSettimanali;
+  const cambia = Math.abs(dopo - prima) > 0.01;
+  if (!cambia || !contratto) return { cambia: false, prima, dopo };
+
+  const scarto = dopo - contratto;
+  return {
+    cambia: true,
+    prima,
+    dopo,
+    scarto,
+    avviso: Math.abs(scarto) < 0.01
+      ? null
+      : `la settimana passa da ${arrotonda(prima)}h a ${arrotonda(dopo)}h, ${scarto > 0 ? '+' : ''}${arrotonda(scarto)}h rispetto alle ${contratto}h di contratto`,
+  };
+}
+
+function arrotonda(n) {
+  return Number(n.toFixed(1)).toString().replace('.', ',');
 }
 
 /** La richiesta è scaduta quando è passata la data del turno ceduto (cap. 24). */

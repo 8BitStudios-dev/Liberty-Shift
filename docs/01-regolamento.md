@@ -84,44 +84,55 @@ lavori, non ti viene proposto di rispondere. Non hai un venerdì libero da dargl
 Uno scambio fra contratti diversi **è permesso**, ma ciascuno resta sul proprio
 contratto: il turno si adatta a chi lo riceve.
 
+La durata del turno è una proprietà **della persona**, non del contratto:
+
+| | Durata del turno | Monte ore settimanale |
+|---|---|---|
+| Full Time | 9 ore | 40 |
+| Part Time | 5 o 6 ore | 20, 25 o 30 |
+
+Sta sull'utente (`durataTurno`, `oreSettimanali`), non nel contratto, proprio
+perché due Part Time possono avere turni diversi. Si imposta dal Profilo.
+
 La regola di adattamento:
 
 - se il turno **comincia entro l'apertura**, si tiene fermo l'**inizio**: entri
-  quando entra chi ti passa il turno, ed esci prima o dopo secondo il tuo
-  contratto;
-- **in tutti gli altri casi** si tiene ferma la **fine**: esci quando esce chi
-  ti passa il turno, ed entri prima o dopo secondo il tuo contratto.
+  quando entra chi ti passa il turno;
+- **in tutti gli altri casi** si tiene ferma la **fine**: esci quando esce lui.
 
-La durata diventa quella standard del contratto di chi riceve.
-
-Esempi, con Full Time da 9 ore e Part Time da 6:
+La durata diventa la tua.
 
 | Turno ceduto | Chi lo prende | Diventa | Perché |
 |---|---|---|---|
-| 09:00–18:00 | Part Time | 09:00–15:00 | apre, si tiene l'inizio |
-| 11:00–20:00 | Part Time | 14:00–20:00 | chiude, si tiene la fine |
-| 11:00–17:00 | Full Time | 08:00–17:00 | si tiene la fine, allungato indietro |
+| 09:00–18:00 | Part Time da 6h | 09:00–15:00 | apre, si tiene l'inizio |
+| 11:00–20:00 | Part Time da 6h | 14:00–20:00 | chiude, si tiene la fine |
+| 11:00–20:00 | Part Time da 5h | 15:00–20:00 | stessa regola, durata diversa |
+| 11:00–17:00 | Full Time | 08:00–17:00 | allungato all'indietro |
 | 11:00–20:00 | Full Time | invariato | stessa durata |
 
 L'adattamento non è un problema da segnalare, è il funzionamento normale: costa
-solo 5 punti di punteggio e viene **spiegato** nella scheda del match, così chi
-legge sa subito che orario farebbe davvero. Il matching valuta il turno
-adattato, non quello originale: un Part Time che cerca un turno che finisca
-entro le 15:00 può quindi trovare un 09:00–18:00 di un Full Time, perché per
-lui diventa 09:00–15:00.
+5 punti di punteggio e viene **spiegato** nella scheda del match. Il matching
+valuta il turno adattato, non l'originale: un Part Time che cerca un turno che
+finisca entro le 15:00 trova quindi il 09:00–18:00 di un Full Time.
 
-Due casi restano segnalati e non risolti d'ufficio:
+Restano segnalati e non risolti d'ufficio:
 
-- le **notti visual**, dove la durata va concordata a parte;
+- le **notti visual**, dove la durata va concordata a parte. Sono rare e quasi
+  mai scambiate, quindi non vale la pena inventare una regola;
 - gli adattamenti che uscirebbero dalla fascia 08:00–21:00.
 
-**Assunzione da confermare**: la durata standard dei due contratti, oggi 9 ore
-per il Full Time e 6 per il Part Time (`RULES.contracts`). Cambiare i due numeri
-ricalcola tutto.
+## R17 — Monte ore settimanale
+Uno scambio fra due turni interi è **a somma zero**: ciascuno riceve un turno
+già adattato alla propria durata, quindi il totale della settimana non cambia.
 
-**Ancora da definire**: il limite sul **monte ore settimanale**. Oggi il motore
-ragiona sul singolo turno. Sa già leggere tutta la settimana di entrambe le
-persone: manca solo la regola.
+Il conto cambia quando c'è di mezzo un OFF: chi cede un turno e prende un
+giorno libero lavora un turno in meno, chi lo prende uno in più. In quel caso
+l'app calcola le ore della settimana Apple dopo lo scambio e le confronta con
+il monte ore, per entrambe le persone: "la settimana passa da 30h a 24h, −1h
+rispetto alle 25h di contratto".
+
+È un avviso, non un blocco: l'app non sa nulla di permessi, recuperi e
+straordinari.
 
 ## R10 — Stati
 `APERTA → PROPOSTA → IN_ATTESA → ACCORDO → CHIUSA`, più `SCADUTA`.

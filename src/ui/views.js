@@ -1,7 +1,7 @@
 import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
 import { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } from './components.js';
-import { hasPriority, shiftLabel, isOpen, etichettaFascia } from '../core/model.js';
+import { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } from '../core/model.js';
 import { RULES, WANT_MODE } from '../core/rules.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
@@ -240,7 +240,7 @@ export function profilo() {
     <header class="hero compatta">
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
-      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
+      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label} · turni da ${durataTurnoDi(me)}h${me.admin ? ' · Admin' : ''}</p>
     </header>
 
     <section class="sezione">
@@ -261,12 +261,32 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>Contratto</h2>
-      <p>${RULES.contracts[me.contratto].label} · turno standard di ${RULES.contracts[me.contratto].durataTurno} ore.</p>
+      <h2>Contratto · ${RULES.contracts[me.contratto].label}</h2>
+      <label class="campo">
+        <span>Durata standard del tuo turno</span>
+        <select class="select" data-act="durata-turno">
+          ${RULES.durateTurnoAmmesse.map((h) => raw(
+    `<option value="${h}" ${h === durataTurnoDi(me) ? 'selected' : ''}>${h} ore</option>`,
+  ))}
+        </select>
+      </label>
+      <label class="campo">
+        <span>Monte ore settimanale</span>
+        <select class="select" data-act="monte-ore">
+          ${RULES.monteOreAmmessi.map((h) => raw(
+    `<option value="${h}" ${h === me.oreSettimanali ? 'selected' : ''}>${h} ore</option>`,
+  ))}
+        </select>
+      </label>
       <p class="testo-tenue">
         Puoi scambiare con chiunque, anche con l'altro contratto: il turno si adatta al tuo.
         Se chi te lo cede apre, entri quando entra lui; se chiude, esci quando esce lui.
         La durata resta la tua.
+      </p>
+      <p class="testo-tenue">
+        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore,
+        il contratto ne prevede ${me.oreSettimanali}. Uno scambio fra due turni interi
+        non cambia il totale; se c'è di mezzo un OFF sì, e l'app te lo dice prima.
       </p>
     </section>
 

@@ -38,17 +38,17 @@ export const RULES = {
     canBeAddedLater: false,
   },
 
-  // Contratti. Uno scambio FT/PT è permesso, ma ciascuno resta sul proprio
-  // contratto: il turno si adatta a chi lo riceve (vedi trasformaTurno).
-  // `durataTurno` è la lunghezza standard del turno per quel contratto.
-  // ASSUNZIONE: i due numeri qui sotto vanno confermati.
+  // Contratti. La durata del turno è una proprietà della persona, non del
+  // contratto: un Part Time può essere da 5 o da 6 ore. Il contratto serve
+  // solo come etichetta; i numeri stanno sull'utente.
   contracts: {
-    FT: { label: 'Full Time', durataTurno: 9, oreSettimanali: 40 },
-    PT: { label: 'Part Time', durataTurno: 6, oreSettimanali: 24 },
+    FT: { label: 'Full Time' },
+    PT: { label: 'Part Time' },
   },
+  durateTurnoAmmesse: [5, 6, 9],
+  monteOreAmmessi: [20, 25, 30, 40],
+  durataTurnoDefault: { FT: 9, PT: 6 },
 
-  // Quanto pesa sul punteggio un turno che va adattato: l'adattamento è
-  // normale, non un problema, quindi la penalità è piccola.
   adattamentoPenalty: 5,
 };
 

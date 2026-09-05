@@ -11,7 +11,7 @@ mettersi d'accordo. Il cambio vero si fa poi nell'app ufficiale.
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 31 test sul motore di matching
+npm test        # 36 test sul motore di matching
 ```
 
 Nessuna dipendenza, nessun build step: moduli ES aperti direttamente dal
@@ -49,8 +49,11 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
   settimana non compaiono proprio, e nemmeno quelli in cui lavori già
 - Orari dello store (vendita 10–20, turni 08–21) e notti visual che scavalcano
   la mezzanotte
-- Adattamento del turno al contratto di chi lo riceve: uno scambio FT/PT
-  accorcia o allunga il turno tenendo fermo l'inizio se apre, la fine altrimenti
+- Adattamento del turno alla persona che lo riceve: uno scambio FT/PT accorcia
+  o allunga il turno tenendo fermo l'inizio se apre, la fine altrimenti
+- Avviso sul monte ore settimanale quando lo scambio sposta le ore
+- Il CERCO con orario preciso si sceglie fra i turni che esistono davvero quel
+  giorno, e mostra le ore che faresti tu
 - Matching su due sorgenti, richieste pubblicate e disponibilità di profilo,
   con punteggio e spiegazione in italiano
 - Proposta, accettazione bilaterale, "Cambio inserito", scadenza automatica
@@ -61,8 +64,8 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 ## Cosa manca, di proposito
 
 Backend e login (oggi i dati stanno nel browser di chi apre l'app), notifiche
-push vere, admin operativo, scambi a tre, limite sul monte ore settimanale. E
-soprattutto la verifica di liceità: vedi `docs/05-decisioni-aperte.md`.
+push vere, admin operativo, scambi a tre. E soprattutto la verifica di
+liceità: vedi `docs/05-decisioni-aperte.md`.
 
 ## Documentazione
 
