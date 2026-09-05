@@ -38,15 +38,18 @@ export const RULES = {
     canBeAddedLater: false,
   },
 
-  // Contratti. Le regole reali FT/PT non sono ancora state fornite:
-  // per ora un turno più lungo del massimo contrattuale non blocca lo
-  // scambio, lo segnala. Sostituire quando arrivano le regole vere.
+  // Contratti. Uno scambio FT/PT è permesso, ma ciascuno resta sul proprio
+  // contratto: il turno si adatta a chi lo riceve (vedi trasformaTurno).
+  // `durataTurno` è la lunghezza standard del turno per quel contratto.
+  // ASSUNZIONE: i due numeri qui sotto vanno confermati.
   contracts: {
-    FT: { label: 'Full Time', maxShiftHours: 9, weeklyHours: 40 },
-    PT: { label: 'Part Time', maxShiftHours: 8, weeklyHours: 24 },
+    FT: { label: 'Full Time', durataTurno: 9, oreSettimanali: 40 },
+    PT: { label: 'Part Time', durataTurno: 6, oreSettimanali: 24 },
   },
-  contractMismatchPenalty: 10,
-  contractIsHardBlock: false,
+
+  // Quanto pesa sul punteggio un turno che va adattato: l'adattamento è
+  // normale, non un problema, quindi la penalità è piccola.
+  adattamentoPenalty: 5,
 };
 
 export const STATUS = {

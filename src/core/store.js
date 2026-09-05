@@ -3,7 +3,7 @@
 // chiamate a un backend non tocca né il motore né la UI.
 
 import { RULES, STATUS } from './rules.js';
-import { newId, isExpired, hasPriority, isOpen } from './model.js';
+import { newId, isExpired, hasPriority, isOpen, turnoAdattato } from './model.js';
 import { validateRequest, nextStatus, satisfies } from './engine.js';
 import { monthKey, todayISO } from './time.js';
 import { seed } from './seed.js';
@@ -162,7 +162,7 @@ export const store = {
     // non solo nel modulo, così nessuna scorciatoia della UI la aggira.
     const offerto = this.shift(shiftOffertoId);
     if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido.'] };
-    if (satisfies(r.cerco, offerto).score === 0) {
+    if (satisfies(r.cerco, turnoAdattato(offerto, this.user(r.userId))).score === 0) {
       return { errori: ['Quel turno non corrisponde a quello che la persona sta cercando.'] };
     }
 

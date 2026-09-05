@@ -12,55 +12,41 @@ aver costruito il prototipo. Le domande sono in ordine di quanto bloccano.
 | Tolleranza del matching | 90 minuti sullo scarto maggiore | `nearMissMinutes` |
 | Chiusura | finisce dopo le 20:00, cioè oltre l'orario di chiusura | R6 |
 | Mattina | inizia entro le 10:00, cioè entro l'apertura | R6 |
+| Scambio FT/PT | permesso, il turno si adatta a chi lo riceve | R9 |
+| "Cerco un OFF" | scambio col giorno libero, non copertura | R8 |
 
 Sulla chiusura la scelta è stata: un 11:00–20:00 esce col negozio e **non** è
 una chiusura, un 12:00–21:00 sì. Se nello store "chiusura" vuol dire invece
 "l'ultimo turno della giornata" a prescindere dall'orario, basta dirlo.
 
-## Bloccanti veri
+## Ancora aperti
 
-### 1. Regole FT/PT
-Riformulo la domanda in modo concreto, perché la versione precedente non era
-chiara.
+### 1. Monte ore settimanale
+Il resto delle regole FT/PT è arrivato ed è implementato (R9): lo scambio fra
+contratti diversi è permesso, ciascuno resta sul proprio contratto e il turno si
+adatta a chi lo riceve, tenendo fermo l'inizio se apre e la fine altrimenti.
 
-Il caso reale è questo: Martina è Part Time. Lorenzo è Full Time e ha un turno
-sabato 11:00–20:00, nove ore. Vogliono scambiarsi il turno: Martina si prende
-le nove ore di Lorenzo.
+Restano due cose da confermare:
 
-Le tre risposte possibili, e cosa cambia nell'app:
+- la **durata standard** dei due contratti, oggi 9 ore per il Full Time e 6 per
+  il Part Time. Sono due numeri in `RULES.contracts`;
+- se esiste un limite sul **monte ore settimanale** oltre a quello sul singolo
+  turno. Il motore sa già leggere tutta la settimana di entrambe le persone,
+  manca solo la regola.
 
-| Risposta | Effetto |
-|---|---|
-| Si può fare, nessun problema | tolgo il controllo, i punteggi salgono a 100 |
-| Si può fare ma serve l'ok del responsabile | resta com'è: avviso giallo, match a 90, scambio permesso |
-| Non si può fare | `contractIsHardBlock: true`, Martina non compare fra i match |
+Da definire anche il comportamento sulle **notti visual**: oggi non vengono
+accorciate d'ufficio, si mostra un avviso che dice di concordare la durata a
+parte. Se anche la notte segue la regola dell'adattamento, l'eccezione si toglie.
 
-Serve anche sapere se il limite è sul **singolo turno** (un PT non fa più di N
-ore in un giorno) o sul **monte ore settimanale** (un PT può fare un turno
-lungo, purché la settimana torni). Oggi controllo solo il singolo turno, perché
-il monte ore richiede di conoscere tutta la settimana di entrambi, ed è una cosa
-che il motore può fare: manca solo la regola.
+### 2. Il CERCO specifico va scritto con le ore di chi chiede
+Conseguenza dell'adattamento, emersa provandolo. Se Martina (Part Time) guarda
+il turno di Lorenzo, 11:00–20:00, e scrive "cerco sabato 11:00–20:00", quelle
+non sono le ore che farebbe: da Part Time farebbe 14:00–20:00. L'app confronta
+il turno adattato, quindi il match non salta fuori.
 
-### 2. Cosa significa davvero "cerco un OFF"
-Costruendo il prototipo è saltato fuori che questo caso non è modellato bene, e
-non è colpa della specifica: è proprio ambiguo.
-
-Uno scambio normale è simmetrico. Io lavoro sabato e sono libero domenica, tu
-lavori domenica e sei libero sabato: ci scambiamo i due giorni e siamo pari.
-
-"Cerco OFF venerdì" invece può voler dire due cose molto diverse:
-
-- **A. Copertura.** Do via il mio turno e non prendo niente in cambio. Io
-  lavoro meno, l'altra persona lavora di più. Non è uno scambio, è un favore.
-- **B. Scambio con giorno libero.** Do via il mio turno e prendo il giorno
-  libero dell'altra persona, che a sua volta prende il mio turno. Perché regga,
-  chi cede deve essere già libero il giorno che chiede.
-
-Oggi l'app implementa la B, ed è per questo che compare un comportamento che
-può sembrare strano: se qualcuno cerca un OFF di venerdì e tu venerdì lavori,
-non ti viene proposto di rispondere.
-
-Se nello store si fa la A, la regola R8 va riscritta e il motore con lei.
+Oggi il campo va compilato con le ore che si farebbero davvero. Si può risolvere
+facendo scegliere il turno dal calendario invece di digitare gli orari a mano,
+ma prima conviene vedere se il problema si presenta all'uso.
 
 ### 3. È lecito farlo?
 Il capitolo 27 della tua specifica, quello intitolato *Privacy e legalità*.

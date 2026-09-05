@@ -4,7 +4,7 @@
 
 import { RULES, STATUS, WANT_MODE } from './rules.js';
 import { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey } from './time.js';
-import { isClosing, isMorning, contractCheck, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti } from './model.js';
+import { isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti, trasformaTurno, turnoAdattato } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 
@@ -159,9 +159,14 @@ export function findMatches(request, ctx) {
     const suoCedo = idx.byId[altra.cedo.shiftId];
     if (!controparte || !suoCedo) continue;
 
-    const perMe = satisfies(request.cerco, suoCedo);
+    // Quello che riceverei non è il turno com'è, ma com'è dopo essere stato
+    // adattato al mio contratto. Il punteggio si calcola su quello.
+    const perMeTurno = turnoAdattato(suoCedo, autore);
+    const perLuiTurno = turnoAdattato(mioCedo, controparte);
+
+    const perMe = satisfies(request.cerco, perMeTurno);
     if (perMe.score === 0) continue;
-    const perLui = satisfies(altra.cerco, mioCedo);
+    const perLui = satisfies(altra.cerco, perLuiTurno);
     if (perLui.score === 0) continue;
 
     let score = Math.round((perMe.score + perLui.score) / 2);
@@ -171,12 +176,14 @@ export function findMatches(request, ctx) {
     ];
     const avvisi = [];
     for (const [chi, turno] of [[autore, suoCedo], [controparte, mioCedo]]) {
-      const check = contractCheck(chi, turno);
-      if (!check.ok) {
-        avvisi.push(`${nome(chi)}: ${check.avviso}`);
-        score -= RULES.contractMismatchPenalty;
-        if (RULES.contractIsHardBlock) score = 0;
+      const t = trasformaTurno(turno, chi);
+      if (t.trasformato) {
+        score -= RULES.adattamentoPenalty;
+        reasons.push(chi.id === autore.id
+          ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
+          : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
       }
+      if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
     }
     if (score < RULES.potentialThreshold) continue;
 
@@ -188,6 +195,7 @@ export function findMatches(request, ctx) {
       userId: controparte.id,
       requestId: altra.id,
       shiftOffertoId: suoCedo.id,
+      adattato: trasformaTurno(suoCedo, autore),
       prioritaria: hasPriority(altra),
       reasons,
       avvisi,
@@ -199,7 +207,7 @@ export function findMatches(request, ctx) {
     if (u.id === request.userId || coperti.has(u.id)) continue;
 
     const suoTurno = idx.get(u.id, request.cerco.data);
-    const perMe = satisfies(request.cerco, suoTurno);
+    const perMe = satisfies(request.cerco, turnoAdattato(suoTurno, autore));
     if (perMe.score === 0) continue;
 
     // Deve poter prendere il mio turno: quel giorno dev'essere libero.
@@ -211,9 +219,11 @@ export function findMatches(request, ctx) {
     const reasons = [`ha ${shiftLabel(suoTurno)} il ${formatDay(request.cerco.data)} e ha dichiarato disponibilità a scambiare quel giorno`];
     let score = Math.min(perMe.score, RULES.availabilityScoreCap);
 
-    if (u.preferenze?.evitaChiusure && isClosing(mioCedo)) continue;
+    // Le preferenze si valutano sul turno che riceverebbe davvero.
+    const perLuiTurno = turnoAdattato(mioCedo, u);
+    if (u.preferenze?.evitaChiusure && isClosing(perLuiTurno)) continue;
     if (u.preferenze?.preferisceMattina) {
-      if (isMorning(mioCedo)) {
+      if (isMorning(perLuiTurno)) {
         score += 5;
         reasons.push('preferisce i turni di mattina e il tuo lo è');
       } else {
@@ -224,10 +234,15 @@ export function findMatches(request, ctx) {
     if (!suoImpegno) reasons.push(`${formatDay(mioCedo.data)} non risulta occupato nel suo calendario`);
 
     const avvisi = [];
-    const check = contractCheck(u, mioCedo);
-    if (!check.ok) {
-      avvisi.push(`${nome(u)}: ${check.avviso}`);
-      score -= RULES.contractMismatchPenalty;
+    for (const [chi, turno] of [[autore, suoTurno], [u, mioCedo]]) {
+      const t = trasformaTurno(turno, chi);
+      if (t.trasformato) {
+        score -= RULES.adattamentoPenalty;
+        reasons.push(chi.id === autore.id
+          ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
+          : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
+      }
+      if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
     }
     score = clamp(Math.round(score), 0, RULES.availabilityScoreCap);
     if (score < RULES.potentialThreshold) continue;
@@ -239,6 +254,7 @@ export function findMatches(request, ctx) {
       userId: u.id,
       requestId: null,
       shiftOffertoId: suoTurno.id,
+      adattato: trasformaTurno(suoTurno, autore),
       prioritaria: false,
       reasons,
       avvisi,
@@ -262,6 +278,10 @@ export function slotSettimana(dataISO) {
 
 function nome(u) {
   return `${u.nome} ${u.cognomeIniziale}.`;
+}
+
+function contrattoDi(u) {
+  return RULES.contracts[u.contratto]?.label || u.contratto;
 }
 
 /** Transizioni di stato ammesse (cap. 14-15). */

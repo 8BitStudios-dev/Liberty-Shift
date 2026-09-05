@@ -5,7 +5,7 @@ import { html, raw, toast } from './dom.js';
 import { store } from '../core/store.js';
 import { findMatches, validateRequest, satisfies } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS } from '../core/rules.js';
-import { shiftLabel, wantLabel, hasPriority, etichettaFascia } from '../core/model.js';
+import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } from '../core/model.js';
 import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
 import { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } from './components.js';
 
@@ -300,10 +300,14 @@ export function dettaglio(params) {
     ${raw(azioneAutore)}`;
 }
 
-/** I turni che posso davvero offrire su una richiesta. */
+/**
+ * I turni che posso davvero offrire su una richiesta. Il confronto va fatto
+ * sul turno come lo riceverebbe chi ha pubblicato, non come ce l'ho io.
+ */
 export function turniOfferibili(request) {
+  const destinatario = store.user(request.userId);
   return store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
-    .filter((s) => satisfies(request.cerco, s).score > 0);
+    .filter((s) => satisfies(request.cerco, turnoAdattato(s, destinatario)).score > 0);
 }
 
 /** Contenuto della sheet "proponi scambio". */
@@ -325,11 +329,18 @@ export function formProposta(request, shiftSuggerito) {
     <label class="campo">
       <span>Il turno che offri</span>
       <select class="select" data-campo="shift">
-        ${opzioni.map((s) => raw(
-    `<option value="${s.id}" ${s.id === shiftSuggerito ? 'selected' : ''}>${formatDay(s.data)} · ${shiftLabel(s)}</option>`,
-  ))}
+        ${opzioni.map((s) => {
+    const t = trasformaTurno(s, store.user(request.userId));
+    const etichetta = t.trasformato
+      ? `${formatDay(s.data)} · ${shiftLabel(s)} → farebbe ${t.start}–${t.end}`
+      : `${formatDay(s.data)} · ${shiftLabel(s)}`;
+    return raw(`<option value="${s.id}" ${s.id === shiftSuggerito ? 'selected' : ''}>${etichetta}</option>`);
+  })}
       </select>
     </label>
+    ${raw(opzioni.some((s) => trasformaTurno(s, store.user(request.userId)).trasformato)
+    ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe davvero.</p>`
+    : '')}
     <label class="campo">
       <span>Messaggio (facoltativo)</span>
       <textarea data-campo="messaggio" rows="2" placeholder="Es. per me va bene anche 12–20"></textarea>

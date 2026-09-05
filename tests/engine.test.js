@@ -5,7 +5,7 @@ import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
 import { satisfies, validateRequest, findMatches, disponibileIl } from '../src/core/engine.js';
 import { WANT_MODE, RULES } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
-import { isClosing, contractCheck, isNotturno, durataOre, etichettaFascia } from '../src/core/model.js';
+import { isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
 
@@ -101,12 +101,9 @@ test('Lorenzo e Martina sono il match perfetto del capitolo 11', () => {
   assert.equal(martina.origine, 'RICHIESTA');
   assert.equal(martina.tipo, 'MATCH');
   assert.ok(martina.reasons.length >= 2);
-  // Entrambi i lati sono soddisfatti al 100%, ma Martina è Part Time e
-  // riceverebbe un turno di 9h: il motore toglie punti e alza un avviso
-  // senza bloccare lo scambio.
-  assert.equal(martina.score, 100 - RULES.contractMismatchPenalty);
-  assert.equal(martina.avvisi.length, 1);
-  assert.match(martina.avvisi[0], /Part Time/);
+  // Entrambi i lati sono soddisfatti al 100%: i punti mancanti sono i due
+  // adattamenti di contratto, uno per parte. Lo scambio resta un match pieno.
+  assert.equal(martina.score, 100 - 2 * RULES.adattamentoPenalty);
 });
 
 test('un match da sola disponibilità resta POTENZIALE e non supera il tetto', () => {
@@ -137,13 +134,59 @@ test('la disponibilità è settimana per settimana', () => {
   assert.ok(!disponibileIl(lorenzo, addDays(w0, 21))); // settimana non dichiarata
 });
 
-test('un turno oltre il massimo contrattuale produce un avviso, non un blocco', () => {
-  const pt = { contratto: 'PT' };
-  const lungo = shift('2026-09-18', '11:00', '20:30'); // 9.5h
-  const check = contractCheck(pt, lungo);
-  assert.equal(check.ok, false);
-  assert.match(check.avviso, /Part Time/);
-  assert.equal(contractCheck({ contratto: 'FT' }, shift('2026-09-18', '11:00', '19:00')).ok, true);
+// --- trasformazione FT/PT ----------------------------------------------
+
+const FT = { contratto: 'FT' };
+const PT = { contratto: 'PT' };
+
+test('un turno di apertura ceduto a un Part Time tiene fermo l\'inizio', () => {
+  const t = trasformaTurno(shift('2026-09-18', '09:00', '18:00'), PT);
+  assert.equal(t.trasformato, true);
+  assert.equal(t.ancora, 'inizio');
+  assert.equal(t.start, '09:00');
+  assert.equal(t.end, '15:00'); // 6 ore da contratto PT
+});
+
+test('un turno di chiusura ceduto a un Part Time tiene ferma la fine', () => {
+  const t = trasformaTurno(shift('2026-09-18', '11:00', '20:00'), PT);
+  assert.equal(t.ancora, 'fine');
+  assert.equal(t.start, '14:00');
+  assert.equal(t.end, '20:00'); // esce quando esce il Full Time
+});
+
+test('un turno corto ceduto a un Full Time viene allungato, non accorciato', () => {
+  const t = trasformaTurno(shift('2026-09-18', '11:00', '17:00'), FT);
+  assert.equal(t.trasformato, true);
+  assert.equal(t.start, '08:00');
+  assert.equal(t.end, '17:00'); // 9 ore da contratto FT
+});
+
+test('fra contratti uguali il turno non si tocca', () => {
+  const t = trasformaTurno(shift('2026-09-18', '11:00', '20:00'), FT);
+  assert.equal(t.trasformato, false);
+  assert.equal(t.start, '11:00');
+  assert.equal(t.end, '20:00');
+});
+
+test('una notte non viene accorciata d\'ufficio, viene segnalata', () => {
+  const t = trasformaTurno(shift('2026-09-17', '22:00', '06:30'), PT);
+  assert.equal(t.trasformato, false);
+  assert.match(t.avviso, /notte/i);
+});
+
+test('un adattamento che sborda dalla fascia dello store viene segnalato', () => {
+  // 12:00-18:00 preso da un FT: ancora la fine, inizio alle 09:00, ci sta.
+  assert.equal(trasformaTurno(shift('2026-09-18', '12:00', '18:00'), FT).avviso, undefined);
+  // 11:00-14:00 preso da un FT: inizio alle 05:00, fuori fascia.
+  assert.match(trasformaTurno(shift('2026-09-18', '11:00', '14:00'), FT).avviso, /fuori dalla fascia/);
+});
+
+test('il match spiega la trasformazione invece di limitarsi a segnalarla', () => {
+  const s = seed();
+  const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+  const martina = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
+  assert.ok(martina.reasons.some((r) => /Part Time.*diventa/.test(r)));
+  assert.equal(martina.adattato.trasformato, true);
 });
 
 test('nessun match con se stessi', () => {

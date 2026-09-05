@@ -262,7 +262,12 @@ export function profilo() {
 
     <section class="sezione">
       <h2>Contratto</h2>
-      <p>${RULES.contracts[me.contratto].label} · massimo ${RULES.contracts[me.contratto].maxShiftHours}h per turno (valore provvisorio, da allineare alle regole reali dello store).</p>
+      <p>${RULES.contracts[me.contratto].label} · turno standard di ${RULES.contracts[me.contratto].durataTurno} ore.</p>
+      <p class="testo-tenue">
+        Puoi scambiare con chiunque, anche con l'altro contratto: il turno si adatta al tuo.
+        Se chi te lo cede apre, entri quando entra lui; se chiude, esci quando esce lui.
+        La durata resta la tua.
+      </p>
     </section>
 
     <section class="sezione">

@@ -62,10 +62,19 @@ Il punteggio è **tagliato a 75**, quindi non può mai presentarsi come match
 pieno. È la traduzione numerica del principio "una disponibilità non è una
 richiesta".
 
-## Correzione contrattuale
-Su entrambi i lati si controlla il turno che la persona riceverebbe contro il
-massimo del suo contratto. Sforare costa 10 punti e alza un avviso visibile.
-Vedi R9: le regole vere non ci sono ancora.
+## Adattamento al contratto
+Prima di calcolare il punteggio, ogni turno viene trasformato in quello che la
+persona lavorerebbe davvero con il proprio contratto (R9): accorciato o
+allungato alla sua durata standard, tenendo fermo l'inizio se il turno apre e
+la fine in tutti gli altri casi.
+
+Questo cambia i risultati in meglio. Un Part Time che cerca un turno che finisca
+entro le 15:00 trova un 09:00–18:00 di un Full Time, perché per lui diventa
+09:00–15:00: il confronto ingenuo sull'orario originale l'avrebbe scartato.
+
+L'adattamento costa 5 punti e viene spiegato fra le ragioni del match. Restano
+segnalati senza essere risolti: le notti e gli adattamenti che uscirebbero dalla
+fascia oraria dello store.
 
 ## Classificazione finale
 
@@ -87,4 +96,5 @@ su WhatsApp.
 - scambi a tre (A→B→C);
 - scambi multipli (cedo due turni, ne prendo uno);
 - storico per pesare chi ha già ricevuto favori;
+- limite sul monte ore settimanale, oggi si guarda solo il singolo turno;
 - disponibilità a fasce orarie nel profilo, oggi è per giornata intera.

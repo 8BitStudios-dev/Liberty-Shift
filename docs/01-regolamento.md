@@ -68,32 +68,60 @@ Una notte non è mai classificata come chiusura né come mattina: è una categor
 a sé, etichettata "notte" nell'interfaccia.
 
 ## R8 — OFF
-Un OFF e un turno lavorato non sono intercambiabili in nessuna direzione:
+"Cerco un OFF venerdì" significa **scambio col giorno libero**: prendo il tuo
+venerdì libero e tu prendi il mio turno. Non è una copertura a senso unico.
+
+Ne segue che un OFF e un turno lavorato non sono intercambiabili in nessuna
+direzione:
 
 - chi cerca un OFF può ricevere solo un OFF;
 - chi cerca un turno non riceve proposte da chi quel giorno è OFF.
 
-Conseguenza pratica visibile nell'app: se qualcuno cerca un OFF di venerdì e tu
-venerdì lavori, il pulsante "Proponi uno scambio" non ti viene proposto. È il
-comportamento corretto ma va confermato con la realtà dello store: se lì un OFF
-si "scambia" in un altro modo, questa regola va riscritta.
+Conseguenza visibile nell'app: se qualcuno cerca un OFF di venerdì e tu venerdì
+lavori, non ti viene proposto di rispondere. Non hai un venerdì libero da dargli.
 
 ## R9 — Full Time / Part Time
-**Regole reali non fornite.** Segnaposto attuale:
+Uno scambio fra contratti diversi **è permesso**, ma ciascuno resta sul proprio
+contratto: il turno si adatta a chi lo riceve.
 
-| Contratto | Massimo per turno |
-|---|---|
-| Full Time | 9 h |
-| Part Time | 8 h |
+La regola di adattamento:
 
-Se la persona che riceve il turno supera il proprio massimo, il motore:
-1. toglie 10 punti al match;
-2. mostra un avviso esplicito ("da verificare con il responsabile");
-3. **non blocca** lo scambio.
+- se il turno **comincia entro l'apertura**, si tiene fermo l'**inizio**: entri
+  quando entra chi ti passa il turno, ed esci prima o dopo secondo il tuo
+  contratto;
+- **in tutti gli altri casi** si tiene ferma la **fine**: esci quando esce chi
+  ti passa il turno, ed entri prima o dopo secondo il tuo contratto.
 
-Il blocco netto si attiva con `contractIsHardBlock: true`. Effetto già
-osservabile: il match Lorenzo (FT, 11:00–20:00) ↔ Martina (PT) vale 90% invece
-di 100 proprio per questa ragione.
+La durata diventa quella standard del contratto di chi riceve.
+
+Esempi, con Full Time da 9 ore e Part Time da 6:
+
+| Turno ceduto | Chi lo prende | Diventa | Perché |
+|---|---|---|---|
+| 09:00–18:00 | Part Time | 09:00–15:00 | apre, si tiene l'inizio |
+| 11:00–20:00 | Part Time | 14:00–20:00 | chiude, si tiene la fine |
+| 11:00–17:00 | Full Time | 08:00–17:00 | si tiene la fine, allungato indietro |
+| 11:00–20:00 | Full Time | invariato | stessa durata |
+
+L'adattamento non è un problema da segnalare, è il funzionamento normale: costa
+solo 5 punti di punteggio e viene **spiegato** nella scheda del match, così chi
+legge sa subito che orario farebbe davvero. Il matching valuta il turno
+adattato, non quello originale: un Part Time che cerca un turno che finisca
+entro le 15:00 può quindi trovare un 09:00–18:00 di un Full Time, perché per
+lui diventa 09:00–15:00.
+
+Due casi restano segnalati e non risolti d'ufficio:
+
+- le **notti visual**, dove la durata va concordata a parte;
+- gli adattamenti che uscirebbero dalla fascia 08:00–21:00.
+
+**Assunzione da confermare**: la durata standard dei due contratti, oggi 9 ore
+per il Full Time e 6 per il Part Time (`RULES.contracts`). Cambiare i due numeri
+ricalcola tutto.
+
+**Ancora da definire**: il limite sul **monte ore settimanale**. Oggi il motore
+ragiona sul singolo turno. Sa già leggere tutta la settimana di entrambe le
+persone: manca solo la regola.
 
 ## R10 — Stati
 `APERTA → PROPOSTA → IN_ATTESA → ACCORDO → CHIUSA`, più `SCADUTA`.

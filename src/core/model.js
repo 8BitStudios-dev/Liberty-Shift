@@ -115,22 +115,80 @@ export function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
 }
 
+function hhmm(min) {
+  const m = ((min % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
 /**
- * Verifica contrattuale sul turno che una persona riceverebbe.
- * Le regole reali FT/PT non sono ancora note (cap. 19): per ora produce
- * un avviso, non un blocco, salvo cambiare RULES.contractIsHardBlock.
+ * Adatta un turno al contratto di chi lo riceve (cap. 19).
+ *
+ * Uno scambio FT/PT è permesso, ma ciascuno resta sul proprio contratto: il
+ * turno viene accorciato o allungato alla durata standard di chi lo prende,
+ * tenendo fermo un estremo.
+ *
+ *   - turno che comincia entro l'apertura -> si tiene fermo l'INIZIO
+ *     (entri quando entra chi ti passa il turno)
+ *   - qualsiasi altro turno -> si tiene ferma la FINE
+ *     (esci quando esce chi ti passa il turno)
+ *
+ * Esempi con FT 9h e PT 6h:
+ *   09:00–18:00 ceduto a un PT -> 09:00–15:00   (apertura, ancora l'inizio)
+ *   11:00–20:00 ceduto a un PT -> 14:00–20:00   (chiusura, ancora la fine)
+ *   11:00–17:00 ceduto a un FT -> 08:00–17:00   (allungato all'indietro)
+ *
+ * Restituisce sempre il turno che la persona lavorerebbe davvero.
  */
-export function contractCheck(user, shift) {
-  if (!shift || shift.tipo === 'OFF') return { ok: true };
-  const c = contractOf(user);
-  const durata = durataOre(shift);
-  if (durata > c.maxShiftHours) {
-    return {
-      ok: false,
-      avviso: `Turno di ${durata.toFixed(1)}h: oltre il massimo ${c.maxShiftHours}h previsto per ${c.label}. Da verificare con il responsabile.`,
-    };
+export function trasformaTurno(shift, ricevente) {
+  if (!shift || shift.tipo === 'OFF' || !ricevente) {
+    return { start: shift?.start, end: shift?.end, trasformato: false };
   }
-  return { ok: true };
+
+  const durataTarget = contractOf(ricevente).durataTurno;
+  const durataAttuale = durataOre(shift);
+  const base = {
+    start: shift.start, end: shift.end, durata: durataAttuale, trasformato: false,
+  };
+  if (Math.abs(durataAttuale - durataTarget) < 0.01) return base;
+
+  // Le notti sono casi particolari: si segnalano, non si accorciano d'ufficio.
+  if (isNotturno(shift)) {
+    return { ...base, avviso: 'Turno di notte: la durata va concordata a parte.' };
+  }
+
+  const ancoraInizio = minutes(shift.start) <= minutes(RULES.store.apre);
+  const durataMin = durataTarget * 60;
+  let inizio;
+  let fine;
+  if (ancoraInizio) {
+    inizio = minutes(shift.start);
+    fine = inizio + durataMin;
+  } else {
+    fine = minutes(shift.end);
+    inizio = fine - durataMin;
+  }
+
+  const risultato = {
+    start: hhmm(inizio),
+    end: hhmm(fine),
+    durata: durataTarget,
+    trasformato: true,
+    ancora: ancoraInizio ? 'inizio' : 'fine',
+    originale: `${shift.start}–${shift.end}`,
+  };
+
+  // L'adattamento non deve sbordare dalla fascia in cui si può stare in store.
+  if (inizio < minutes(RULES.store.primoIngresso) || fine > minutes(RULES.store.ultimaUscita)) {
+    risultato.avviso = `Adattato a ${risultato.start}–${risultato.end}, fuori dalla fascia ${RULES.store.primoIngresso}–${RULES.store.ultimaUscita}: da concordare.`;
+  }
+  return risultato;
+}
+
+/** Il turno adattato, nella forma di uno Shift, per darlo in pasto al motore. */
+export function turnoAdattato(shift, ricevente) {
+  const t = trasformaTurno(shift, ricevente);
+  if (!t.trasformato) return shift;
+  return { ...shift, start: t.start, end: t.end };
 }
 
 /** La richiesta è scaduta quando è passata la data del turno ceduto (cap. 24). */

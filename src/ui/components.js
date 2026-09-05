@@ -75,7 +75,11 @@ export function cardMatch(match) {
         ${verde ? '🟢 Match' : '🟡 Potenziale'}
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'disponibilità dal profilo'}
       </div>
-      <div class="turno-offerto">Ti darebbe <strong>${formatDay(turno?.data || match.cerco?.data)}</strong> · ${shiftLabel(turno)}</div>
+      <div class="turno-offerto">
+        Faresti <strong>${formatDay(turno?.data)}</strong> ·
+        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+        ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
+      </div>
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
       </ul>

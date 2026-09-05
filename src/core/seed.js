@@ -84,7 +84,8 @@ export function seed() {
   const iso = (h) => new Date(ora.getTime() - h * 3600 * 1000).toISOString();
 
   const requests = [
-    // Cap. 11: Lorenzo e Martina si incastrano perfettamente.
+    // Cap. 11: Lorenzo e Martina si incastrano. Martina è Part Time e chiede
+    // le ore che farebbe davvero sul turno di Lorenzo, 11:00-20:00 adattato.
     {
       id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA, prioritaFinoA: null,
       cedo: { shiftId: turno('u_lorenzo', addDays(w0, 0)).id, altriShiftIds: [], flessibile: false },
@@ -93,7 +94,7 @@ export function seed() {
     {
       id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA, prioritaFinoA: null,
       cedo: { shiftId: turno('u_martina', addDays(w0, 1)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 0), mode: WANT_MODE.SPECIFIC, start: '11:00', end: '20:00', evitaChiusura: false, note: '' },
+      cerco: { data: addDays(w0, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
     },
     // Luca cerca un OFF: nessuna richiesta corrispondente, solo disponibilità.
     {
