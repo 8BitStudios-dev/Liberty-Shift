@@ -6,6 +6,7 @@ import { formatDay, appleWeekKey } from '../core/time.js';
 import { slotSettimana } from '../core/engine.js';
 import { durataOre, isNotturno, fuoriFascia, etichettaFascia } from '../core/model.js';
 import { RULES } from '../core/rules.js';
+import { parseICS } from '../core/ics.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -196,6 +197,65 @@ const AZIONI = {
     if (!confirm('Ripristinare i dati di esempio? Perdi tutto quello che hai inserito.')) return;
     store.reset();
     vai('#/home');
+    render();
+  },
+
+  /**
+   * Import dei turni da un calendario. Oggi il testo si incolla: un
+   * calendario sottoscrivibile non si può leggere da una pagina web senza
+   * un pezzo di server in mezzo, e quel pezzo è anche quello che il capitolo
+   * 27 dice di verificare prima. Il parser però è già quello definitivo.
+   */
+  importa: () => {
+    const w = sheet('📥 Importa turni', html`
+      <p class="testo-tenue">
+        Incolla qui il calendario dei turni in formato ICS. Dal calendario del telefono:
+        tieni premuto sul calendario dei turni, <strong>Condividi</strong> o
+        <strong>Esporta</strong>, e incolla il contenuto del file.
+      </p>
+      <label class="campo">
+        <span>Contenuto del calendario</span>
+        <textarea data-campo="ics" rows="5" placeholder="BEGIN:VCALENDAR…"></textarea>
+      </label>
+      <div data-anteprima></div>`, {
+      azioni: '<button class="btn primario largo" data-act="conferma-import" disabled>Importa</button>',
+    });
+
+    const area = w.el.querySelector('[data-campo="ics"]');
+    const box = w.el.querySelector('[data-anteprima]');
+    const bottone = w.el.querySelector('[data-act="conferma-import"]');
+
+    // Anteprima mentre si incolla: si vede cosa è stato capito prima di
+    // toccare il proprio calendario.
+    const aggiorna = () => {
+      const { turni, ignorati, errore } = parseICS(area.value);
+      w.el._turni = turni;
+      bottone.disabled = turni.length === 0;
+      if (!area.value.trim()) { box.innerHTML = ''; return; }
+      if (errore) { box.innerHTML = `<p class="avviso">⚠️ ${errore}</p>`; return; }
+      box.innerHTML = html`
+        <h3>${turni.length} ${turni.length === 1 ? 'turno riconosciuto' : 'turni riconosciuti'}</h3>
+        <div class="lista-turni">
+          ${turni.slice(0, 10).map((t) => raw(`
+            <div class="riga-turno">
+              <span class="giorno-nome">${formatDay(t.data)}</span>
+              <span class="turno-valore">${t.tipo === 'OFF' ? 'OFF' : `${t.start}–${t.end}`}</span>
+            </div>`))}
+        </div>
+        ${raw(turni.length > 10 ? `<p class="testo-tenue">…e altri ${turni.length - 10}.</p>` : '')}
+        ${raw(ignorati.length ? `<p class="testo-tenue">Ignorati ${ignorati.length}: ${ignorati.slice(0, 3).map((i) => i.motivo).join(', ')}.</p>` : '')}
+        <p class="testo-tenue">I giorni già presenti verranno sostituiti. Gli altri restano come sono.</p>`;
+    };
+    area.addEventListener('input', aggiorna);
+  },
+
+  'conferma-import': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const turni = wrap._turni || [];
+    if (!turni.length) return toast('Niente da importare');
+    const { aggiunti, aggiornati } = store.importaTurni(turni);
+    wrap.querySelector('[data-chiudi]').click();
+    toast(`${aggiunti} turni aggiunti, ${aggiornati} aggiornati`);
     render();
   },
 

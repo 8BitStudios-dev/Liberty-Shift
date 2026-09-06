@@ -16,6 +16,7 @@ const MODULI = [
   'src/core/time.js',
   'src/core/model.js',
   'src/core/engine.js',
+  'src/core/ics.js',
   'src/core/seed.js',
   'src/core/store.js',
   'src/ui/dom.js',

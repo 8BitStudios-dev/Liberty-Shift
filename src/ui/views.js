@@ -243,6 +243,7 @@ export function profilo() {
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
       </p>
       ${raw(dueSettimane())}
+      <button class="btn secondario largo" data-act="importa">📥 Importa da calendario</button>
     </section>
 
     <section class="sezione">

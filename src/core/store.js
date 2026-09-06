@@ -97,6 +97,30 @@ export const store = {
     this.commit();
   },
 
+  /**
+   * Importa i turni letti da un calendario. Sostituisce quelli già presenti
+   * nelle stesse date e lascia stare tutto il resto: un import non deve mai
+   * cancellare giorni che il calendario non nomina.
+   */
+  importaTurni(turni, { userId = this.state.currentUserId } = {}) {
+    let aggiornati = 0;
+    let aggiunti = 0;
+    for (const t of turni) {
+      const esistente = this.state.shifts.find((s) => s.userId === userId && s.data === t.data);
+      if (esistente) {
+        Object.assign(esistente, { tipo: t.tipo, start: t.start, end: t.end });
+        aggiornati += 1;
+      } else {
+        this.state.shifts.push({
+          id: newId('sh'), userId, data: t.data, tipo: t.tipo, start: t.start, end: t.end,
+        });
+        aggiunti += 1;
+      }
+    }
+    this.commit();
+    return { aggiunti, aggiornati };
+  },
+
   eliminaTurno(id) {
     const usato = this.state.requests.some((r) => r.cedo.shiftId === id && isOpen(r));
     if (usato) return 'Il turno è collegato a una richiesta aperta: cancella prima la richiesta.';

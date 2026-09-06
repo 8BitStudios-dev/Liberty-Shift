@@ -17,7 +17,7 @@ In locale:
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 46 test sul motore di matching
+npm test        # 56 test su motore e import
 npm run build   # dist/cambio-turno.html, tutta l'app in un file solo
 ```
 
@@ -38,6 +38,7 @@ src/core/     il prodotto vero e proprio, senza UI
   model.js      forma dei dati e regole derivate
   engine.js     matching: chi è compatibile con chi, e perché
   store.js      stato e persistenza (oggi localStorage)
+  ics.js        lettura di un calendario iCalendar
   seed.js       dati di esempio, costruiti sulla settimana corrente
 src/ui/       viste e flussi, ~1000 righe senza framework
 tests/        node --test sul motore
@@ -51,8 +52,9 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 
 ## Cosa funziona già
 
-- Inserimento dei turni dal calendario delle due settimane, calendario mensile
-  che parte dal sabato con il dettaglio di ogni giornata
+- Inserimento dei turni dal calendario delle due settimane, o import da un
+  calendario ICS con anteprima di quello che l'app ha capito
+- Calendario mensile che parte dal sabato, con il dettaglio di ogni giornata
 - Due tipi di cambio, presi dai messaggi veri del gruppo: **cambio orario**
   (stessa giornata, orario diverso) e **cambio OFF** (due giornate che si
   scambiano per intero), ciascuno con le sue regole e il suo wizard

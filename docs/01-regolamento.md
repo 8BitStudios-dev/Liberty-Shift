@@ -206,3 +206,25 @@ con due turni nello stesso giorno. La regola è applicata alla creazione e nella
 scelta dei giorni, dove compaiono solo i tuoi OFF.
 
 Nel cambio orario il problema non si pone: si resta dentro una giornata sola.
+
+## R18 — Import dei turni
+I turni si possono inserire a mano oppure importare da un **calendario in
+formato ICS**, che è quello che parlano i calendari sottoscrivibili.
+
+L'import non è cieco:
+
+- un evento con orario diventa un turno lavorato;
+- un evento il cui titolo contiene *off, riposo, libero, ferie, permesso,
+  festivo* diventa un OFF;
+- una giornata intera che non sembra un OFF viene **ignorata**, non
+  interpretata: compleanni e festività non sono turni;
+- un evento annullato non diventa niente;
+- due eventi sullo stesso giorno: vince il primo, l'altro viene segnalato.
+
+Prima di importare si vede l'anteprima di quello che l'app ha capito, con il
+conto di quello che ha scartato e perché. L'import **sostituisce** i giorni che
+il calendario nomina e **lascia stare** tutti gli altri: non cancella mai un
+giorno di cui il file non parla.
+
+Gli orari in UTC vengono riportati all'ora del dispositivo; quelli con fuso
+dichiarato o senza fuso sono già locali.

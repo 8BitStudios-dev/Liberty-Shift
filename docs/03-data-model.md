@@ -96,3 +96,12 @@ alimenta la UI. Le push vere richiedono un backend e vanno verificate su iOS
 `src/core/store.js` è l'unico punto che legge e scrive. Sostituire `salva()` e
 `carica()` con chiamate HTTP è tutto ciò che serve per passare a un server: né
 il motore né le viste sanno dove stanno i dati.
+
+## Import da calendario
+`src/core/ics.js` legge il formato iCalendar (RFC 5545) e restituisce
+`{ turni, ignorati, errore }` — mai un'eccezione, perché il testo che incolla
+una persona è sempre da trattare come possibilmente sbagliato.
+
+Il parser è separato da come il testo arriva. Oggi si incolla; se un giorno ci
+sarà un server che scarica il calendario sottoscritto, cambia solo chi passa la
+stringa: il resto è già scritto e coperto da test.

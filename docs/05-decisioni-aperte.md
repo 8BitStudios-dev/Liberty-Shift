@@ -17,6 +17,8 @@ aver costruito il prototipo. Le domande sono in ordine di quanto bloccano.
 | Durata dei turni | FT 9h, PT 5 o 6h, impostata per persona | R9 |
 | Monte ore | 20, 25, 30, 40; avviso quando lo scambio le sposta | R17 |
 | CERCO con orario preciso | si sceglie fra i turni reali del giorno | `04-flussi-ux.md` |
+| Durata del turno | non esiste uno standard: si usano le ore del turno che si lascia | R9 |
+| Import turni | da calendario ICS, con anteprima di cosa è stato capito | R18 |
 | Tipi di cambio | orario (una giornata) e OFF (due giornate), separati | R2 |
 | Cambio nello stesso giorno | è il caso più frequente, non un errore | R2 |
 
@@ -26,7 +28,18 @@ una chiusura, un 12:00–21:00 sì. Se nello store "chiusura" vuol dire invece
 
 ## Ancora aperti
 
-### 1. È lecito farlo?
+### 1. Il calendario sottoscrivibile, e il capitolo 27
+I turni arrivano su un calendario a cui ci si iscrive. Il lettore del formato
+(ICS) è scritto e coperto da test: oggi il testo si incolla, e questo funziona
+senza server e senza far uscire niente dal telefono.
+
+Il passo successivo — **scaricare da solo** il calendario e tenersi aggiornato —
+richiede due cose che sono la stessa domanda: un pezzo di server (una pagina web
+non può leggere un indirizzo esterno da sola) e il via libera del capitolo 27,
+perché a quel punto i turni passerebbero da un sistema aziendale a uno che non
+lo è. Vale la pena chiarire il secondo punto prima di costruire il primo.
+
+### 2. È lecito farlo?
 Il capitolo 27 della tua specifica, quello intitolato *Privacy e legalità*.
 Resta aperto e nessuna riga di codice lo chiude. Dice, in sostanza: prima di
 usare davvero uno strumento del genere serve verificare che sia consentito,
@@ -40,12 +53,12 @@ persone.
 
 ## Da decidere presto
 
-### 2. Priorità
+### 3. Priorità
 Le assunzioni implementate: rinnovo il primo del mese, credito consumato
 all'uso, niente rimborso se cancelli. Da confermare, in particolare cosa
 succede se la richiesta si chiude dopo due ore invece che dopo 48.
 
-### 3. Permessi dell'Admin
+### 4. Permessi dell'Admin
 Nel prototipo l'admin è solo un campo. Va definito cosa può fare davvero:
 rimuovere una richiesta, chiuderne una d'ufficio, vedere le statistiche.
 Il confine è chiaro: mai accettare al posto di qualcuno.
