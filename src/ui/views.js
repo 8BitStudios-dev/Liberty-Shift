@@ -285,6 +285,11 @@ export function profilo() {
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
       </p>
       ${raw(dueSettimane())}
+      <p class="testo-tenue">
+        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore
+        pagate, il contratto ne prevede ${me.oreSettimanali}. La pausa pranzo non
+        è conteggiata: cinque turni da nove ore fanno quaranta ore.
+      </p>
     </section>
 
     <section class="sezione">

@@ -14,7 +14,7 @@ import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 export const bozzaProfilo = {
   passo: 1,
   nome: '',
-  cognomeIniziale: '',
+  cognome: '',
   genere: '',
   contratto: '',
   oreSettimanali: null,
@@ -27,7 +27,7 @@ export function apriProfilo({ modifica = false } = {}) {
   Object.assign(bozzaProfilo, {
     passo: 1,
     nome: modifica ? me.nome : '',
-    cognomeIniziale: modifica ? me.cognomeIniziale : '',
+    cognome: modifica ? me.cognome || '' : '',
     genere: modifica ? me.genere || '' : '',
     contratto: modifica ? me.contratto : '',
     oreSettimanali: modifica ? me.oreSettimanali : null,
@@ -49,7 +49,7 @@ export function validaProfilo() {
   const b = bozzaProfilo;
   const errori = [];
   if (!b.nome.trim()) errori.push('Manca il nome.');
-  if (!b.cognomeIniziale.trim()) errori.push('Manca l\'iniziale del cognome.');
+  if (!b.cognome.trim()) errori.push('Manca il cognome.');
   if (!b.genere) errori.push('Scegli una delle tre opzioni, anche "preferisco non dirlo".');
   if (!b.contratto) errori.push('Scegli il tipo di contratto.');
   if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
@@ -86,9 +86,10 @@ function passoChiSei() {
   return html`
     <h2 class="titolo-gruppo">Chi sei</h2>
     <p class="testo-tenue">
-      Il nome è quello che vedono i colleghi accanto alle tue richieste. Del
-      cognome basta l'iniziale: in un negozio serve solo a distinguere due
-      persone che si chiamano uguale.
+      Accanto alle tue richieste i colleghi vedono il nome e l'iniziale del
+      cognome — «${b.nome || 'Lorenzo'} ${(b.cognome || 'Bandini').slice(0, 1).toUpperCase()}.» —
+      perché in un negozio tanto basta. Il cognome per intero resta sul tuo
+      dispositivo.
     </p>
 
     <label class="campo">
@@ -98,9 +99,9 @@ function passoChiSei() {
     </label>
 
     <label class="campo">
-      <span>Iniziale del cognome</span>
-      <input type="text" class="testo" data-campo="cognome" value="${b.cognomeIniziale}"
-             placeholder="B" maxlength="1" autocomplete="family-name">
+      <span>Cognome</span>
+      <input type="text" class="testo" data-campo="cognome" value="${b.cognome}"
+             placeholder="Bandini" autocomplete="family-name">
     </label>
 
     <div class="campo">

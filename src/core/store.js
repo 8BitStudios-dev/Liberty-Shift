@@ -368,11 +368,15 @@ export const store = {
    * richieste della demo restano coerenti e l'app è viva dal primo minuto,
    * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
    */
-  completaProfilo({ nome, cognomeIniziale, genere, contratto, oreSettimanali, versioneNote }) {
+  completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, versioneNote }) {
     const me = this.me;
+    const cog = (cognome || '').trim();
     Object.assign(me, {
       nome: (nome || '').trim() || me.nome,
-      cognomeIniziale: (cognomeIniziale || '').trim().slice(0, 1).toUpperCase() || me.cognomeIniziale,
+      // Il cognome intero resta nel profilo; in giro per l'app se ne mostra
+      // solo l'iniziale, che in un negozio basta a distinguere due omonimi.
+      cognome: cog || me.cognome || '',
+      cognomeIniziale: cog.slice(0, 1).toUpperCase() || me.cognomeIniziale,
       genere: genere || 'X',
       contratto: contratto || me.contratto,
       oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,

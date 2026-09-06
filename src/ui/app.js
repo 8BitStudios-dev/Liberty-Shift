@@ -556,7 +556,7 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   // I campi del profilo non passano da render(): riscrivere il DOM a ogni
   // lettera sposterebbe il cursore a fine riga sotto le dita di chi scrive.
   if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
-  if (chiave === 'cognome') { P.bozzaProfilo.cognomeIniziale = el.value; return; }
+  if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 

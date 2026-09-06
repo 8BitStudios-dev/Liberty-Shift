@@ -1804,39 +1804,39 @@ const o = 'OFF';
 
 const PERSONE = [
   {
-    id: 'u_lorenzo', genere: 'M', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
+    id: 'u_lorenzo', cognome: 'Bandini', genere: 'M', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
     preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true },
     disponibilita: [true, false, true, true, false, true, false],
     settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
     // Cinque turni da nove ore di presenza: 40 ore pagate, pausa esclusa.
   },
   {
-    id: 'u_martina', genere: 'F', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
+    id: 'u_martina', cognome: 'Rossi', genere: 'F', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
     preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, true, true, false, true, true],
     settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:00', '15:00'], ['15:00', '21:00']]),
   },
   {
-    id: 'u_luca', genere: 'M', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
+    id: 'u_luca', cognome: 'Bianchi', genere: 'M', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
     preferenze: { preferiscePomeriggi: true },
     disponibilita: [false, true, true, false, true, true, true],
     settimana: W([['12:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
   },
   {
-    id: 'u_giulia', genere: 'F', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
+    id: 'u_giulia', cognome: 'Moretti', genere: 'F', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
     preferenze: { preferisceAperture: true, evitaChiusure: true },
     disponibilita: [true, false, true, true, true, false, true],
     settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:00', '14:00'], ['10:00', '15:00'], o]),
   },
   {
     // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
-    id: 'u_marco', genere: 'M', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
+    id: 'u_marco', cognome: 'Turri', genere: 'M', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
     preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, false, true, true, true, true],
     settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], o, ['22:00', '06:30'], o]),
   },
   {
-    id: 'u_sara', genere: 'F', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
+    id: 'u_sara', cognome: 'Pellegrini', genere: 'F', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
     preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true },
     disponibilita: [true, true, true, true, true, true, true],
     settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
@@ -1861,6 +1861,7 @@ function seed() {
     users.push({
       id: p.id,
       nome: p.nome,
+      cognome: p.cognome,
       cognomeIniziale: p.cognomeIniziale,
       contratto: p.contratto,
       genere: p.genere || 'X',
@@ -2398,11 +2399,15 @@ const store = {
    * richieste della demo restano coerenti e l'app è viva dal primo minuto,
    * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
    */
-  completaProfilo({ nome, cognomeIniziale, genere, contratto, oreSettimanali, versioneNote }) {
+  completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, versioneNote }) {
     const me = this.me;
+    const cog = (cognome || '').trim();
     Object.assign(me, {
       nome: (nome || '').trim() || me.nome,
-      cognomeIniziale: (cognomeIniziale || '').trim().slice(0, 1).toUpperCase() || me.cognomeIniziale,
+      // Il cognome intero resta nel profilo; in giro per l'app se ne mostra
+      // solo l'iniziale, che in un negozio basta a distinguere due omonimi.
+      cognome: cog || me.cognome || '',
+      cognomeIniziale: cog.slice(0, 1).toUpperCase() || me.cognomeIniziale,
       genere: genere || 'X',
       contratto: contratto || me.contratto,
       oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,
@@ -3085,6 +3090,11 @@ function profilo() {
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
       </p>
       ${raw(dueSettimane())}
+      <p class="testo-tenue">
+        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore
+        pagate, il contratto ne prevede ${me.oreSettimanali}. La pausa pranzo non
+        è conteggiata: cinque turni da nove ore fanno quaranta ore.
+      </p>
     </section>
 
     <section class="sezione">
@@ -4504,7 +4514,7 @@ const { noteLegali, accettazioneNote, VERSIONE_NOTE } = M_legale;
 const bozzaProfilo = {
   passo: 1,
   nome: '',
-  cognomeIniziale: '',
+  cognome: '',
   genere: '',
   contratto: '',
   oreSettimanali: null,
@@ -4517,7 +4527,7 @@ function apriProfilo({ modifica = false } = {}) {
   Object.assign(bozzaProfilo, {
     passo: 1,
     nome: modifica ? me.nome : '',
-    cognomeIniziale: modifica ? me.cognomeIniziale : '',
+    cognome: modifica ? me.cognome || '' : '',
     genere: modifica ? me.genere || '' : '',
     contratto: modifica ? me.contratto : '',
     oreSettimanali: modifica ? me.oreSettimanali : null,
@@ -4539,7 +4549,7 @@ function validaProfilo() {
   const b = bozzaProfilo;
   const errori = [];
   if (!b.nome.trim()) errori.push('Manca il nome.');
-  if (!b.cognomeIniziale.trim()) errori.push('Manca l\'iniziale del cognome.');
+  if (!b.cognome.trim()) errori.push('Manca il cognome.');
   if (!b.genere) errori.push('Scegli una delle tre opzioni, anche "preferisco non dirlo".');
   if (!b.contratto) errori.push('Scegli il tipo di contratto.');
   if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
@@ -4576,9 +4586,10 @@ function passoChiSei() {
   return html`
     <h2 class="titolo-gruppo">Chi sei</h2>
     <p class="testo-tenue">
-      Il nome è quello che vedono i colleghi accanto alle tue richieste. Del
-      cognome basta l'iniziale: in un negozio serve solo a distinguere due
-      persone che si chiamano uguale.
+      Accanto alle tue richieste i colleghi vedono il nome e l'iniziale del
+      cognome — «${b.nome || 'Lorenzo'} ${(b.cognome || 'Bandini').slice(0, 1).toUpperCase()}.» —
+      perché in un negozio tanto basta. Il cognome per intero resta sul tuo
+      dispositivo.
     </p>
 
     <label class="campo">
@@ -4588,9 +4599,9 @@ function passoChiSei() {
     </label>
 
     <label class="campo">
-      <span>Iniziale del cognome</span>
-      <input type="text" class="testo" data-campo="cognome" value="${b.cognomeIniziale}"
-             placeholder="B" maxlength="1" autocomplete="family-name">
+      <span>Cognome</span>
+      <input type="text" class="testo" data-campo="cognome" value="${b.cognome}"
+             placeholder="Bandini" autocomplete="family-name">
     </label>
 
     <div class="campo">
@@ -5236,7 +5247,7 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   // I campi del profilo non passano da render(): riscrivere il DOM a ogni
   // lettera sposterebbe il cursore a fine riga sotto le dita di chi scrive.
   if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
-  if (chiave === 'cognome') { P.bozzaProfilo.cognomeIniziale = el.value; return; }
+  if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 
