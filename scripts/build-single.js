@@ -45,8 +45,11 @@ function riscriviImport(codice) {
   return codice
     .replace(/^import\s+\*\s+as\s+([A-Za-z0-9_$]+)\s+from\s+'([^']+)';?$/gm,
       (_, alias, da) => `const ${alias} = ${nomeModulo(da)};`)
+    // In un import si rinomina con `as`, in una destrutturazione con `:`.
+    // Tradurlo non è un dettaglio: `const { x as y }` non è codice valido, e
+    // basta un import rinominato per lasciare la pagina bianca.
     .replace(/^import\s*\{([^}]+)\}\s*from\s+'([^']+)';?$/gm,
-      (_, nomi, da) => `const {${nomi}} = ${nomeModulo(da)};`)
+      (_, nomi, da) => `const {${nomi.replace(/\s+as\s+/g, ': ')}} = ${nomeModulo(da)};`)
     .replace(/^import\s+([A-Za-z0-9_$]+)\s+from\s+'([^']+)';?$/gm,
       (_, alias, da) => `const ${alias} = ${nomeModulo(da)}.default;`);
 }
@@ -79,6 +82,20 @@ ${css}
 ${pezzi.join('\n\n')}
 </script>
 `;
+
+  // Un errore di sintassi nel bundle non si vede: il browser scarta l'intero
+  // <script> e resta una pagina bianca, senza niente in console prima del
+  // caricamento. Meglio scoprirlo qui che dopo aver pubblicato.
+  const script = pezzi.join('\n\n');
+  try {
+    // eslint-disable-next-line no-new-func
+    new Function(`return (async () => {\n${script}\n});`);
+  } catch (e) {
+    console.error(`Il bundle non è codice valido: ${e.message}`);
+    console.error('Niente da pubblicare: dist/ resta com\'era.');
+    process.exitCode = 1;
+    return;
+  }
 
   await mkdir(join(RADICE, 'dist'), { recursive: true });
   await writeFile(join(RADICE, 'dist', 'cambio-turno.html'), html);
