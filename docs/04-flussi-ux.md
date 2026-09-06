@@ -151,6 +151,31 @@ problema io", ordinato per quanto sei una buona risposta. Compaiono solo le
 richieste che i tuoi turni risolvono davvero: in una schermata che esiste per
 aiutare, le altre sarebbero rumore.
 
+## Da dove arrivano i turni
+La voce "Inserisci i tuoi turni" non sta più in fondo al calendario, dove era un
+invito a uscire dalla schermata appena aperta. I turni si gestiscono nel
+Profilo, in una sezione con due strade in ordine di comodità:
+
+1. **Importa da calendario**, con accanto un riquadro *Come si prende il file
+   .ics* che spiega dove trovarlo da iPhone, da Mac e da Google Calendar. Un
+   pulsante "importa da calendario" senza istruzioni è un pulsante che nessuno
+   preme.
+2. **Inserisci manualmente i turni**, che apre il giorno di oggi nel calendario
+   delle due settimane, cioè lo stesso posto dove si correggono.
+
+## Le preferenze, in due riquadri che si aprono
+Sei interruttori in fila nascondevano la sola cosa che conta saperne: quello che
+**eviti** è un filtro netto e quei turni spariscono, quello che **preferisci**
+vale qualche punto. Ora sono due riquadri chiusi, ciascuno col titolo di quello
+che fa e il conto di quante ne hai attive.
+
+Attivando una preferenza si spegne la sua opposta, e la schermata si ridisegna
+per farlo vedere: senza il ridisegno la casella dell'opposta restava accesa a
+mentire, e il tocco successivo la spegneva invece di accenderla.
+
+I riquadri aperti restano aperti dopo una modifica. È stato della finestra, non
+dei dati, e vive in `riquadriAperti` dentro `dom.js`.
+
 ## Il Profilo: le tue due settimane
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
 ✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.

@@ -262,7 +262,9 @@ const AZIONI = {
     vai('#/home');
   },
 
-  pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); },
+  // Serve il render: attivare una preferenza ne spegne un'altra, e senza
+  // ridisegnare la casella dell'opposta resterebbe accesa a mentire.
+  pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); render(); },
   'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
 
   reset: () => {
@@ -421,6 +423,9 @@ const AZIONI = {
 on(document.body, 'click', '[data-act]', (e, el) => {
   const fn = AZIONI[el.dataset.act];
   if (!fn) return;
+  // Caselle e radio li gestisce 'change': su un click emettono entrambi gli
+  // eventi, e farli passare due volte significa eseguire l'azione due volte.
+  if (el.tagName === 'INPUT' && (el.type === 'checkbox' || el.type === 'radio')) return;
   if (el.tagName !== 'INPUT') e.preventDefault();
   fn(e, el);
 });

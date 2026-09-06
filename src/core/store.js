@@ -2,7 +2,7 @@
 // Nell'MVP i dati stanno nel browser: sostituire salva()/carica() con
 // chiamate a un backend non tocca né il motore né la UI.
 
-import { RULES, STATUS } from './rules.js';
+import { RULES, PREFERENZE, STATUS } from './rules.js';
 import { newId, isExpired, hasPriority, isOpen } from './model.js';
 import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
 import { monthKey, todayISO } from './time.js';
@@ -353,8 +353,18 @@ export const store = {
     this.commit();
   },
 
+  /**
+   * Attivare una preferenza spegne la sua opposta: "evito le mattine" e
+   * "preferisco le mattine" insieme non vogliono dire niente, e lasciarle
+   * entrambe accese scaricherebbe sul motore una contraddizione che si può
+   * togliere qui, dove nasce.
+   */
   impostaPreferenze(patch) {
-    Object.assign(this.me.preferenze, patch);
+    for (const [key, valore] of Object.entries(patch)) {
+      this.me.preferenze[key] = valore;
+      const opposta = PREFERENZE.find((p) => p.key === key)?.opposta;
+      if (valore && opposta) this.me.preferenze[opposta] = false;
+    }
     this.commit();
   },
 

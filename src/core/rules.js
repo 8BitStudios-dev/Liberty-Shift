@@ -48,7 +48,50 @@ export const RULES = {
   monteOreAmmessi: [20, 25, 30, 40],
 
   adattamentoPenalty: 5,
+
+  // Quanto pesa una preferenza soddisfatta. Poco per costruzione: è un
+  // "mi farebbe piacere", non una condizione.
+  preferenzaBonus: 4,
 };
+
+/**
+ * Le preferenze del profilo.
+ *
+ * Due gruppi che si comportano in modo diverso, ed è la differenza che conta:
+ * quello che **eviti** è un filtro netto — quei turni non compaiono affatto —
+ * mentre quello che **preferisci** sposta il punteggio di pochi punti e basta.
+ * Metterle nella stessa lista senza dirlo sarebbe una bugia comoda.
+ *
+ * `fascia` collega la preferenza a una classificazione del turno (R6, R7), così
+ * il motore non ha una catena di `if` da tenere allineata a mano, e `opposta`
+ * impedisce di dichiarare insieme due cose incompatibili.
+ */
+export const PREFERENZE = [
+  {
+    key: 'evitaMattine', label: 'Evito le mattine', gruppo: 'evita', fascia: 'MATTINA',
+    opposta: 'preferisceMattine', aiuto: 'I turni che iniziano entro l\'apertura non ti verranno proposti.',
+  },
+  {
+    key: 'evitaChiusure', label: 'Evito le chiusure', gruppo: 'evita', fascia: 'CHIUSURA',
+    opposta: 'preferisceChiusure', aiuto: 'I turni che finiscono dopo la chiusura del negozio non ti verranno proposti.',
+  },
+  {
+    key: 'evitaNotti', label: 'Evito le notti visual', gruppo: 'evita', fascia: 'NOTTE',
+    opposta: null, aiuto: 'Sono rare, e la durata va comunque concordata a parte.',
+  },
+  {
+    key: 'preferisceMattine', label: 'Preferisco le mattine', gruppo: 'preferisce', fascia: 'MATTINA',
+    opposta: 'evitaMattine', aiuto: '',
+  },
+  {
+    key: 'preferisceChiusure', label: 'Preferisco le chiusure', gruppo: 'preferisce', fascia: 'CHIUSURA',
+    opposta: 'evitaChiusure', aiuto: '',
+  },
+  {
+    key: 'disponibileWeekend', label: 'Disponibile nel weekend', gruppo: 'altro', fascia: null,
+    opposta: null, aiuto: '',
+  },
+];
 
 export const STATUS = {
   APERTA: 'APERTA',

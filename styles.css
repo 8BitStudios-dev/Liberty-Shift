@@ -290,6 +290,29 @@ p { margin: 8px 0; }
 .riga-richiesta .non-puoi { text-align: left; margin: 2px 0 0; }
 .nota-non-puoi { text-align: right; margin: 2px 0 0; font-size: 12px; }
 
+/* Un riquadro che si apre: usa <details>, così funziona anche senza
+   javascript e la freccia la disegna il browser. */
+.riquadro {
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: 12px; padding: 0 14px; margin-bottom: 10px;
+}
+.riquadro > summary {
+  cursor: pointer; padding: 13px 0; font-weight: 600; font-size: 15px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.riquadro > summary::-webkit-details-marker { display: none; }
+.riquadro > summary::after { content: '›'; color: var(--testo-tenue); transition: transform .15s ease; }
+.riquadro[open] > summary::after { transform: rotate(90deg); }
+.riquadro[open] > summary { border-bottom: 1px solid var(--bordo); }
+.riquadro .conteggio { font-size: 12px; font-weight: 500; color: var(--testo-tenue); margin-left: auto; }
+.riquadro > summary::after { margin-left: 4px; }
+.riquadro > *:last-child { margin-bottom: 14px; }
+.riquadro .switch:last-of-type { border-bottom: 0; }
+.switch .aiuto { display: block; font-style: normal; font-size: 12px; color: var(--testo-tenue); }
+.riquadro code {
+  font-size: 12px; background: var(--superficie-2); border-radius: 4px; padding: 1px 4px;
+}
+
 /* ------------------------------------------------------- chip e pillole */
 
 .chips, .pillole { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; }

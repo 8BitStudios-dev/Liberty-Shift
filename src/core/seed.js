@@ -10,38 +10,38 @@ const o = 'OFF';
 const PERSONE = [
   {
     id: 'u_lorenzo', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
-    preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
+    preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true, disponibileWeekend: true },
     disponibilita: [true, false, true, true, false, true, false],
     settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
   },
   {
     id: 'u_martina', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
-    preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
+    preferenze: { preferisceChiusure: true, evitaMattine: true, disponibileWeekend: true },
     disponibilita: [true, true, true, true, false, true, true],
     settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:00', '15:00'], ['15:00', '21:00']]),
   },
   {
     id: 'u_luca', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
-    preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: false },
+    preferenze: { disponibileWeekend: false },
     disponibilita: [false, true, true, false, true, true, true],
     settimana: W([['12:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
   },
   {
     id: 'u_giulia', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
-    preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: false },
+    preferenze: { preferisceMattine: true, evitaChiusure: true, disponibileWeekend: false },
     disponibilita: [true, false, true, true, true, false, true],
     settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:00', '14:00'], ['10:00', '15:00'], o]),
   },
   {
     // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
     id: 'u_marco', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
-    preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
+    preferenze: { preferisceChiusure: true, evitaMattine: true, disponibileWeekend: true },
     disponibilita: [true, true, false, true, true, true, true],
     settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], o, ['22:00', '06:30'], o]),
   },
   {
     id: 'u_sara', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
-    preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
+    preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true, disponibileWeekend: true },
     disponibilita: [true, true, true, true, true, true, true],
     settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
   },

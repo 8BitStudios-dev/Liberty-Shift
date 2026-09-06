@@ -1,7 +1,7 @@
 // Data model (Fase 3 della specifica).
 // Nessuna classe: oggetti semplici, serializzabili, pronti per qualsiasi backend.
 
-import { RULES, STATUS, WANT_MODE, TIPO_CAMBIO } from './rules.js';
+import { RULES, PREFERENZE, STATUS, WANT_MODE, TIPO_CAMBIO } from './rules.js';
 import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
 
 /**
@@ -298,4 +298,39 @@ export function ruoloNelGiorno(request, giorno, cedo) {
     };
   }
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
+}
+
+/** La fascia di un turno, nel vocabolario delle preferenze (R6, R7). */
+export function fasciaDi(shift) {
+  if (!shift || shift.tipo !== 'WORK') return null;
+  if (isNotturno(shift)) return 'NOTTE';
+  if (isClosing(shift)) return 'CHIUSURA';
+  if (isMorning(shift)) return 'MATTINA';
+  return null;
+}
+
+/**
+ * Le preferenze applicate a un turno che una persona riceverebbe.
+ *
+ * Restituisce { escluso, bonus, reasons }. La differenza fra i due gruppi è
+ * tutta qui: quello che si evita esclude il turno, quello che si preferisce
+ * vale qualche punto. Un turno può soddisfare al massimo una preferenza,
+ * perché le fasce sono mutuamente esclusive.
+ */
+export function applicaPreferenze(user, shift) {
+  const fascia = fasciaDi(shift);
+  if (!fascia || !user?.preferenze) return { escluso: false, bonus: 0, reasons: [] };
+
+  for (const p of PREFERENZE) {
+    if (p.fascia !== fascia || !user.preferenze[p.key]) continue;
+    if (p.gruppo === 'evita') {
+      return { escluso: true, bonus: 0, reasons: [`${user.nome}: ${p.label.toLowerCase()}`] };
+    }
+    return {
+      escluso: false,
+      bonus: RULES.preferenzaBonus,
+      reasons: [`${p.label.toLowerCase()}, e ${shiftLabel(shift)} lo è`],
+    };
+  }
+  return { escluso: false, bonus: 0, reasons: [] };
 }

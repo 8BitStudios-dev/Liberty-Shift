@@ -6,11 +6,11 @@ import {
   satisfies, validateRequest, findMatches, disponibileIl, cambioRapido, turnoOfferibile,
   opportunitaPerMe, richiesteSulGiorno,
 } from '../src/core/engine.js';
-import { WANT_MODE, RULES, TIPO_CAMBIO } from '../src/core/rules.js';
+import { WANT_MODE, RULES, PREFERENZE, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
-  impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno,
+  impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno, applicaPreferenze,
 } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
@@ -128,9 +128,14 @@ test('Lorenzo e Martina sono il match perfetto del capitolo 11', () => {
   assert.equal(martina.origine, 'RICHIESTA');
   assert.equal(martina.tipo, 'MATCH');
   assert.ok(martina.reasons.length >= 2);
-  // Entrambi i lati sono soddisfatti al 100%: i punti mancanti sono i due
-  // adattamenti di contratto, uno per parte. Lo scambio resta un match pieno.
-  assert.equal(martina.score, 100 - 2 * RULES.adattamentoPenalty);
+  // Entrambi i lati sono soddisfatti al 100%. Da lì si tolgono i due
+  // adattamenti di contratto, uno per parte, e si aggiungono le due
+  // preferenze soddisfatte: Lorenzo riceve una mattina e le preferisce,
+  // Martina riceve una chiusura e le preferisce.
+  assert.equal(
+    martina.score,
+    100 - 2 * RULES.adattamentoPenalty + 2 * RULES.preferenzaBonus,
+  );
 });
 
 test('un match da sola disponibilità resta POTENZIALE e non supera il tetto', () => {
@@ -481,4 +486,46 @@ test('un cambio orario è una proposta, quindi sta fra chi offre', () => {
   assert.equal(r.ruolo, 'OFFRE');
   assert.match(r.sintesi, /12:00–21:00/);
   assert.match(r.sintesi, /entro le 19:00/);
+});
+
+// --- preferenze --------------------------------------------------------
+
+test('quello che eviti esclude, quello che preferisci vale qualche punto', () => {
+  const mattina = { tipo: 'WORK', start: '09:00', end: '18:00' };
+  const chiusura = { tipo: 'WORK', start: '12:00', end: '21:00' };
+  const evita = { nome: 'Lorenzo', preferenze: { evitaChiusure: true, preferisceMattine: true } };
+
+  assert.equal(applicaPreferenze(evita, chiusura).escluso, true);
+  assert.equal(applicaPreferenze(evita, mattina).escluso, false);
+  assert.equal(applicaPreferenze(evita, mattina).bonus, RULES.preferenzaBonus);
+  // Un turno che non è né mattina né chiusura non tocca niente.
+  assert.equal(applicaPreferenze(evita, { tipo: 'WORK', start: '11:00', end: '18:00' }).bonus, 0);
+});
+
+test('una preferenza esclude chi ha solo dichiarato una disponibilità', () => {
+  const conEvita = (evita) => {
+    const s = seed();
+    // Marco cede una chiusura: chi le evita non deve comparire fra i match
+    // nati da una semplice disponibilità.
+    const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
+    const cedo = s.shifts.find((x) => x.id === richiesta.cedo.shiftId);
+    cedo.start = '12:00';
+    cedo.end = '21:00';
+    // Martina il sabato è a casa e si è dichiarata disponibile: è lei la
+    // candidata naturale, e lunedì lavora, quindi ha qualcosa da offrire.
+    const martina = s.users.find((u) => u.id === 'u_martina');
+    martina.preferenze = { evitaChiusure: evita };
+    return findMatches(richiesta, s)
+      .some((m) => m.userId === 'u_martina' && m.origine === 'DISPONIBILITA');
+  };
+
+  assert.equal(conEvita(false), true, 'senza la preferenza Luca compare');
+  assert.equal(conEvita(true), false, 'con "evito le chiusure" sparisce');
+});
+
+test('due preferenze opposte non restano accese insieme', () => {
+  // La regola sta nello store, ma la coppia è dichiarata nel regolamento.
+  const mattine = PREFERENZE.find((p) => p.key === 'evitaMattine');
+  assert.equal(mattine.opposta, 'preferisceMattine');
+  assert.equal(PREFERENZE.find((p) => p.key === 'preferisceMattine').opposta, 'evitaMattine');
 });

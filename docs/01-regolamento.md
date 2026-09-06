@@ -210,6 +210,31 @@ cercato. Sparisce da bacheca, calendario e match; resta nei dati.
 Effetto: prima posizione in bacheca, evidenza nel calendario. Nessun diritto in
 più.
 
+## R19 — Preferenze
+Le preferenze del profilo sono due cose diverse, e l'app le tiene separate
+perché si comportano in modo diverso.
+
+| Gruppo | Effetto | Voci |
+|---|---|---|
+| **Quello che non vuoi** | filtro netto: quei turni non compaiono, nemmeno con un punteggio basso | evito le mattine, evito le chiusure, evito le notti visual |
+| **Quello che preferisci** | sposta il punteggio di `RULES.preferenzaBonus` punti | preferisco le mattine, preferisco le chiusure |
+
+Le voci stanno in `RULES.PREFERENZE`, ciascuna collegata a una fascia (R6, R7)
+invece che a una catena di `if`: aggiungerne una è una riga di tabella.
+
+**Due preferenze opposte non possono stare accese insieme.** "Evito le mattine"
+e "preferisco le mattine" insieme non vogliono dire niente, quindi attivarne una
+spegne l'altra, nello store, dove nasce la contraddizione. Il motore non deve
+sapere che esiste.
+
+Il filtro netto vale solo per chi compare **da una disponibilità dichiarata**:
+chi ha pubblicato una richiesta ha già detto cosa cerca, e quella prevale sulla
+preferenza generica del profilo.
+
+Nota: `preferisceMattina` esisteva già nel modello ma il motore non la leggeva.
+Era una preferenza che non faceva niente, e la documentazione diceva il
+contrario. Ora è implementata.
+
 ## R15 — Chi può comparire fra i match
 Solo chi ha dato un segnale:
 1. una richiesta pubblicata compatibile;

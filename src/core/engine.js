@@ -9,6 +9,7 @@ import {
 import {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
+  applicaPreferenze,
 } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -163,7 +164,13 @@ function verificheIncrociate(coppie, shifts) {
   const reasons = [];
   const avvisi = [];
   let penalita = 0;
+  let bonus = 0;
   for (const [chi, cede, riceve] of coppie) {
+    // Le preferenze pesano sul turno che quella persona riceverebbe davvero,
+    // cioè quello già adattato alle sue ore.
+    const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede));
+    bonus += pref.bonus;
+    if (pref.bonus) reasons.push(`${chi.nome} ${pref.reasons[0]}`);
     const t = trasformaTurno(riceve, cede);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
@@ -175,7 +182,7 @@ function verificheIncrociate(coppie, shifts) {
       if (ore.avviso) avvisi.push(`${nome(chi)}: ${ore.avviso}.`);
     }
   }
-  return { reasons, avvisi, penalita };
+  return { reasons, avvisi, penalita, bonus };
 }
 
 /**
@@ -228,14 +235,16 @@ function matchOrario(request, ctx) {
       reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
     } else {
       if (!disponibileIl(u, giorno)) continue;
-      if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, suo))) continue;
+      // Chi non ha pubblicato niente si giudica dalle preferenze del profilo:
+      // è l'unica cosa che ha detto.
+      if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
       origine = 'DISPONIBILITA';
       reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e si è dichiarato disponibile a scambiare`);
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
-    score = clamp(Math.round(score - v.penalita), 0,
+    score = clamp(Math.round(score - v.penalita + v.bonus), 0,
       origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
     if (score < RULES.potentialThreshold) continue;
 
@@ -302,7 +311,7 @@ function matchOff(request, ctx) {
         reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
         if (!disponibileIl(u, mioCedo.data)) continue;
-        if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, suo))) continue;
+        if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
         score = Math.min(perMe.score, RULES.availabilityScoreCap);
         origine = 'DISPONIBILITA';
         reasons.push(`è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`);
@@ -310,7 +319,7 @@ function matchOff(request, ctx) {
       reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
 
       const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
-      score = clamp(Math.round(score - v.penalita), 0,
+      score = clamp(Math.round(score - v.penalita + v.bonus), 0,
         origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
       if (score < RULES.potentialThreshold) continue;
 

@@ -65,3 +65,20 @@ export function sheet(titolo, contenuto, { azioni = '' } = {}) {
   });
   return { el: wrap, chiudi };
 }
+
+/**
+ * Quali riquadri sono aperti.
+ *
+ * La schermata viene ridisegnata a ogni modifica, e senza memoria un
+ * interruttore dentro un <details> lo richiudeva sotto le dita di chi lo
+ * aveva appena toccato. Sta qui e non in una vista perché è stato della
+ * finestra, non dei dati: non va salvato con il resto.
+ */
+export const riquadriAperti = new Set();
+
+document.addEventListener('toggle', (e) => {
+  const chiave = e.target?.dataset?.riquadro;
+  if (!chiave) return;
+  if (e.target.open) riquadriAperti.add(chiave);
+  else riquadriAperti.delete(chiave);
+}, true);

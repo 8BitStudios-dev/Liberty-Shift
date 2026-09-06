@@ -1,4 +1,4 @@
-import { html, raw } from './dom.js';
+import { html, raw, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
@@ -8,7 +8,7 @@ import { hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana } from '
 import {
   slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
 } from '../core/engine.js';
-import { RULES, TIPO_CAMBIO } from '../core/rules.js';
+import { RULES, PREFERENZE, TIPO_CAMBIO } from '../core/rules.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
 } from '../core/time.js';
@@ -186,8 +186,7 @@ export function calendario(params) {
       <span class="barre in-legenda"><i class="cerca"></i></span> cercano ·
       <span class="barre in-legenda"><i class="offre"></i></span> offrono ·
       bordo oro: priorità. Ogni riga è una settimana Apple, da sabato a venerdì.
-    </p>
-    <button class="btn secondario largo" data-act="vai" data-to="#/profilo">Inserisci i tuoi turni</button>`;
+    </p>`;
 }
 
 /**
@@ -264,16 +263,6 @@ export function profilo() {
   const settimana = appleWeekKey(todayISO());
   const credito = store.creditoPriorita();
 
-  const pref = [
-    ['preferisceMattina', 'Preferisco i turni di mattina'],
-    ['evitaChiusure', 'Evito le chiusure'],
-    ['disponibileWeekend', 'Disponibile nel weekend'],
-  ].map(([k, label]) => html`
-    <label class="switch">
-      <input type="checkbox" data-act="pref" data-key="${k}" ${raw(me.preferenze[k] ? 'checked' : '')}>
-      <span>${label}</span>
-    </label>`).join('');
-
   return html`
     <header class="hero compatta">
       <span class="avatar grande">${iniziali(me)}</span>
@@ -286,20 +275,23 @@ export function profilo() {
     </section>
 
     <section class="sezione">
+      <h2>I tuoi turni</h2>
+      ${raw(sezioneTurni())}
+    </section>
+
+    <section class="sezione">
       <h2>Le tue due settimane</h2>
       <p class="testo-tenue">
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
       </p>
       ${raw(dueSettimane())}
-      <button class="btn secondario largo" data-act="importa">📥 Importa da calendario</button>
     </section>
 
     ${raw(sezioneRingraziamenti())}
 
     <section class="sezione">
       <h2>Preferenze</h2>
-      ${raw(pref)}
-      <p class="testo-tenue">Le preferenze pesano sul punteggio dei match, non bloccano nulla.</p>
+      ${raw(sezionePreferenze(me))}
     </section>
 
     <section class="sezione">
@@ -338,6 +330,116 @@ export function profilo() {
       </select>
       <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
     </section>`;
+}
+
+
+/**
+ * Le preferenze, in due riquadri che si aprono.
+ *
+ * Aperte tutte insieme erano sei interruttori in fila, e la differenza che
+ * conta — quello che eviti sparisce dai match, quello che preferisci vale
+ * qualche punto — si perdeva nell'elenco. Chiusi, il profilo resta leggibile e
+ * si vede a colpo d'occhio quante ne hai attive.
+ */
+function sezionePreferenze(me) {
+  const gruppi = [
+    {
+      key: 'evita',
+      titolo: 'Quello che non vuoi',
+      nota: 'Filtro netto: questi turni non ti vengono proposti, nemmeno con un punteggio basso.',
+    },
+    {
+      key: 'preferisce',
+      titolo: 'Quello che preferisci',
+      nota: `Sposta il punteggio di ${RULES.preferenzaBonus} punti, non esclude niente.`,
+    },
+  ];
+
+  const box = gruppi.map((g) => {
+    const voci = PREFERENZE.filter((p) => p.gruppo === g.key);
+    const attive = voci.filter((p) => me.preferenze[p.key]).length;
+    return html`
+      <details class="riquadro" data-riquadro="pref-${g.key}" ${raw(riquadriAperti.has(`pref-${g.key}`) ? 'open' : '')}>
+        <summary>
+          <span>${g.titolo}</span>
+          <span class="conteggio">${attive ? `${attive} attiv${attive === 1 ? 'a' : 'e'}` : 'nessuna'}</span>
+        </summary>
+        <p class="testo-tenue">${g.nota}</p>
+        ${raw(voci.map((p) => html`
+          <label class="switch">
+            <input type="checkbox" data-act="pref" data-key="${p.key}" ${raw(me.preferenze[p.key] ? 'checked' : '')}>
+            <span>
+              ${p.label}
+              ${raw(p.aiuto ? `<em class="aiuto">${p.aiuto}</em>` : '')}
+            </span>
+          </label>`).join(''))}
+      </details>`;
+  }).join('');
+
+  const altre = PREFERENZE.filter((p) => p.gruppo === 'altro').map((p) => html`
+    <label class="switch">
+      <input type="checkbox" data-act="pref" data-key="${p.key}" ${raw(me.preferenze[p.key] ? 'checked' : '')}>
+      <span>${p.label}</span>
+    </label>`).join('');
+
+  return html`
+    ${raw(box)}
+    ${raw(altre)}
+    <p class="testo-tenue">
+      Due preferenze opposte non possono stare accese insieme: attivandone una,
+      l'altra si spegne da sola.
+    </p>`;
+}
+
+/**
+ * Da dove arrivano i turni. Due strade, quella comoda per prima, e le
+ * istruzioni dell'import scritte per intero: un'app che dice "importa da
+ * calendario" senza spiegare da dove si prende il file non serve a niente.
+ */
+function sezioneTurni() {
+  return html`
+    <button class="tile" data-act="importa">
+      <span class="tile-icona">📥</span>
+      <span>
+        <strong>Importa da calendario</strong>
+        <em>Un file .ics del calendario turni: l'app legge orari e OFF</em>
+      </span>
+      <span class="chevron">›</span>
+    </button>
+
+    <details class="riquadro" data-riquadro="istruzioni-ics" ${raw(riquadriAperti.has('istruzioni-ics') ? 'open' : '')}>
+      <summary>
+        <span>Come si prende il file .ics</span>
+        <span class="conteggio">istruzioni</span>
+      </summary>
+      <ol class="elenco">
+        <li><strong>Da un calendario sottoscritto</strong> (quello dei turni): apri
+          l'app Calendario, tieni premuto sul calendario dei turni e scegli
+          <em>Condividi</em> o <em>Esporta</em>. Se compare solo l'indirizzo del
+          calendario, copialo: è un link che finisce in <code>.ics</code> e va bene lo stesso.</li>
+        <li><strong>Da Mac</strong>: Calendario, seleziona il calendario dei turni,
+          poi <em>Archivio ▸ Esporta ▸ Esporta</em>. Ottieni un file <code>.ics</code>.</li>
+        <li><strong>Da Google Calendar</strong>: Impostazioni ▸ il calendario dei turni
+          ▸ <em>Esporta calendario</em>, oppure copia l'indirizzo segreto in formato iCal.</li>
+        <li>Torna qui, tocca <strong>Importa da calendario</strong> e incolla il
+          contenuto del file o il link.</li>
+      </ol>
+      <p class="testo-tenue">
+        Prima di scrivere qualcosa vedi l'anteprima di quello che l'app ha capito,
+        con il conto di quello che ha scartato e perché. L'import sostituisce solo
+        i giorni che il calendario nomina: non cancella mai un giorno di cui il
+        file non parla.
+      </p>
+    </details>
+
+    <button class="tile" data-act="giorno-profilo" data-data="${todayISO()}">
+      <span class="tile-icona">✍️</span>
+      <span>
+        <strong>Inserisci manualmente i turni</strong>
+        <em>Giorno per giorno, dal calendario delle due settimane qui sotto</em>
+      </span>
+      <span class="chevron">›</span>
+    </button>`;
 }
 
 /** Il tasto per le proposte, con quante ne aspettano una risposta. */
