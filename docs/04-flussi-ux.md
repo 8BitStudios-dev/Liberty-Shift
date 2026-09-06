@@ -86,7 +86,7 @@ nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 
 ## Dettagli che portano peso
 - In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
-  ("vuole libero Sab 12 · lavora Lun 14 o Mer 16"). Orari, note, stato e
+  ("cerca OFF Sab 12 · offre Lun 14 o Mer 16"). Orari, note, stato e
   proposte stanno nel dettaglio, che si apre toccandola. Prima ogni richiesta
   occupava mezzo schermo e scorrerne dieci era faticoso.
 - Nel dettaglio il blocco della richiesta è sempre identico ovunque compaia. È
