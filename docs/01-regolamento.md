@@ -238,6 +238,10 @@ invece si misura sulle ore pagate.
 **Assunzione**: la pausa è di un'ora e scatta oltre le sei ore di turno
 (`RULES.pausa`). Un Part Time con turni da cinque ore non la fa.
 
+Il monte ore **dipende dal contratto e non è una scelta libera**: un Full Time
+è 40 ore, un Part Time sceglie fra 20, 25 e 30 (`RULES.contracts[x].ore`).
+Dove la risposta è una sola l'app non fa la domanda: la dice.
+
 Senza questa distinzione l'app segnalava uno sforamento — «sei a 45 ore, il
 contratto ne prevede 40» — su una settimana perfettamente normale.
 

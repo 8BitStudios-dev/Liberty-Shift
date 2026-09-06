@@ -326,6 +326,8 @@ p { margin: 8px 0; }
 .accesso .non-puoi { text-align: center; }
 .accesso-nota { margin-top: 18px; }
 
+.valore-fisso { font-size: 17px; font-weight: 600; margin: 0; }
+
 .tabella-dati {
   width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
   background: var(--superficie); border: 1px solid var(--bordo); border-radius: 12px;

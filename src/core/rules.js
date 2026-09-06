@@ -64,11 +64,15 @@ export const RULES = {
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
   // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
   // è il monte ore settimanale, che sta sull'utente.
+  /**
+   * Il monte ore dipende dal contratto, e non è una scelta libera: un Full
+   * Time è 40 ore e basta, un Part Time sceglie fra 20, 25 e 30. Chiederlo
+   * comunque a un Full Time era una domanda con una risposta sola.
+   */
   contracts: {
-    FT: { label: 'Full Time' },
-    PT: { label: 'Part Time' },
+    FT: { label: 'Full Time', ore: [40] },
+    PT: { label: 'Part Time', ore: [20, 25, 30] },
   },
-  monteOreAmmessi: [20, 25, 30, 40],
 
   adattamentoPenalty: 5,
 

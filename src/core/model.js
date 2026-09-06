@@ -8,7 +8,8 @@ import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
  * User
  * {
  *   id, nome, cognomeIniziale, contratto: 'FT'|'PT',
- *   oreSettimanali: 20|25|30|40, admin: bool,
+ *   oreSettimanali: 40 se FT, 20|25|30 se PT (RULES.contracts),
+ *   admin: bool,
  *   genere: 'F'|'M'|'X',   // X = non specificato: si usano forme neutre
  *   preferenze: { evita*, preferisce* },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
@@ -149,6 +150,17 @@ export function concorda(user, { m, f, n }) {
 
 export function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
+}
+
+/** Le ore che un contratto ammette; per il Full Time è una sola. */
+export function oreDelContratto(contratto) {
+  return RULES.contracts[contratto]?.ore || [];
+}
+
+/** Il monte ore da usare quando il contratto ne ammette uno solo. */
+export function oreAutomatiche(contratto) {
+  const ore = oreDelContratto(contratto);
+  return ore.length === 1 ? ore[0] : null;
 }
 
 function hhmm(min) {

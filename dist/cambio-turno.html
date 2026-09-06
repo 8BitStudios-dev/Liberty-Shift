@@ -330,6 +330,8 @@ p { margin: 8px 0; }
 .accesso .non-puoi { text-align: center; }
 .accesso-nota { margin-top: 18px; }
 
+.valore-fisso { font-size: 17px; font-weight: 600; margin: 0; }
+
 .tabella-dati {
   width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
   background: var(--superficie); border: 1px solid var(--bordo); border-radius: 12px;
@@ -601,11 +603,15 @@ const RULES = {
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
   // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
   // è il monte ore settimanale, che sta sull'utente.
+  /**
+   * Il monte ore dipende dal contratto, e non è una scelta libera: un Full
+   * Time è 40 ore e basta, un Part Time sceglie fra 20, 25 e 30. Chiederlo
+   * comunque a un Full Time era una domanda con una risposta sola.
+   */
   contracts: {
-    FT: { label: 'Full Time' },
-    PT: { label: 'Part Time' },
+    FT: { label: 'Full Time', ore: [40] },
+    PT: { label: 'Part Time', ore: [20, 25, 30] },
   },
-  monteOreAmmessi: [20, 25, 30, 40],
 
   adattamentoPenalty: 5,
 
@@ -781,7 +787,8 @@ const { minutes, todayISO, appleWeekKey, formatDay } = M_time;
  * User
  * {
  *   id, nome, cognomeIniziale, contratto: 'FT'|'PT',
- *   oreSettimanali: 20|25|30|40, admin: bool,
+ *   oreSettimanali: 40 se FT, 20|25|30 se PT (RULES.contracts),
+ *   admin: bool,
  *   genere: 'F'|'M'|'X',   // X = non specificato: si usano forme neutre
  *   preferenze: { evita*, preferisce* },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
@@ -922,6 +929,17 @@ function concorda(user, { m, f, n }) {
 
 function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
+}
+
+/** Le ore che un contratto ammette; per il Full Time è una sola. */
+function oreDelContratto(contratto) {
+  return RULES.contracts[contratto]?.ore || [];
+}
+
+/** Il monte ore da usare quando il contratto ne ammette uno solo. */
+function oreAutomatiche(contratto) {
+  const ore = oreDelContratto(contratto);
+  return ore.length === 1 ? ore[0] : null;
 }
 
 function hhmm(min) {
@@ -1151,7 +1169,7 @@ function applicaPreferenze(user, shift) {
   };
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, concorda, contractOf, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
+return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, concorda, contractOf, oreDelContratto, oreAutomatiche, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
 })();
 
 // ---- src/core/engine.js
@@ -4609,6 +4627,7 @@ const { store } = M_store;
 const { RULES } = M_rules;
 const { noteLegali, accettazioneNote, VERSIONE_NOTE } = M_legale;
 const { controllaPassword, REGOLE_PASSWORD } = M_accesso;
+const { oreDelContratto, oreAutomatiche } = M_model;
 
 /** La bozza in corso di compilazione. */
 const bozzaProfilo = {
@@ -4656,7 +4675,11 @@ function validaProfilo() {
   if (!b.cognome.trim()) errori.push('Manca il cognome.');
   if (!b.genere) errori.push('Scegli una delle tre opzioni.');
   if (!b.contratto) errori.push('Scegli il tipo di contratto.');
-  if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
+  // Con un contratto a ore fisse non c'è niente da scegliere, quindi non c'è
+  // niente che possa mancare.
+  if (b.contratto && !oreAutomatiche(b.contratto) && !b.oreSettimanali) {
+    errori.push('Scegli il monte ore settimanale.');
+  }
   // In modifica la password non si tocca: ha una voce sua nel Profilo.
   if (!b.modifica) {
     const problema = controllaPassword(b.password, b.conferma);
@@ -4742,14 +4765,7 @@ function passoContratto() {
       </div>
     </div>
 
-    <div class="campo">
-      <span>Monte ore settimanale</span>
-      <div class="pillole">
-        ${raw(RULES.monteOreAmmessi.map((h) => `
-          <button class="pill ${b.oreSettimanali === h ? 'attivo' : ''}"
-                  data-act="profilo-ore" data-valore="${h}">${h} ore</button>`).join(''))}
-      </div>
-    </div>
+    ${raw(campoOre(b))}
 
     <p class="testo-tenue">
       Ore <strong>pagate</strong>, al netto della pausa: cinque turni da nove ore
@@ -4763,6 +4779,31 @@ function passoContratto() {
     <button class="btn primario largo" data-act="profilo-avanti">
       ${b.modifica ? 'Salva' : 'Continua'}
     </button>`;
+}
+
+/**
+ * Le ore si chiedono solo quando c'è davvero qualcosa da scegliere. Con un
+ * Full Time la risposta è una sola, e si dice invece di domandarla.
+ */
+function campoOre(b) {
+  if (!b.contratto) return '';
+  const ore = oreDelContratto(b.contratto);
+  if (ore.length === 1) {
+    return html`
+      <div class="campo">
+        <span>Monte ore settimanale</span>
+        <p class="valore-fisso">${ore[0]} ore</p>
+      </div>`;
+  }
+  return html`
+    <div class="campo">
+      <span>Monte ore settimanale</span>
+      <div class="pillole">
+        ${raw(ore.map((h) => `
+          <button class="pill ${b.oreSettimanali === h ? 'attivo' : ''}"
+                  data-act="profilo-ore" data-valore="${h}">${h} ore</button>`).join(''))}
+      </div>
+    </div>`;
 }
 
 function passoPassword() {
@@ -4827,7 +4868,9 @@ const V = M_views;
 const F = M_flows;
 const { formatDay, appleWeekKey } = M_time;
 const { slotSettimana } = M_engine;
-const { durataOre, isNotturno, fuoriFascia, etichettaFascia } = M_model;
+const {
+  durataOre, isNotturno, fuoriFascia, etichettaFascia, oreDelContratto, oreAutomatiche,
+} = M_model;
 const { RULES } = M_rules;
 const { parseICS } = M_ics;
 const P = M_profilo_setup;
@@ -5064,7 +5107,16 @@ const AZIONI = {
 
   // --- creazione e modifica del profilo ---
   'profilo-genere': (_, el) => { P.bozzaProfilo.genere = el.dataset.valore; render(); },
-  'profilo-contratto': (_, el) => { P.bozzaProfilo.contratto = el.dataset.valore; render(); },
+  'profilo-contratto': (_, el) => {
+    const b = P.bozzaProfilo;
+    b.contratto = el.dataset.valore;
+    // Le ore seguono il contratto: fisse dove ce n'è una sola, da riscegliere
+    // quando quelle di prima non sono più ammesse.
+    const fisse = oreAutomatiche(b.contratto);
+    const ammesse = oreDelContratto(b.contratto);
+    b.oreSettimanali = fisse || (ammesse.includes(b.oreSettimanali) ? b.oreSettimanali : null);
+    render();
+  },
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
   'profilo-accetta': (e) => { P.bozzaProfilo.accettate = e.target.checked; render(); },
   'profilo-indietro': () => {

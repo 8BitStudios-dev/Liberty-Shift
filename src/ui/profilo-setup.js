@@ -10,6 +10,7 @@ import { store } from '../core/store.js';
 import { RULES } from '../core/rules.js';
 import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
+import { oreDelContratto, oreAutomatiche } from '../core/model.js';
 
 /** La bozza in corso di compilazione. */
 export const bozzaProfilo = {
@@ -57,7 +58,11 @@ export function validaProfilo() {
   if (!b.cognome.trim()) errori.push('Manca il cognome.');
   if (!b.genere) errori.push('Scegli una delle tre opzioni.');
   if (!b.contratto) errori.push('Scegli il tipo di contratto.');
-  if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
+  // Con un contratto a ore fisse non c'è niente da scegliere, quindi non c'è
+  // niente che possa mancare.
+  if (b.contratto && !oreAutomatiche(b.contratto) && !b.oreSettimanali) {
+    errori.push('Scegli il monte ore settimanale.');
+  }
   // In modifica la password non si tocca: ha una voce sua nel Profilo.
   if (!b.modifica) {
     const problema = controllaPassword(b.password, b.conferma);
@@ -143,14 +148,7 @@ function passoContratto() {
       </div>
     </div>
 
-    <div class="campo">
-      <span>Monte ore settimanale</span>
-      <div class="pillole">
-        ${raw(RULES.monteOreAmmessi.map((h) => `
-          <button class="pill ${b.oreSettimanali === h ? 'attivo' : ''}"
-                  data-act="profilo-ore" data-valore="${h}">${h} ore</button>`).join(''))}
-      </div>
-    </div>
+    ${raw(campoOre(b))}
 
     <p class="testo-tenue">
       Ore <strong>pagate</strong>, al netto della pausa: cinque turni da nove ore
@@ -164,6 +162,31 @@ function passoContratto() {
     <button class="btn primario largo" data-act="profilo-avanti">
       ${b.modifica ? 'Salva' : 'Continua'}
     </button>`;
+}
+
+/**
+ * Le ore si chiedono solo quando c'è davvero qualcosa da scegliere. Con un
+ * Full Time la risposta è una sola, e si dice invece di domandarla.
+ */
+function campoOre(b) {
+  if (!b.contratto) return '';
+  const ore = oreDelContratto(b.contratto);
+  if (ore.length === 1) {
+    return html`
+      <div class="campo">
+        <span>Monte ore settimanale</span>
+        <p class="valore-fisso">${ore[0]} ore</p>
+      </div>`;
+  }
+  return html`
+    <div class="campo">
+      <span>Monte ore settimanale</span>
+      <div class="pillole">
+        ${raw(ore.map((h) => `
+          <button class="pill ${b.oreSettimanali === h ? 'attivo' : ''}"
+                  data-act="profilo-ore" data-valore="${h}">${h} ore</button>`).join(''))}
+      </div>
+    </div>`;
 }
 
 function passoPassword() {

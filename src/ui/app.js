@@ -4,7 +4,9 @@ import * as V from './views.js';
 import * as F from './flows.js';
 import { formatDay, appleWeekKey } from '../core/time.js';
 import { slotSettimana } from '../core/engine.js';
-import { durataOre, isNotturno, fuoriFascia, etichettaFascia } from '../core/model.js';
+import {
+  durataOre, isNotturno, fuoriFascia, etichettaFascia, oreDelContratto, oreAutomatiche,
+} from '../core/model.js';
 import { RULES } from '../core/rules.js';
 import { parseICS } from '../core/ics.js';
 import * as P from './profilo-setup.js';
@@ -241,7 +243,16 @@ const AZIONI = {
 
   // --- creazione e modifica del profilo ---
   'profilo-genere': (_, el) => { P.bozzaProfilo.genere = el.dataset.valore; render(); },
-  'profilo-contratto': (_, el) => { P.bozzaProfilo.contratto = el.dataset.valore; render(); },
+  'profilo-contratto': (_, el) => {
+    const b = P.bozzaProfilo;
+    b.contratto = el.dataset.valore;
+    // Le ore seguono il contratto: fisse dove ce n'è una sola, da riscegliere
+    // quando quelle di prima non sono più ammesse.
+    const fisse = oreAutomatiche(b.contratto);
+    const ammesse = oreDelContratto(b.contratto);
+    b.oreSettimanali = fisse || (ammesse.includes(b.oreSettimanali) ? b.oreSettimanali : null);
+    render();
+  },
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
   'profilo-accetta': (e) => { P.bozzaProfilo.accettate = e.target.checked; render(); },
   'profilo-indietro': () => {
