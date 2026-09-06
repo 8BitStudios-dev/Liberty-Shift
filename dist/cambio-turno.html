@@ -220,10 +220,13 @@ p { margin: 8px 0; }
 /* --------------------------------------------------------- calendario */
 
 .griglia-intestazione, .griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.griglia-mese { grid-auto-rows: minmax(58px, auto); margin-bottom: 4px; }
 .griglia-intestazione { color: var(--testo-tenue); font-size: 12px; text-align: center; margin-bottom: 6px; }
 
 .giorno {
-  aspect-ratio: 1 / 1.15; border: 1px solid var(--bordo); border-radius: 10px;
+  /* min-height invece di aspect-ratio: in griglia l'aspect-ratio può far
+     debordare la cella oltre la riga e coprire quello che viene dopo. */
+  min-height: 58px; border: 1px solid var(--bordo); border-radius: 10px;
   background: var(--superficie); color: inherit; font: inherit;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   padding: 5px 2px; gap: 1px; cursor: pointer; position: relative;
@@ -233,7 +236,6 @@ p { margin: 8px 0; }
 .giorno .mio-turno { font-size: 9px; color: var(--testo-tenue); }
 .giorno .indicatori { display: flex; align-items: center; gap: 2px; margin-top: auto; }
 .giorno.oggi { border-color: var(--accento); background: var(--accento-tenue); }
-.giorno.inizio-settimana { border-left: 3px solid var(--testo-tenue); }
 .giorno small { font-size: 9px; color: var(--testo-tenue); }
 
 .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accento); display: inline-block; }
@@ -1993,6 +1995,7 @@ const { html, raw } = M_dom;
 const { store } = M_store;
 const { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } = M_components;
 const { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } = M_model;
+const { slotSettimana } = M_engine;
 const { RULES, TIPO_CAMBIO } = M_rules;
 const {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
@@ -2097,7 +2100,9 @@ function calendario(params) {
   const [anno, m] = mese.split('-').map(Number);
   const primo = new Date(Date.UTC(anno, m - 1, 1));
   const giorniNelMese = new Date(Date.UTC(anno, m, 0)).getUTCDate();
-  const offset = (primo.getUTCDay() + 6) % 7; // griglia lunedì → domenica
+  // La griglia parte dal sabato: così ogni riga è una settimana Apple intera
+  // e il vincolo "non si scambia fra settimane diverse" si vede a colpo d'occhio.
+  const offset = slotSettimana(`${anno}-${String(m).padStart(2, '0')}-01`);
 
   const aperte = store.state.requests.filter(isOpen);
   const perGiorno = new Map();
@@ -2118,9 +2123,8 @@ function calendario(params) {
     const richieste = perGiorno.get(data) || [];
     const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
     const prio = richieste.some(hasPriority);
-    const inizioSettimana = weekday(data) === RULES.weekStartsOn;
     celle.push(html`
-      <button class="giorno ${data === todayISO() ? 'oggi' : ''} ${inizioSettimana ? 'inizio-settimana' : ''}"
+      <button class="giorno ${data === todayISO() ? 'oggi' : ''}"
               data-act="giorno" data-data="${data}">
         <span class="numero">${g}</span>
         <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
@@ -2141,12 +2145,12 @@ function calendario(params) {
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
     </header>
     <div class="griglia-intestazione">
-      ${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d) => raw(`<span>${d}</span>`))}
+      ${['S', 'D', 'L', 'M', 'M', 'G', 'V'].map((d) => raw(`<span>${d}</span>`))}
     </div>
     <div class="griglia-mese">${celle.map(raw)}</div>
     <p class="legenda">
-      <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità ·
-      la riga più marcata apre la settimana Apple (sabato)
+      <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità.
+      Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>
     <button class="btn secondario largo" data-act="vai" data-to="#/turni">Gestisci i tuoi turni</button>`;
 }

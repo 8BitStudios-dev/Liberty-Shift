@@ -88,8 +88,10 @@ nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 ## Dettagli che portano peso
 - Il blocco CEDO/CERCO è sempre identico ovunque compaia. È l'unità visiva che
   rende una richiesta leggibile in un secondo.
-- Il calendario mostra il tuo turno dentro la casella e marca il sabato con un
-  bordo: la settimana Apple si vede, non va spiegata.
+- Il calendario parte dal **sabato**, non dal lunedì: così ogni riga è una
+  settimana Apple intera e il vincolo "non si scambia fra settimane diverse" si
+  legge a colpo d'occhio, senza spiegazioni. Dentro ogni casella c'è il tuo
+  turno di quel giorno.
 - Ogni match elenca le ragioni. Un suggerimento senza spiegazione non viene
   usato.
 - Modalità chiara e scura, aree di sicurezza dell'iPhone, tocchi da 44px.

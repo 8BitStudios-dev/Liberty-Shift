@@ -62,6 +62,9 @@ Il vincolo si applica **solo al cambio OFF**, che tocca due giornate: il giorno
 che lasci e i giorni che offri devono stare nella stessa settimana. Il cambio
 orario resta dentro una giornata, quindi non c'entra.
 
+Anche il calendario parte dal sabato: ogni riga è una settimana Apple, e due
+giorni scambiabili sono sempre sulla stessa riga.
+
 ## R6 — Orari dello store
 Il negozio vende dalle **10:00 alle 20:00**. I turni però vanno dalle **08:00
 alle 21:00**: prima e dopo l'orario di vendita si lavora comunque (apertura,

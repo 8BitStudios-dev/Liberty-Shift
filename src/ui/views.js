@@ -2,6 +2,7 @@ import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
 import { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } from './components.js';
 import { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } from '../core/model.js';
+import { slotSettimana } from '../core/engine.js';
 import { RULES, TIPO_CAMBIO } from '../core/rules.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
@@ -106,7 +107,9 @@ export function calendario(params) {
   const [anno, m] = mese.split('-').map(Number);
   const primo = new Date(Date.UTC(anno, m - 1, 1));
   const giorniNelMese = new Date(Date.UTC(anno, m, 0)).getUTCDate();
-  const offset = (primo.getUTCDay() + 6) % 7; // griglia lunedì → domenica
+  // La griglia parte dal sabato: così ogni riga è una settimana Apple intera
+  // e il vincolo "non si scambia fra settimane diverse" si vede a colpo d'occhio.
+  const offset = slotSettimana(`${anno}-${String(m).padStart(2, '0')}-01`);
 
   const aperte = store.state.requests.filter(isOpen);
   const perGiorno = new Map();
@@ -127,9 +130,8 @@ export function calendario(params) {
     const richieste = perGiorno.get(data) || [];
     const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
     const prio = richieste.some(hasPriority);
-    const inizioSettimana = weekday(data) === RULES.weekStartsOn;
     celle.push(html`
-      <button class="giorno ${data === todayISO() ? 'oggi' : ''} ${inizioSettimana ? 'inizio-settimana' : ''}"
+      <button class="giorno ${data === todayISO() ? 'oggi' : ''}"
               data-act="giorno" data-data="${data}">
         <span class="numero">${g}</span>
         <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
@@ -150,12 +152,12 @@ export function calendario(params) {
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
     </header>
     <div class="griglia-intestazione">
-      ${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d) => raw(`<span>${d}</span>`))}
+      ${['S', 'D', 'L', 'M', 'M', 'G', 'V'].map((d) => raw(`<span>${d}</span>`))}
     </div>
     <div class="griglia-mese">${celle.map(raw)}</div>
     <p class="legenda">
-      <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità ·
-      la riga più marcata apre la settimana Apple (sabato)
+      <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità.
+      Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>
     <button class="btn secondario largo" data-act="vai" data-to="#/turni">Gestisci i tuoi turni</button>`;
 }
