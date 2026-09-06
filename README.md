@@ -82,12 +82,13 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 Backend e login, notifiche push vere, admin operativo, scambi a tre.
 
 Il backend non è rimandato per tempo: la Business Conduct Policy di Apple
-consente di creare app «solo per scopi personali o didattici» e non di
-condividerle, quindi il passaggio da prototipo personale a strumento di gruppo
-va chiesto a Business Conduct prima di costruirlo. I turni in sé non sono il
-problema — la stessa policy dichiara esplicitamente il diritto di parlare dei
-propri orari. Il ragionamento completo è in
-[`docs/05-decisioni-aperte.md`](docs/05-decisioni-aperte.md).
+consente di creare app «solo per scopi personali o didattici» e vieta di
+«condividere, vendere o distribuire app, adesivi o altri contenuti», quindi il
+passaggio da prototipo personale a strumento di gruppo va chiesto a Business
+Conduct prima di costruirlo — ed essere un sito web invece di un'app non è
+detto che basti. I turni in sé non sono il problema: la stessa policy dichiara
+esplicitamente il diritto di parlare dei propri orari. Il ragionamento completo
+è in [`docs/05-decisioni-aperte.md`](docs/05-decisioni-aperte.md).
 
 ## Documentazione
 

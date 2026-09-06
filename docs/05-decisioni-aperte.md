@@ -60,14 +60,30 @@ WhatsApp già fa.
 Va letto insieme alla definizione di informazione riservata (pag. 7), che parla
 di «materiali o informazioni non pubblici relativi a prodotti o servizi Apple
 […] vendite, prezzi, operazioni, fonti dei materiali, dati finanziari e piani di
-marketing». I turni personali non stanno in quell'elenco.
+marketing». I turni personali non stanno in quell'elenco — e la stessa pagina 7,
+subito dopo le regole sulla riservatezza, rimanda al diritto di parlare
+liberamente di orari e condizioni di lavoro, come a segnalare il confine.
 
-#### Lo strumento sì
+#### Lo strumento sì — e non basta chiamarlo sito web
 > **Creazione di app** (pag. 12) — «È possibile creare app solo per scopi
 > personali o didattici. Non si può partecipare al Developer Program né
-> **condividere**, vendere o distribuire app […] a meno che non sia necessario
-> per fini commerciali di Apple. […] contattare Business Conduct per comprendere
-> ciò che è ammesso.»
+> **condividere**, vendere o distribuire app, adesivi **o altri contenuti** (per
+> iOS, Android o qualsiasi altro sistema operativo), a meno che non sia
+> necessario per fini commerciali di Apple.»
+
+La distinzione fra app e sito web è più debole di quanto sembri:
+
+- la formula dice «app, adesivi **o altri contenuti**», non solo app;
+- il verbo che conta è **condividere**, non pubblicare su uno store. Il divieto
+  del Developer Program è nominato a parte, come cosa in più;
+- l'obiettivo dichiarato del progetto (cap. 26 della specifica) è farlo
+  aggiungere alla schermata Home e dare «un'esperienza simile a un'app». Chi la
+  usa non distingue.
+
+Regge un argomento in senso opposto — la regola sembra scritta pensando alla
+distribuzione pubblica, e un indirizzo privato usato da otto colleghi non è
+distribuzione — ma è un'interpretazione, e a interpretare la policy di Apple
+non è chi la deve rispettare.
 
 Questo è il vincolo vero, e non riguarda i dati ma la distribuzione:
 
@@ -75,24 +91,24 @@ Questo è il vincolo vero, e non riguarda i dati ma la distribuzione:
 - **darla ai colleghi** è condivisione, che la policy non ammette se non c'è
   un'esigenza commerciale di Apple — e non è chi scrive l'app a stabilirlo.
 
-Non è un divieto definitivo: la policy stessa indica il canale, *Business
-Conduct*. La domanda da fare è precisa, il che aiuta: *un'app non commerciale,
-senza server, che aiuta i colleghi del mio store a organizzare i cambi turno
-che già si scambiano in chat, ricade nel divieto di condivisione o è
-autorizzabile?*
+Non è un divieto definitivo: la policy stessa dice di «contattare Business
+Conduct per comprendere ciò che è ammesso». La domanda da fare è precisa, il che
+aiuta: *un sito web privato, non commerciale, senza server e senza account, che
+aiuta i colleghi del mio store a organizzare i cambi turno che già si scambiano
+in chat, ricade nel divieto di condivisione della pag. 12 o è autorizzabile?*
 
 #### Conseguenze pratiche, da subito
 1. **Il prototipo attuale è nel perimetro consentito**: uso personale, nessuna
    distribuzione. Può restare così quanto serve.
-2. **Il backend condiviso non si costruisce prima della risposta.** È il
-   passaggio che trasforma il progetto da personale a distribuito, ed è anche
-   quello che porterebbe i turni su un sistema di terze parti: la pag. 7 chiede
-   un NDA e una verifica con il proprio manager prima di condividere
-   informazioni con fornitori esterni.
-3. **Il download automatico dal calendario sottoscritto** (punto 1) è lo stesso
-   discorso, aggravato: un server che si iscrive al calendario aziendale è
-   proprio il caso previsto da quella regola. Il lettore ICS resta utile perché
-   funziona senza uscire dal telefono.
+2. **Il backend condiviso non si costruisce prima della risposta**, ma per un
+   motivo solo: è il passaggio che trasforma il progetto da personale a
+   distribuito, cioè quello che la pag. 12 non consente senza autorizzazione.
+   *Non* per la regola sugli NDA con le terze parti: quella riguarda le
+   informazioni riservate di Apple, e i turni non lo sono.
+3. **Il download automatico dal calendario sottoscritto** è un caso diverso e
+   più delicato: lì un server esterno leggerebbe un calendario aziendale, e il
+   contenuto di quel calendario non è più solo "i miei orari". Il lettore ICS
+   resta utile perché funziona senza far uscire niente dal telefono.
 4. **L'uso dell'AI** per costruirlo ha una policy dedicata: *Policy sull'uso
    individuale dell'AI*, citata a pag. 7 e in fondo al documento. Vale la pena
    leggerla, visto come è stata scritta questa app.
