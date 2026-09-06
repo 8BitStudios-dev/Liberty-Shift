@@ -9,9 +9,16 @@ mettersi d'accordo. Il cambio vero si fa poi nell'app ufficiale.
 
 ## Provarla
 
+Online, senza installare niente:
+**[claude.ai/code/artifact/41acc583-fb0c-4e24-a264-be58a1f9b08f](https://claude.ai/code/artifact/41acc583-fb0c-4e24-a264-be58a1f9b08f)**
+(su iPhone: Safari → Condividi → Aggiungi alla schermata Home).
+
+In locale:
+
 ```bash
 npm run dev     # http://localhost:5173
 npm test        # 36 test sul motore di matching
+npm run build   # dist/cambio-turno.html, tutta l'app in un file solo
 ```
 
 Nessuna dipendenza, nessun build step: moduli ES aperti direttamente dal
@@ -35,6 +42,7 @@ src/core/     il prodotto vero e proprio, senza UI
 src/ui/       viste e flussi, ~1000 righe senza framework
 tests/        node --test sul motore
 docs/         regolamento, motore, data model, flussi, decisioni aperte
+scripts/      server statico per lo sviluppo, build in file unico
 ```
 
 Il motore non conosce il DOM e lo store non conosce le regole di compatibilità.

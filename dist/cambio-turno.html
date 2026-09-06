@@ -1,0 +1,2755 @@
+<title>Cambio Turno</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cambio Turno">
+<style>
+/* Cambio Turno — foglio di stile unico, mobile first, iPhone in mente. */
+
+:root {
+  color-scheme: light dark;
+  --sfondo: #f4f5f7;
+  --superficie: #ffffff;
+  --superficie-2: #eef0f4;
+  --testo: #12161c;
+  --testo-tenue: #667085;
+  --bordo: #e3e6ec;
+  --accento: #0a6cff;
+  --accento-tenue: #e8f0ff;
+  --rosso: #e0454b;
+  --verde: #1f9d55;
+  --giallo: #d99b0a;
+  --oro: #c8890a;
+  --raggio: 16px;
+  --ombra: 0 1px 2px rgba(16, 24, 40, .06), 0 6px 18px rgba(16, 24, 40, .06);
+  --tab-h: 62px;
+}
+
+/* Il tema scuro vale sia quando il sistema lo chiede, sia quando la pagina
+   viene aperta in un contenitore che lo dichiara con data-theme. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sfondo: #0b1220;
+    --superficie: #141b2b;
+    --superficie-2: #1d2637;
+    --testo: #eef2f8;
+    --testo-tenue: #94a1b8;
+    --bordo: #253046;
+    --accento: #4d94ff;
+    --accento-tenue: #16233c;
+    --rosso: #ff6b70;
+    --verde: #45c281;
+    --giallo: #e8b53c;
+    --oro: #e8b53c;
+    --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+  }
+}
+
+:root[data-theme="dark"] {
+  --sfondo: #0b1220;
+  --superficie: #141b2b;
+  --superficie-2: #1d2637;
+  --testo: #eef2f8;
+  --testo-tenue: #94a1b8;
+  --bordo: #253046;
+  --accento: #4d94ff;
+  --accento-tenue: #16233c;
+  --rosso: #ff6b70;
+  --verde: #45c281;
+  --giallo: #e8b53c;
+  --oro: #e8b53c;
+  --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--sfondo);
+  color: var(--testo);
+  font: 16px/1.45 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: max(env(safe-area-inset-top), 12px) 16px calc(var(--tab-h) + 32px);
+}
+
+h1 { font-size: 26px; margin: 0; letter-spacing: -.02em; }
+h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--testo-tenue); margin: 0 0 10px; }
+h3 { font-size: 15px; margin: 18px 0 8px; }
+p { margin: 8px 0; }
+
+.testo-tenue { color: var(--testo-tenue); font-size: 14px; }
+.meta { color: var(--testo-tenue); font-size: 13px; }
+.occhiello { color: var(--testo-tenue); font-size: 15px; margin: 4px 0 16px; }
+.nota-regola { margin-top: 22px; }
+
+/* -------------------------------------------------- testate e sezioni */
+
+.hero { padding: 18px 0 6px; }
+.hero .saluto { color: var(--testo-tenue); margin: 0; font-size: 15px; }
+.hero h1 { font-size: 32px; }
+.hero .sottotitolo { color: var(--testo-tenue); font-size: 14px; margin: 2px 0 0; }
+.hero.compatta { text-align: center; padding-top: 24px; }
+
+.testata { display: flex; align-items: center; gap: 10px; padding: 14px 0 12px; }
+.testata h1 { flex: 1; font-size: 22px; text-align: center; }
+.testata .icon-btn:only-of-type + h1 { text-align: left; }
+.passo { color: var(--testo-tenue); font-size: 13px; min-width: 30px; text-align: right; }
+
+.sezione { margin: 26px 0; }
+.sezione-head { display: flex; align-items: baseline; justify-content: space-between; }
+
+/* ------------------------------------------------------------ bottoni */
+
+.btn {
+  appearance: none; border: 0; cursor: pointer;
+  font: inherit; font-weight: 600;
+  padding: 13px 18px; border-radius: 13px;
+  background: var(--superficie-2); color: var(--testo);
+  transition: transform .12s ease, opacity .12s ease;
+}
+.btn:active { transform: scale(.97); }
+.btn[disabled] { opacity: .4; cursor: default; }
+.btn.primario { background: var(--accento); color: #fff; }
+.btn.secondario { background: var(--superficie); border: 1px solid var(--bordo); }
+.btn.pericolo { background: transparent; color: var(--rosso); border: 1px solid var(--bordo); }
+.btn.largo { display: block; width: 100%; margin-top: 12px; }
+
+.icon-btn {
+  appearance: none; border: 0; background: var(--superficie);
+  width: 36px; height: 36px; border-radius: 50%;
+  font-size: 18px; color: var(--testo); cursor: pointer;
+  border: 1px solid var(--bordo);
+}
+.link-btn { appearance: none; border: 0; background: none; color: var(--accento); font: inherit; cursor: pointer; padding: 0; }
+.link { color: var(--accento); font-weight: 600; font-size: 14px; }
+
+.barra-azioni { display: flex; gap: 10px; margin-top: 18px; }
+.barra-azioni .btn { flex: 1; }
+
+/* --------------------------------------------------------------- card */
+
+.card {
+  background: var(--superficie);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--ombra);
+}
+.card.richiesta { cursor: pointer; }
+.card.prioritaria { border-color: var(--oro); box-shadow: 0 0 0 1px var(--oro) inset, var(--ombra); }
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.card-head > div { flex: 1; min-width: 0; }
+.card-foot { margin-top: 10px; text-align: right; }
+
+.avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--accento-tenue); color: var(--accento);
+  display: grid; place-items: center; font-weight: 700; font-size: 14px;
+  flex: 0 0 auto;
+}
+.avatar.grande { width: 68px; height: 68px; font-size: 22px; margin: 0 auto 10px; }
+
+.score { font-weight: 700; color: var(--accento); font-variant-numeric: tabular-nums; }
+
+.badge { font-size: 12px; color: var(--testo-tenue); }
+
+/* ----------------------------------------------------- coppia CEDO/CERCO */
+
+.coppia {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch;
+  background: var(--superficie-2); border-radius: 12px; padding: 12px;
+}
+.coppia .lato { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.coppia .etichetta { font-size: 11px; letter-spacing: .06em; font-weight: 700; }
+.coppia .cedo .etichetta { color: var(--rosso); }
+.coppia .cerco .etichetta { color: var(--verde); }
+.coppia strong { font-size: 15px; }
+.coppia .orario { font-size: 13px; color: var(--testo-tenue); }
+.coppia .freccia { align-self: center; color: var(--testo-tenue); font-size: 18px; }
+.coppia .nota { font-size: 12px; color: var(--testo-tenue); font-style: italic; }
+
+.nota-utente { font-size: 14px; color: var(--testo-tenue); font-style: italic; margin: 10px 0 0; }
+
+/* -------------------------------------------------------------- righe */
+
+.lista-cambi, .lista-turni { background: var(--superficie); border: 1px solid var(--bordo); border-radius: var(--raggio); overflow: hidden; }
+.lista-cambi:empty { display: none; }
+
+.riga-cambio, .riga-turno {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 13px 14px; border: 0; border-bottom: 1px solid var(--bordo);
+  background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.riga-cambio:last-child, .riga-turno:last-child { border-bottom: 0; }
+.riga-cambio > div, .riga-turno .giorno-nome { flex: 1; }
+.riga-turno .turno-valore { color: var(--testo-tenue); font-size: 14px; }
+.riga-turno .turno-valore.off { color: var(--accento); }
+.riga-turno.scelto { background: var(--accento-tenue); }
+.chevron { color: var(--testo-tenue); }
+
+.pallino { width: 9px; height: 9px; border-radius: 50%; background: var(--accento); flex: 0 0 auto; }
+.pallino.urgente { background: var(--rosso); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rosso) 22%, transparent); }
+
+/* -------------------------------------------------------------- tile */
+
+.tile {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 16px; border-radius: var(--raggio); border: 1px solid var(--bordo);
+  background: var(--superficie); color: inherit; font: inherit; text-align: left;
+  cursor: pointer; box-shadow: var(--ombra); margin-bottom: 10px;
+}
+.tile > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
+.tile em { font-style: normal; color: var(--testo-tenue); font-size: 13px; }
+.tile-icona { font-size: 24px; }
+.tile.cambio-rapido { background: linear-gradient(135deg, var(--accento) 0%, #6b46ff 100%); color: #fff; border: 0; }
+.tile.cambio-rapido em, .tile.cambio-rapido .chevron { color: rgba(255, 255, 255, .8); }
+.tile.priorita { border-color: var(--oro); }
+.tile.scelta { padding: 18px; }
+.tile.scelta.rosso { border-left: 4px solid var(--rosso); }
+.tile.scelta.verde { border-left: 4px solid var(--verde); }
+.tile.scelta.blu { border-left: 4px solid var(--accento); }
+
+/* --------------------------------------------------------- calendario */
+
+.griglia-intestazione, .griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.griglia-intestazione { color: var(--testo-tenue); font-size: 12px; text-align: center; margin-bottom: 6px; }
+
+.giorno {
+  aspect-ratio: 1 / 1.15; border: 1px solid var(--bordo); border-radius: 10px;
+  background: var(--superficie); color: inherit; font: inherit;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 5px 2px; gap: 1px; cursor: pointer; position: relative;
+}
+.giorno.vuota { border: 0; background: none; }
+.giorno .numero { font-size: 14px; font-weight: 600; }
+.giorno .mio-turno { font-size: 9px; color: var(--testo-tenue); }
+.giorno .indicatori { display: flex; align-items: center; gap: 2px; margin-top: auto; }
+.giorno.oggi { border-color: var(--accento); background: var(--accento-tenue); }
+.giorno.inizio-settimana { border-left: 3px solid var(--testo-tenue); }
+.giorno small { font-size: 9px; color: var(--testo-tenue); }
+
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accento); display: inline-block; }
+.dot.prio { background: var(--oro); }
+.legenda { font-size: 12px; color: var(--testo-tenue); margin-top: 12px; }
+
+.giorno-dettaglio .tuo-turno { padding-bottom: 8px; border-bottom: 1px solid var(--bordo); }
+
+/* ------------------------------------------------------- chip e pillole */
+
+.chips, .pillole { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 16px; }
+.chip, .pill {
+  appearance: none; border: 1px solid var(--bordo); background: var(--superficie);
+  color: inherit; font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+}
+.chip.attivo, .pill.attivo { background: var(--accento); color: #fff; border-color: var(--accento); }
+.pill { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 12px; line-height: 1.2; }
+.pill em { font-style: normal; font-size: 11px; opacity: .6; }
+.chip[disabled], .pill[disabled] { opacity: .35; cursor: default; }
+
+.tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--superficie-2); color: var(--testo-tenue); }
+.tag.ok { background: color-mix(in srgb, var(--verde) 18%, transparent); color: var(--verde); }
+
+/* ------------------------------------------------------------ moduli */
+
+.campo { display: block; margin: 14px 0; }
+.campo > span { display: block; font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
+input[type="time"], textarea, .select {
+  width: 100%; font: inherit; color: inherit;
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: 11px; padding: 11px 12px;
+}
+.campi-orario { display: flex; gap: 10px; margin: 12px 0; }
+.campi-orario label { flex: 1; font-size: 13px; color: var(--testo-tenue); }
+.campi-orario input { margin-top: 5px; }
+
+.switch { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--bordo); font-size: 15px; }
+.switch input { width: 20px; height: 20px; accent-color: var(--accento); }
+.switch.disabilitato { opacity: .5; }
+
+.progresso { height: 3px; background: var(--superficie-2); border-radius: 2px; overflow: hidden; margin-bottom: 18px; }
+.progresso i { display: block; height: 100%; background: var(--accento); transition: width .2s ease; }
+
+.errori { background: color-mix(in srgb, var(--rosso) 12%, transparent); border-radius: 12px; padding: 10px 14px; margin: 14px 0; font-size: 14px; }
+.errori p { margin: 4px 0; }
+.avviso { color: var(--giallo); font-size: 14px; }
+.avviso-box { background: var(--superficie-2); border-radius: 12px; padding: 10px 12px; }
+
+/* ------------------------------------------------------------- match */
+
+.titolo-gruppo { font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--testo); margin: 22px 0 10px; }
+.card.match.verde { border-left: 4px solid var(--verde); }
+.card.match.giallo { border-left: 4px solid var(--giallo); }
+.match-tipo { font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
+.turno-offerto { font-size: 15px; margin-bottom: 8px; }
+.perche { margin: 0 0 10px; padding-left: 18px; font-size: 13px; color: var(--testo-tenue); }
+.perche li { margin: 3px 0; }
+.card.match .btn { width: 100%; }
+
+.accordo { background: color-mix(in srgb, var(--verde) 12%, transparent); border-radius: 12px; padding: 12px; margin-top: 10px; }
+.accettazioni { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+
+/* ----------------------------------------------------- disponibilità */
+
+.settimana-disp { margin-bottom: 18px; }
+.griglia-disp { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.disp {
+  appearance: none; border: 1px solid var(--bordo); border-radius: 10px;
+  background: var(--superficie); color: inherit; font: inherit;
+  padding: 7px 2px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;
+}
+.disp span { font-size: 11px; color: var(--testo-tenue); }
+.disp em { font-style: normal; font-size: 13px; font-weight: 600; }
+.disp b { font-size: 12px; }
+.disp.si { border-color: var(--verde); background: color-mix(in srgb, var(--verde) 10%, transparent); }
+
+/* -------------------------------------------------------------- vuoto */
+
+.vuoto { text-align: center; padding: 34px 20px; color: var(--testo-tenue); }
+.vuoto-icona { font-size: 34px; margin-bottom: 8px; }
+.vuoto strong { display: block; color: var(--testo); margin-bottom: 4px; }
+.elenco { padding-left: 18px; font-size: 15px; }
+.elenco li { margin: 6px 0; }
+
+/* ------------------------------------------------------------ tabbar */
+
+#tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; justify-content: space-around;
+  padding: 6px 0 max(env(safe-area-inset-bottom), 6px);
+  background: color-mix(in srgb, var(--superficie) 88%, transparent);
+  backdrop-filter: saturate(160%) blur(18px);
+  border-top: 1px solid var(--bordo);
+}
+#tabbar[hidden] { display: none; }
+.tab {
+  appearance: none; border: 0; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  color: var(--testo-tenue); font: inherit; font-size: 10px; padding: 4px 12px;
+}
+.tab.attivo { color: var(--accento); }
+.tab-icona { font-size: 20px; line-height: 1; }
+
+/* -------------------------------------------------------------- sheet */
+
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(8, 12, 20, .45);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; transition: opacity .2s ease;
+}
+.sheet-backdrop.aperto { opacity: 1; }
+.sheet {
+  width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
+  background: var(--sfondo); border-radius: 20px 20px 0 0;
+  padding: 8px 16px max(env(safe-area-inset-bottom), 16px);
+  transform: translateY(16px); transition: transform .22s ease;
+}
+.sheet-backdrop.aperto .sheet { transform: none; }
+.sheet-grip { width: 38px; height: 4px; border-radius: 2px; background: var(--bordo); margin: 4px auto 8px; }
+.sheet-head { display: flex; align-items: center; gap: 10px; }
+.sheet-head h2 { flex: 1; font-size: 17px; text-transform: none; letter-spacing: 0; color: var(--testo); margin: 0; }
+.sheet-foot { position: sticky; bottom: 0; padding-top: 10px; background: var(--sfondo); }
+
+/* -------------------------------------------------------------- toast */
+
+#toast {
+  position: fixed; left: 50%; bottom: calc(var(--tab-h) + 18px); transform: translate(-50%, 12px);
+  background: var(--testo); color: var(--sfondo);
+  padding: 11px 18px; border-radius: 999px; font-size: 14px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: all .22s ease; z-index: 60; max-width: 90vw; text-align: center;
+}
+#toast.visibile { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+</style>
+
+<main id="app" aria-live="polite"></main>
+<nav id="tabbar" aria-label="Navigazione principale"></nav>
+
+<script type="module">
+// ---- src/core/rules.js
+const M_rules = (() => {
+// Regolamento configurabile.
+// Tutti i punti ancora aperti nella specifica (cap. 30) vivono qui dentro,
+// così cambiare una regola dello store non richiede di toccare il motore.
+
+const RULES = {
+  // Settimana Apple: sabato -> venerdì (0 = domenica ... 6 = sabato)
+  weekStartsOn: 6,
+
+  // Orari dello store. Il negozio vende dalle 10 alle 20; prima e dopo si
+  // lavora comunque (apertura, pulizia, visual), da qui la fascia più larga.
+  store: {
+    apre: '10:00',
+    chiude: '20:00',
+    primoIngresso: '08:00',
+    ultimaUscita: '21:00',
+  },
+
+  // "Chiusura" e "mattina" si ricavano dagli orari qui sopra: chiude chi
+  // resta oltre l'orario di chiusura, è di mattina chi entra entro
+  // l'apertura. Nessuna soglia separata da tenere allineata a mano.
+
+  // Tolleranza per i quasi-match sugli orari (minuti).
+  nearMissMinutes: 90,
+
+  // Soglie di classificazione del match.
+  matchThreshold: 85,     // >= verde
+  potentialThreshold: 50, // >= giallo, sotto non viene mostrato
+
+  // Un match nato da una disponibilità di profilo non può mai
+  // presentarsi come match pieno: è solo un indizio di interesse.
+  availabilityScoreCap: 75,
+
+  // Priorità
+  priority: {
+    creditsPerMonth: 1,
+    durationHours: 48,
+    refundOnCancel: false,
+    canBeAddedLater: false,
+  },
+
+  // Contratti. La durata del turno è una proprietà della persona, non del
+  // contratto: un Part Time può essere da 5 o da 6 ore. Il contratto serve
+  // solo come etichetta; i numeri stanno sull'utente.
+  contracts: {
+    FT: { label: 'Full Time' },
+    PT: { label: 'Part Time' },
+  },
+  durateTurnoAmmesse: [5, 6, 9],
+  monteOreAmmessi: [20, 25, 30, 40],
+  durataTurnoDefault: { FT: 9, PT: 6 },
+
+  adattamentoPenalty: 5,
+};
+
+const STATUS = {
+  APERTA: 'APERTA',
+  PROPOSTA: 'PROPOSTA',
+  IN_ATTESA: 'IN_ATTESA',
+  ACCORDO: 'ACCORDO',
+  CHIUSA: 'CHIUSA',
+  SCADUTA: 'SCADUTA',
+};
+
+const STATUS_META = {
+  APERTA: { dot: '🟡', label: 'Aperta' },
+  PROPOSTA: { dot: '🔵', label: 'Proposta ricevuta' },
+  IN_ATTESA: { dot: '🟠', label: 'In attesa di accettazione' },
+  ACCORDO: { dot: '🟢', label: 'Accordo raggiunto' },
+  CHIUSA: { dot: '⚫', label: 'Chiusa' },
+  SCADUTA: { dot: '⚫', label: 'Scaduta' },
+};
+
+// Flessibilità del lato CERCO
+const WANT_MODE = {
+  SPECIFIC: 'SPECIFIC', // Venerdì 18 · 14:00-20:00
+  RANGE: 'RANGE',       // Venerdì 18 · che finisca entro le 20:00
+  ANY: 'ANY',           // Venerdì 18 · qualsiasi turno
+  OFF: 'OFF',           // Venerdì 18 · OFF
+};
+
+return { RULES, STATUS, STATUS_META, WANT_MODE };
+})();
+
+// ---- src/core/time.js
+const M_time = (() => {
+// Utility su date e orari. Tutto lavora su stringhe 'YYYY-MM-DD' e 'HH:MM'
+// per evitare sorprese di fuso orario: qui non serve mai un istante assoluto.
+
+const { RULES } = M_rules;
+
+const GIORNI = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+const GIORNI_LUNGHI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
+const MESI = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+  'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+
+function toDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+function toISO(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function addDays(iso, n) {
+  const d = toDate(iso);
+  d.setUTCDate(d.getUTCDate() + n);
+  return toISO(d);
+}
+
+function weekday(iso) {
+  return toDate(iso).getUTCDay();
+}
+
+function minutes(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/**
+ * Settimana Apple: sabato -> venerdì.
+ * Restituisce la data ISO del sabato che apre la settimana: è la chiave
+ * con cui confrontiamo due giorni.
+ */
+function appleWeekKey(iso) {
+  const day = weekday(iso);
+  const diff = (day - RULES.weekStartsOn + 7) % 7;
+  return addDays(iso, -diff);
+}
+
+/** Regola del cap. 18: CEDO e CERCO devono stare nella stessa settimana Apple. */
+function sameAppleWeek(isoA, isoB) {
+  return appleWeekKey(isoA) === appleWeekKey(isoB);
+}
+
+function appleWeekRange(iso) {
+  const start = appleWeekKey(iso);
+  return { start, end: addDays(start, 6) };
+}
+
+function formatDay(iso, long = false) {
+  const d = toDate(iso);
+  const names = long ? GIORNI_LUNGHI : GIORNI;
+  const dd = String(d.getUTCDate()).padStart(2, '0');
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  return long
+    ? `${names[d.getUTCDay()]} ${d.getUTCDate()} ${MESI[d.getUTCMonth()]}`
+    : `${names[d.getUTCDay()]} ${dd}/${mm}`;
+}
+
+function monthKey(iso) {
+  return iso.slice(0, 7);
+}
+
+function todayISO(now = new Date()) {
+  return toISO(new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())));
+}
+
+return { GIORNI, GIORNI_LUNGHI, MESI, toDate, toISO, addDays, weekday, minutes, appleWeekKey, sameAppleWeek, appleWeekRange, formatDay, monthKey, todayISO };
+})();
+
+// ---- src/core/model.js
+const M_model = (() => {
+// Data model (Fase 3 della specifica).
+// Nessuna classe: oggetti semplici, serializzabili, pronti per qualsiasi backend.
+
+const { RULES, STATUS, WANT_MODE } = M_rules;
+const { minutes, todayISO, appleWeekKey } = M_time;
+
+/**
+ * User
+ * {
+ *   id, nome, cognomeIniziale, ruolo, contratto: 'FT'|'PT', admin: bool,
+ *   preferenze: { preferisceMattina, evitaChiusure, disponibileWeekend },
+ *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
+ *   prioritaUsata: { '<YYYY-MM>': true }
+ * }
+ *
+ * Shift
+ * { id, userId, data: 'YYYY-MM-DD', tipo: 'WORK'|'OFF', start, end }
+ *
+ * Request
+ * {
+ *   id, userId, createdAt, status, prioritaFinoA: iso-datetime | null,
+ *   cedo: { shiftId, altriShiftIds: [], flessibile: bool },
+ *   cerco: { data, mode, start, end, entroLe, dalleOre, evitaChiusura, note }
+ * }
+ *
+ * Proposal
+ * {
+ *   id, requestId, daUserId, aUserId, shiftOffertoId, messaggio,
+ *   accettataDa: [userId], status, createdAt, cambioInserito: bool
+ * }
+ */
+
+let counter = 0;
+function newId(prefix) {
+  counter += 1;
+  return `${prefix}_${Date.now().toString(36)}${counter.toString(36)}`;
+}
+
+/**
+ * Le notti visual scavalcano la mezzanotte: 22:00–06:00 finisce il giorno
+ * dopo. Tutti i confronti sull'orario di fine passano di qui, così un turno
+ * notturno non risulta mai "corto" o "che finisce presto".
+ */
+function isNotturno(shift) {
+  return shift?.tipo === 'WORK' && minutes(shift.end) <= minutes(shift.start);
+}
+
+/** Minuti di fine sulla scala del giorno di inizio (può superare 1440). */
+function fineMinuti(shift) {
+  return minutes(shift.end) + (isNotturno(shift) ? 1440 : 0);
+}
+
+function durataOre(shift) {
+  if (!shift || shift.tipo === 'OFF') return 0;
+  return (fineMinuti(shift) - minutes(shift.start)) / 60;
+}
+
+/** Chiude chi resta oltre l'orario di chiusura del negozio. */
+function isClosing(shift) {
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.end) > minutes(RULES.store.chiude);
+}
+
+/** È di mattina chi entra entro l'apertura del negozio. */
+function isMorning(shift) {
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.start) <= minutes(RULES.store.apre);
+}
+
+/** Il turno inizia prima dell'apertura: allestimento, pulizia, consegne. */
+function isPreApertura(shift) {
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.start) < minutes(RULES.store.apre);
+}
+
+/** Etichetta breve per il tipo di turno, quando c'è qualcosa da dire. */
+function etichettaFascia(shift) {
+  if (isNotturno(shift)) return 'notte';
+  if (isClosing(shift)) return 'chiusura';
+  if (isPreApertura(shift)) return 'apertura';
+  return null;
+}
+
+/** Il turno esce dalla fascia normale dello store senza essere una notte. */
+function fuoriFascia(shift) {
+  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
+  return minutes(shift.start) < minutes(RULES.store.primoIngresso)
+    || minutes(shift.end) > minutes(RULES.store.ultimaUscita);
+}
+
+function shiftLabel(shift) {
+  if (!shift) return '—';
+  if (shift.tipo === 'OFF') return 'OFF';
+  return isNotturno(shift) ? `${shift.start}–${shift.end} (+1)` : `${shift.start}–${shift.end}`;
+}
+
+function wantLabel(cerco) {
+  switch (cerco.mode) {
+    case WANT_MODE.SPECIFIC:
+      return `${cerco.start}–${cerco.end}`;
+    case WANT_MODE.RANGE: {
+      const parti = [];
+      if (cerco.entroLe) parti.push(`che finisca entro le ${cerco.entroLe}`);
+      if (cerco.dalleOre) parti.push(`che inizi dopo le ${cerco.dalleOre}`);
+      return `qualsiasi turno ${parti.join(' e ')}`.trim();
+    }
+    case WANT_MODE.OFF:
+      return 'OFF';
+    default:
+      return cerco.evitaChiusura ? 'qualsiasi turno non di chiusura' : 'qualsiasi turno';
+  }
+}
+
+function contractOf(user) {
+  return RULES.contracts[user.contratto] || RULES.contracts.FT;
+}
+
+/** Durata standard del turno di una persona: 9 per un FT, 5 o 6 per un PT. */
+function durataTurnoDi(user) {
+  return user?.durataTurno ?? RULES.durataTurnoDefault[user?.contratto] ?? 9;
+}
+
+function etichettaContratto(user) {
+  return `${contractOf(user).label} · turni da ${durataTurnoDi(user)}h · ${user?.oreSettimanali ?? '—'}h a settimana`;
+}
+
+function hhmm(min) {
+  const m = ((min % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
+/**
+ * Adatta un turno al contratto di chi lo riceve (cap. 19).
+ *
+ * Uno scambio FT/PT è permesso, ma ciascuno resta sul proprio contratto: il
+ * turno viene accorciato o allungato alla durata standard di chi lo prende,
+ * tenendo fermo un estremo.
+ *
+ *   - turno che comincia entro l'apertura -> si tiene fermo l'INIZIO
+ *     (entri quando entra chi ti passa il turno)
+ *   - qualsiasi altro turno -> si tiene ferma la FINE
+ *     (esci quando esce chi ti passa il turno)
+ *
+ * Esempi con FT 9h e PT 6h:
+ *   09:00–18:00 ceduto a un PT -> 09:00–15:00   (apertura, ancora l'inizio)
+ *   11:00–20:00 ceduto a un PT -> 14:00–20:00   (chiusura, ancora la fine)
+ *   11:00–17:00 ceduto a un FT -> 08:00–17:00   (allungato all'indietro)
+ *
+ * Restituisce sempre il turno che la persona lavorerebbe davvero.
+ */
+function trasformaTurno(shift, ricevente) {
+  if (!shift || shift.tipo === 'OFF' || !ricevente) {
+    return { start: shift?.start, end: shift?.end, trasformato: false };
+  }
+
+  const durataTarget = durataTurnoDi(ricevente);
+  const durataAttuale = durataOre(shift);
+  const base = {
+    start: shift.start, end: shift.end, durata: durataAttuale, trasformato: false,
+  };
+  if (Math.abs(durataAttuale - durataTarget) < 0.01) return base;
+
+  // Le notti sono casi particolari: si segnalano, non si accorciano d'ufficio.
+  if (isNotturno(shift)) {
+    return { ...base, avviso: 'Turno di notte: la durata va concordata a parte.' };
+  }
+
+  const ancoraInizio = minutes(shift.start) <= minutes(RULES.store.apre);
+  const durataMin = durataTarget * 60;
+  let inizio;
+  let fine;
+  if (ancoraInizio) {
+    inizio = minutes(shift.start);
+    fine = inizio + durataMin;
+  } else {
+    fine = minutes(shift.end);
+    inizio = fine - durataMin;
+  }
+
+  const risultato = {
+    start: hhmm(inizio),
+    end: hhmm(fine),
+    durata: durataTarget,
+    trasformato: true,
+    ancora: ancoraInizio ? 'inizio' : 'fine',
+    originale: `${shift.start}–${shift.end}`,
+  };
+
+  // L'adattamento non deve sbordare dalla fascia in cui si può stare in store.
+  if (inizio < minutes(RULES.store.primoIngresso) || fine > minutes(RULES.store.ultimaUscita)) {
+    risultato.avviso = `Adattato a ${risultato.start}–${risultato.end}, fuori dalla fascia ${RULES.store.primoIngresso}–${RULES.store.ultimaUscita}: da concordare.`;
+  }
+  return risultato;
+}
+
+/** Il turno adattato, nella forma di uno Shift, per darlo in pasto al motore. */
+function turnoAdattato(shift, ricevente) {
+  const t = trasformaTurno(shift, ricevente);
+  if (!t.trasformato) return shift;
+  return { ...shift, start: t.start, end: t.end };
+}
+
+/** Ore lavorate da una persona in una settimana Apple. */
+function oreSettimana(userId, weekKey, shifts) {
+  return shifts
+    .filter((s) => s.userId === userId && s.tipo === 'WORK' && appleWeekKey(s.data) === weekKey)
+    .reduce((tot, s) => tot + durataOre(s), 0);
+}
+
+/**
+ * Effetto di uno scambio sul monte ore settimanale.
+ * Uno scambio fra due turni standard è a somma zero, perché ciascuno riceve
+ * un turno già adattato alla propria durata. Il conto cambia soprattutto
+ * quando c'è di mezzo un OFF: lì una persona lavora un turno in meno e
+ * l'altra uno in più.
+ */
+function impattoMonteOre(user, cedo, ricevuto, shifts) {
+  const weekKey = appleWeekKey(cedo.data);
+  const prima = oreSettimana(user.id, weekKey, shifts);
+  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, user));
+  const contratto = user.oreSettimanali;
+  const cambia = Math.abs(dopo - prima) > 0.01;
+  if (!cambia || !contratto) return { cambia: false, prima, dopo };
+
+  const scarto = dopo - contratto;
+  return {
+    cambia: true,
+    prima,
+    dopo,
+    scarto,
+    avviso: Math.abs(scarto) < 0.01
+      ? null
+      : `la settimana passa da ${arrotonda(prima)}h a ${arrotonda(dopo)}h, ${scarto > 0 ? '+' : ''}${arrotonda(scarto)}h rispetto alle ${contratto}h di contratto`,
+  };
+}
+
+function arrotonda(n) {
+  return Number(n.toFixed(1)).toString().replace('.', ',');
+}
+
+/** La richiesta è scaduta quando è passata la data del turno ceduto (cap. 24). */
+function isExpired(request, shiftsById, oggi = todayISO()) {
+  const cedo = shiftsById[request.cedo.shiftId];
+  if (!cedo) return true;
+  return cedo.data < oggi || request.cerco.data < oggi;
+}
+
+function hasPriority(request, now = new Date()) {
+  return Boolean(request.prioritaFinoA) && new Date(request.prioritaFinoA) > now;
+}
+
+function isOpen(request) {
+  return request.status === STATUS.APERTA
+    || request.status === STATUS.PROPOSTA
+    || request.status === STATUS.IN_ATTESA;
+}
+
+return { newId, isNotturno, fineMinuti, durataOre, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, durataTurnoDi, etichettaContratto, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen };
+})();
+
+// ---- src/core/engine.js
+const M_engine = (() => {
+// Shift Engine (Fase 2 della specifica).
+// Definisce matematicamente quando due richieste sono compatibili
+// e perché, perché il match senza spiegazione non serve a nessuno.
+
+const { RULES, STATUS, WANT_MODE } = M_rules;
+const { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey } = M_time;
+const { isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre } = M_model;
+
+const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
+
+/** Fine del CERCO sulla scala del giorno di inizio, notti comprese. */
+function fineCerco(cerco) {
+  const fine = minutes(cerco.end);
+  return fine <= minutes(cerco.start) ? fine + 1440 : fine;
+}
+
+/**
+ * Quanto un turno reale soddisfa un lato CERCO.
+ * Restituisce { score 0-100, reasons: [] }. Score 0 = incompatibile.
+ */
+function satisfies(cerco, shift) {
+  const reasons = [];
+  if (!shift) return { score: 0, reasons: ['nessun turno in quella data'] };
+  if (shift.data !== cerco.data) return { score: 0, reasons: ['data diversa'] };
+
+  if (cerco.mode === WANT_MODE.OFF) {
+    return shift.tipo === 'OFF'
+      ? { score: 100, reasons: ['è un OFF, esattamente quello che cerchi'] }
+      : { score: 0, reasons: ['cerchi un OFF ma quel giorno è un turno lavorato'] };
+  }
+
+  if (shift.tipo === 'OFF') {
+    return { score: 0, reasons: ['quel giorno è un OFF, non un turno scambiabile'] };
+  }
+
+  if (cerco.evitaChiusura && isClosing(shift)) {
+    return { score: 0, reasons: ['è un turno di chiusura, che hai escluso'] };
+  }
+
+  let score = 0;
+  switch (cerco.mode) {
+    case WANT_MODE.SPECIFIC: {
+      // Scarto = il più grande dei due scostamenti, confrontato con la
+      // tolleranza. Sommarli penalizzava due volte lo stesso spostamento.
+      const dStart = Math.abs(minutes(shift.start) - minutes(cerco.start));
+      const dEnd = Math.abs(fineMinuti(shift) - fineCerco(cerco));
+      const scarto = Math.max(dStart, dEnd);
+      if (scarto === 0) {
+        score = 100;
+        reasons.push(`orario identico a quello che cerchi (${cerco.start}–${cerco.end})`);
+      } else if (scarto <= RULES.nearMissMinutes) {
+        score = Math.round(100 - 40 * (scarto / RULES.nearMissMinutes));
+        reasons.push(`${scarto} minuti di scarto dal tuo orario (${shiftLabel(shift)} contro ${cerco.start}–${cerco.end})`);
+      } else {
+        score = 0;
+        reasons.push('orario troppo lontano da quello richiesto');
+      }
+      break;
+    }
+    case WANT_MODE.RANGE: {
+      const violazioni = [];
+      if (cerco.entroLe && fineMinuti(shift) > minutes(cerco.entroLe)) {
+        violazioni.push(fineMinuti(shift) - minutes(cerco.entroLe));
+      }
+      if (cerco.dalleOre && minutes(shift.start) < minutes(cerco.dalleOre)) {
+        violazioni.push(minutes(cerco.dalleOre) - minutes(shift.start));
+      }
+      if (violazioni.length === 0) {
+        score = 100;
+        reasons.push(`rientra nella fascia che hai indicato (${wantLabel(cerco)})`);
+      } else {
+        const sforo = Math.max(...violazioni);
+        score = sforo <= RULES.nearMissMinutes
+          ? Math.round(70 - 20 * (sforo / RULES.nearMissMinutes))
+          : 0;
+        if (score > 0) reasons.push(`fuori fascia di ${sforo} minuti, ma vicino`);
+        else reasons.push('fuori dalla fascia oraria richiesta');
+      }
+      break;
+    }
+    default: {
+      score = 100;
+      reasons.push('accetti qualsiasi turno in quella data');
+    }
+  }
+  return { score: clamp(score), reasons };
+}
+
+/**
+ * Validazione di una richiesta prima della pubblicazione (cap. 6 e 18).
+ * `shifts`, se passato, abilita anche il controllo di doppio impegno.
+ */
+function validateRequest({ cedo, cerco, userId }, shiftsById, shifts = null) {
+  const errori = [];
+  const shift = shiftsById[cedo?.shiftId];
+
+  // Non puoi prendere un turno in un giorno in cui lavori già: ne avresti due.
+  // Il CERCO di tipo OFF è escluso, lì la semantica è ancora da definire.
+  if (shifts && cerco?.data && cerco.mode !== WANT_MODE.OFF) {
+    const mio = shifts.find((s) => s.userId === (userId ?? cedo?.userId) && s.data === cerco.data);
+    if (mio && mio.tipo === 'WORK') {
+      errori.push(
+        `Il ${formatDay(cerco.data)} hai già un turno (${shiftLabel(mio)}): non puoi prenderne un altro. Se vuoi liberarti quel giorno, cedi quello.`,
+      );
+    }
+  }
+  if (!shift) errori.push('Devi scegliere un turno da cedere fra i tuoi.');
+  if (!cerco?.data) errori.push('Devi indicare cosa cerchi in cambio.');
+  if (shift && cerco?.data) {
+    if (shift.data === cerco.data) {
+      errori.push('Il turno ceduto e quello cercato sono nello stesso giorno.');
+    }
+    if (!sameAppleWeek(shift.data, cerco.data)) {
+      errori.push(
+        `Settimane Apple diverse: ${formatDay(shift.data)} e ${formatDay(cerco.data)} non sono scambiabili. La settimana va da sabato a venerdì.`,
+      );
+    }
+  }
+  if (cerco?.mode === WANT_MODE.SPECIFIC && (!cerco.start || !cerco.end)) {
+    errori.push('Per un CERCO specifico servono orario di inizio e fine.');
+  }
+  if (cerco?.mode === WANT_MODE.RANGE && !cerco.entroLe && !cerco.dalleOre) {
+    errori.push('Per una fascia serve almeno un limite orario.');
+  }
+  return errori;
+}
+
+function indexShifts(shifts) {
+  const byUserDate = new Map();
+  const byId = {};
+  for (const s of shifts) {
+    byId[s.id] = s;
+    byUserDate.set(`${s.userId}|${s.data}`, s);
+  }
+  return { byId, get: (userId, data) => byUserDate.get(`${userId}|${data}`) };
+}
+
+/**
+ * Trova i match per una richiesta.
+ * ctx = { users, shifts, requests }
+ * Restituisce match ordinati per punteggio, senza chi non ha dato alcun
+ * segnale di interesse (cap. 10).
+ */
+function findMatches(request, ctx) {
+  const idx = indexShifts(ctx.shifts);
+  const usersById = Object.fromEntries(ctx.users.map((u) => [u.id, u]));
+  const autore = usersById[request.userId];
+  const mioCedo = idx.byId[request.cedo.shiftId];
+  if (!mioCedo || !autore) return [];
+
+  const risultati = [];
+  const coperti = new Set();
+
+  // 1. Match richiesta contro richiesta: due bisogni che si incastrano.
+  for (const altra of ctx.requests) {
+    if (altra.id === request.id || altra.userId === request.userId) continue;
+    if (!isOpen(altra)) continue;
+    const controparte = usersById[altra.userId];
+    const suoCedo = idx.byId[altra.cedo.shiftId];
+    if (!controparte || !suoCedo) continue;
+
+    // Quello che riceverei non è il turno com'è, ma com'è dopo essere stato
+    // adattato al mio contratto. Il punteggio si calcola su quello.
+    const perMeTurno = turnoAdattato(suoCedo, autore);
+    const perLuiTurno = turnoAdattato(mioCedo, controparte);
+
+    const perMe = satisfies(request.cerco, perMeTurno);
+    if (perMe.score === 0) continue;
+    const perLui = satisfies(altra.cerco, perLuiTurno);
+    if (perLui.score === 0) continue;
+
+    let score = Math.round((perMe.score + perLui.score) / 2);
+    const reasons = [
+      `${nome(controparte)} cede ${formatDay(suoCedo.data)} · ${shiftLabel(suoCedo)}: ${perMe.reasons[0]}`,
+      `e cerca proprio ${formatDay(mioCedo.data)} · ${wantLabel(altra.cerco)}`,
+    ];
+    const avvisi = [];
+    for (const [chi, cede, riceve] of [[autore, mioCedo, suoCedo], [controparte, suoCedo, mioCedo]]) {
+      const t = trasformaTurno(riceve, chi);
+      if (t.trasformato) {
+        score -= RULES.adattamentoPenalty;
+        reasons.push(chi.id === autore.id
+          ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
+          : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
+      }
+      if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
+      const ore = impattoMonteOre(chi, cede, riceve, ctx.shifts);
+      if (ore.avviso) avvisi.push(`${chi.id === autore.id ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
+    }
+    if (score < RULES.potentialThreshold) continue;
+
+    coperti.add(controparte.id);
+    risultati.push({
+      origine: 'RICHIESTA',
+      tipo: score >= RULES.matchThreshold ? 'MATCH' : 'POTENZIALE',
+      score: clamp(score),
+      userId: controparte.id,
+      requestId: altra.id,
+      shiftOffertoId: suoCedo.id,
+      adattato: trasformaTurno(suoCedo, autore),
+      prioritaria: hasPriority(altra),
+      reasons,
+      avvisi,
+    });
+  }
+
+  // 2. Match da disponibilità di profilo: interesse dichiarato, non richiesta.
+  for (const u of ctx.users) {
+    if (u.id === request.userId || coperti.has(u.id)) continue;
+
+    const suoTurno = idx.get(u.id, request.cerco.data);
+    const perMe = satisfies(request.cerco, turnoAdattato(suoTurno, autore));
+    if (perMe.score === 0) continue;
+
+    // Deve poter prendere il mio turno: quel giorno dev'essere libero.
+    const suoImpegno = idx.get(u.id, mioCedo.data);
+    if (suoImpegno && suoImpegno.tipo !== 'OFF') continue;
+
+    if (!disponibileIl(u, request.cerco.data)) continue;
+
+    const reasons = [`ha ${shiftLabel(suoTurno)} il ${formatDay(request.cerco.data)} e ha dichiarato disponibilità a scambiare quel giorno`];
+    let score = Math.min(perMe.score, RULES.availabilityScoreCap);
+
+    // Le preferenze si valutano sul turno che riceverebbe davvero.
+    const perLuiTurno = turnoAdattato(mioCedo, u);
+    if (u.preferenze?.evitaChiusure && isClosing(perLuiTurno)) continue;
+    if (u.preferenze?.preferisceMattina) {
+      if (isMorning(perLuiTurno)) {
+        score += 5;
+        reasons.push('preferisce i turni di mattina e il tuo lo è');
+      } else {
+        score -= 10;
+        reasons.push('preferisce i turni di mattina, il tuo no');
+      }
+    }
+    if (!suoImpegno) reasons.push(`${formatDay(mioCedo.data)} non risulta occupato nel suo calendario`);
+
+    const avvisi = [];
+    for (const [chi, cede, riceve] of [[autore, mioCedo, suoTurno], [u, suoTurno, mioCedo]]) {
+      const t = trasformaTurno(riceve, chi);
+      if (t.trasformato) {
+        score -= RULES.adattamentoPenalty;
+        reasons.push(chi.id === autore.id
+          ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
+          : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
+      }
+      if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
+      const ore = impattoMonteOre(chi, cede, riceve, ctx.shifts);
+      if (ore.avviso) avvisi.push(`${chi.id === autore.id ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
+    }
+    score = clamp(Math.round(score), 0, RULES.availabilityScoreCap);
+    if (score < RULES.potentialThreshold) continue;
+
+    risultati.push({
+      origine: 'DISPONIBILITA',
+      tipo: 'POTENZIALE',
+      score,
+      userId: u.id,
+      requestId: null,
+      shiftOffertoId: suoTurno.id,
+      adattato: trasformaTurno(suoTurno, autore),
+      prioritaria: false,
+      reasons,
+      avvisi,
+    });
+  }
+
+  return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+}
+
+/** Disponibilità dichiarata settimana per settimana (cap. 20). */
+function disponibileIl(user, dataISO) {
+  const settimana = user.disponibilita?.[appleWeekKey(dataISO)];
+  if (!settimana) return false;
+  return Boolean(settimana[slotSettimana(dataISO)]);
+}
+
+// Lo slot 0 è sabato, coerente con la settimana Apple.
+function slotSettimana(dataISO) {
+  return (weekday(dataISO) - RULES.weekStartsOn + 7) % 7;
+}
+
+function nome(u) {
+  return `${u.nome} ${u.cognomeIniziale}.`;
+}
+
+function contrattoDi(u) {
+  return RULES.contracts[u.contratto]?.label || u.contratto;
+}
+
+/** Transizioni di stato ammesse (cap. 14-15). */
+function nextStatus(request, proposte) {
+  if (request.status === STATUS.CHIUSA || request.status === STATUS.ACCORDO) return request.status;
+  const attive = proposte.filter((p) => p.requestId === request.id && p.status !== 'RIFIUTATA');
+  if (attive.some((p) => p.accettataDa.length >= 2)) return STATUS.ACCORDO;
+  if (attive.some((p) => p.accettataDa.length === 1)) return STATUS.IN_ATTESA;
+  if (attive.length > 0) return STATUS.PROPOSTA;
+  return STATUS.APERTA;
+}
+
+return { satisfies, validateRequest, findMatches, disponibileIl, slotSettimana, nextStatus };
+})();
+
+// ---- src/core/seed.js
+const M_seed = (() => {
+// Dati dimostrativi. Sono costruiti attorno alla settimana Apple corrente,
+// così la demo non invecchia. Riproducono gli esempi del capitolo 11.
+
+const { appleWeekKey, addDays, todayISO } = M_time;
+const { STATUS, WANT_MODE } = M_rules;
+
+const W = (turni) => turni; // [sab, dom, lun, mar, mer, gio, ven]
+const o = 'OFF';
+
+const PERSONE = [
+  {
+    id: 'u_lorenzo', durataTurno: 9, oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', ruolo: 'Expert', contratto: 'FT', admin: true,
+    preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
+    disponibilita: [true, false, true, true, false, true, false],
+    settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
+  },
+  {
+    id: 'u_martina', durataTurno: 6, oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', ruolo: 'Specialist', contratto: 'PT', admin: false,
+    preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
+    disponibilita: [true, true, true, true, false, true, true],
+    settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:00', '15:00'], ['15:00', '21:00']]),
+  },
+  {
+    id: 'u_luca', durataTurno: 9, oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', ruolo: 'Expert', contratto: 'FT', admin: false,
+    preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: false },
+    disponibilita: [false, true, true, false, true, true, true],
+    settimana: W([['12:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
+  },
+  {
+    id: 'u_giulia', durataTurno: 5, oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', ruolo: 'Specialist', contratto: 'PT', admin: false,
+    preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: false },
+    disponibilita: [true, false, true, true, true, false, true],
+    settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:00', '14:00'], ['10:00', '15:00'], o]),
+  },
+  {
+    // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
+    id: 'u_marco', durataTurno: 9, oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', ruolo: 'Genius', contratto: 'FT', admin: false,
+    preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
+    disponibilita: [true, true, false, true, true, true, true],
+    settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], o, ['22:00', '06:30'], o]),
+  },
+  {
+    id: 'u_sara', durataTurno: 6, oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', ruolo: 'Specialist', contratto: 'PT', admin: false,
+    preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
+    disponibilita: [true, true, true, true, true, true, true],
+    settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
+  },
+];
+
+function seed() {
+  const w0 = appleWeekKey(todayISO());
+  const w1 = addDays(w0, 7);
+  const giorno = (settimana, i) => (settimana === 0 ? addDays(w0, i) : addDays(w1, i));
+
+  const users = [];
+  const shifts = [];
+  let n = 0;
+
+  for (const p of PERSONE) {
+    users.push({
+      id: p.id,
+      nome: p.nome,
+      cognomeIniziale: p.cognomeIniziale,
+      ruolo: p.ruolo,
+      contratto: p.contratto,
+      durataTurno: p.durataTurno,
+      oreSettimanali: p.oreSettimanali,
+      admin: p.admin,
+      preferenze: p.preferenze,
+      disponibilita: { [w0]: [...p.disponibilita], [w1]: [...p.disponibilita] },
+      prioritaUsata: {},
+    });
+    for (const settimana of [0, 1]) {
+      p.settimana.forEach((t, i) => {
+        n += 1;
+        const data = giorno(settimana, i);
+        shifts.push(t === o
+          ? { id: `sh_${p.id}_${n}`, userId: p.id, data, tipo: 'OFF', start: null, end: null }
+          : { id: `sh_${p.id}_${n}`, userId: p.id, data, tipo: 'WORK', start: t[0], end: t[1] });
+      });
+    }
+  }
+
+  const turno = (userId, data) => shifts.find((s) => s.userId === userId && s.data === data);
+  const ora = new Date();
+  const iso = (h) => new Date(ora.getTime() - h * 3600 * 1000).toISOString();
+
+  const requests = [
+    // Cap. 11: Lorenzo e Martina si incastrano. Martina è Part Time e chiede
+    // le ore che farebbe davvero sul turno di Lorenzo, 11:00-20:00 adattato.
+    {
+      id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA, prioritaFinoA: null,
+      cedo: { shiftId: turno('u_lorenzo', addDays(w0, 0)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(w0, 1), mode: WANT_MODE.ANY, evitaChiusura: true, note: '' },
+    },
+    {
+      id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA, prioritaFinoA: null,
+      cedo: { shiftId: turno('u_martina', addDays(w0, 1)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(w0, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
+    },
+    // Luca cerca un OFF: nessuna richiesta corrispondente, solo disponibilità.
+    {
+      id: 'rq_luca_1', userId: 'u_luca', createdAt: iso(20), status: STATUS.APERTA, prioritaFinoA: null,
+      cedo: { shiftId: turno('u_luca', addDays(w0, 6)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(w0, 5), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.' },
+    },
+    // Giulia usa una fascia oraria.
+    {
+      id: 'rq_giulia_1', userId: 'u_giulia', createdAt: iso(30), status: STATUS.APERTA, prioritaFinoA: null,
+      cedo: { shiftId: turno('u_giulia', addDays(w0, 4)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(w0, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
+    },
+    // Marco cede la notte visual e ha speso la sua priorità del mese.
+    {
+      id: 'rq_marco_1', userId: 'u_marco', createdAt: iso(2), status: STATUS.APERTA,
+      prioritaFinoA: new Date(ora.getTime() + 46 * 3600 * 1000).toISOString(),
+      cedo: { shiftId: turno('u_marco', addDays(w0, 5)).id, altriShiftIds: [], flessibile: true },
+      cerco: { data: addDays(w0, 6), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Matrimonio, non posso proprio.' },
+    },
+  ];
+
+  const marco = users.find((u) => u.id === 'u_marco');
+  marco.prioritaUsata[todayISO().slice(0, 7)] = 1;
+
+  return {
+    versione: 1,
+    currentUserId: 'u_lorenzo',
+    users,
+    shifts,
+    requests,
+    proposals: [],
+    notifications: [],
+  };
+}
+
+return { seed };
+})();
+
+// ---- src/core/store.js
+const M_store = (() => {
+// Stato applicativo + persistenza locale.
+// Nell'MVP i dati stanno nel browser: sostituire salva()/carica() con
+// chiamate a un backend non tocca né il motore né la UI.
+
+const { RULES, STATUS } = M_rules;
+const { newId, isExpired, hasPriority, isOpen, turnoAdattato } = M_model;
+const { validateRequest, nextStatus, satisfies } = M_engine;
+const { monthKey, todayISO } = M_time;
+const { seed } = M_seed;
+
+const CHIAVE = 'cambio-turno:v1';
+
+const store = {
+  state: null,
+  listeners: new Set(),
+
+  init() {
+    this.state = carica() || seed();
+    this.scadenze();
+    return this.state;
+  },
+
+  subscribe(fn) {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  },
+
+  commit() {
+    this.scadenze();
+    salva(this.state);
+    this.listeners.forEach((fn) => fn(this.state));
+  },
+
+  reset() {
+    localStorage.removeItem(CHIAVE);
+    this.state = seed();
+    this.commit();
+  },
+
+  // --- lettura -------------------------------------------------------
+  get me() {
+    return this.state.users.find((u) => u.id === this.state.currentUserId);
+  },
+  user(id) {
+    return this.state.users.find((u) => u.id === id);
+  },
+  shift(id) {
+    return this.state.shifts.find((s) => s.id === id);
+  },
+  shiftsById() {
+    return Object.fromEntries(this.state.shifts.map((s) => [s.id, s]));
+  },
+  shiftsOf(userId, { soloFuturi = false } = {}) {
+    const oggi = todayISO();
+    return this.state.shifts
+      .filter((s) => s.userId === userId && (!soloFuturi || s.data >= oggi))
+      .sort((a, b) => a.data.localeCompare(b.data));
+  },
+  request(id) {
+    return this.state.requests.find((r) => r.id === id);
+  },
+  bacheca() {
+    return this.state.requests
+      .filter(isOpen)
+      .sort((a, b) => (hasPriority(b) - hasPriority(a)) || b.createdAt.localeCompare(a.createdAt));
+  },
+  proposteDi(requestId) {
+    return this.state.proposals.filter((p) => p.requestId === requestId);
+  },
+  propostePerMe() {
+    const me = this.state.currentUserId;
+    return this.state.proposals.filter(
+      (p) => (p.daUserId === me || p.aUserId === me) && p.status !== 'RIFIUTATA' && !p.cambioInserito,
+    );
+  },
+  creditoPriorita(userId = this.state.currentUserId) {
+    const u = this.user(userId);
+    const usati = u.prioritaUsata?.[monthKey(todayISO())] || 0;
+    return Math.max(0, RULES.priority.creditsPerMonth - usati);
+  },
+
+  // --- scrittura -----------------------------------------------------
+  cambiaUtente(id) {
+    this.state.currentUserId = id;
+    this.commit();
+  },
+
+  salvaTurno({ id, data, tipo, start, end, userId = this.state.currentUserId }) {
+    const esistente = id
+      ? this.shift(id)
+      : this.state.shifts.find((s) => s.userId === userId && s.data === data);
+    if (esistente) {
+      Object.assign(esistente, { data, tipo, start, end });
+    } else {
+      this.state.shifts.push({ id: newId('sh'), userId, data, tipo, start, end });
+    }
+    this.commit();
+  },
+
+  eliminaTurno(id) {
+    const usato = this.state.requests.some((r) => r.cedo.shiftId === id && isOpen(r));
+    if (usato) return 'Il turno è collegato a una richiesta aperta: cancella prima la richiesta.';
+    this.state.shifts = this.state.shifts.filter((s) => s.id !== id);
+    this.commit();
+    return null;
+  },
+
+  creaRichiesta({ cedo, cerco, usaPriorita }) {
+    const errori = validateRequest(
+      { cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
+    );
+    if (errori.length) return { errori };
+    if (usaPriorita && this.creditoPriorita() < 1) {
+      return { errori: ['Non hai crediti priorità disponibili questo mese.'] };
+    }
+
+    const me = this.me;
+    const richiesta = {
+      id: newId('rq'),
+      userId: me.id,
+      createdAt: new Date().toISOString(),
+      status: STATUS.APERTA,
+      prioritaFinoA: null,
+      cedo: { shiftId: cedo.shiftId, altriShiftIds: cedo.altriShiftIds || [], flessibile: Boolean(cedo.flessibile) },
+      cerco: { ...cerco },
+    };
+
+    if (usaPriorita) {
+      const scadenza = new Date(Date.now() + RULES.priority.durationHours * 3600 * 1000);
+      richiesta.prioritaFinoA = scadenza.toISOString();
+      const mk = monthKey(todayISO());
+      me.prioritaUsata = me.prioritaUsata || {};
+      me.prioritaUsata[mk] = (me.prioritaUsata[mk] || 0) + 1;
+    }
+
+    this.state.requests.push(richiesta);
+    this.commit();
+    return { richiesta };
+  },
+
+  // Una richiesta pubblicata non si modifica (cap. 23): si cancella e si rifà.
+  cancellaRichiesta(id) {
+    const r = this.request(id);
+    if (!r) return;
+    r.status = STATUS.CHIUSA;
+    r.chiusaIl = new Date().toISOString();
+    this.state.proposals
+      .filter((p) => p.requestId === id && p.status !== 'RIFIUTATA')
+      .forEach((p) => { p.status = 'RIFIUTATA'; });
+    this.commit();
+  },
+
+  proponiScambio({ requestId, shiftOffertoId, messaggio }) {
+    const r = this.request(requestId);
+    if (!r) return { errori: ['Richiesta non trovata.'] };
+    const me = this.state.currentUserId;
+    if (r.userId === me) return { errori: ['Non puoi proporre uno scambio a te stesso.'] };
+    if (this.state.proposals.some((p) => p.requestId === requestId && p.daUserId === me && p.status !== 'RIFIUTATA')) {
+      return { errori: ['Hai già una proposta aperta su questa richiesta.'] };
+    }
+    // Il turno offerto deve davvero soddisfare il CERCO: la regola vale qui,
+    // non solo nel modulo, così nessuna scorciatoia della UI la aggira.
+    const offerto = this.shift(shiftOffertoId);
+    if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido.'] };
+    if (satisfies(r.cerco, turnoAdattato(offerto, this.user(r.userId))).score === 0) {
+      return { errori: ['Quel turno non corrisponde a quello che la persona sta cercando.'] };
+    }
+
+    const proposta = {
+      id: newId('pr'),
+      requestId,
+      daUserId: me,
+      aUserId: r.userId,
+      shiftOffertoId,
+      messaggio: messaggio || '',
+      accettataDa: [me], // proporre vale già come prima accettazione
+      status: 'IN_ATTESA',
+      createdAt: new Date().toISOString(),
+      cambioInserito: false,
+    };
+    this.state.proposals.push(proposta);
+    this.aggiornaStato(r);
+    this.notifica(r.userId, `${this.user(me).nome} ti ha proposto uno scambio.`);
+    this.commit();
+    return { proposta };
+  },
+
+  accetta(proposalId) {
+    const p = this.state.proposals.find((x) => x.id === proposalId);
+    if (!p || p.status === 'RIFIUTATA') return;
+    const me = this.state.currentUserId;
+    if (!p.accettataDa.includes(me)) p.accettataDa.push(me);
+    const r = this.request(p.requestId);
+    if (p.accettataDa.length >= 2) {
+      p.status = 'ACCORDO';
+      // Le altre proposte sulla stessa richiesta decadono.
+      this.state.proposals
+        .filter((x) => x.requestId === p.requestId && x.id !== p.id)
+        .forEach((x) => { x.status = 'RIFIUTATA'; });
+      [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo nell\'app ufficiale.'));
+    } else {
+      this.notifica(p.daUserId === me ? p.aUserId : p.daUserId, `${this.user(me).nome} ha accettato il cambio.`);
+    }
+    this.aggiornaStato(r);
+    this.commit();
+  },
+
+  rifiuta(proposalId) {
+    const p = this.state.proposals.find((x) => x.id === proposalId);
+    if (!p) return;
+    p.status = 'RIFIUTATA';
+    this.aggiornaStato(this.request(p.requestId));
+    this.commit();
+  },
+
+  // "Cambio inserito": chiude la partita, l'app non tocca il sistema ufficiale.
+  cambioInserito(proposalId) {
+    const p = this.state.proposals.find((x) => x.id === proposalId);
+    if (!p) return;
+    p.cambioInserito = true;
+    const r = this.request(p.requestId);
+    if (r) {
+      r.status = STATUS.CHIUSA;
+      r.chiusaIl = new Date().toISOString();
+    }
+    this.commit();
+  },
+
+  aggiornaStato(request) {
+    if (!request) return;
+    request.status = nextStatus(request, this.state.proposals);
+  },
+
+  impostaDisponibilita(weekKey, slot, valore) {
+    const me = this.me;
+    me.disponibilita = me.disponibilita || {};
+    me.disponibilita[weekKey] = me.disponibilita[weekKey] || Array(7).fill(false);
+    me.disponibilita[weekKey][slot] = valore;
+    this.commit();
+  },
+
+  impostaContratto(patch) {
+    Object.assign(this.me, patch);
+    this.commit();
+  },
+
+  impostaPreferenze(patch) {
+    Object.assign(this.me.preferenze, patch);
+    this.commit();
+  },
+
+  notifica(userId, testo) {
+    this.state.notifications.unshift({
+      id: newId('nt'), userId, testo, letta: false, createdAt: new Date().toISOString(),
+    });
+    this.state.notifications = this.state.notifications.slice(0, 100);
+  },
+
+  notifichePerMe() {
+    return this.state.notifications.filter((n) => n.userId === this.state.currentUserId);
+  },
+
+  scadenze() {
+    const byId = Object.fromEntries(this.state.shifts.map((s) => [s.id, s]));
+    for (const r of this.state.requests) {
+      if (isOpen(r) && isExpired(r, byId)) r.status = STATUS.SCADUTA;
+    }
+  },
+};
+
+function salva(state) {
+  try {
+    localStorage.setItem(CHIAVE, JSON.stringify(state));
+  } catch (e) {
+    console.warn('Salvataggio non riuscito', e);
+  }
+}
+
+function carica() {
+  try {
+    const raw = localStorage.getItem(CHIAVE);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+return { store };
+})();
+
+// ---- src/ui/dom.js
+const M_dom = (() => {
+// Micro-helper di rendering: niente framework, la app è piccola e deve
+// restare apribile da Safari senza build.
+
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+/** Template tag: interpola con escaping, salvo valori marcati raw(). */
+function html(strings, ...values) {
+  return strings.reduce((out, s, i) => {
+    if (i === 0) return s;
+    const v = values[i - 1];
+    const parte = Array.isArray(v)
+      ? v.map((x) => (x && x.__raw ? x.value : esc(x))).join('')
+      : (v && v.__raw ? v.value : esc(v));
+    return out + parte + s;
+  }, '');
+}
+
+const raw = (value) => ({ __raw: true, value });
+
+function on(root, evento, selettore, handler) {
+  root.addEventListener(evento, (e) => {
+    const target = e.target.closest(selettore);
+    if (target && root.contains(target)) handler(e, target);
+  });
+}
+
+function toast(testo) {
+  let el = document.getElementById('toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = testo;
+  el.classList.add('visibile');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('visibile'), 2600);
+}
+
+function sheet(titolo, contenuto, { azioni = '' } = {}) {
+  const wrap = document.createElement('div');
+  wrap.className = 'sheet-backdrop';
+  wrap.innerHTML = html`
+    <div class="sheet" role="dialog" aria-modal="true" aria-label="${titolo}">
+      <div class="sheet-grip"></div>
+      <header class="sheet-head">
+        <h2>${titolo}</h2>
+        <button class="icon-btn" data-chiudi aria-label="Chiudi">✕</button>
+      </header>
+      <div class="sheet-body">${raw(contenuto)}</div>
+      ${raw(azioni ? `<footer class="sheet-foot">${azioni}</footer>` : '')}
+    </div>`;
+  document.body.appendChild(wrap);
+  requestAnimationFrame(() => wrap.classList.add('aperto'));
+  const chiudi = () => {
+    wrap.classList.remove('aperto');
+    setTimeout(() => wrap.remove(), 220);
+  };
+  wrap.addEventListener('click', (e) => {
+    if (e.target === wrap || e.target.closest('[data-chiudi]')) chiudi();
+  });
+  return { el: wrap, chiudi };
+}
+
+return { esc, html, raw, on, toast, sheet };
+})();
+
+// ---- src/ui/components.js
+const M_components = (() => {
+const { html, raw } = M_dom;
+const { store } = M_store;
+const { shiftLabel, wantLabel, hasPriority } = M_model;
+const { STATUS_META } = M_rules;
+const { formatDay } = M_time;
+
+function nomeUtente(u) {
+  return u ? `${u.nome} ${u.cognomeIniziale}.` : '—';
+}
+
+function iniziali(u) {
+  return u ? `${u.nome[0]}${u.cognomeIniziale}` : '?';
+}
+
+function badgeStato(status) {
+  const m = STATUS_META[status] || { dot: '', label: status };
+  return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
+}
+
+/** Il blocco CEDO/CERCO: è l'unità visiva di tutta l'app. */
+function coppiaCedoCerco(request, { compatto = false } = {}) {
+  const cedo = store.shift(request.cedo.shiftId);
+  const extra = request.cedo.flessibile
+    ? '<div class="nota">disponibile a cedere anche altri turni</div>' : '';
+  return html`
+    <div class="coppia ${compatto ? 'compatta' : ''}">
+      <div class="lato cedo">
+        <span class="etichetta">🔴 CEDO</span>
+        <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
+        <span class="orario">${shiftLabel(cedo)}</span>
+        ${raw(extra)}
+      </div>
+      <div class="freccia">⇄</div>
+      <div class="lato cerco">
+        <span class="etichetta">🟢 CERCO</span>
+        <strong>${formatDay(request.cerco.data)}</strong>
+        <span class="orario">${wantLabel(request.cerco)}</span>
+      </div>
+    </div>`;
+}
+
+function cardRichiesta(request, { azione = 'Vedi cambio' } = {}) {
+  const autore = store.user(request.userId);
+  const prio = hasPriority(request);
+  return html`
+    <article class="card richiesta ${prio ? 'prioritaria' : ''}" data-act="apri-richiesta" data-id="${request.id}">
+      <header class="card-head">
+        <span class="avatar">${iniziali(autore)}</span>
+        <div>
+          <strong>${prio ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
+          <div class="meta">${autore?.ruolo} · ${autore?.contratto} ${raw(badgeStato(request.status))}</div>
+        </div>
+      </header>
+      ${raw(coppiaCedoCerco(request, { compatto: true }))}
+      ${raw(request.cerco.note ? `<p class="nota-utente">“${request.cerco.note}”</p>` : '')}
+      <footer class="card-foot"><span class="link">${azione} →</span></footer>
+    </article>`;
+}
+
+function cardMatch(match) {
+  const u = store.user(match.userId);
+  const turno = store.shift(match.shiftOffertoId);
+  const verde = match.tipo === 'MATCH';
+  return html`
+    <article class="card match ${verde ? 'verde' : 'giallo'}">
+      <header class="card-head">
+        <span class="avatar">${iniziali(u)}</span>
+        <div>
+          <strong>${nomeUtente(u)}</strong>
+          <div class="meta">${u?.ruolo} · ${u?.contratto}</div>
+        </div>
+        <span class="score">${match.score}%</span>
+      </header>
+      <div class="match-tipo">
+        ${verde ? '🟢 Match' : '🟡 Potenziale'}
+        · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'disponibilità dal profilo'}
+      </div>
+      <div class="turno-offerto">
+        Faresti <strong>${formatDay(turno?.data)}</strong> ·
+        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+        ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
+      </div>
+      <ul class="perche">
+        ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
+      </ul>
+      ${raw(match.avvisi.length ? `<div class="avviso">⚠️ ${match.avvisi.join(' ')}</div>` : '')}
+      <button class="btn primario" data-act="proponi" data-user="${match.userId}"
+              data-richiesta="${match.requestId || ''}" data-shift="${match.shiftOffertoId}">
+        Proponi lo scambio
+      </button>
+    </article>`;
+}
+
+function vuoto(titolo, sottotitolo, azione = '') {
+  return html`
+    <div class="vuoto">
+      <div class="vuoto-icona">🗓️</div>
+      <strong>${titolo}</strong>
+      <p>${sottotitolo}</p>
+      ${raw(azione)}
+    </div>`;
+}
+
+return { nomeUtente, iniziali, badgeStato, coppiaCedoCerco, cardRichiesta, cardMatch, vuoto };
+})();
+
+// ---- src/ui/views.js
+const M_views = (() => {
+const { html, raw } = M_dom;
+const { store } = M_store;
+const { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } = M_components;
+const { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } = M_model;
+const { RULES, WANT_MODE } = M_rules;
+const {
+  formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
+} = M_time;
+
+// ---------------------------------------------------------------- HOME
+
+function home() {
+  const me = store.me;
+  const ora = new Date().getHours();
+  const saluto = ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera';
+
+  const miei = store.state.requests.filter((r) => r.userId === me.id && isOpen(r));
+  const proposte = store.propostePerMe();
+  const credito = store.creditoPriorita();
+  const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
+
+  const bloccoMiei = miei.length || proposte.length
+    ? [
+      ...proposte.map((p) => {
+        const r = store.request(p.requestId);
+        const altro = store.user(p.daUserId === me.id ? p.aUserId : p.daUserId);
+        const inAttesaDiMe = !p.accettataDa.includes(me.id);
+        return html`
+          <div class="riga-cambio" data-act="apri-richiesta" data-id="${r?.id}">
+            <span class="pallino ${inAttesaDiMe ? 'urgente' : ''}"></span>
+            <div>
+              <strong>${inAttesaDiMe ? 'Ti aspetta una risposta' : 'In attesa di ' + nomeUtente(altro)}</strong>
+              <div class="meta">Scambio con ${nomeUtente(altro)}</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>`;
+      }),
+      ...miei.map((r) => html`
+        <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
+          <span class="pallino"></span>
+          <div>
+            <strong>${hasPriority(r) ? '⭐ ' : ''}Cedi ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
+            <div class="meta">${raw(badgeStato(r.status))}</div>
+          </div>
+          <span class="chevron">›</span>
+        </div>`),
+    ].join('')
+    : '<p class="testo-tenue">Nessun cambio in corso.</p>';
+
+  return html`
+    <header class="hero">
+      <p class="saluto">${saluto}</p>
+      <h1>${me.nome}</h1>
+      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label}</p>
+    </header>
+
+    <section class="sezione">
+      <h2>I tuoi cambi</h2>
+      <div class="lista-cambi">${raw(bloccoMiei)}</div>
+      <button class="btn primario largo" data-act="vai" data-to="#/nuovo">+ Nuovo cambio</button>
+    </section>
+
+    <section class="sezione">
+      <button class="tile cambio-rapido" data-act="vai" data-to="#/rapido">
+        <span class="tile-icona">⚡</span>
+        <span>
+          <strong>Cambio rapido</strong>
+          <em>Trova subito qualcuno per il tuo turno</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+    </section>
+
+    <section class="sezione">
+      <button class="tile priorita" data-act="spiega-priorita">
+        <span class="tile-icona">⭐</span>
+        <span>
+          <strong>La tua priorità</strong>
+          <em>${credito} priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+    </section>
+
+    <section class="sezione">
+      <div class="sezione-head">
+        <h2>Ultime richieste</h2>
+        <button class="link-btn" data-act="vai" data-to="#/bacheca">Vedi tutto</button>
+      </div>
+      ${raw(altrui.length ? altrui.map((r) => cardRichiesta(r)).join('') : vuoto('Bacheca vuota', 'Nessuno ha pubblicato richieste aperte.'))}
+    </section>`;
+}
+
+// ----------------------------------------------------------- CALENDARIO
+
+function calendario(params) {
+  const mese = params.mese || monthKey(todayISO());
+  const [anno, m] = mese.split('-').map(Number);
+  const primo = new Date(Date.UTC(anno, m - 1, 1));
+  const giorniNelMese = new Date(Date.UTC(anno, m, 0)).getUTCDate();
+  const offset = (primo.getUTCDay() + 6) % 7; // griglia lunedì → domenica
+
+  const aperte = store.state.requests.filter(isOpen);
+  const perGiorno = new Map();
+  for (const r of aperte) {
+    const cedo = store.shift(r.cedo.shiftId);
+    for (const d of [cedo?.data, r.cerco.data]) {
+      if (!d) continue;
+      const lista = perGiorno.get(d) || [];
+      lista.push(r);
+      perGiorno.set(d, lista);
+    }
+  }
+
+  const celle = [];
+  for (let i = 0; i < offset; i += 1) celle.push('<div class="giorno vuota"></div>');
+  for (let g = 1; g <= giorniNelMese; g += 1) {
+    const data = `${anno}-${String(m).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
+    const richieste = perGiorno.get(data) || [];
+    const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
+    const prio = richieste.some(hasPriority);
+    const inizioSettimana = weekday(data) === RULES.weekStartsOn;
+    celle.push(html`
+      <button class="giorno ${data === todayISO() ? 'oggi' : ''} ${inizioSettimana ? 'inizio-settimana' : ''}"
+              data-act="giorno" data-data="${data}">
+        <span class="numero">${g}</span>
+        <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
+        <span class="indicatori">
+          ${raw(prio ? '<i class="dot prio"></i>' : '')}
+          ${raw(richieste.length ? `<i class="dot"></i><small>${richieste.length}</small>` : '')}
+        </span>
+      </button>`);
+  }
+
+  const prev = m === 1 ? `${anno - 1}-12` : `${anno}-${String(m - 1).padStart(2, '0')}`;
+  const next = m === 12 ? `${anno + 1}-01` : `${anno}-${String(m + 1).padStart(2, '0')}`;
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}">‹</button>
+      <h1>${MESI[m - 1]} ${anno}</h1>
+      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
+    </header>
+    <div class="griglia-intestazione">
+      ${['L', 'M', 'M', 'G', 'V', 'S', 'D'].map((d) => raw(`<span>${d}</span>`))}
+    </div>
+    <div class="griglia-mese">${celle.map(raw)}</div>
+    <p class="legenda">
+      <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità ·
+      la riga più marcata apre la settimana Apple (sabato)
+    </p>
+    <button class="btn secondario largo" data-act="vai" data-to="#/turni">Gestisci i tuoi turni</button>`;
+}
+
+function dettaglioGiorno(data) {
+  const richieste = store.state.requests.filter((r) => {
+    if (!isOpen(r)) return false;
+    const cedo = store.shift(r.cedo.shiftId);
+    return cedo?.data === data || r.cerco.data === data;
+  });
+  const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
+
+  return html`
+    <div class="giorno-dettaglio">
+      <p class="tuo-turno">
+        Il tuo turno: <strong>${mio ? shiftLabel(mio) : 'non inserito'}</strong>
+        ${raw(mio && etichettaFascia(mio) ? `<span class="tag">${etichettaFascia(mio)}</span>` : '')}
+      </p>
+      <h3>${richieste.length} ${richieste.length === 1 ? 'richiesta' : 'richieste'}</h3>
+      ${raw(richieste.length
+    ? richieste.sort((a, b) => hasPriority(b) - hasPriority(a)).map((r) => cardRichiesta(r)).join('')
+    : '<p class="testo-tenue">Nessuna richiesta su questo giorno.</p>')}
+    </div>`;
+}
+
+// -------------------------------------------------------------- BACHECA
+
+const FILTRI = {
+  TUTTI: { label: 'Tutti', test: () => true },
+  CEDO: { label: 'Cedo', test: (r) => store.shift(r.cedo.shiftId)?.tipo === 'WORK' },
+  CERCO: { label: 'Cerco', test: (r) => r.cerco.mode === WANT_MODE.SPECIFIC || r.cerco.mode === WANT_MODE.RANGE },
+  OFF: { label: 'OFF', test: (r) => r.cerco.mode === WANT_MODE.OFF },
+};
+
+function bacheca(params) {
+  const filtro = FILTRI[params.filtro] ? params.filtro : 'TUTTI';
+  const lista = store.bacheca()
+    .filter((r) => r.userId !== store.state.currentUserId)
+    .filter(FILTRI[filtro].test);
+
+  return html`
+    <header class="testata"><h1>Bacheca</h1></header>
+    <div class="chips">
+      ${Object.entries(FILTRI).map(([k, v]) => raw(
+    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.label}</button>`,
+  ))}
+    </div>
+    ${raw(lista.length
+    ? lista.map((r) => cardRichiesta(r)).join('')
+    : vuoto('Niente da vedere', 'Con questo filtro non ci sono richieste aperte.'))}`;
+}
+
+// -------------------------------------------------------------- PROFILO
+
+function profilo() {
+  const me = store.me;
+  const settimana = appleWeekKey(todayISO());
+  const prossima = addDays(settimana, 7);
+  const credito = store.creditoPriorita();
+
+  const settimane = [settimana, prossima].map((wk) => {
+    const disp = me.disponibilita?.[wk] || Array(7).fill(false);
+    const celle = disp.map((v, i) => {
+      const data = addDays(wk, i);
+      return html`
+        <button class="disp ${v ? 'si' : 'no'}" data-act="toggle-disp" data-week="${wk}" data-slot="${i}">
+          <span>${GIORNI[weekday(data)]}</span>
+          <em>${toDate(data).getUTCDate()}</em>
+          <b>${v ? '✅' : '❌'}</b>
+        </button>`;
+    }).join('');
+    return html`
+      <div class="settimana-disp">
+        <h3>Settimana ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
+        <div class="griglia-disp">${raw(celle)}</div>
+      </div>`;
+  }).join('');
+
+  const pref = [
+    ['preferisceMattina', 'Preferisco i turni di mattina'],
+    ['evitaChiusure', 'Evito le chiusure'],
+    ['disponibileWeekend', 'Disponibile nel weekend'],
+  ].map(([k, label]) => html`
+    <label class="switch">
+      <input type="checkbox" data-act="pref" data-key="${k}" ${raw(me.preferenze[k] ? 'checked' : '')}>
+      <span>${label}</span>
+    </label>`).join('');
+
+  return html`
+    <header class="hero compatta">
+      <span class="avatar grande">${iniziali(me)}</span>
+      <h1>${nomeUtente(me)}</h1>
+      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label} · turni da ${durataTurnoDi(me)}h${me.admin ? ' · Admin' : ''}</p>
+    </header>
+
+    <section class="sezione">
+      <h2>Disponibilità allo scambio</h2>
+      <p class="testo-tenue">Si imposta settimana per settimana: quello che dichiari qui ti fa comparire fra i match potenziali degli altri.</p>
+      ${raw(settimane)}
+    </section>
+
+    <section class="sezione">
+      <h2>Preferenze</h2>
+      ${raw(pref)}
+      <p class="testo-tenue">Le preferenze pesano sul punteggio dei match, non bloccano nulla.</p>
+    </section>
+
+    <section class="sezione">
+      <h2>Priorità</h2>
+      <p>${credito} di ${RULES.priority.creditsPerMonth} disponibile per ${monthKey(todayISO())}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
+    </section>
+
+    <section class="sezione">
+      <h2>Contratto · ${RULES.contracts[me.contratto].label}</h2>
+      <label class="campo">
+        <span>Durata standard del tuo turno</span>
+        <select class="select" data-act="durata-turno">
+          ${RULES.durateTurnoAmmesse.map((h) => raw(
+    `<option value="${h}" ${h === durataTurnoDi(me) ? 'selected' : ''}>${h} ore</option>`,
+  ))}
+        </select>
+      </label>
+      <label class="campo">
+        <span>Monte ore settimanale</span>
+        <select class="select" data-act="monte-ore">
+          ${RULES.monteOreAmmessi.map((h) => raw(
+    `<option value="${h}" ${h === me.oreSettimanali ? 'selected' : ''}>${h} ore</option>`,
+  ))}
+        </select>
+      </label>
+      <p class="testo-tenue">
+        Puoi scambiare con chiunque, anche con l'altro contratto: il turno si adatta al tuo.
+        Se chi te lo cede apre, entri quando entra lui; se chiude, esci quando esce lui.
+        La durata resta la tua.
+      </p>
+      <p class="testo-tenue">
+        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore,
+        il contratto ne prevede ${me.oreSettimanali}. Uno scambio fra due turni interi
+        non cambia il totale; se c'è di mezzo un OFF sì, e l'app te lo dice prima.
+      </p>
+    </section>
+
+    <section class="sezione">
+      <h2>Demo</h2>
+      <p class="testo-tenue">Prototipo: i dati stanno solo su questo telefono. Cambia persona per vedere l'app dall'altro lato di uno scambio.</p>
+      <select data-act="cambia-utente" class="select">
+        ${store.state.users.map((u) => raw(
+    `<option value="${u.id}" ${u.id === me.id ? 'selected' : ''}>${u.nome} ${u.cognomeIniziale}. — ${u.contratto}</option>`,
+  ))}
+      </select>
+      <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
+    </section>`;
+}
+
+// ---------------------------------------------------------------- TURNI
+
+function turni() {
+  const me = store.me;
+  const settimane = [appleWeekKey(todayISO()), addDays(appleWeekKey(todayISO()), 7)];
+
+  const blocchi = settimane.map((wk) => {
+    const righe = Array.from({ length: 7 }, (_, i) => {
+      const data = addDays(wk, i);
+      const s = store.state.shifts.find((x) => x.userId === me.id && x.data === data);
+      return html`
+        <button class="riga-turno" data-act="modifica-turno" data-data="${data}">
+          <span class="giorno-nome">${formatDay(data)}</span>
+          <span class="turno-valore ${s?.tipo === 'OFF' ? 'off' : ''}">${s ? shiftLabel(s) : '— da inserire'}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
+          <span class="chevron">›</span>
+        </button>`;
+    }).join('');
+    return html`
+      <section class="sezione">
+        <h2>Settimana ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h2>
+        <div class="lista-turni">${raw(righe)}</div>
+      </section>`;
+  }).join('');
+
+  return html`
+    <header class="testata"><h1>I tuoi turni</h1></header>
+    <p class="testo-tenue avviso-box">
+      I turni non arrivano dal sistema ufficiale: li inserisci tu. Questa app serve a mettersi d'accordo,
+      il cambio va poi fatto nell'app ufficiale dei turni.
+    </p>
+    ${raw(blocchi)}`;
+}
+
+return { home, calendario, dettaglioGiorno, bacheca, profilo, turni };
+})();
+
+// ---- src/ui/flows.js
+const M_flows = (() => {
+// Flussi: creazione richiesta (Cambio Rapido incluso), match, proposta,
+// accettazione bilaterale.
+
+const { html, raw, toast } = M_dom;
+const { store } = M_store;
+const { findMatches, validateRequest, satisfies } = M_engine;
+const { RULES, WANT_MODE, STATUS } = M_rules;
+const { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } = M_model;
+const { appleWeekKey, addDays, formatDay, todayISO } = M_time;
+const { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } = M_components;
+
+const draft = {
+  intent: null,
+  step: 1,
+  cedoShiftId: null,
+  flessibile: false,
+  cerco: { data: null, mode: WANT_MODE.ANY, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' },
+  usaPriorita: false,
+  orarioManuale: false,
+  errori: [],
+};
+
+function resetDraft(intent = null) {
+  draft.intent = intent;
+  draft.step = intent ? 2 : 1;
+  draft.cedoShiftId = null;
+  draft.flessibile = false;
+  draft.cerco = { data: null, mode: intent === 'CEDERE' ? WANT_MODE.ANY : WANT_MODE.SPECIFIC, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' };
+  draft.usaPriorita = false;
+  draft.orarioManuale = false;
+  draft.errori = [];
+}
+
+// ------------------------------------------------------- CAMBIO RAPIDO
+
+function scelta() {
+  return html`
+    <header class="testata"><h1>⚡ Cambio rapido</h1></header>
+    <p class="occhiello">Cosa vuoi fare?</p>
+    <button class="tile scelta rosso" data-act="intent" data-intent="CEDERE">
+      <span class="tile-icona">🔴</span>
+      <span><strong>Cedere un turno</strong><em>Ho un turno che non riesco a fare e cerco chi lo prende</em></span>
+    </button>
+    <button class="tile scelta verde" data-act="intent" data-intent="CERCARE">
+      <span class="tile-icona">🟢</span>
+      <span><strong>Cercare un turno</strong><em>Voglio un giorno preciso e offro uno dei miei in cambio</em></span>
+    </button>
+    <button class="tile scelta blu" data-act="intent" data-intent="SCAMBIO">
+      <span class="tile-icona">🔄</span>
+      <span><strong>Scambio specifico</strong><em>So già quale combinazione voglio</em></span>
+    </button>
+    <p class="testo-tenue nota-regola">
+      In ogni caso la richiesta avrà sempre due lati: quello che cedi e quello che cerchi.
+      È la regola che tiene in piedi tutto il resto.
+    </p>`;
+}
+
+// -------------------------------------------------- COSTRUZIONE RICHIESTA
+
+function nuovo() {
+  if (draft.step === 1) return scelta();
+  if (draft.step === 2) return passoCedo();
+  if (draft.step === 3) return passoCerco();
+  return passoRiepilogo();
+}
+
+function passoCedo() {
+  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
+    .filter((s) => s.tipo === 'WORK');
+
+  const righe = miei.map((s) => html`
+    <button class="riga-turno ${s.id === draft.cedoShiftId ? 'scelto' : ''}" data-act="scegli-cedo" data-id="${s.id}">
+      <span class="giorno-nome">${formatDay(s.data)}</span>
+      <span class="turno-valore">${shiftLabel(s)}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
+      <span class="chevron">${s.id === draft.cedoShiftId ? '✓' : '›'}</span>
+    </button>`).join('');
+
+  return html`
+    ${raw(barra('Quale turno cedi?', 1))}
+    ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
+    : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}
+    <label class="switch">
+      <input type="checkbox" data-act="flessibile" ${raw(draft.flessibile ? 'checked' : '')}>
+      <span>Sono disponibile a cedere anche altri turni</span>
+    </label>
+    <div class="barra-azioni">
+      <button class="btn primario largo" data-act="step" data-step="3" ${raw(draft.cedoShiftId ? '' : 'disabled')}>Continua</button>
+    </div>`;
+}
+
+function passoCerco() {
+  const cedo = store.shift(draft.cedoShiftId);
+  const wk = appleWeekKey(cedo.data);
+  const giorni = Array.from({ length: 7 }, (_, i) => addDays(wk, i))
+    .filter((d) => d !== cedo.data);
+
+  const pillole = giorni.map((d) => {
+    const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === d);
+    const occupato = mio?.tipo === 'WORK' && draft.cerco.mode !== WANT_MODE.OFF;
+    const bloccata = d < todayISO() || occupato;
+    const titolo = occupato ? `Quel giorno lavori già (${shiftLabel(mio)})` : '';
+    return html`
+      <button class="pill ${draft.cerco.data === d ? 'attivo' : ''}" data-act="scegli-data" data-data="${d}"
+              title="${titolo}" ${raw(bloccata ? 'disabled' : '')}>
+        ${formatDay(d)}
+        <em>${mio ? shiftLabel(mio) : 'niente'}</em>
+      </button>`;
+  }).join('');
+
+  const modi = [
+    [WANT_MODE.SPECIFIC, 'Orario preciso'],
+    [WANT_MODE.RANGE, 'Fascia oraria'],
+    [WANT_MODE.ANY, 'Qualsiasi turno'],
+    [WANT_MODE.OFF, 'OFF'],
+  ].map(([k, label]) => html`
+    <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
+
+  let campi = '';
+  if (draft.cerco.mode === WANT_MODE.SPECIFIC) {
+    campi = campiOrarioPreciso();
+  } else if (draft.cerco.mode === WANT_MODE.RANGE) {
+    campi = html`
+      <div class="campi-orario">
+        <label>Che finisca entro <input type="time" data-campo="entroLe" value="${draft.cerco.entroLe}"></label>
+        <label>Che inizi dopo <input type="time" data-campo="dalleOre" value="${draft.cerco.dalleOre}"></label>
+      </div>`;
+  }
+
+  const escludi = draft.cerco.mode === WANT_MODE.OFF ? '' : html`
+    <label class="switch">
+      <input type="checkbox" data-act="evita-chiusura" ${raw(draft.cerco.evitaChiusura ? 'checked' : '')}>
+      <span>Non voglio un turno di chiusura</span>
+    </label>`;
+
+  return html`
+    ${raw(barra('Cosa cerchi in cambio?', 2))}
+    <p class="testo-tenue avviso-box">
+      Solo i giorni della stessa settimana Apple di ${formatDay(cedo.data)} (sabato → venerdì):
+      gli scambi fra settimane diverse non sono ammessi.
+    </p>
+    <div class="pillole">${raw(pillole)}</div>
+    <p class="testo-tenue">Sotto ogni giorno c'è quello che hai tu: i giorni in cui lavori già sono spenti, prenderesti due turni.</p>
+    <h3>Quanto sei rigido?</h3>
+    <div class="chips">${raw(modi)}</div>
+    ${raw(campi)}
+    ${raw(escludi)}
+    <label class="campo">
+      <span>Messaggio (facoltativo)</span>
+      <textarea data-campo="note" rows="2" placeholder="Es. anche 12–20 mi andrebbe bene">${draft.cerco.note}</textarea>
+    </label>
+    <div class="barra-azioni">
+      <button class="btn secondario" data-act="step" data-step="2">Indietro</button>
+      <button class="btn primario" data-act="step" data-step="4" ${raw(draft.cerco.data ? '' : 'disabled')}>Continua</button>
+    </div>`;
+}
+
+/**
+ * Il CERCO con orario preciso non si digita: si sceglie fra i turni che quel
+ * giorno esistono davvero in store, mostrati senza nome. Digitare gli orari
+ * a mano è la trappola per chi ha un contratto diverso: un Part Time che
+ * copia "11:00–20:00" dal turno di un Full Time sta chiedendo ore che non
+ * farebbe mai. Qui sceglie il turno e l'app calcola le sue ore.
+ */
+function campiOrarioPreciso() {
+  const me = store.me;
+  if (!draft.cerco.data) {
+    return html`<p class="testo-tenue">Scegli prima il giorno.</p>`;
+  }
+
+  const visti = new Set();
+  const turni = store.state.shifts
+    .filter((s) => s.data === draft.cerco.data && s.tipo === 'WORK' && s.userId !== me.id)
+    .filter((s) => {
+      const chiave = `${s.start}-${s.end}`;
+      if (visti.has(chiave)) return false;
+      visti.add(chiave);
+      return true;
+    })
+    .sort((a, b) => a.start.localeCompare(b.start));
+
+  const righe = turni.map((s) => {
+    const t = trasformaTurno(s, me);
+    const scelto = draft.cerco.start === t.start && draft.cerco.end === t.end;
+    return html`
+      <button class="riga-turno ${scelto ? 'scelto' : ''}" data-act="scegli-orario"
+              data-start="${t.start}" data-end="${t.end}" data-originale="${shiftLabel(s)}">
+        <span class="giorno-nome">${shiftLabel(s)}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
+        <span class="turno-valore">${t.trasformato ? `tu faresti ${t.start}–${t.end}` : 'stesso orario per te'}</span>
+        <span class="chevron">${scelto ? '✓' : '›'}</span>
+      </button>`;
+  }).join('');
+
+  return html`
+    ${raw(turni.length ? `
+      <p class="testo-tenue">Turni che ci sono quel giorno in store. Scegli quello che ti interessa: l'orario a destra è quello che faresti tu, con il tuo contratto.</p>
+      <div class="lista-turni">${righe}</div>` : '')}
+    <label class="switch">
+      <input type="checkbox" data-act="orario-manuale" ${raw(draft.orarioManuale ? 'checked' : '')}>
+      <span>Nessuno di questi, scrivo io l'orario</span>
+    </label>
+    ${raw(draft.orarioManuale || !turni.length ? `
+      <div class="campi-orario">
+        <label>Dalle <input type="time" data-campo="start" value="${draft.cerco.start}"></label>
+        <label>Alle <input type="time" data-campo="end" value="${draft.cerco.end}"></label>
+      </div>
+      <p class="testo-tenue">Scrivi le ore che faresti tu, non quelle del turno di chi te lo cede.</p>` : '')}`;
+}
+
+function passoRiepilogo() {
+  const finto = { userId: store.state.currentUserId, cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile }, cerco: draft.cerco };
+  const credito = store.creditoPriorita();
+  const errori = validateRequest(finto, store.shiftsById(), store.state.shifts);
+
+  return html`
+    ${raw(barra('Controlla e pubblica', 3))}
+    <div class="card">
+      ${raw(coppiaCedoCerco(finto))}
+      ${raw(draft.cerco.note ? `<p class="nota-utente">“${draft.cerco.note}”</p>` : '')}
+    </div>
+
+    <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
+      <input type="checkbox" data-act="priorita" ${raw(draft.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
+      <span>⭐ Usa la priorità del mese (${credito} disponibile, dura ${RULES.priority.durationHours}h)</span>
+    </label>
+    <p class="testo-tenue">La priorità non si può aggiungere dopo e non torna indietro se cancelli la richiesta.</p>
+
+    ${raw(errori.length ? `<div class="errori">${errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>` : '')}
+    ${raw(draft.errori.length ? `<div class="errori">${draft.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>` : '')}
+
+    <div class="barra-azioni">
+      <button class="btn secondario" data-act="step" data-step="3">Indietro</button>
+      <button class="btn primario" data-act="pubblica" ${raw(errori.length ? 'disabled' : '')}>Pubblica e cerca match</button>
+    </div>
+    <p class="testo-tenue">Una volta pubblicata la richiesta non si modifica: si cancella e se ne fa un'altra.</p>`;
+}
+
+function barra(titolo, passo) {
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">✕</button>
+      <h1>${titolo}</h1>
+      <span class="passo">${passo}/3</span>
+    </header>
+    <div class="progresso"><i style="width:${(passo / 3) * 100}%"></i></div>`;
+}
+
+// ---------------------------------------------------------------- MATCH
+
+function match(params) {
+  const r = store.request(params.id);
+  if (!r) return vuoto('Richiesta non trovata', 'Forse è stata chiusa.');
+  const risultati = findMatches(r, store.state);
+  const pieni = risultati.filter((m) => m.tipo === 'MATCH');
+  const potenziali = risultati.filter((m) => m.tipo === 'POTENZIALE');
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Possibili match</h1>
+    </header>
+    <div class="card riepilogo">${raw(coppiaCedoCerco(r, { compatto: true }))}</div>
+
+    ${raw(pieni.length ? `<h2 class="titolo-gruppo">🟢 Match (${pieni.length})</h2>${pieni.map(cardMatch).join('')}` : '')}
+    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map(cardMatch).join('')}` : '')}
+    ${raw(risultati.length ? '' : vuoto(
+    'Ancora nessuno',
+    'Nessun collega ha pubblicato una richiesta compatibile né dichiarato disponibilità su quel giorno. La richiesta resta in bacheca.',
+    '<button class="btn secondario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
+  ))}
+    <p class="testo-tenue">Chi non ha dato nessun segnale di interesse non compare: l'app non manda richieste a caso.</p>`;
+}
+
+// ---------------------------------------------------- DETTAGLIO RICHIESTA
+
+function dettaglio(params) {
+  const r = store.request(params.id);
+  if (!r) return vuoto('Richiesta non trovata', 'Forse è stata chiusa o è scaduta.');
+  const autore = store.user(r.userId);
+  const mio = r.userId === store.state.currentUserId;
+  const proposte = store.proposteDi(r.id).filter((p) => p.status !== 'RIFIUTATA');
+  const me = store.state.currentUserId;
+
+  const blocchiProposte = proposte.map((p) => {
+    const da = store.user(p.daUserId);
+    const offerto = store.shift(p.shiftOffertoId);
+    const coinvolto = p.daUserId === me || p.aUserId === me;
+    const hoAccettato = p.accettataDa.includes(me);
+    const accordo = p.status === 'ACCORDO';
+
+    const azioni = accordo
+      ? html`
+        <div class="accordo">
+          <strong>🟢 Scambio concordato</strong>
+          <p>Ora effettua il cambio nell'app ufficiale dei turni. Questa app non lo fa al posto tuo.</p>
+          ${raw(p.cambioInserito
+    ? '<span class="tag">cambio inserito</span>'
+    : `<button class="btn primario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>`)}
+        </div>`
+      : coinvolto && !hoAccettato
+        ? html`
+          <div class="barra-azioni">
+            <button class="btn primario" data-act="accetta" data-id="${p.id}">Accetta</button>
+            <button class="btn secondario" data-act="rifiuta" data-id="${p.id}">Rifiuta</button>
+          </div>`
+        : html`<p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>`;
+
+    return html`
+      <article class="card proposta">
+        <header class="card-head">
+          <span class="avatar">${iniziali(da)}</span>
+          <div><strong>${nomeUtente(da)}</strong><div class="meta">ha proposto uno scambio</div></div>
+        </header>
+        <p>Ti darebbe <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
+        ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
+        <div class="accettazioni">${raw(p.accettataDa.map((u) => `<span class="tag ok">${nomeUtente(store.user(u))} ha accettato</span>`).join(''))}</div>
+        ${raw(azioni)}
+      </article>`;
+  }).join('');
+
+  const hoGiaProposto = proposte.some((p) => p.daUserId === me);
+  const accordoRaggiunto = r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA;
+  const azioneAutore = mio
+    ? (accordoRaggiunto ? '' : html`
+      <div class="barra-azioni">
+        <button class="btn secondario" data-act="vai" data-to="#/match?id=${r.id}">Rivedi i match</button>
+        <button class="btn pericolo" data-act="cancella" data-id="${r.id}">Cancella richiesta</button>
+      </div>`)
+    : r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA || hoGiaProposto || !turniOfferibili(r).length
+      ? ''
+      : html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`;
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="indietro">‹</button>
+      <h1>Cambio turno</h1>
+    </header>
+    <article class="card ${hasPriority(r) ? 'prioritaria' : ''}">
+      <header class="card-head">
+        <span class="avatar">${iniziali(autore)}</span>
+        <div>
+          <strong>${hasPriority(r) ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
+          <div class="meta">${autore.ruolo} · ${RULES.contracts[autore.contratto].label}</div>
+        </div>
+      </header>
+      ${raw(coppiaCedoCerco(r))}
+      ${raw(r.cerco.note ? `<p class="nota-utente">“${r.cerco.note}”</p>` : '')}
+      <div class="meta">${raw(badgeStato(r.status))} · pubblicata ${formatDay(r.createdAt.slice(0, 10))}</div>
+    </article>
+    ${raw(blocchiProposte)}
+    ${raw(azioneAutore)}`;
+}
+
+/**
+ * I turni che posso davvero offrire su una richiesta. Il confronto va fatto
+ * sul turno come lo riceverebbe chi ha pubblicato, non come ce l'ho io.
+ */
+function turniOfferibili(request) {
+  const destinatario = store.user(request.userId);
+  return store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
+    .filter((s) => satisfies(request.cerco, turnoAdattato(s, destinatario)).score > 0);
+}
+
+/** Contenuto della sheet "proponi scambio". */
+function formProposta(request, shiftSuggerito) {
+  // Si può offrire solo qualcosa che soddisfa davvero il CERCO: se cercano
+  // un OFF, un turno lavorato non serve a niente.
+  const opzioni = turniOfferibili(request);
+
+  if (!opzioni.length) {
+    return html`
+      <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
+      <p class="avviso">⚠️ Il ${formatDay(request.cerco.data)} non hai niente che corrisponda a quello che ${nomeUtente(store.user(request.userId))} sta cercando.</p>
+      <p class="testo-tenue">Aggiorna i tuoi turni se il calendario non è allineato, oppure lascia perdere questo scambio.</p>`;
+  }
+
+  return html`
+    <p>Stai proponendo uno scambio a <strong>${nomeUtente(store.user(request.userId))}</strong>.</p>
+    <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
+    <label class="campo">
+      <span>Il turno che offri</span>
+      <select class="select" data-campo="shift">
+        ${opzioni.map((s) => {
+    const t = trasformaTurno(s, store.user(request.userId));
+    const etichetta = t.trasformato
+      ? `${formatDay(s.data)} · ${shiftLabel(s)} → farebbe ${t.start}–${t.end}`
+      : `${formatDay(s.data)} · ${shiftLabel(s)}`;
+    return raw(`<option value="${s.id}" ${s.id === shiftSuggerito ? 'selected' : ''}>${etichetta}</option>`);
+  })}
+      </select>
+    </label>
+    ${raw(opzioni.some((s) => trasformaTurno(s, store.user(request.userId)).trasformato)
+    ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe davvero.</p>`
+    : '')}
+    <label class="campo">
+      <span>Messaggio (facoltativo)</span>
+      <textarea data-campo="messaggio" rows="2" placeholder="Es. per me va bene anche 12–20"></textarea>
+    </label>
+    <p class="testo-tenue">Proponendo accetti già da parte tua: serve anche l'accettazione dell'altra persona.</p>`;
+}
+
+function pubblica() {
+  const { errori, richiesta } = store.creaRichiesta({
+    cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile },
+    cerco: draft.cerco,
+    usaPriorita: draft.usaPriorita,
+  });
+  if (errori) {
+    draft.errori = errori;
+    return null;
+  }
+  toast('Richiesta pubblicata');
+  return richiesta;
+}
+
+return { draft, resetDraft, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica };
+})();
+
+// ---- src/ui/app.js
+const M_app = (() => {
+const { html, raw, on, toast, sheet } = M_dom;
+const { store } = M_store;
+const V = M_views;
+const F = M_flows;
+const { formatDay } = M_time;
+const { durataOre, isNotturno, fuoriFascia, etichettaFascia } = M_model;
+const { RULES } = M_rules;
+
+const app = document.getElementById('app');
+const tabbar = document.getElementById('tabbar');
+
+const TABS = [
+  { hash: '#/home', icona: '⌂', label: 'Home' },
+  { hash: '#/calendario', icona: '▦', label: 'Calendario' },
+  { hash: '#/bacheca', icona: '☰', label: 'Bacheca' },
+  { hash: '#/profilo', icona: '☺', label: 'Profilo' },
+];
+
+function parseHash() {
+  const h = location.hash || '#/home';
+  const [percorso, query] = h.slice(2).split('?');
+  const params = Object.fromEntries(new URLSearchParams(query || ''));
+  return { percorso: percorso || 'home', params };
+}
+
+function render() {
+  const { percorso, params } = parseHash();
+  const viste = {
+    home: V.home,
+    calendario: V.calendario,
+    bacheca: V.bacheca,
+    profilo: V.profilo,
+    turni: V.turni,
+    rapido: () => { if (F.draft.step !== 1) F.resetDraft(null); return F.nuovo(); },
+    nuovo: F.nuovo,
+    match: F.match,
+    richiesta: F.dettaglio,
+  };
+  const vista = viste[percorso] || V.home;
+  app.innerHTML = vista(params);
+  app.scrollTop = 0;
+
+  const attivo = TABS.find((t) => t.hash === `#/${percorso}`);
+  tabbar.innerHTML = TABS.map((t) => html`
+    <button class="tab ${t === attivo ? 'attivo' : ''}" data-act="vai" data-to="${t.hash}">
+      <span class="tab-icona">${t.icona}</span><span>${t.label}</span>
+    </button>`).join('');
+  tabbar.hidden = !attivo;
+}
+
+function vai(to) {
+  location.hash = to;
+}
+
+// ------------------------------------------------------------ azioni
+
+const AZIONI = {
+  vai: (_, el) => vai(el.dataset.to),
+  indietro: () => history.back(),
+
+  'apri-richiesta': (_, el) => vai(`#/richiesta?id=${el.dataset.id}`),
+
+  giorno: (_, el) => {
+    const data = el.dataset.data;
+    sheet(formatDay(data, true), V.dettaglioGiorno(data));
+  },
+
+  intent: (_, el) => {
+    F.resetDraft(el.dataset.intent);
+    vai('#/nuovo');
+  },
+
+  step: (_, el) => {
+    F.draft.step = Number(el.dataset.step);
+    F.draft.errori = [];
+    render();
+  },
+
+  'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },
+  'scegli-data': (_, el) => { F.draft.cerco.data = el.dataset.data; render(); },
+  modo: (_, el) => { F.draft.cerco.mode = el.dataset.modo; render(); },
+  'scegli-orario': (_, el) => {
+    F.draft.cerco.start = el.dataset.start;
+    F.draft.cerco.end = el.dataset.end;
+    F.draft.cerco.daTurno = el.dataset.originale;
+    render();
+  },
+  'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },
+  flessibile: (e) => { F.draft.flessibile = e.target.checked; },
+  'evita-chiusura': (e) => { F.draft.cerco.evitaChiusura = e.target.checked; },
+  priorita: (e) => { F.draft.usaPriorita = e.target.checked; },
+
+  pubblica: () => {
+    const r = F.pubblica();
+    if (r) vai(`#/match?id=${r.id}`);
+    else render();
+  },
+
+  proponi: (_, el) => {
+    const richiesta = store.request(el.dataset.richiesta);
+    if (!richiesta) return;
+    const possibile = F.turniOfferibili(richiesta).length > 0;
+    const s = sheet('Proponi lo scambio', F.formProposta(richiesta, el.dataset.shift), {
+      azioni: possibile
+        ? '<button class="btn primario largo" data-act="conferma-proposta">Invia proposta</button>'
+        : '<button class="btn secondario largo" data-chiudi>Chiudi</button>',
+    });
+    s.el.dataset.richiesta = richiesta.id;
+  },
+
+  'conferma-proposta': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const scelta = wrap.querySelector('[data-campo="shift"]');
+    if (!scelta) return toast('Non hai un turno da offrire su quel giorno');
+    const shiftId = scelta.value;
+    const messaggio = wrap.querySelector('[data-campo="messaggio"]').value;
+    const { errori } = store.proponiScambio({ requestId: wrap.dataset.richiesta, shiftOffertoId: shiftId, messaggio });
+    if (errori) return toast(errori[0]);
+    wrap.querySelector('[data-chiudi]').click();
+    toast('Proposta inviata');
+    vai(`#/richiesta?id=${wrap.dataset.richiesta}`);
+    render();
+  },
+
+  accetta: (_, el) => { store.accetta(el.dataset.id); render(); },
+  rifiuta: (_, el) => { store.rifiuta(el.dataset.id); toast('Proposta rifiutata'); render(); },
+  'cambio-inserito': (_, el) => { store.cambioInserito(el.dataset.id); toast('Richiesta chiusa'); vai('#/home'); },
+
+  cancella: (_, el) => {
+    if (!confirm('Cancellare la richiesta? Non si può modificare, solo rifare da capo.')) return;
+    store.cancellaRichiesta(el.dataset.id);
+    toast('Richiesta cancellata');
+    vai('#/home');
+  },
+
+  'toggle-disp': (_, el) => {
+    const { week, slot } = el.dataset;
+    const attuale = store.me.disponibilita?.[week]?.[Number(slot)];
+    store.impostaDisponibilita(week, Number(slot), !attuale);
+    render();
+  },
+
+  pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); },
+  'durata-turno': (e) => { store.impostaContratto({ durataTurno: Number(e.target.value) }); render(); },
+  'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
+
+  reset: () => {
+    if (!confirm('Ripristinare i dati di esempio? Perdi tutto quello che hai inserito.')) return;
+    store.reset();
+    vai('#/home');
+    render();
+  },
+
+  'spiega-priorita': () => {
+    sheet('⭐ Come funziona la priorità', html`
+      <ul class="elenco">
+        <li>Hai <strong>1 priorità al mese</strong>, dura <strong>48 ore</strong>.</li>
+        <li>La richiesta va in cima alla bacheca ed è evidenziata nel calendario.</li>
+        <li>Serve a farsi vedere, non dà nessun diritto in più: nessuno è obbligato ad accettare.</li>
+        <li>Si sceglie al momento della pubblicazione: non si può aggiungere dopo.</li>
+        <li>Se cancelli la richiesta il credito non torna indietro.</li>
+      </ul>
+      <p class="testo-tenue">Credito disponibile adesso: ${store.creditoPriorita()}.</p>`);
+  },
+
+  'modifica-turno': (_, el) => {
+    const data = el.dataset.data;
+    const s = store.state.shifts.find((x) => x.userId === store.state.currentUserId && x.data === data);
+    const usato = s && store.state.requests.some((r) => r.cedo.shiftId === s.id && r.status !== 'CHIUSA' && r.status !== 'SCADUTA');
+    const w = sheet(formatDay(data, true), html`
+      ${raw(usato ? '<p class="avviso">⚠️ Questo turno è collegato a una richiesta attiva.</p>' : '')}
+      <div class="chips">
+        <button class="chip ${!s || s.tipo === 'WORK' ? 'attivo' : ''}" data-tipo="WORK">Turno</button>
+        <button class="chip ${s?.tipo === 'OFF' ? 'attivo' : ''}" data-tipo="OFF">OFF</button>
+      </div>
+      <div class="campi-orario" data-orari ${raw(s?.tipo === 'OFF' ? 'hidden' : '')}>
+        <label>Dalle <input type="time" data-campo="start" value="${s?.start || '10:00'}"></label>
+        <label>Alle <input type="time" data-campo="end" value="${s?.end || '19:00'}"></label>
+      </div>
+      <p class="testo-tenue" data-nota-turno></p>`, {
+      azioni: `<button class="btn primario largo" data-act="salva-turno" data-data="${data}">Salva</button>
+               ${s ? `<button class="btn pericolo largo" data-act="elimina-turno" data-id="${s.id}">Elimina</button>` : ''}`,
+    });
+    w.el.dataset.tipo = s?.tipo || 'WORK';
+    w.el.querySelectorAll('[data-tipo]').forEach((btn) => btn.addEventListener('click', () => {
+      w.el.dataset.tipo = btn.dataset.tipo;
+      w.el.querySelectorAll('[data-tipo]').forEach((b) => b.classList.toggle('attivo', b === btn));
+      w.el.querySelector('[data-orari]').hidden = btn.dataset.tipo === 'OFF';
+      nota();
+    }));
+
+    // Il turno che scavalca la mezzanotte va detto subito, altrimenti sembra
+    // un errore di battitura.
+    const nota = () => {
+      const p = w.el.querySelector('[data-nota-turno]');
+      if (w.el.dataset.tipo === 'OFF') { p.textContent = ''; return; }
+      const finto = {
+        tipo: 'WORK',
+        start: w.el.querySelector('[data-campo="start"]').value,
+        end: w.el.querySelector('[data-campo="end"]').value,
+      };
+      if (!finto.start || !finto.end) { p.textContent = ''; return; }
+      const durata = durataOre(finto).toFixed(1).replace('.0', '');
+      if (isNotturno(finto)) {
+        p.textContent = `Notte: finisce alle ${finto.end} del giorno dopo, ${durata} ore.`;
+      } else if (fuoriFascia(finto)) {
+        p.textContent = `${durata} ore, fuori dalla fascia ${RULES.store.primoIngresso}–${RULES.store.ultimaUscita}. Controlla gli orari.`;
+      } else {
+        p.textContent = `${durata} ore${etichettaFascia(finto) ? ` · ${etichettaFascia(finto)}` : ''}.`;
+      }
+    };
+    w.el.querySelectorAll('[data-campo="start"], [data-campo="end"]')
+      .forEach((i) => i.addEventListener('input', nota));
+    nota();
+  },
+
+  'salva-turno': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const tipo = wrap.dataset.tipo;
+    store.salvaTurno({
+      data: el.dataset.data,
+      tipo,
+      start: tipo === 'OFF' ? null : wrap.querySelector('[data-campo="start"]').value,
+      end: tipo === 'OFF' ? null : wrap.querySelector('[data-campo="end"]').value,
+    });
+    wrap.querySelector('[data-chiudi]').click();
+    toast('Turno salvato');
+    render();
+  },
+
+  'elimina-turno': (_, el) => {
+    const errore = store.eliminaTurno(el.dataset.id);
+    if (errore) return toast(errore);
+    el.closest('.sheet-backdrop').querySelector('[data-chiudi]').click();
+    render();
+  },
+};
+
+on(document.body, 'click', '[data-act]', (e, el) => {
+  const fn = AZIONI[el.dataset.act];
+  if (!fn) return;
+  if (el.tagName !== 'INPUT') e.preventDefault();
+  fn(e, el);
+});
+
+on(document.body, 'change', '[data-act]', (e, el) => {
+  if (el.tagName !== 'INPUT' && el.tagName !== 'SELECT') return;
+  if (el.dataset.act === 'cambia-utente') {
+    store.cambiaUtente(el.value);
+    toast(`Ora sei ${store.me.nome}`);
+    return render();
+  }
+  const fn = AZIONI[el.dataset.act];
+  if (fn) fn(e, el);
+});
+
+// Campi liberi del wizard (orari, note): aggiornano la bozza senza rerender.
+on(document.body, 'input', '[data-campo]', (e, el) => {
+  const chiave = el.dataset.campo;
+  if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
+});
+
+window.addEventListener('hashchange', render);
+
+store.init();
+store.subscribe(() => {});
+if (!location.hash) location.hash = '#/home';
+render();
+
+
+return {  };
+})();
+</script>
