@@ -9,6 +9,7 @@ import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
 import { RULES } from '../core/rules.js';
 import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
+import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 
 /** La bozza in corso di compilazione. */
 export const bozzaProfilo = {
@@ -18,6 +19,8 @@ export const bozzaProfilo = {
   genere: '',
   contratto: '',
   oreSettimanali: null,
+  password: '',
+  conferma: '',
   accettate: false,
   errori: [],
 };
@@ -31,6 +34,8 @@ export function apriProfilo({ modifica = false } = {}) {
     genere: modifica ? me.genere || '' : '',
     contratto: modifica ? me.contratto : '',
     oreSettimanali: modifica ? me.oreSettimanali : null,
+    password: '',
+    conferma: '',
     // In modifica le note sono già state accettate: non si richiede due volte.
     accettate: modifica,
     modifica,
@@ -53,18 +58,24 @@ export function validaProfilo() {
   if (!b.genere) errori.push('Scegli una delle tre opzioni.');
   if (!b.contratto) errori.push('Scegli il tipo di contratto.');
   if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
+  // In modifica la password non si tocca: ha una voce sua nel Profilo.
+  if (!b.modifica) {
+    const problema = controllaPassword(b.password, b.conferma);
+    if (problema) errori.push(problema);
+  }
   if (!b.accettate) errori.push('Serve la presa visione delle note.');
   return errori;
 }
 
 export function schermataProfilo() {
   const b = bozzaProfilo;
-  const totale = b.modifica ? 2 : 3;
+  const totale = b.modifica ? 2 : 4;
   const passo = Math.min(b.passo, totale);
 
   const contenuto = passo === 1 ? passoChiSei()
     : passo === 2 ? passoContratto()
-      : passoNote();
+      : passo === 3 ? passoPassword()
+        : passoNote();
 
   return html`
     <header class="testata">
@@ -153,6 +164,37 @@ function passoContratto() {
     <button class="btn primario largo" data-act="profilo-avanti">
       ${b.modifica ? 'Salva' : 'Continua'}
     </button>`;
+}
+
+function passoPassword() {
+  const b = bozzaProfilo;
+  return html`
+    <h2 class="titolo-gruppo">La tua password</h2>
+    <p class="testo-tenue">
+      Serve a entrare nell'app. È personale: nessun altro la conosce, nemmeno
+      chi ti ha passato il link.
+    </p>
+
+    <label class="campo">
+      <span>Password</span>
+      <input type="password" class="testo" data-campo="password-nuova"
+             value="${b.password}" placeholder="Almeno ${REGOLE_PASSWORD.lunghezzaMinima} caratteri"
+             autocomplete="new-password">
+    </label>
+
+    <label class="campo">
+      <span>Ripetila</span>
+      <input type="password" class="testo" data-campo="password-conferma"
+             value="${b.conferma}" autocomplete="new-password">
+    </label>
+
+    <p class="testo-tenue">
+      Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
+      permette di riconoscerla. Se la dimentichi non si recupera, e l'unica
+      strada è ricominciare da capo.
+    </p>
+
+    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
 
 function passoNote() {

@@ -219,7 +219,7 @@ export function seed() {
     versione: 1,
     currentUserId: 'u_lorenzo',
     // Finché non è completato, all'avvio compare la creazione del profilo.
-    profilo: { completato: false, noteAccettateIl: null, versioneNote: null },
+    profilo: { completato: false, noteAccettateIl: null, versioneNote: null, credenziali: null },
     users,
     shifts,
     requests,

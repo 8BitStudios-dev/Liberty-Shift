@@ -5,6 +5,7 @@
 import { RULES, PREFERENZE, STATUS } from './rules.js';
 import { newId, isExpired, hasPriority, isOpen } from './model.js';
 import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
+import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
 import { monthKey, todayISO } from './time.js';
 import { seed } from './seed.js';
 
@@ -19,7 +20,7 @@ export const store = {
     // Dati salvati da una versione precedente possono non avere i campi nuovi.
     this.state.ringraziamenti = this.state.ringraziamenti || [];
     this.state.profilo = this.state.profilo
-      || { completato: false, noteAccettateIl: null, versioneNote: null };
+      || { completato: false, noteAccettateIl: null, versioneNote: null, credenziali: null };
     this.scadenze();
     return this.state;
   },
@@ -368,7 +369,38 @@ export const store = {
    * richieste della demo restano coerenti e l'app è viva dal primo minuto,
    * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
    */
-  completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, versioneNote }) {
+  /** Le credenziali di chi usa l'app, senza la password: solo la sua impronta. */
+  get credenziali() {
+    return this.state.profilo?.credenziali || null;
+  },
+  entrato() {
+    return sessioneAperta(this.credenziali);
+  },
+  entra(password) {
+    if (!verificaPassword(password, this.credenziali)) return false;
+    apriSessione(this.credenziali);
+    return true;
+  },
+  esci() {
+    chiudiSessione();
+  },
+  /**
+   * Cambio password. Serve quella attuale: se qualcuno trova il telefono
+   * sbloccato non deve potersi chiudere dentro cambiandola.
+   */
+  cambiaPassword(attuale, nuova) {
+    if (!verificaPassword(attuale, this.credenziali)) {
+      return { errore: 'La password attuale non è corretta.' };
+    }
+    this.state.profilo.credenziali = creaCredenziali(nuova);
+    // La sessione segue la credenziale nuova: cambiare password non deve
+    // buttare fuori chi l'ha appena cambiata.
+    apriSessione(this.state.profilo.credenziali);
+    this.commit();
+    return { ok: true };
+  },
+
+  completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote }) {
     const me = this.me;
     const cog = (cognome || '').trim();
     Object.assign(me, {
@@ -381,11 +413,16 @@ export const store = {
       contratto: contratto || me.contratto,
       oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,
     });
+    const credenziali = password
+      ? creaCredenziali(password)
+      : this.state.profilo?.credenziali || null;
     this.state.profilo = {
       completato: true,
       noteAccettateIl: new Date().toISOString(),
       versioneNote: versioneNote || this.state.profilo?.versioneNote || null,
+      credenziali,
     };
+    if (credenziali) apriSessione(credenziali);
     this.commit();
     return { ok: true };
   },

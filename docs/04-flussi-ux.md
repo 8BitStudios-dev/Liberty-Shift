@@ -217,30 +217,43 @@ può risolverla, e un "sei Part Time" giusto da un lato è falso dall'altro. Si
 usano i nomi propri, e c'è un test che rifiuta le frasi di parte.
 
 ## L'accesso
-Una password sola, uguale per tutti, chiesta prima di ogni altra cosa. Chi la
-inserisce resta dentro finché non tocca "Esci" dal Profilo.
+La password è **personale**, scelta da ciascuno alla prima apertura. Chi entra
+resta dentro finché non tocca "Esci" dal Profilo.
 
-Va detto cosa protegge: **tiene fuori chi capita sul link, non i dati.** Il
-controllo avviene nel browser e chiunque abbia il file può leggerne il codice.
-Nel sorgente non c'è la password ma la sua impronta (`RULES.accesso.impronta`),
-generata con `node scripts/password.js "..."`; la password si dice a voce.
+Non viene salvata: si salva la sua **impronta**, calcolata insieme a un sale
+casuale generato in quel momento. Due persone con la stessa password hanno
+impronte diverse, e dai dati salvati non si risale alla password.
+
+Va detto cosa protegge: **l'app da chi mette le mani sul dispositivo, non i
+dati.** Il controllo avviene nel browser, e chi ha accesso al telefono ha
+accesso al `localStorage`. È una serratura, non una cassaforte.
 
 L'hash è volutamente semplice e non SHA-256: `crypto.subtle` non esiste sui file
 aperti in locale, e avrebbe reso l'app inutilizzabile fuori da https per una
-sicurezza che comunque non c'è. La protezione vera arriverà dal server, e questa
-schermata diventerà il punto in cui si ottengono le credenziali.
+sicurezza che comunque, girando tutta nel browser, non c'è. Con il server la
+password resterà la stessa per chi la usa, ma a verificarla sarà Supabase.
+
+**Se la password si dimentica non si recupera.** L'unica strada è "Ricomincia da
+capo" nella schermata di accesso, che cancella i dati di quel dispositivo. È
+scritto sia lì sia nel passo in cui la si sceglie, perché una sorpresa del
+genere non si scopre dopo.
+
+**Cambio password**, dal Profilo in fondo: serve quella attuale. Chi trovasse il
+telefono già sbloccato non deve poter chiudere fuori il proprietario cambiandola.
+La sessione segue la credenziale nuova, così chi cambia password non si ritrova
+alla porta.
 
 ## La prima apertura
-Tre passi, e non si salta nessuno: **chi sei** (nome, iniziale del cognome,
-come preferisci essere chiamato), **il contratto** (tipo e monte ore), **le
-note d'uso**. Il pulsante finale resta spento finché non si dichiara di averle
-lette.
+Quattro passi, e non si salta nessuno: **chi sei** (nome, cognome, come
+preferisci essere chiamato), **il contratto** (tipo e monte ore), **la
+password**, **le note d'uso**. Il pulsante finale resta spento finché non si
+dichiara di averle lette.
 
 La validazione è per passo: mentre scrivi il nome non ti viene detto che manca
 il contratto.
 
-Dal Profilo si riapre lo stesso modulo con "Modifica profilo", saltando le note
-già accettate.
+Dal Profilo si riapre lo stesso modulo con "Modifica profilo": due passi, senza
+la password (che ha una voce sua) e senza le note già accettate.
 
 ## La guida
 Ogni sezione ha una scheda che si apre **da sola la prima volta** che ci si

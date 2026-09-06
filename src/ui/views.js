@@ -317,6 +317,14 @@ export function profilo() {
         </span>
         <span class="chevron">›</span>
       </button>
+      <button class="tile" data-act="cambia-password">
+        <span class="tile-icona">🔒</span>
+        <span>
+          <strong>Cambia password</strong>
+          <em>Serve quella attuale</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
       <button class="tile" data-act="vai" data-to="#/legale">
         <span class="tile-icona">📄</span>
         <span>

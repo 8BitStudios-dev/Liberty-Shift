@@ -8,7 +8,9 @@ import {
 } from '../src/core/engine.js';
 import { WANT_MODE, RULES, PREFERENZE, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
-import { impronta, passwordCorretta } from '../src/core/accesso.js';
+import {
+  impronta, creaCredenziali, verificaPassword, controllaPassword,
+} from '../src/core/accesso.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
   impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno, applicaPreferenze, fasceDi,
@@ -594,15 +596,38 @@ test('senza genere dichiarato si usa una forma neutra, non il maschile', () => {
 
 // --- accesso -----------------------------------------------------------
 
-test('l\'impronta è stabile e non contiene la password', () => {
-  assert.equal(impronta('cambio turno'), impronta('  Cambio Turno  '));
-  assert.notEqual(impronta('cambio turno'), impronta('cambio turni'));
-  assert.doesNotMatch(impronta('cambio turno'), /cambio|turno/i);
+test('la password non si salva: si salva la sua impronta', () => {
+  const c = creaCredenziali('segreto123');
+  assert.ok(c.impronta && c.sale);
+  assert.doesNotMatch(JSON.stringify(c), /segreto123/);
 });
 
 test('la password giusta apre, le altre no', () => {
-  assert.ok(passwordCorretta('cambio turno'));
-  assert.ok(!passwordCorretta('cambio turni'));
-  assert.ok(!passwordCorretta(''));
-  assert.ok(!passwordCorretta(undefined));
+  const c = creaCredenziali('segreto123');
+  assert.ok(verificaPassword('segreto123', c));
+  assert.ok(!verificaPassword('segreto124', c));
+  assert.ok(!verificaPassword('', c));
+  assert.ok(!verificaPassword('segreto123', null));
+});
+
+test('due persone con la stessa password hanno impronte diverse', () => {
+  // È il lavoro del sale: senza, un'impronta uguale rivelerebbe una password
+  // uguale a chiunque legga i dati.
+  const a = creaCredenziali('stessapassword');
+  const b = creaCredenziali('stessapassword');
+  assert.notEqual(a.sale, b.sale);
+  assert.notEqual(a.impronta, b.impronta);
+  assert.ok(verificaPassword('stessapassword', a));
+  assert.ok(verificaPassword('stessapassword', b));
+});
+
+test('senza sale l\'impronta resta deterministica', () => {
+  assert.equal(impronta('abc', 'sale'), impronta('abc', 'sale'));
+  assert.notEqual(impronta('abc', 'sale'), impronta('abc', 'altro'));
+});
+
+test('i requisiti della password sono controllati prima di salvarla', () => {
+  assert.match(controllaPassword('abc'), /almeno/);
+  assert.match(controllaPassword('abcdef', 'abcdeg'), /non coincidono/);
+  assert.equal(controllaPassword('abcdef', 'abcdef'), '');
 });

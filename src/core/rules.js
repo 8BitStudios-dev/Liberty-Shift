@@ -70,19 +70,6 @@ export const RULES = {
   },
   monteOreAmmessi: [20, 25, 30, 40],
 
-  /**
-   * Accesso all'app. `impronta` non è la password: è il suo hash, generato
-   * con `node scripts/password.js "..."`. La password si dice a voce.
-   *
-   * Serve a tenere fuori chi capita sul link, non a proteggere i dati: il
-   * controllo avviene nel browser. La protezione vera arriverà dal server.
-   */
-  accesso: {
-    attivo: true,
-    // Password di partenza: "cambio turno". Da cambiare prima di darla in giro.
-    impronta: 'fftexy-1uzmmw6',
-  },
-
   adattamentoPenalty: 5,
 
   // Quanto pesa una preferenza soddisfatta. Poco per costruzione: è un

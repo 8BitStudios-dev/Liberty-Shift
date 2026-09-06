@@ -71,8 +71,9 @@ export function noteLegali({ compatte = false } = {}) {
           da autenticati, e ognuno modifica soltanto le proprie richieste.</li>
         <li>Niente esce di qui senza che tu lo pubblichi.</li>
         <li>Le richieste cancellate spariscono dalla bacheca.</li>
-        <li>Si entra con la password del gruppo: tiene fuori chi arriva sul link
-          per caso, non sostituisce un vero accesso protetto.</li>
+        <li>Si entra con una password personale, che non viene salvata: l'app
+          conserva solo un'impronta per riconoscerla. Protegge l'app da chi
+          mette le mani sul dispositivo, non i dati che ci stanno dentro.</li>
         ${raw(esteso(`<li>Non inserire dati di clienti, numeri di vendita o altre
           informazioni di lavoro riservate.</li>`))}
       </ul>

@@ -10,7 +10,7 @@ import { parseICS } from '../core/ics.js';
 import * as P from './profilo-setup.js';
 import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
-import { sbloccato, sblocca, blocca } from '../core/accesso.js';
+import { controllaPassword } from '../core/accesso.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -81,7 +81,7 @@ function schermataAccesso(errore = false) {
     <div class="accesso">
       <div class="accesso-logo">🔄</div>
       <h1>Cambio Turno</h1>
-      <p class="testo-tenue">Inserisci la password del gruppo.</p>
+      <p class="testo-tenue">Inserisci la tua password.</p>
       <label class="campo">
         <input type="password" class="testo" data-campo="password"
                placeholder="Password" autocomplete="current-password" autofocus>
@@ -89,15 +89,19 @@ function schermataAccesso(errore = false) {
       ${raw(errore ? '<p class="non-puoi">Password sbagliata.</p>' : '')}
       <button class="btn primario largo" data-act="entra">Entra</button>
       <p class="testo-tenue accesso-nota">
-        Se non ce l'hai, chiedila a chi ti ha passato il link.
+        Se l'hai dimenticata non si recupera: si riparte da capo, e i dati di
+        questo dispositivo vanno persi.
       </p>
+      <button class="link-btn" data-act="ricomincia">Ricomincia da capo</button>
     </div>`;
 }
 
 function render() {
   const { percorso, params } = parseHash();
 
-  if (!sbloccato()) {
+  // La porta c'è solo quando c'è una password da chiedere: alla primissima
+  // apertura si va dritti alla creazione del profilo.
+  if (store.credenziali && !store.entrato()) {
     app.innerHTML = schermataAccesso();
     tabbar.hidden = true;
     setTimeout(() => app.querySelector('[data-campo="password"]')?.focus(), 40);
@@ -185,14 +189,54 @@ const AZIONI = {
 
   entra: () => {
     const campo = app.querySelector('[data-campo="password"]');
-    if (sblocca(campo?.value)) return render();
+    if (store.entra(campo?.value)) return render();
     app.innerHTML = schermataAccesso(true);
     app.querySelector('[data-campo="password"]')?.focus();
   },
   esci: () => {
-    if (!confirm('Uscire? Per rientrare serve di nuovo la password.')) return;
-    blocca();
+    if (!confirm('Uscire? Per rientrare serve la tua password.')) return;
+    store.esci();
     render();
+  },
+  ricomincia: () => {
+    if (!confirm('Cancellare tutto e ricominciare? I turni e le richieste di questo dispositivo vanno persi.')) return;
+    store.esci();
+    store.reset();
+    location.hash = '#/home';
+    render();
+  },
+
+  'cambia-password': () => {
+    const w = sheet('Cambia password', html`
+      <label class="campo">
+        <span>Password attuale</span>
+        <input type="password" class="testo" data-campo="vecchia" autocomplete="current-password">
+      </label>
+      <label class="campo">
+        <span>Nuova password</span>
+        <input type="password" class="testo" data-campo="nuova" autocomplete="new-password">
+      </label>
+      <label class="campo">
+        <span>Ripeti la nuova</span>
+        <input type="password" class="testo" data-campo="ripeti" autocomplete="new-password">
+      </label>
+      <div data-esito></div>`, {
+      azioni: '<button class="btn primario largo" data-act="conferma-password">Cambia</button>',
+    });
+    setTimeout(() => w.el.querySelector('[data-campo="vecchia"]')?.focus(), 40);
+  },
+
+  'conferma-password': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const val = (n) => wrap.querySelector(`[data-campo="${n}"]`).value;
+    const esito = wrap.querySelector('[data-esito]');
+    const mostra = (testo) => { esito.innerHTML = `<p class="non-puoi">${testo}</p>`; };
+    const problema = controllaPassword(val('nuova'), val('ripeti'));
+    if (problema) return mostra(problema);
+    const r = store.cambiaPassword(val('vecchia'), val('nuova'));
+    if (r.errore) return mostra(r.errore);
+    wrap.querySelector('[data-chiudi]').click();
+    toast('Password cambiata');
   },
 
   // --- creazione e modifica del profilo ---
@@ -208,9 +252,12 @@ const AZIONI = {
     const b = P.bozzaProfilo;
     // Si controlla un passo per volta: un errore sul contratto mentre stai
     // scrivendo il nome è solo rumore.
-    const mancanti = b.passo === 1
-      ? P.validaProfilo().filter((e) => /nome|cognome|opzioni/.test(e))
-      : P.validaProfilo().filter((e) => /contratto|monte ore/.test(e));
+    const perPasso = {
+      1: /nome|cognome|opzioni/,
+      2: /contratto|monte ore/,
+      3: /password/i,
+    }[b.passo];
+    const mancanti = perPasso ? P.validaProfilo().filter((e) => perPasso.test(e)) : [];
     if (mancanti.length) { b.errori = mancanti; return render(); }
     b.errori = [];
     if (b.modifica && b.passo === 2) return AZIONI['profilo-salva']();
@@ -596,6 +643,8 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   // lettera sposterebbe il cursore a fine riga sotto le dita di chi scrive.
   if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
   if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
+  if (chiave === 'password-nuova') { P.bozzaProfilo.password = el.value; return; }
+  if (chiave === 'password-conferma') { P.bozzaProfilo.conferma = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 
