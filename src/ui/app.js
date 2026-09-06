@@ -45,6 +45,7 @@ function render() {
     bacheca: V.bacheca,
     profilo: V.profilo,
     inbox: F.inbox,
+    aiuta: F.aiuta,
     rapido: F.vistaRapida,
     nuovo: F.nuovo,
     match: F.match,
@@ -62,9 +63,14 @@ function render() {
   tabbar.hidden = !attivo;
 }
 
+/** Chiude ogni tendina aperta, qualunque essa sia. */
+function chiudiSheet() {
+  document.querySelectorAll('.sheet-backdrop [data-chiudi]').forEach((b) => b.click());
+}
+
 /** La sheet del giorno nel profilo, riapribile dopo aver salvato un turno. */
 function apriGiornoProfilo(data) {
-  document.querySelectorAll('.sheet-backdrop [data-chiudi]').forEach((b) => b.click());
+  chiudiSheet();
   const s = sheet(formatDay(data, true), V.dettaglioGiornoProfilo(data));
   s.el.dataset.giornoProfilo = data;
 }
@@ -82,7 +88,12 @@ const AZIONI = {
   vai: (_, el) => vai(el.dataset.to),
   indietro: () => history.back(),
 
-  'apri-richiesta': (_, el) => vai(`#/richiesta?id=${el.dataset.id}`),
+  // Toccando una richiesta si va al dettaglio: la tendina del giorno ha
+  // finito il suo lavoro e resterebbe sopra la schermata che si è chiesta.
+  'apri-richiesta': (_, el) => {
+    chiudiSheet();
+    vai(`#/richiesta?id=${el.dataset.id}`);
+  },
 
   giorno: (_, el) => {
     const data = el.dataset.data;

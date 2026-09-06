@@ -58,6 +58,22 @@ export const store = {
       .filter((s) => s.userId === userId && (!soloFuturi || s.data >= oggi))
       .sort((a, b) => a.data.localeCompare(b.data));
   },
+  /**
+   * I turni che posso davvero offrire su una richiesta.
+   * Vive qui e non in una schermata perché la stessa risposta serve in tre
+   * posti: la riga nel calendario, il dettaglio e la sheet della proposta.
+   */
+  turniOfferibili(request) {
+    const byId = this.shiftsById();
+    return this.shiftsOf(this.state.currentUserId, { soloFuturi: true })
+      .filter((s) => turnoOfferibile(request, s, this.state.shifts, byId).ok);
+  },
+  /** Posso rispondere a questa richiesta? Falso anche se è mia o già chiusa. */
+  possoRispondere(request) {
+    if (!request || request.userId === this.state.currentUserId) return true;
+    if (!isOpen(request)) return true;
+    return this.turniOfferibili(request).length > 0;
+  },
   request(id) {
     return this.state.requests.find((r) => r.id === id);
   },

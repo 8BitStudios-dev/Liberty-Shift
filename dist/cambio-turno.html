@@ -217,6 +217,7 @@ p { margin: 8px 0; }
 .chevron { color: var(--testo-tenue); }
 
 .pallino { width: 9px; height: 9px; border-radius: 50%; background: var(--accento); flex: 0 0 auto; }
+.pallino.fatto { background: var(--verde); }
 .pallino.urgente { background: var(--rosso); box-shadow: 0 0 0 4px color-mix(in srgb, var(--rosso) 22%, transparent); }
 
 /* -------------------------------------------------------------- tile */
@@ -260,21 +261,38 @@ p { margin: 8px 0; }
 
 .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accento); display: inline-block; }
 .dot.prio { background: var(--oro); }
-/* Il colore dice il ruolo: chi vuole liberarsi, chi si offre, chi sposta l'orario. */
-.dot.cerca { background: var(--rosso); }
-.dot.offre { background: var(--verde); }
-.dot.orario { background: var(--accento); }
+
+/* Una barra in fondo alla cella al posto dei pallini: si legge come un
+   sottolineato, non come una macchia, e resta leggibile anche piccola. */
+.barre { display: flex; gap: 2px; width: 62%; height: 3px; margin-top: auto; }
+.barre i { flex: 1; border-radius: 2px; }
+.barre .cerca { background: var(--rosso); }
+.barre .offre { background: var(--verde); }
+.giorno.prioritaria { border-color: var(--oro); }
+
 .legenda { font-size: 12px; color: var(--testo-tenue); margin-top: 12px; line-height: 1.9; }
-.legenda .dot { margin: 0 2px 0 6px; }
+.barre.in-legenda { display: inline-flex; width: 16px; vertical-align: middle; margin-left: 4px; }
 
 .giorno-dettaglio .tuo-turno { padding-bottom: 8px; border-bottom: 1px solid var(--bordo); }
 
-.gruppo-giorno { margin-top: 16px; }
-.gruppo-giorno h3 { margin: 0 0 2px; font-size: 15px; }
+.gruppo-giorno { margin-top: 18px; }
+.gruppo-giorno h3 {
+  margin: 0 0 2px; font-size: 13px; text-transform: uppercase; letter-spacing: .07em;
+  display: flex; align-items: center; gap: 7px;
+}
+.gruppo-giorno h3::before { content: ''; width: 14px; height: 3px; border-radius: 2px; }
+.gruppo-giorno.CERCA h3::before { background: var(--rosso); }
+.gruppo-giorno.OFFRE h3::before { background: var(--verde); }
 .gruppo-giorno > .testo-tenue { font-size: 12px; margin: 0 0 8px; }
 .riga-richiesta.ruolo-CERCA { border-left: 3px solid var(--rosso); }
 .riga-richiesta.ruolo-OFFRE { border-left: 3px solid var(--verde); }
-.riga-richiesta.ruolo-ORARIO { border-left: 3px solid var(--accento); }
+
+/* Il limite reale, detto dove si decide: piccolo, ma non nascosto. */
+.non-puoi {
+  color: var(--rosso); font-size: 12px; margin: 6px 0 0; text-align: right;
+}
+.riga-richiesta .non-puoi { text-align: left; margin: 2px 0 0; }
+.nota-non-puoi { text-align: right; margin: 2px 0 0; font-size: 12px; }
 
 /* ------------------------------------------------------- chip e pillole */
 
@@ -901,18 +919,20 @@ function isOpen(request) {
 function ruoloNelGiorno(request, giorno, cedo) {
   const giorni = request.cerco.giorni || [];
 
+  // Un cambio orario è un turno messo a disposizione: chi lo pubblica offre
+  // la propria giornata a chiunque quel giorno voglia un orario diverso.
   if (request.tipo === TIPO_CAMBIO.ORARIO) {
     return {
-      ruolo: 'ORARIO',
+      ruolo: 'OFFRE',
       icona: '🕐',
-      verbo: 'cambia orario',
-      sintesi: `lascia ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
+      verbo: 'offre orario',
+      sintesi: `offre ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
     };
   }
   if (cedo?.data === giorno) {
     return {
       ruolo: 'CERCA',
-      icona: '🔴',
+      icona: '📅',
       verbo: 'cerca OFF',
       sintesi: giorni.length
         ? `vuole libero questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
@@ -922,7 +942,7 @@ function ruoloNelGiorno(request, giorno, cedo) {
   if (giorni.includes(giorno)) {
     return {
       ruolo: 'OFFRE',
-      icona: '🟢',
+      icona: '📅',
       verbo: 'offre OFF',
       // Solo il giorno che si sta guardando: gli altri che la richiesta offre
       // hanno una casella loro, ed è lì che vanno letti.
@@ -1735,6 +1755,46 @@ function seed() {
         evitaChiusura: false, note: 'Matrimonio, non posso proprio.',
       },
     },
+    // Una seconda richiesta di Lorenzo, già chiusa da un accordo: serve a far
+    // vedere come si presenta uno scambio concordato e il ringraziamento.
+    {
+      id: 'rq_lorenzo_2', userId: 'u_lorenzo', createdAt: iso(50), status: STATUS.ACCORDO,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.ORARIO,
+      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 4)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 4)], mode: WANT_MODE.RANGE, entroLe: '17:00',
+        evitaChiusura: true, note: 'Devo passare in posta prima che chiuda.',
+      },
+    },
+  ];
+
+  // Le proposte già in circolo, una per stato: una che aspetta una risposta
+  // di Lorenzo, una in cui è lui ad aspettare, una già andata a buon fine.
+  const proposals = [
+    {
+      id: 'pr_giulia_1', requestId: 'rq_lorenzo_1',
+      daUserId: 'u_giulia', aUserId: 'u_lorenzo',
+      shiftOffertoId: turno('u_giulia', addDays(wRef, 5)).id,
+      messaggio: 'Io giovedì stacco alle 15, se ti va bene volentieri.',
+      accettataDa: ['u_giulia'], status: STATUS.IN_ATTESA, createdAt: iso(6),
+      cambioInserito: false,
+    },
+    {
+      id: 'pr_lorenzo_1', requestId: 'rq_martina_1',
+      daUserId: 'u_lorenzo', aUserId: 'u_martina',
+      shiftOffertoId: turno('u_lorenzo', addDays(wRef, 5)).id,
+      messaggio: 'Il mio giovedì inizia alle 12, dovrebbe essere quello che cerchi.',
+      accettataDa: ['u_lorenzo'], status: STATUS.IN_ATTESA, createdAt: iso(5),
+      cambioInserito: false,
+    },
+    {
+      id: 'pr_giulia_2', requestId: 'rq_lorenzo_2',
+      daUserId: 'u_giulia', aUserId: 'u_lorenzo',
+      shiftOffertoId: turno('u_giulia', addDays(wRef, 4)).id,
+      messaggio: '',
+      accettataDa: ['u_giulia', 'u_lorenzo'], status: STATUS.ACCORDO, createdAt: iso(48),
+      cambioInserito: false,
+    },
   ];
 
   const marco = users.find((u) => u.id === 'u_marco');
@@ -1746,7 +1806,7 @@ function seed() {
     users,
     shifts,
     requests,
-    proposals: [],
+    proposals,
     ringraziamenti: [],
     notifications: [],
   };
@@ -1816,6 +1876,22 @@ const store = {
     return this.state.shifts
       .filter((s) => s.userId === userId && (!soloFuturi || s.data >= oggi))
       .sort((a, b) => a.data.localeCompare(b.data));
+  },
+  /**
+   * I turni che posso davvero offrire su una richiesta.
+   * Vive qui e non in una schermata perché la stessa risposta serve in tre
+   * posti: la riga nel calendario, il dettaglio e la sheet della proposta.
+   */
+  turniOfferibili(request) {
+    const byId = this.shiftsById();
+    return this.shiftsOf(this.state.currentUserId, { soloFuturi: true })
+      .filter((s) => turnoOfferibile(request, s, this.state.shifts, byId).ok);
+  },
+  /** Posso rispondere a questa richiesta? Falso anche se è mia o già chiusa. */
+  possoRispondere(request) {
+    if (!request || request.userId === this.state.currentUserId) return true;
+    if (!isOpen(request)) return true;
+    return this.turniOfferibili(request).length > 0;
   },
   request(id) {
     return this.state.requests.find((r) => r.id === id);
@@ -2327,6 +2403,7 @@ function cardRichiesta(request, giorno = null) {
           <span class="tipo-pill">${ctx ? `${ctx.icona} ${ctx.verbo}` : `${meta.icona} ${meta.breve}`}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
+        ${raw(store.possoRispondere(request) ? '' : '<span class="non-puoi">al momento non puoi cambiare</span>')}
       </span>
       <span class="chevron">›</span>
     </button>`;
@@ -2477,18 +2554,26 @@ function home() {
   const credito = store.creditoPriorita();
   const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
   const prossimo = store.shiftsOf(me.id, { soloFuturi: true }).find((s) => s.tipo === 'WORK');
+  const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
   const bloccoMiei = miei.length || proposte.length
     ? [
       ...proposte.map((p) => {
         const r = store.request(p.requestId);
         const altro = store.user(p.daUserId === me.id ? p.aUserId : p.daUserId);
-        const inAttesaDiMe = !p.accettataDa.includes(me.id);
+        const accordo = p.status === 'ACCORDO';
+        const inAttesaDiMe = !accordo && !p.accettataDa.includes(me.id);
+        // Uno scambio già concordato non aspetta più nessuno: dire "in attesa
+        // di Giulia" quando Giulia ha già accettato manda a cercare un
+        // problema che non c'è.
+        const titolo = accordo
+          ? '🟢 Scambio concordato'
+          : inAttesaDiMe ? 'Ti aspetta una risposta' : `In attesa di ${nomeUtente(altro)}`;
         return html`
           <div class="riga-cambio" data-act="apri-richiesta" data-id="${r?.id}">
-            <span class="pallino ${inAttesaDiMe ? 'urgente' : ''}"></span>
+            <span class="pallino ${inAttesaDiMe ? 'urgente' : ''} ${accordo ? 'fatto' : ''}"></span>
             <div>
-              <strong>${inAttesaDiMe ? 'Ti aspetta una risposta' : 'In attesa di ' + nomeUtente(altro)}</strong>
+              <strong>${titolo}</strong>
               <div class="meta">Scambio con ${nomeUtente(altro)}</div>
             </div>
             <span class="chevron">›</span>
@@ -2534,6 +2619,16 @@ function home() {
         <span>
           <strong>Cambio rapido</strong>
           <em>Chi può prenderti ${prossimo ? formatDay(prossimo.data) : 'un turno'}, senza domande</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+      <button class="tile" data-act="vai" data-to="#/aiuta">
+        <span class="tile-icona">🤝</span>
+        <span>
+          <strong>Aiuta un collega</strong>
+          <em>${aiutabili
+    ? `${aiutabili} ${aiutabili === 1 ? 'richiesta che puoi risolvere' : 'richieste che puoi risolvere'}`
+    : 'Chi ha bisogno di un turno che tu hai'}</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -2586,24 +2681,20 @@ function calendario(params) {
     const richieste = perGiorno.get(data) || [];
     const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
     const prio = richieste.some(hasPriority);
-    // Un pallino per ruolo, non uno per richiesta: quello che serve sapere
-    // guardando il mese è se su quel giorno qualcuno vuole andarsene, qualcuno
-    // vuole venire, o entrambe le cose.
+    // Una barra sotto la cella, non dei pallini: un segmento per ruolo
+    // presente quel giorno. Quello che serve sapere guardando il mese è se su
+    // quel giorno qualcuno cerca, qualcuno offre, o tutte e due le cose.
     const ruoli = new Set(richieste.map((r) => ruoloNelGiorno(r, data).ruolo));
-    const pallini = ['CERCA', 'OFFRE', 'ORARIO']
+    const segmenti = ['CERCA', 'OFFRE']
       .filter((k) => ruoli.has(k))
-      .map((k) => `<i class="dot ${k.toLowerCase()}"></i>`)
+      .map((k) => `<i class="${k.toLowerCase()}"></i>`)
       .join('');
     celle.push(html`
-      <button class="giorno ${data === todayISO() ? 'oggi' : ''}"
+      <button class="giorno ${data === todayISO() ? 'oggi' : ''} ${prio ? 'prioritaria' : ''}"
               data-act="giorno" data-data="${data}">
         <span class="numero">${g}</span>
         <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
-        <span class="indicatori">
-          ${raw(prio ? '<i class="dot prio"></i>' : '')}
-          ${raw(pallini)}
-          ${raw(richieste.length > 1 ? `<small>${richieste.length}</small>` : '')}
-        </span>
+        <span class="barre">${raw(segmenti)}</span>
       </button>`);
   }
 
@@ -2621,22 +2712,22 @@ function calendario(params) {
     </div>
     <div class="griglia-mese">${celle.map(raw)}</div>
     <p class="legenda">
-      <i class="dot cerca"></i> cercano OFF · <i class="dot offre"></i> offrono di lavorare ·
-      <i class="dot orario"></i> cambio orario · <i class="dot prio"></i> priorità.
-      Ogni riga è una settimana Apple, da sabato a venerdì.
+      <span class="barre in-legenda"><i class="cerca"></i></span> cercano ·
+      <span class="barre in-legenda"><i class="offre"></i></span> offrono ·
+      bordo oro: priorità. Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>
     <button class="btn secondario largo" data-act="vai" data-to="#/profilo">Inserisci i tuoi turni</button>`;
 }
 
 /**
- * I tre gruppi in cui si divide una giornata. L'ordine è quello in cui uno
- * legge la casella: prima chi vuole andarsene, poi chi si offre di coprire,
- * infine chi resta e sposta solo l'orario.
+ * Due gruppi soli, perché due sono le domande che uno si fa aprendo un
+ * giorno: chi vuole liberarsene, e chi mette qualcosa a disposizione.
+ * Nel secondo stanno insieme i giorni offerti e i turni di un cambio orario:
+ * da fuori sono la stessa cosa, un turno che si può prendere.
  */
 const GRUPPI_GIORNO = [
-  { ruolo: 'CERCA', titolo: '🔴 Cercano di liberarsi questo giorno', nota: 'Se questo giorno sei libero, puoi prendere il loro turno.' },
-  { ruolo: 'OFFRE', titolo: '🟢 Offrono di lavorare questo giorno', nota: 'Sono già a casa e verrebbero, in cambio di un altro giorno.' },
-  { ruolo: 'ORARIO', titolo: '🕐 Cambio orario in giornata', nota: 'Restano in turno, cambia solo la fascia oraria.' },
+  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno libero. Se tu sei a casa, puoi prendere il loro turno.' },
+  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate messi a disposizione: qui si prende.' },
 ];
 
 function dettaglioGiorno(data) {
@@ -2923,11 +3014,14 @@ const { html, raw, toast } = M_dom;
 const { store } = M_store;
 const {
   findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
+  opportunitaPerMe,
 } = M_engine;
 const { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } = M_rules;
 const { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } = M_model;
 const { appleWeekKey, addDays, formatDay, todayISO } = M_time;
-const { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } = M_components;
+const {
+  cardMatch, cardOpportunita, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
+} = M_components;
 
 const draft = {
   tipo: null,
@@ -3373,9 +3467,14 @@ function dettaglio(params) {
         <button class="btn secondario" data-act="vai" data-to="#/match?id=${r.id}">Rivedi i match</button>
         <button class="btn pericolo" data-act="cancella" data-id="${r.id}">Cancella richiesta</button>
       </div>`)
-    : r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA || hoGiaProposto || !turniOfferibili(r).length
+    : r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA || hoGiaProposto
       ? ''
-      : html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`;
+      : turniOfferibili(r).length
+        ? html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`
+        // Il posto dove ci sarebbe stato il pulsante è il posto giusto per
+        // dire perché non c'è: prima spariva e basta.
+        : html`<p class="non-puoi">al momento non puoi cambiare</p>
+          <p class="testo-tenue nota-non-puoi">${motivoNonOfferibile(r)}</p>`;
 
   return html`
     <header class="testata">
@@ -3398,25 +3497,43 @@ function dettaglio(params) {
     ${raw(azioneAutore)}`;
 }
 
-/** Perché non posso rispondere: il motore lo sa, tanto vale dirlo. */
+/**
+ * Perché non posso rispondere.
+ *
+ * Scorrere i motivi turno per turno e prendere il primo dava frasi vere ma
+ * senza senso, tipo "Lun 07/09 non è fra i giorni che ha offerto" su una
+ * richiesta di mercoledì: il primo turno della lista non c'entra niente.
+ * Le condizioni sono poche e note (R8), tanto vale guardare quelle.
+ */
 function motivoNonOfferibile(request) {
-  const byId = store.shiftsById();
-  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true });
-  const motivi = miei
-    .map((s) => turnoOfferibile(request, s, store.state.shifts, byId))
-    .filter((v) => !v.ok)
-    .map((v) => v.motivo);
-  return motivi.length
-    ? [...new Set(motivi)][0]
-    : 'Aggiorna i tuoi turni se il calendario non è allineato.';
+  const me = store.state.currentUserId;
+  const cedo = store.shift(request.cedo.shiftId);
+  const giorni = request.cerco.giorni || [];
+  const mioIl = (data) => store.state.shifts.find((s) => s.userId === me && s.data === data);
+
+  if (request.tipo === TIPO_CAMBIO.ORARIO) {
+    const mio = mioIl(cedo?.data);
+    if (!mio || mio.tipo !== 'WORK') {
+      return `${formatDay(cedo?.data)} non lavori: in un cambio orario servono due persone in turno.`;
+    }
+    return `Il tuo ${shiftLabel(mio)} non rientra in quello che cerca (${wantLabel(request.cerco)}).`;
+  }
+
+  // Cambio OFF: le due condizioni sono essere liberi il giorno che vuole
+  // lasciare, e lavorare in uno dei giorni che offre.
+  const mioNelSuoGiorno = mioIl(cedo?.data);
+  if (mioNelSuoGiorno && mioNelSuoGiorno.tipo === 'WORK') {
+    return `${formatDay(cedo?.data)} lavori già (${shiftLabel(mioNelSuoGiorno)}): non puoi prendere anche il suo turno.`;
+  }
+  const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
+  if (!lavorati.length) {
+    return `Nei giorni che offre (${giorni.map((g) => formatDay(g)).join(', ')}) sei a casa: non hai un turno da dargli in cambio.`;
+  }
+  return `I tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
 }
 
-/** I turni che posso davvero offrire su una richiesta. */
-function turniOfferibili(request) {
-  const byId = store.shiftsById();
-  return store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
-    .filter((s) => turnoOfferibile(request, s, store.state.shifts, byId).ok);
-}
+/** I turni che posso davvero offrire su una richiesta. Il calcolo sta nello store. */
+const turniOfferibili = (request) => store.turniOfferibili(request);
 
 /** Contenuto della sheet "proponi scambio". */
 function formProposta(request, shiftSuggerito) {
@@ -3540,7 +3657,7 @@ function vocebox(v) {
         <span class="avatar">${iniziali(altro)}</span>
         <div>
           <strong>${nomeUtente(altro)}</strong>
-          <div class="meta">${ioHoProposto ? 'gli hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
+          <div class="meta">${ioHoProposto ? 'hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
         </div>
       </header>
       ${raw(coppiaCedoCerco(r, { compatto: true }))}
@@ -3588,7 +3705,36 @@ function formGrazie(proposalId) {
     </label>`;
 }
 
-return { draft, resetDraft, rapido, vistaRapida, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica, inbox, formRifiuto, formGrazie };
+// ------------------------------------------------------- AIUTA UN COLLEGA
+
+/**
+ * Il matching al contrario, tutto in una schermata: non "chi può prendere il
+ * mio turno" ma "di chi posso risolvere il problema io". Sono le stesse
+ * opportunità che compaiono giorno per giorno nel Profilo, qui raccolte e
+ * ordinate per quanto sei una buona risposta.
+ */
+function aiuta() {
+  const mie = opportunitaPerMe(store.state.currentUserId, store.state);
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Aiuta un collega</h1>
+    </header>
+    <p class="occhiello">
+      Richieste aperte che i tuoi turni possono risolvere davvero. Le altre non
+      compaiono: non servirebbe a nessuno.
+    </p>
+    ${raw(mie.length
+    ? mie.map((o) => cardOpportunita(o)).join('')
+    : vuoto(
+      'Niente da fare, per ora',
+      'Nessuna richiesta aperta torna con i turni che hai in calendario. Se il calendario non è aggiornato, il posto per farlo è il Profilo.',
+      '<button class="btn primario" data-act="vai" data-to="#/profilo">Aggiorna i turni</button>',
+    ))}`;
+}
+
+return { draft, resetDraft, rapido, vistaRapida, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica, inbox, formRifiuto, formGrazie, aiuta };
 })();
 
 // ---- src/ui/app.js
@@ -3640,6 +3786,7 @@ function render() {
     bacheca: V.bacheca,
     profilo: V.profilo,
     inbox: F.inbox,
+    aiuta: F.aiuta,
     rapido: F.vistaRapida,
     nuovo: F.nuovo,
     match: F.match,
@@ -3657,9 +3804,14 @@ function render() {
   tabbar.hidden = !attivo;
 }
 
+/** Chiude ogni tendina aperta, qualunque essa sia. */
+function chiudiSheet() {
+  document.querySelectorAll('.sheet-backdrop [data-chiudi]').forEach((b) => b.click());
+}
+
 /** La sheet del giorno nel profilo, riapribile dopo aver salvato un turno. */
 function apriGiornoProfilo(data) {
-  document.querySelectorAll('.sheet-backdrop [data-chiudi]').forEach((b) => b.click());
+  chiudiSheet();
   const s = sheet(formatDay(data, true), V.dettaglioGiornoProfilo(data));
   s.el.dataset.giornoProfilo = data;
 }
@@ -3677,7 +3829,12 @@ const AZIONI = {
   vai: (_, el) => vai(el.dataset.to),
   indietro: () => history.back(),
 
-  'apri-richiesta': (_, el) => vai(`#/richiesta?id=${el.dataset.id}`),
+  // Toccando una richiesta si va al dettaglio: la tendina del giorno ha
+  // finito il suo lavoro e resterebbe sopra la schermata che si è chiesta.
+  'apri-richiesta': (_, el) => {
+    chiudiSheet();
+    vai(`#/richiesta?id=${el.dataset.id}`);
+  },
 
   giorno: (_, el) => {
     const data = el.dataset.data;

@@ -95,6 +95,7 @@ export function cardRichiesta(request, giorno = null) {
           <span class="tipo-pill">${ctx ? `${ctx.icona} ${ctx.verbo}` : `${meta.icona} ${meta.breve}`}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
+        ${raw(store.possoRispondere(request) ? '' : '<span class="non-puoi">al momento non puoi cambiare</span>')}
       </span>
       <span class="chevron">›</span>
     </button>`;

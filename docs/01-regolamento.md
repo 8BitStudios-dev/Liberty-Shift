@@ -155,6 +155,11 @@ Conseguenza pratica: chi apre il 16 legge solo cosa succede il 16. I giorni
 alternativi della stessa richiesta non vengono elencati lì, perché hanno una
 casella loro.
 
+Un cambio orario è sempre classificato come **offerta**: chi lo pubblica mette
+il proprio turno a disposizione di chi quel giorno vuole un orario diverso. Da
+fuori è la stessa cosa di una giornata offerta, e nell'interfaccia sta nello
+stesso gruppo.
+
 ## R17 — Monte ore settimanale
 Uno scambio fra due turni interi è **a somma zero**: ciascuno riceve un turno
 con le ore di quello che lascia, quindi il totale della settimana non cambia.
@@ -168,6 +173,14 @@ rispetto alle 25h di contratto".
 
 È un avviso, non un blocco: l'app non sa nulla di permessi, recuperi e
 straordinari.
+
+## R8c — Perché non puoi rispondere
+Quando nessuno dei tuoi turni è offribile su una richiesta, l'app lo dice invece
+di far sparire il pulsante: "al momento non puoi cambiare", più il motivo
+concreto. Il motivo si ricava dalle condizioni di R8 nell'ordine in cui uno le
+verificherebbe a mente, non scorrendo i propri turni: quel giorno lavori già,
+oppure nei giorni offerti sei a casa e non hai niente da dare in cambio, oppure
+i turni che hai non rientrano in quello che cerca.
 
 ## R10 — Stati
 `APERTA → PROPOSTA → IN_ATTESA → ACCORDO → CHIUSA`, più `SCADUTA`.

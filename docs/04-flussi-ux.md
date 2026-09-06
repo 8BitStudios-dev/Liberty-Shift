@@ -104,28 +104,52 @@ l'autore vuole liberare **cerca**, nei giorni che mette sul piatto **offre**.
 Prima la stessa riga compariva identica su tutte le caselle, e chi apriva il 16
 leggeva una richiesta scritta per il 14.
 
-Ora il ruolo si calcola sul giorno che si sta guardando (`ruoloNelGiorno`), e
-il dettaglio della giornata è diviso in tre blocchi:
+Ora il ruolo si calcola sul giorno che si sta guardando (`ruoloNelGiorno`), e il
+dettaglio della giornata ha due soli blocchi, perché due sono le domande che uno
+si fa aprendo un giorno:
 
-| Blocco | Chi c'è dentro | Cosa vuol dire per chi guarda |
-|---|---|---|
-| 🔴 Cercano di liberarsi questo giorno | chi lascia il turno di questa data | se sei libero, puoi prenderne il turno |
-| 🟢 Offrono di lavorare questo giorno | chi mette questa data fra quelle che offre | è a casa e verrebbe, in cambio di un altro giorno |
-| 🕐 Cambio orario in giornata | chi resta in turno e sposta la fascia | si scambia solo l'orario |
+| Blocco | Chi c'è dentro |
+|---|---|
+| **Cercano** | chi vuole libero questo giorno: se tu sei a casa, puoi prendere il suo turno |
+| **Offrono** | tutto quello che è a disposizione: le giornate offerte in un cambio OFF e i turni di un cambio orario |
+
+Il cambio orario sta fra chi offre e non in un gruppo suo: da fuori è un turno
+che si può prendere, esattamente come una giornata messa a disposizione. Chi
+guarda non ha bisogno di sapere come l'app classifica la richiesta.
 
 La sintesi è riscritta dal punto di vista della data: sul 14 si legge "offre di
 lavorare questo giorno · in cambio vuole libero Sab 12", e gli altri giorni che
 la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
-Nella griglia del mese lo stesso ruolo diventa il colore del pallino: rosso chi
-cerca un OFF, verde chi si offre di lavorare, blu il cambio orario, oro la
-priorità. Un pallino per ruolo, non uno per richiesta: dal mese serve sapere se
-su quel giorno c'è qualcuno che se ne vuole andare, qualcuno che vuole venire, o
-tutt'e due.
-- Ogni match elenca le ragioni. Un suggerimento senza spiegazione non viene
-  usato.
-- Modalità chiara e scura, aree di sicurezza dell'iPhone, tocchi da 44px.
+Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un
+segmento per ruolo presente: rosso chi cerca, verde chi offre, bordo oro per la
+priorità. Un segmento per ruolo e non uno per richiesta: dal mese serve sapere
+se su quel giorno qualcuno se ne vuole andare, qualcuno vuole venire, o tutte e
+due le cose.
+
+Toccando una richiesta si va al suo dettaglio e la tendina del giorno si chiude:
+ha finito il suo lavoro, e restare aperta sopra la schermata appena chiesta è
+solo un ostacolo.
+
+## Quando non puoi rispondere, l'app lo dice
+Dove ci sarebbe stato il pulsante "Proponi uno scambio" compare, in rosso e in
+piccolo, **al momento non puoi cambiare**, con sotto il motivo concreto: "Mer
+16/09 lavori già (10:00–19:00): non puoi prendere anche il suo turno". La stessa
+riga rossa sta sotto la richiesta in bacheca e nel calendario, così si vede
+prima di aprirla.
+
+Il motivo è scritto guardando le condizioni di R8, non scorrendo i turni uno per
+uno: la prima versione prendeva il primo motivo che capitava e produceva frasi
+vere ma insensate, tipo "Lun 07/09 non è fra i giorni che ha offerto" su una
+richiesta di mercoledì.
+
+## Aiuta un collega
+In Home, sotto il Cambio rapido. È il matching al contrario raccolto in una
+schermata: non "chi può prendere il mio turno" ma "di chi posso risolvere il
+problema io", ordinato per quanto sei una buona risposta. Compaiono solo le
+richieste che i tuoi turni risolvono davvero: in una schermata che esiste per
+aiutare, le altre sarebbero rumore.
 
 ## Il Profilo: le tue due settimane
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di

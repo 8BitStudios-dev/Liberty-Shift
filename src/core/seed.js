@@ -154,6 +154,46 @@ export function seed() {
         evitaChiusura: false, note: 'Matrimonio, non posso proprio.',
       },
     },
+    // Una seconda richiesta di Lorenzo, già chiusa da un accordo: serve a far
+    // vedere come si presenta uno scambio concordato e il ringraziamento.
+    {
+      id: 'rq_lorenzo_2', userId: 'u_lorenzo', createdAt: iso(50), status: STATUS.ACCORDO,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.ORARIO,
+      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 4)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 4)], mode: WANT_MODE.RANGE, entroLe: '17:00',
+        evitaChiusura: true, note: 'Devo passare in posta prima che chiuda.',
+      },
+    },
+  ];
+
+  // Le proposte già in circolo, una per stato: una che aspetta una risposta
+  // di Lorenzo, una in cui è lui ad aspettare, una già andata a buon fine.
+  const proposals = [
+    {
+      id: 'pr_giulia_1', requestId: 'rq_lorenzo_1',
+      daUserId: 'u_giulia', aUserId: 'u_lorenzo',
+      shiftOffertoId: turno('u_giulia', addDays(wRef, 5)).id,
+      messaggio: 'Io giovedì stacco alle 15, se ti va bene volentieri.',
+      accettataDa: ['u_giulia'], status: STATUS.IN_ATTESA, createdAt: iso(6),
+      cambioInserito: false,
+    },
+    {
+      id: 'pr_lorenzo_1', requestId: 'rq_martina_1',
+      daUserId: 'u_lorenzo', aUserId: 'u_martina',
+      shiftOffertoId: turno('u_lorenzo', addDays(wRef, 5)).id,
+      messaggio: 'Il mio giovedì inizia alle 12, dovrebbe essere quello che cerchi.',
+      accettataDa: ['u_lorenzo'], status: STATUS.IN_ATTESA, createdAt: iso(5),
+      cambioInserito: false,
+    },
+    {
+      id: 'pr_giulia_2', requestId: 'rq_lorenzo_2',
+      daUserId: 'u_giulia', aUserId: 'u_lorenzo',
+      shiftOffertoId: turno('u_giulia', addDays(wRef, 4)).id,
+      messaggio: '',
+      accettataDa: ['u_giulia', 'u_lorenzo'], status: STATUS.ACCORDO, createdAt: iso(48),
+      cambioInserito: false,
+    },
   ];
 
   const marco = users.find((u) => u.id === 'u_marco');
@@ -165,7 +205,7 @@ export function seed() {
     users,
     shifts,
     requests,
-    proposals: [],
+    proposals,
     ringraziamenti: [],
     notifications: [],
   };

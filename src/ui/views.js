@@ -25,18 +25,26 @@ export function home() {
   const credito = store.creditoPriorita();
   const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
   const prossimo = store.shiftsOf(me.id, { soloFuturi: true }).find((s) => s.tipo === 'WORK');
+  const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
   const bloccoMiei = miei.length || proposte.length
     ? [
       ...proposte.map((p) => {
         const r = store.request(p.requestId);
         const altro = store.user(p.daUserId === me.id ? p.aUserId : p.daUserId);
-        const inAttesaDiMe = !p.accettataDa.includes(me.id);
+        const accordo = p.status === 'ACCORDO';
+        const inAttesaDiMe = !accordo && !p.accettataDa.includes(me.id);
+        // Uno scambio già concordato non aspetta più nessuno: dire "in attesa
+        // di Giulia" quando Giulia ha già accettato manda a cercare un
+        // problema che non c'è.
+        const titolo = accordo
+          ? '🟢 Scambio concordato'
+          : inAttesaDiMe ? 'Ti aspetta una risposta' : `In attesa di ${nomeUtente(altro)}`;
         return html`
           <div class="riga-cambio" data-act="apri-richiesta" data-id="${r?.id}">
-            <span class="pallino ${inAttesaDiMe ? 'urgente' : ''}"></span>
+            <span class="pallino ${inAttesaDiMe ? 'urgente' : ''} ${accordo ? 'fatto' : ''}"></span>
             <div>
-              <strong>${inAttesaDiMe ? 'Ti aspetta una risposta' : 'In attesa di ' + nomeUtente(altro)}</strong>
+              <strong>${titolo}</strong>
               <div class="meta">Scambio con ${nomeUtente(altro)}</div>
             </div>
             <span class="chevron">›</span>
@@ -82,6 +90,16 @@ export function home() {
         <span>
           <strong>Cambio rapido</strong>
           <em>Chi può prenderti ${prossimo ? formatDay(prossimo.data) : 'un turno'}, senza domande</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+      <button class="tile" data-act="vai" data-to="#/aiuta">
+        <span class="tile-icona">🤝</span>
+        <span>
+          <strong>Aiuta un collega</strong>
+          <em>${aiutabili
+    ? `${aiutabili} ${aiutabili === 1 ? 'richiesta che puoi risolvere' : 'richieste che puoi risolvere'}`
+    : 'Chi ha bisogno di un turno che tu hai'}</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -134,24 +152,20 @@ export function calendario(params) {
     const richieste = perGiorno.get(data) || [];
     const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
     const prio = richieste.some(hasPriority);
-    // Un pallino per ruolo, non uno per richiesta: quello che serve sapere
-    // guardando il mese è se su quel giorno qualcuno vuole andarsene, qualcuno
-    // vuole venire, o entrambe le cose.
+    // Una barra sotto la cella, non dei pallini: un segmento per ruolo
+    // presente quel giorno. Quello che serve sapere guardando il mese è se su
+    // quel giorno qualcuno cerca, qualcuno offre, o tutte e due le cose.
     const ruoli = new Set(richieste.map((r) => ruoloNelGiorno(r, data).ruolo));
-    const pallini = ['CERCA', 'OFFRE', 'ORARIO']
+    const segmenti = ['CERCA', 'OFFRE']
       .filter((k) => ruoli.has(k))
-      .map((k) => `<i class="dot ${k.toLowerCase()}"></i>`)
+      .map((k) => `<i class="${k.toLowerCase()}"></i>`)
       .join('');
     celle.push(html`
-      <button class="giorno ${data === todayISO() ? 'oggi' : ''}"
+      <button class="giorno ${data === todayISO() ? 'oggi' : ''} ${prio ? 'prioritaria' : ''}"
               data-act="giorno" data-data="${data}">
         <span class="numero">${g}</span>
         <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
-        <span class="indicatori">
-          ${raw(prio ? '<i class="dot prio"></i>' : '')}
-          ${raw(pallini)}
-          ${raw(richieste.length > 1 ? `<small>${richieste.length}</small>` : '')}
-        </span>
+        <span class="barre">${raw(segmenti)}</span>
       </button>`);
   }
 
@@ -169,22 +183,22 @@ export function calendario(params) {
     </div>
     <div class="griglia-mese">${celle.map(raw)}</div>
     <p class="legenda">
-      <i class="dot cerca"></i> cercano OFF · <i class="dot offre"></i> offrono di lavorare ·
-      <i class="dot orario"></i> cambio orario · <i class="dot prio"></i> priorità.
-      Ogni riga è una settimana Apple, da sabato a venerdì.
+      <span class="barre in-legenda"><i class="cerca"></i></span> cercano ·
+      <span class="barre in-legenda"><i class="offre"></i></span> offrono ·
+      bordo oro: priorità. Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>
     <button class="btn secondario largo" data-act="vai" data-to="#/profilo">Inserisci i tuoi turni</button>`;
 }
 
 /**
- * I tre gruppi in cui si divide una giornata. L'ordine è quello in cui uno
- * legge la casella: prima chi vuole andarsene, poi chi si offre di coprire,
- * infine chi resta e sposta solo l'orario.
+ * Due gruppi soli, perché due sono le domande che uno si fa aprendo un
+ * giorno: chi vuole liberarsene, e chi mette qualcosa a disposizione.
+ * Nel secondo stanno insieme i giorni offerti e i turni di un cambio orario:
+ * da fuori sono la stessa cosa, un turno che si può prendere.
  */
 const GRUPPI_GIORNO = [
-  { ruolo: 'CERCA', titolo: '🔴 Cercano di liberarsi questo giorno', nota: 'Se questo giorno sei libero, puoi prendere il loro turno.' },
-  { ruolo: 'OFFRE', titolo: '🟢 Offrono di lavorare questo giorno', nota: 'Sono già a casa e verrebbero, in cambio di un altro giorno.' },
-  { ruolo: 'ORARIO', titolo: '🕐 Cambio orario in giornata', nota: 'Restano in turno, cambia solo la fascia oraria.' },
+  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno libero. Se tu sei a casa, puoi prendere il loro turno.' },
+  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate messi a disposizione: qui si prende.' },
 ];
 
 export function dettaglioGiorno(data) {

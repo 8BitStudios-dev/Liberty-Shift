@@ -267,18 +267,20 @@ export function isOpen(request) {
 export function ruoloNelGiorno(request, giorno, cedo) {
   const giorni = request.cerco.giorni || [];
 
+  // Un cambio orario è un turno messo a disposizione: chi lo pubblica offre
+  // la propria giornata a chiunque quel giorno voglia un orario diverso.
   if (request.tipo === TIPO_CAMBIO.ORARIO) {
     return {
-      ruolo: 'ORARIO',
+      ruolo: 'OFFRE',
       icona: '🕐',
-      verbo: 'cambia orario',
-      sintesi: `lascia ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
+      verbo: 'offre orario',
+      sintesi: `offre ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
     };
   }
   if (cedo?.data === giorno) {
     return {
       ruolo: 'CERCA',
-      icona: '🔴',
+      icona: '📅',
       verbo: 'cerca OFF',
       sintesi: giorni.length
         ? `vuole libero questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
@@ -288,7 +290,7 @@ export function ruoloNelGiorno(request, giorno, cedo) {
   if (giorni.includes(giorno)) {
     return {
       ruolo: 'OFFRE',
-      icona: '🟢',
+      icona: '📅',
       verbo: 'offre OFF',
       // Solo il giorno che si sta guardando: gli altri che la richiesta offre
       // hanno una casella loro, ed è lì che vanno letti.

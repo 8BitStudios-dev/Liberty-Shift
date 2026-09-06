@@ -5,11 +5,14 @@ import { html, raw, toast } from './dom.js';
 import { store } from '../core/store.js';
 import {
   findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
+  opportunitaPerMe,
 } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } from '../core/model.js';
 import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
-import { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } from './components.js';
+import {
+  cardMatch, cardOpportunita, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
+} from './components.js';
 
 export const draft = {
   tipo: null,
@@ -455,9 +458,14 @@ export function dettaglio(params) {
         <button class="btn secondario" data-act="vai" data-to="#/match?id=${r.id}">Rivedi i match</button>
         <button class="btn pericolo" data-act="cancella" data-id="${r.id}">Cancella richiesta</button>
       </div>`)
-    : r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA || hoGiaProposto || !turniOfferibili(r).length
+    : r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA || hoGiaProposto
       ? ''
-      : html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`;
+      : turniOfferibili(r).length
+        ? html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`
+        // Il posto dove ci sarebbe stato il pulsante è il posto giusto per
+        // dire perché non c'è: prima spariva e basta.
+        : html`<p class="non-puoi">al momento non puoi cambiare</p>
+          <p class="testo-tenue nota-non-puoi">${motivoNonOfferibile(r)}</p>`;
 
   return html`
     <header class="testata">
@@ -480,25 +488,43 @@ export function dettaglio(params) {
     ${raw(azioneAutore)}`;
 }
 
-/** Perché non posso rispondere: il motore lo sa, tanto vale dirlo. */
+/**
+ * Perché non posso rispondere.
+ *
+ * Scorrere i motivi turno per turno e prendere il primo dava frasi vere ma
+ * senza senso, tipo "Lun 07/09 non è fra i giorni che ha offerto" su una
+ * richiesta di mercoledì: il primo turno della lista non c'entra niente.
+ * Le condizioni sono poche e note (R8), tanto vale guardare quelle.
+ */
 function motivoNonOfferibile(request) {
-  const byId = store.shiftsById();
-  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true });
-  const motivi = miei
-    .map((s) => turnoOfferibile(request, s, store.state.shifts, byId))
-    .filter((v) => !v.ok)
-    .map((v) => v.motivo);
-  return motivi.length
-    ? [...new Set(motivi)][0]
-    : 'Aggiorna i tuoi turni se il calendario non è allineato.';
+  const me = store.state.currentUserId;
+  const cedo = store.shift(request.cedo.shiftId);
+  const giorni = request.cerco.giorni || [];
+  const mioIl = (data) => store.state.shifts.find((s) => s.userId === me && s.data === data);
+
+  if (request.tipo === TIPO_CAMBIO.ORARIO) {
+    const mio = mioIl(cedo?.data);
+    if (!mio || mio.tipo !== 'WORK') {
+      return `${formatDay(cedo?.data)} non lavori: in un cambio orario servono due persone in turno.`;
+    }
+    return `Il tuo ${shiftLabel(mio)} non rientra in quello che cerca (${wantLabel(request.cerco)}).`;
+  }
+
+  // Cambio OFF: le due condizioni sono essere liberi il giorno che vuole
+  // lasciare, e lavorare in uno dei giorni che offre.
+  const mioNelSuoGiorno = mioIl(cedo?.data);
+  if (mioNelSuoGiorno && mioNelSuoGiorno.tipo === 'WORK') {
+    return `${formatDay(cedo?.data)} lavori già (${shiftLabel(mioNelSuoGiorno)}): non puoi prendere anche il suo turno.`;
+  }
+  const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
+  if (!lavorati.length) {
+    return `Nei giorni che offre (${giorni.map((g) => formatDay(g)).join(', ')}) sei a casa: non hai un turno da dargli in cambio.`;
+  }
+  return `I tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
 }
 
-/** I turni che posso davvero offrire su una richiesta. */
-export function turniOfferibili(request) {
-  const byId = store.shiftsById();
-  return store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
-    .filter((s) => turnoOfferibile(request, s, store.state.shifts, byId).ok);
-}
+/** I turni che posso davvero offrire su una richiesta. Il calcolo sta nello store. */
+export const turniOfferibili = (request) => store.turniOfferibili(request);
 
 /** Contenuto della sheet "proponi scambio". */
 export function formProposta(request, shiftSuggerito) {
@@ -622,7 +648,7 @@ function vocebox(v) {
         <span class="avatar">${iniziali(altro)}</span>
         <div>
           <strong>${nomeUtente(altro)}</strong>
-          <div class="meta">${ioHoProposto ? 'gli hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
+          <div class="meta">${ioHoProposto ? 'hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
         </div>
       </header>
       ${raw(coppiaCedoCerco(r, { compatto: true }))}
@@ -668,4 +694,33 @@ export function formGrazie(proposalId) {
       <span>Oppure scrivi tu</span>
       <textarea data-campo="grazie" rows="2" placeholder="Grazie!"></textarea>
     </label>`;
+}
+
+// ------------------------------------------------------- AIUTA UN COLLEGA
+
+/**
+ * Il matching al contrario, tutto in una schermata: non "chi può prendere il
+ * mio turno" ma "di chi posso risolvere il problema io". Sono le stesse
+ * opportunità che compaiono giorno per giorno nel Profilo, qui raccolte e
+ * ordinate per quanto sei una buona risposta.
+ */
+export function aiuta() {
+  const mie = opportunitaPerMe(store.state.currentUserId, store.state);
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Aiuta un collega</h1>
+    </header>
+    <p class="occhiello">
+      Richieste aperte che i tuoi turni possono risolvere davvero. Le altre non
+      compaiono: non servirebbe a nessuno.
+    </p>
+    ${raw(mie.length
+    ? mie.map((o) => cardOpportunita(o)).join('')
+    : vuoto(
+      'Niente da fare, per ora',
+      'Nessuna richiesta aperta torna con i turni che hai in calendario. Se il calendario non è aggiornato, il posto per farlo è il Profilo.',
+      '<button class="btn primario" data-act="vai" data-to="#/profilo">Aggiorna i turni</button>',
+    ))}`;
 }
