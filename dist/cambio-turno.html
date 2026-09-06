@@ -260,9 +260,21 @@ p { margin: 8px 0; }
 
 .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accento); display: inline-block; }
 .dot.prio { background: var(--oro); }
-.legenda { font-size: 12px; color: var(--testo-tenue); margin-top: 12px; }
+/* Il colore dice il ruolo: chi vuole liberarsi, chi si offre, chi sposta l'orario. */
+.dot.cerca { background: var(--rosso); }
+.dot.offre { background: var(--verde); }
+.dot.orario { background: var(--accento); }
+.legenda { font-size: 12px; color: var(--testo-tenue); margin-top: 12px; line-height: 1.9; }
+.legenda .dot { margin: 0 2px 0 6px; }
 
 .giorno-dettaglio .tuo-turno { padding-bottom: 8px; border-bottom: 1px solid var(--bordo); }
+
+.gruppo-giorno { margin-top: 16px; }
+.gruppo-giorno h3 { margin: 0 0 2px; font-size: 15px; }
+.gruppo-giorno > .testo-tenue { font-size: 12px; margin: 0 0 8px; }
+.riga-richiesta.ruolo-CERCA { border-left: 3px solid var(--rosso); }
+.riga-richiesta.ruolo-OFFRE { border-left: 3px solid var(--verde); }
+.riga-richiesta.ruolo-ORARIO { border-left: 3px solid var(--accento); }
 
 /* ------------------------------------------------------- chip e pillole */
 
@@ -278,6 +290,24 @@ p { margin: 8px 0; }
 
 .tag { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--superficie-2); color: var(--testo-tenue); }
 .tag.ok { background: color-mix(in srgb, var(--verde) 18%, transparent); color: var(--verde); }
+
+.badge-conta {
+  background: var(--rosso); color: #fff; font-size: 12px; font-weight: 700;
+  min-width: 22px; height: 22px; border-radius: 999px;
+  display: grid; place-items: center; padding: 0 6px; flex: 0 0 auto;
+}
+.card.da-fare { border-left: 4px solid var(--accento); }
+
+/* Ringraziamenti collezionati */
+.grazie-lista { display: flex; flex-direction: column; gap: 8px; }
+.grazie {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: 12px; padding: 10px 12px;
+}
+.grazie > div { flex: 1; min-width: 0; }
+.grazie strong { font-size: 15px; font-weight: 600; }
+.cuore { font-size: 18px; }
 
 /* ------------------------------------------------------------ moduli */
 
@@ -375,7 +405,8 @@ input[type="time"], textarea, .select {
   color: var(--testo-tenue); font: inherit; font-size: 10px; padding: 4px 12px;
 }
 .tab.attivo { color: var(--accento); }
-.tab-icona { font-size: 20px; line-height: 1; }
+.tab-icona { display: block; width: 22px; height: 22px; }
+.tab-icona svg { width: 100%; height: 100%; display: block; }
 
 /* -------------------------------------------------------------- sheet */
 
@@ -604,8 +635,8 @@ const M_model = (() => {
 // Data model (Fase 3 della specifica).
 // Nessuna classe: oggetti semplici, serializzabili, pronti per qualsiasi backend.
 
-const { RULES, STATUS, WANT_MODE } = M_rules;
-const { minutes, todayISO, appleWeekKey } = M_time;
+const { RULES, STATUS, WANT_MODE, TIPO_CAMBIO } = M_rules;
+const { minutes, todayISO, appleWeekKey, formatDay } = M_time;
 
 /**
  * User
@@ -857,7 +888,51 @@ function isOpen(request) {
     || request.status === STATUS.IN_ATTESA;
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen };
+/**
+ * Che parte ha una richiesta nel giorno che si sta guardando.
+ *
+ * Una richiesta di cambio OFF tocca più date con ruoli opposti: nel giorno che
+ * l'autore vuole liberare **cerca**, nei giorni che mette sul piatto **offre**.
+ * Mostrarla identica su ogni casella del calendario era il modo più rapido per
+ * non capirci niente: chi guardava il 16 leggeva una richiesta scritta per il 14.
+ *
+ * `cedo` è il turno che la richiesta lascia, già risolto da chi chiama.
+ */
+function ruoloNelGiorno(request, giorno, cedo) {
+  const giorni = request.cerco.giorni || [];
+
+  if (request.tipo === TIPO_CAMBIO.ORARIO) {
+    return {
+      ruolo: 'ORARIO',
+      icona: '🕐',
+      verbo: 'cambia orario',
+      sintesi: `lascia ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
+    };
+  }
+  if (cedo?.data === giorno) {
+    return {
+      ruolo: 'CERCA',
+      icona: '🔴',
+      verbo: 'cerca OFF',
+      sintesi: giorni.length
+        ? `vuole libero questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
+        : 'vuole libero questo giorno',
+    };
+  }
+  if (giorni.includes(giorno)) {
+    return {
+      ruolo: 'OFFRE',
+      icona: '🟢',
+      verbo: 'offre OFF',
+      // Solo il giorno che si sta guardando: gli altri che la richiesta offre
+      // hanno una casella loro, ed è lì che vanno letti.
+      sintesi: `offre di lavorare questo giorno · in cambio vuole libero ${formatDay(cedo?.data)}`,
+    };
+  }
+  return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
+}
+
+return { newId, isNotturno, fineMinuti, durataOre, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno };
 })();
 
 // ---- src/core/engine.js
@@ -1672,6 +1747,7 @@ function seed() {
     shifts,
     requests,
     proposals: [],
+    ringraziamenti: [],
     notifications: [],
   };
 }
@@ -1699,6 +1775,8 @@ const store = {
 
   init() {
     this.state = carica() || seed();
+    // Dati salvati da una versione precedente possono non avere i campi nuovi.
+    this.state.ringraziamenti = this.state.ringraziamenti || [];
     this.scadenze();
     return this.state;
   },
@@ -1912,12 +1990,79 @@ const store = {
     this.commit();
   },
 
-  rifiuta(proposalId) {
+  /**
+   * Rifiutare con due parole di spiegazione costa poco e cambia molto: chi
+   * ha proposto sa se riprovare o lasciar perdere.
+   */
+  rifiuta(proposalId, motivo = '') {
     const p = this.state.proposals.find((x) => x.id === proposalId);
     if (!p) return;
+    const me = this.state.currentUserId;
     p.status = 'RIFIUTATA';
+    p.motivoRifiuto = motivo.trim();
+    p.rifiutataDa = me;
+    const altro = p.daUserId === me ? p.aUserId : p.daUserId;
+    this.notifica(altro, motivo.trim()
+      ? `${this.user(me).nome} ha rifiutato: "${motivo.trim()}"`
+      : `${this.user(me).nome} ha rifiutato lo scambio.`);
     this.aggiornaStato(this.request(p.requestId));
     this.commit();
+  },
+
+  /**
+   * Un grazie è l'unica cosa che resta dopo che il cambio è fatto. Si
+   * conserva nel profilo di chi lo riceve.
+   */
+  ringrazia(proposalId, testo) {
+    const p = this.state.proposals.find((x) => x.id === proposalId);
+    if (!p) return { errori: ['Proposta non trovata.'] };
+    const me = this.state.currentUserId;
+    const a = p.daUserId === me ? p.aUserId : p.daUserId;
+    if (this.state.ringraziamenti.some((r) => r.proposalId === proposalId && r.daUserId === me)) {
+      return { errori: ['Hai già ringraziato per questo scambio.'] };
+    }
+    this.state.ringraziamenti.unshift({
+      id: newId('gr'),
+      proposalId,
+      daUserId: me,
+      aUserId: a,
+      testo: (testo || '').trim(),
+      createdAt: new Date().toISOString(),
+    });
+    this.notifica(a, `${this.user(me).nome} ti ha ringraziato 💛`);
+    this.commit();
+    return { ok: true };
+  },
+
+  ringraziamentiRicevuti(userId = this.state.currentUserId) {
+    return this.state.ringraziamenti.filter((r) => r.aUserId === userId);
+  },
+
+  haGiaRingraziato(proposalId) {
+    return this.state.ringraziamenti.some(
+      (r) => r.proposalId === proposalId && r.daUserId === this.state.currentUserId,
+    );
+  },
+
+  /**
+   * Tutto quello che aspetta una risposta, mia o dell'altra persona.
+   * In cima quelle che aspettano me: sono le uniche su cui posso agire.
+   */
+  inbox() {
+    const me = this.state.currentUserId;
+    return this.state.proposals
+      .filter((p) => (p.daUserId === me || p.aUserId === me) && !p.cambioInserito)
+      .map((p) => ({
+        proposta: p,
+        richiesta: this.request(p.requestId),
+        altro: this.user(p.daUserId === me ? p.aUserId : p.daUserId),
+        aspettaMe: p.status === 'IN_ATTESA' && !p.accettataDa.includes(me),
+        daRingraziare: p.status === 'ACCORDO' && !this.haGiaRingraziato(p.id),
+      }))
+      .filter((x) => x.richiesta)
+      .sort((a, b) => (b.aspettaMe - a.aspettaMe)
+        || (b.daRingraziare - a.daRingraziare)
+        || b.proposta.createdAt.localeCompare(a.proposta.createdAt));
   },
 
   // "Cambio inserito": chiude la partita, l'app non tocca il sistema ufficiale.
@@ -2087,7 +2232,9 @@ return { esc, html, raw, on, toast, sheet };
 const M_components = (() => {
 const { html, raw, esc } = M_dom;
 const { store } = M_store;
-const { shiftLabel, wantLabel, hasPriority, trasformaTurno } = M_model;
+const {
+  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno as ruoloCore,
+} = M_model;
 const { STATUS_META, TIPO_META, TIPO_CAMBIO } = M_rules;
 const { formatDay } = M_time;
 
@@ -2150,24 +2297,36 @@ function sintesiRichiesta(request) {
   return `${formatDay(cedo?.data)} · ${shiftLabel(cedo)} → ${wantLabel(request.cerco)}`;
 }
 
+/** Il ruolo della richiesta nel giorno guardato, col turno ceduto già risolto. */
+function ruoloNelGiorno(request, giorno) {
+  const r = ruoloCore(request, giorno, store.shift(request.cedo.shiftId));
+  return r.sintesi ? r : { ...r, sintesi: sintesiRichiesta(request) };
+}
+
 /**
  * La riga della bacheca. Sta in due righe di testo: nome e una sintesi.
  * Tutto il resto — orari, note, stato, proposte — vive nel dettaglio, che si
  * apre toccandola.
+ *
+ * Con un `giorno` la sintesi viene riscritta dal punto di vista di quella
+ * data: è la differenza fra "questa richiesta esiste" e "questa richiesta ti
+ * riguarda oggi".
  */
-function cardRichiesta(request) {
+function cardRichiesta(request, giorno = null) {
   const autore = store.user(request.userId);
   const prio = hasPriority(request);
   const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
+  const ctx = giorno ? ruoloNelGiorno(request, giorno) : null;
   return html`
-    <button class="riga-richiesta ${prio ? 'prioritaria' : ''}" data-act="apri-richiesta" data-id="${request.id}">
+    <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''}"
+            data-act="apri-richiesta" data-id="${request.id}">
       <span class="avatar piccolo">${iniziali(autore)}</span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${prio ? '⭐ ' : ''}${nomeUtente(autore)}
-          <span class="tipo-pill">${meta.icona} ${meta.breve}</span>
+          <span class="tipo-pill">${ctx ? `${ctx.icona} ${ctx.verbo}` : `${meta.icona} ${meta.breve}`}</span>
         </span>
-        <span class="riga-sintesi">${sintesiRichiesta(request)}</span>
+        <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
       </span>
       <span class="chevron">›</span>
     </button>`;
@@ -2286,7 +2445,7 @@ function cardOpportunita({ richiesta, match }) {
     </article>`;
 }
 
-return { nomeUtente, iniziali, badgeStato, coppiaCedoCerco, sintesiRichiesta, cardRichiesta, cardMatch, vuoto, cardOpportunita };
+return { nomeUtente, iniziali, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, vuoto, cardOpportunita };
 })();
 
 // ---- src/ui/views.js
@@ -2295,6 +2454,7 @@ const { html, raw } = M_dom;
 const { store } = M_store;
 const {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
+  ruoloNelGiorno,
 } = M_components;
 const { hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana } = M_model;
 const {
@@ -2426,6 +2586,14 @@ function calendario(params) {
     const richieste = perGiorno.get(data) || [];
     const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
     const prio = richieste.some(hasPriority);
+    // Un pallino per ruolo, non uno per richiesta: quello che serve sapere
+    // guardando il mese è se su quel giorno qualcuno vuole andarsene, qualcuno
+    // vuole venire, o entrambe le cose.
+    const ruoli = new Set(richieste.map((r) => ruoloNelGiorno(r, data).ruolo));
+    const pallini = ['CERCA', 'OFFRE', 'ORARIO']
+      .filter((k) => ruoli.has(k))
+      .map((k) => `<i class="dot ${k.toLowerCase()}"></i>`)
+      .join('');
     celle.push(html`
       <button class="giorno ${data === todayISO() ? 'oggi' : ''}"
               data-act="giorno" data-data="${data}">
@@ -2433,7 +2601,8 @@ function calendario(params) {
         <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
         <span class="indicatori">
           ${raw(prio ? '<i class="dot prio"></i>' : '')}
-          ${raw(richieste.length ? `<i class="dot"></i><small>${richieste.length}</small>` : '')}
+          ${raw(pallini)}
+          ${raw(richieste.length > 1 ? `<small>${richieste.length}</small>` : '')}
         </span>
       </button>`);
   }
@@ -2452,19 +2621,42 @@ function calendario(params) {
     </div>
     <div class="griglia-mese">${celle.map(raw)}</div>
     <p class="legenda">
-      <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità.
+      <i class="dot cerca"></i> cercano OFF · <i class="dot offre"></i> offrono di lavorare ·
+      <i class="dot orario"></i> cambio orario · <i class="dot prio"></i> priorità.
       Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>
     <button class="btn secondario largo" data-act="vai" data-to="#/profilo">Inserisci i tuoi turni</button>`;
 }
+
+/**
+ * I tre gruppi in cui si divide una giornata. L'ordine è quello in cui uno
+ * legge la casella: prima chi vuole andarsene, poi chi si offre di coprire,
+ * infine chi resta e sposta solo l'orario.
+ */
+const GRUPPI_GIORNO = [
+  { ruolo: 'CERCA', titolo: '🔴 Cercano di liberarsi questo giorno', nota: 'Se questo giorno sei libero, puoi prendere il loro turno.' },
+  { ruolo: 'OFFRE', titolo: '🟢 Offrono di lavorare questo giorno', nota: 'Sono già a casa e verrebbero, in cambio di un altro giorno.' },
+  { ruolo: 'ORARIO', titolo: '🕐 Cambio orario in giornata', nota: 'Restano in turno, cambia solo la fascia oraria.' },
+];
 
 function dettaglioGiorno(data) {
   const richieste = store.state.requests.filter((r) => {
     if (!isOpen(r)) return false;
     const cedo = store.shift(r.cedo.shiftId);
     return cedo?.data === data || (r.cerco.giorni || []).includes(data);
-  });
+  }).sort((a, b) => hasPriority(b) - hasPriority(a));
   const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
+
+  const sezioni = GRUPPI_GIORNO.map((g) => {
+    const dentro = richieste.filter((r) => ruoloNelGiorno(r, data).ruolo === g.ruolo);
+    if (!dentro.length) return '';
+    return html`
+      <section class="gruppo-giorno ${g.ruolo}">
+        <h3>${g.titolo} · ${dentro.length}</h3>
+        <p class="testo-tenue">${g.nota}</p>
+        ${raw(dentro.map((r) => cardRichiesta(r, data)).join(''))}
+      </section>`;
+  }).join('');
 
   return html`
     <div class="giorno-dettaglio">
@@ -2472,10 +2664,7 @@ function dettaglioGiorno(data) {
         Il tuo turno: <strong>${mio ? shiftLabel(mio) : 'non inserito'}</strong>
         ${raw(mio && etichettaFascia(mio) ? `<span class="tag">${etichettaFascia(mio)}</span>` : '')}
       </p>
-      <h3>${richieste.length} ${richieste.length === 1 ? 'richiesta' : 'richieste'}</h3>
-      ${raw(richieste.length
-    ? richieste.sort((a, b) => hasPriority(b) - hasPriority(a)).map((r) => cardRichiesta(r)).join('')
-    : '<p class="testo-tenue">Nessuna richiesta su questo giorno.</p>')}
+      ${raw(sezioni || '<p class="testo-tenue">Nessuna richiesta su questo giorno.</p>')}
     </div>`;
 }
 
@@ -2531,6 +2720,10 @@ function profilo() {
     </header>
 
     <section class="sezione">
+      ${raw(bottoneInbox())}
+    </section>
+
+    <section class="sezione">
       <h2>Le tue due settimane</h2>
       <p class="testo-tenue">
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
@@ -2538,6 +2731,8 @@ function profilo() {
       ${raw(dueSettimane())}
       <button class="btn secondario largo" data-act="importa">📥 Importa da calendario</button>
     </section>
+
+    ${raw(sezioneRingraziamenti())}
 
     <section class="sezione">
       <h2>Preferenze</h2>
@@ -2580,6 +2775,55 @@ function profilo() {
   ))}
       </select>
       <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
+    </section>`;
+}
+
+/** Il tasto per le proposte, con quante ne aspettano una risposta. */
+function bottoneInbox() {
+  const voci = store.inbox();
+  const daFare = voci.filter((v) => v.aspettaMe || v.daRingraziare).length;
+  return html`
+    <button class="tile" data-act="vai" data-to="#/inbox">
+      <span class="tile-icona">📬</span>
+      <span>
+        <strong>Proposte ricevute</strong>
+        <em>${voci.length
+    ? `${voci.length} in corso${daFare ? `, ${daFare} aspetta${daFare === 1 ? '' : 'no'} te` : ''}`
+    : 'Nessuna proposta al momento'}</em>
+      </span>
+      ${raw(daFare ? `<span class="badge-conta">${daFare}</span>` : '<span class="chevron">›</span>')}
+    </button>`;
+}
+
+/** I ringraziamenti ricevuti: l'unica cosa che resta dopo il cambio. */
+function sezioneRingraziamenti() {
+  const grazie = store.ringraziamentiRicevuti();
+  if (!grazie.length) {
+    return html`
+      <section class="sezione">
+        <h2>Ringraziamenti</h2>
+        <p class="testo-tenue">
+          Ancora nessuno. Arrivano da chi accetta uno scambio con te, e restano qui.
+        </p>
+      </section>`;
+  }
+  return html`
+    <section class="sezione">
+      <h2>Ringraziamenti · ${grazie.length}</h2>
+      <div class="grazie-lista">
+        ${grazie.map((g) => {
+    const da = store.user(g.daUserId);
+    return html`
+          <div class="grazie">
+            <span class="avatar piccolo">${iniziali(da)}</span>
+            <div>
+              <strong>${g.testo || 'Grazie!'}</strong>
+              <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
+            </div>
+            <span class="cuore">💛</span>
+          </div>`;
+  })}
+      </div>
     </section>`;
 }
 
@@ -3095,13 +3339,16 @@ function dettaglio(params) {
           <p>Ora effettua il cambio nell'app ufficiale dei turni. Questa app non lo fa al posto tuo.</p>
           ${raw(p.cambioInserito
     ? '<span class="tag">cambio inserito</span>'
-    : `<button class="btn primario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>`)}
+    : `<div class="barra-azioni">
+        ${store.haGiaRingraziato(p.id) ? '' : `<button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">💛 Ringrazia</button>`}
+        <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
+      </div>`)}
         </div>`
       : coinvolto && !hoAccettato
         ? html`
           <div class="barra-azioni">
             <button class="btn primario" data-act="accetta" data-id="${p.id}">Accetta</button>
-            <button class="btn secondario" data-act="rifiuta" data-id="${p.id}">Rifiuta</button>
+            <button class="btn secondario" data-act="chiedi-rifiuto" data-id="${p.id}">Rifiuta</button>
           </div>`
         : html`<p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>`;
 
@@ -3228,7 +3475,120 @@ function pubblica() {
   return richiesta;
 }
 
-return { draft, resetDraft, rapido, vistaRapida, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica };
+// --------------------------------------------------------------- INBOX
+
+/**
+ * Le proposte che ti riguardano, in un posto solo. In cima quelle che
+ * aspettano te: sono le uniche su cui puoi fare qualcosa adesso.
+ */
+function inbox() {
+  const voci = store.inbox();
+  const daFare = voci.filter((v) => v.aspettaMe || v.daRingraziare);
+  const resto = voci.filter((v) => !v.aspettaMe && !v.daRingraziare);
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>Proposte ricevute</h1>
+    </header>
+
+    ${raw(voci.length ? '' : vuoto(
+    'Niente da leggere',
+    'Quando qualcuno propone uno scambio sulle tue richieste, o tu ne proponi uno, lo trovi qui.',
+    '<button class="btn primario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
+  ))}
+
+    ${raw(daFare.length ? `<h2 class="titolo-gruppo">Aspettano te (${daFare.length})</h2>` : '')}
+    ${raw(daFare.map(vocebox).join(''))}
+
+    ${raw(resto.length ? `<h2 class="titolo-gruppo">In corso</h2>${resto.map(vocebox).join('')}` : '')}`;
+}
+
+function vocebox(v) {
+  const { proposta: p, richiesta: r, altro } = v;
+  const offerto = store.shift(p.shiftOffertoId);
+  const ioHoProposto = p.daUserId === store.state.currentUserId;
+
+  const azioni = v.aspettaMe
+    ? html`
+      <div class="barra-azioni">
+        <button class="btn primario" data-act="accetta" data-id="${p.id}">Accetta</button>
+        <button class="btn secondario" data-act="chiedi-rifiuto" data-id="${p.id}">Rifiuta</button>
+      </div>`
+    : v.daRingraziare
+      ? html`
+        <div class="accordo">
+          <strong>🟢 Scambio concordato</strong>
+          <p>Ora fate il cambio nell'app ufficiale dei turni.</p>
+          <div class="barra-azioni">
+            <button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">💛 Ringrazia ${altro.nome}</button>
+            <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
+          </div>
+        </div>`
+      : p.status === 'ACCORDO'
+        ? html`
+          <div class="accordo">
+            <strong>🟢 Scambio concordato</strong>
+            <p>Hai già ringraziato. Quando avete fatto il cambio nell'app ufficiale, chiudi la richiesta.</p>
+            <button class="btn secondario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
+          </div>`
+        : html`<p class="testo-tenue">In attesa che ${altro.nome} risponda (${p.accettataDa.length}/2).</p>`;
+
+  return html`
+    <article class="card ${v.aspettaMe ? 'da-fare' : ''}">
+      <header class="card-head">
+        <span class="avatar">${iniziali(altro)}</span>
+        <div>
+          <strong>${nomeUtente(altro)}</strong>
+          <div class="meta">${ioHoProposto ? 'gli hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
+        </div>
+      </header>
+      ${raw(coppiaCedoCerco(r, { compatto: true }))}
+      <div class="scambio-secco">
+        <div><span>${ioHoProposto ? 'Tu metteresti' : 'Ti darebbe'}</span><strong>${formatDay(offerto?.data)} · ${shiftLabel(offerto)}</strong></div>
+      </div>
+      ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
+      ${raw(p.motivoRifiuto ? `<p class="nota-utente">Rifiutato: “${p.motivoRifiuto}”</p>` : '')}
+      ${raw(azioni)}
+    </article>`;
+}
+
+/** Il modulo per rifiutare: il motivo è facoltativo ma sempre offerto. */
+function formRifiuto(proposalId) {
+  const p = store.state.proposals.find((x) => x.id === proposalId);
+  const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
+  return html`
+    <p>Stai rifiutando lo scambio con <strong>${nomeUtente(altro)}</strong>.</p>
+    <label class="campo">
+      <span>Vuoi dire perché? (facoltativo)</span>
+      <textarea data-campo="motivo" rows="2" placeholder="Es. quel giorno ho già un impegno"></textarea>
+    </label>
+    <div class="chips">
+      ${['Quel giorno non posso', 'Ho già preso un altro cambio', 'L\'orario non mi torna'].map((t) => raw(
+    `<button class="chip" data-act="motivo-veloce" data-testo="${t}">${t}</button>`,
+  ))}
+    </div>
+    <p class="testo-tenue">Due parole aiutano chi ha proposto a capire se riprovare.</p>`;
+}
+
+/** Il modulo per ringraziare, con qualche formula pronta. */
+function formGrazie(proposalId) {
+  const p = store.state.proposals.find((x) => x.id === proposalId);
+  const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
+  return html`
+    <p>Un grazie a <strong>${nomeUtente(altro)}</strong>. Resterà nel suo profilo.</p>
+    <div class="chips">
+      ${['Mi hai salvato!', 'Grazie mille 💛', 'Ricambio quando vuoi', 'Sei un grande'].map((t) => raw(
+    `<button class="chip" data-act="grazie-veloce" data-testo="${t}">${t}</button>`,
+  ))}
+    </div>
+    <label class="campo">
+      <span>Oppure scrivi tu</span>
+      <textarea data-campo="grazie" rows="2" placeholder="Grazie!"></textarea>
+    </label>`;
+}
+
+return { draft, resetDraft, rapido, vistaRapida, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica, inbox, formRifiuto, formGrazie };
 })();
 
 // ---- src/ui/app.js
@@ -3246,11 +3606,23 @@ const { parseICS } = M_ics;
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
 
+// Quattro icone disegnate con lo stesso tratto, invece di caratteri presi da
+// alfabeti diversi: il glifo della faccina non stava insieme agli altri.
+const ICONE = {
+  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  bacheca: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  profilo: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+};
+
+const icona = (nome) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONE[nome]}</svg>`;
+
 const TABS = [
-  { hash: '#/home', icona: '⌂', label: 'Home' },
-  { hash: '#/calendario', icona: '▦', label: 'Calendario' },
-  { hash: '#/bacheca', icona: '☰', label: 'Bacheca' },
-  { hash: '#/profilo', icona: '☺', label: 'Profilo' },
+  { hash: '#/home', icona: 'home', label: 'Home' },
+  { hash: '#/calendario', icona: 'calendario', label: 'Calendario' },
+  { hash: '#/bacheca', icona: 'bacheca', label: 'Bacheca' },
+  { hash: '#/profilo', icona: 'profilo', label: 'Profilo' },
 ];
 
 function parseHash() {
@@ -3267,6 +3639,7 @@ function render() {
     calendario: V.calendario,
     bacheca: V.bacheca,
     profilo: V.profilo,
+    inbox: F.inbox,
     rapido: F.vistaRapida,
     nuovo: F.nuovo,
     match: F.match,
@@ -3279,7 +3652,7 @@ function render() {
   const attivo = TABS.find((t) => t.hash === `#/${percorso}`);
   tabbar.innerHTML = TABS.map((t) => html`
     <button class="tab ${t === attivo ? 'attivo' : ''}" data-act="vai" data-to="${t.hash}">
-      <span class="tab-icona">${t.icona}</span><span>${t.label}</span>
+      <span class="tab-icona">${raw(icona(t.icona))}</span><span>${t.label}</span>
     </button>`).join('');
   tabbar.hidden = !attivo;
 }
@@ -3414,8 +3787,56 @@ const AZIONI = {
     render();
   },
 
-  accetta: (_, el) => { store.accetta(el.dataset.id); render(); },
-  rifiuta: (_, el) => { store.rifiuta(el.dataset.id); toast('Proposta rifiutata'); render(); },
+  accetta: (_, el) => {
+    const id = el.dataset.id;
+    store.accetta(id);
+    render();
+    // Se con la mia accettazione si chiude l'accordo, il grazie è il gesto
+    // naturale subito dopo: si offre, non si impone.
+    const p = store.state.proposals.find((x) => x.id === id);
+    if (p?.status === 'ACCORDO' && !store.haGiaRingraziato(id)) AZIONI['chiedi-grazie'](null, el);
+  },
+
+  'chiedi-rifiuto': (_, el) => {
+    const w = sheet('Rifiuta lo scambio', F.formRifiuto(el.dataset.id), {
+      azioni: '<button class="btn pericolo largo" data-act="conferma-rifiuto">Rifiuta</button>',
+    });
+    w.el.dataset.proposta = el.dataset.id;
+  },
+
+  'motivo-veloce': (_, el) => {
+    const area = el.closest('.sheet-backdrop').querySelector('[data-campo="motivo"]');
+    area.value = el.dataset.testo;
+  },
+
+  'conferma-rifiuto': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    store.rifiuta(wrap.dataset.proposta, wrap.querySelector('[data-campo="motivo"]').value);
+    wrap.querySelector('[data-chiudi]').click();
+    toast('Proposta rifiutata');
+    render();
+  },
+
+  'chiedi-grazie': (_, el) => {
+    const w = sheet('💛 Ringrazia', F.formGrazie(el.dataset.id), {
+      azioni: '<button class="btn primario largo" data-act="conferma-grazie">Invia</button>',
+    });
+    w.el.dataset.proposta = el.dataset.id;
+  },
+
+  'grazie-veloce': (_, el) => {
+    const area = el.closest('.sheet-backdrop').querySelector('[data-campo="grazie"]');
+    area.value = el.dataset.testo;
+  },
+
+  'conferma-grazie': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const testo = wrap.querySelector('[data-campo="grazie"]').value;
+    const { errori } = store.ringrazia(wrap.dataset.proposta, testo);
+    wrap.querySelector('[data-chiudi]').click();
+    toast(errori ? errori[0] : 'Grazie inviato 💛');
+    render();
+  },
   'cambio-inserito': (_, el) => { store.cambioInserito(el.dataset.id); toast('Richiesta chiusa'); vai('#/home'); },
 
   cancella: (_, el) => {

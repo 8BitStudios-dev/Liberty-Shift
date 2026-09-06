@@ -1,8 +1,8 @@
 // Data model (Fase 3 della specifica).
 // Nessuna classe: oggetti semplici, serializzabili, pronti per qualsiasi backend.
 
-import { RULES, STATUS, WANT_MODE } from './rules.js';
-import { minutes, todayISO, appleWeekKey } from './time.js';
+import { RULES, STATUS, WANT_MODE, TIPO_CAMBIO } from './rules.js';
+import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
 
 /**
  * User
@@ -252,4 +252,48 @@ export function isOpen(request) {
   return request.status === STATUS.APERTA
     || request.status === STATUS.PROPOSTA
     || request.status === STATUS.IN_ATTESA;
+}
+
+/**
+ * Che parte ha una richiesta nel giorno che si sta guardando.
+ *
+ * Una richiesta di cambio OFF tocca più date con ruoli opposti: nel giorno che
+ * l'autore vuole liberare **cerca**, nei giorni che mette sul piatto **offre**.
+ * Mostrarla identica su ogni casella del calendario era il modo più rapido per
+ * non capirci niente: chi guardava il 16 leggeva una richiesta scritta per il 14.
+ *
+ * `cedo` è il turno che la richiesta lascia, già risolto da chi chiama.
+ */
+export function ruoloNelGiorno(request, giorno, cedo) {
+  const giorni = request.cerco.giorni || [];
+
+  if (request.tipo === TIPO_CAMBIO.ORARIO) {
+    return {
+      ruolo: 'ORARIO',
+      icona: '🕐',
+      verbo: 'cambia orario',
+      sintesi: `lascia ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
+    };
+  }
+  if (cedo?.data === giorno) {
+    return {
+      ruolo: 'CERCA',
+      icona: '🔴',
+      verbo: 'cerca OFF',
+      sintesi: giorni.length
+        ? `vuole libero questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
+        : 'vuole libero questo giorno',
+    };
+  }
+  if (giorni.includes(giorno)) {
+    return {
+      ruolo: 'OFFRE',
+      icona: '🟢',
+      verbo: 'offre OFF',
+      // Solo il giorno che si sta guardando: gli altri che la richiesta offre
+      // hanno una casella loro, ed è lì che vanno letti.
+      sintesi: `offre di lavorare questo giorno · in cambio vuole libero ${formatDay(cedo?.data)}`,
+    };
+  }
+  return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
 }

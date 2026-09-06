@@ -421,13 +421,16 @@ export function dettaglio(params) {
           <p>Ora effettua il cambio nell'app ufficiale dei turni. Questa app non lo fa al posto tuo.</p>
           ${raw(p.cambioInserito
     ? '<span class="tag">cambio inserito</span>'
-    : `<button class="btn primario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>`)}
+    : `<div class="barra-azioni">
+        ${store.haGiaRingraziato(p.id) ? '' : `<button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">💛 Ringrazia</button>`}
+        <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
+      </div>`)}
         </div>`
       : coinvolto && !hoAccettato
         ? html`
           <div class="barra-azioni">
             <button class="btn primario" data-act="accetta" data-id="${p.id}">Accetta</button>
-            <button class="btn secondario" data-act="rifiuta" data-id="${p.id}">Rifiuta</button>
+            <button class="btn secondario" data-act="chiedi-rifiuto" data-id="${p.id}">Rifiuta</button>
           </div>`
         : html`<p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>`;
 
@@ -552,4 +555,117 @@ export function pubblica() {
   resetDraft();
   toast('Richiesta pubblicata');
   return richiesta;
+}
+
+// --------------------------------------------------------------- INBOX
+
+/**
+ * Le proposte che ti riguardano, in un posto solo. In cima quelle che
+ * aspettano te: sono le uniche su cui puoi fare qualcosa adesso.
+ */
+export function inbox() {
+  const voci = store.inbox();
+  const daFare = voci.filter((v) => v.aspettaMe || v.daRingraziare);
+  const resto = voci.filter((v) => !v.aspettaMe && !v.daRingraziare);
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>Proposte ricevute</h1>
+    </header>
+
+    ${raw(voci.length ? '' : vuoto(
+    'Niente da leggere',
+    'Quando qualcuno propone uno scambio sulle tue richieste, o tu ne proponi uno, lo trovi qui.',
+    '<button class="btn primario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
+  ))}
+
+    ${raw(daFare.length ? `<h2 class="titolo-gruppo">Aspettano te (${daFare.length})</h2>` : '')}
+    ${raw(daFare.map(vocebox).join(''))}
+
+    ${raw(resto.length ? `<h2 class="titolo-gruppo">In corso</h2>${resto.map(vocebox).join('')}` : '')}`;
+}
+
+function vocebox(v) {
+  const { proposta: p, richiesta: r, altro } = v;
+  const offerto = store.shift(p.shiftOffertoId);
+  const ioHoProposto = p.daUserId === store.state.currentUserId;
+
+  const azioni = v.aspettaMe
+    ? html`
+      <div class="barra-azioni">
+        <button class="btn primario" data-act="accetta" data-id="${p.id}">Accetta</button>
+        <button class="btn secondario" data-act="chiedi-rifiuto" data-id="${p.id}">Rifiuta</button>
+      </div>`
+    : v.daRingraziare
+      ? html`
+        <div class="accordo">
+          <strong>🟢 Scambio concordato</strong>
+          <p>Ora fate il cambio nell'app ufficiale dei turni.</p>
+          <div class="barra-azioni">
+            <button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">💛 Ringrazia ${altro.nome}</button>
+            <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
+          </div>
+        </div>`
+      : p.status === 'ACCORDO'
+        ? html`
+          <div class="accordo">
+            <strong>🟢 Scambio concordato</strong>
+            <p>Hai già ringraziato. Quando avete fatto il cambio nell'app ufficiale, chiudi la richiesta.</p>
+            <button class="btn secondario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
+          </div>`
+        : html`<p class="testo-tenue">In attesa che ${altro.nome} risponda (${p.accettataDa.length}/2).</p>`;
+
+  return html`
+    <article class="card ${v.aspettaMe ? 'da-fare' : ''}">
+      <header class="card-head">
+        <span class="avatar">${iniziali(altro)}</span>
+        <div>
+          <strong>${nomeUtente(altro)}</strong>
+          <div class="meta">${ioHoProposto ? 'gli hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
+        </div>
+      </header>
+      ${raw(coppiaCedoCerco(r, { compatto: true }))}
+      <div class="scambio-secco">
+        <div><span>${ioHoProposto ? 'Tu metteresti' : 'Ti darebbe'}</span><strong>${formatDay(offerto?.data)} · ${shiftLabel(offerto)}</strong></div>
+      </div>
+      ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
+      ${raw(p.motivoRifiuto ? `<p class="nota-utente">Rifiutato: “${p.motivoRifiuto}”</p>` : '')}
+      ${raw(azioni)}
+    </article>`;
+}
+
+/** Il modulo per rifiutare: il motivo è facoltativo ma sempre offerto. */
+export function formRifiuto(proposalId) {
+  const p = store.state.proposals.find((x) => x.id === proposalId);
+  const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
+  return html`
+    <p>Stai rifiutando lo scambio con <strong>${nomeUtente(altro)}</strong>.</p>
+    <label class="campo">
+      <span>Vuoi dire perché? (facoltativo)</span>
+      <textarea data-campo="motivo" rows="2" placeholder="Es. quel giorno ho già un impegno"></textarea>
+    </label>
+    <div class="chips">
+      ${['Quel giorno non posso', 'Ho già preso un altro cambio', 'L\'orario non mi torna'].map((t) => raw(
+    `<button class="chip" data-act="motivo-veloce" data-testo="${t}">${t}</button>`,
+  ))}
+    </div>
+    <p class="testo-tenue">Due parole aiutano chi ha proposto a capire se riprovare.</p>`;
+}
+
+/** Il modulo per ringraziare, con qualche formula pronta. */
+export function formGrazie(proposalId) {
+  const p = store.state.proposals.find((x) => x.id === proposalId);
+  const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
+  return html`
+    <p>Un grazie a <strong>${nomeUtente(altro)}</strong>. Resterà nel suo profilo.</p>
+    <div class="chips">
+      ${['Mi hai salvato!', 'Grazie mille 💛', 'Ricambio quando vuoi', 'Sei un grande'].map((t) => raw(
+    `<button class="chip" data-act="grazie-veloce" data-testo="${t}">${t}</button>`,
+  ))}
+    </div>
+    <label class="campo">
+      <span>Oppure scrivi tu</span>
+      <textarea data-campo="grazie" rows="2" placeholder="Grazie!"></textarea>
+    </label>`;
 }

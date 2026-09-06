@@ -97,6 +97,32 @@ nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
   settimana Apple intera e il vincolo "non si scambia fra settimane diverse" si
   legge a colpo d'occhio, senza spiegazioni. Dentro ogni casella c'è il tuo
   turno di quel giorno.
+
+## Il calendario dice chi cerca e chi offre
+Una richiesta di cambio OFF tocca più giornate con ruoli opposti: nel giorno che
+l'autore vuole liberare **cerca**, nei giorni che mette sul piatto **offre**.
+Prima la stessa riga compariva identica su tutte le caselle, e chi apriva il 16
+leggeva una richiesta scritta per il 14.
+
+Ora il ruolo si calcola sul giorno che si sta guardando (`ruoloNelGiorno`), e
+il dettaglio della giornata è diviso in tre blocchi:
+
+| Blocco | Chi c'è dentro | Cosa vuol dire per chi guarda |
+|---|---|---|
+| 🔴 Cercano di liberarsi questo giorno | chi lascia il turno di questa data | se sei libero, puoi prenderne il turno |
+| 🟢 Offrono di lavorare questo giorno | chi mette questa data fra quelle che offre | è a casa e verrebbe, in cambio di un altro giorno |
+| 🕐 Cambio orario in giornata | chi resta in turno e sposta la fascia | si scambia solo l'orario |
+
+La sintesi è riscritta dal punto di vista della data: sul 14 si legge "offre di
+lavorare questo giorno · in cambio vuole libero Sab 12", e gli altri giorni che
+la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
+vanno letti.
+
+Nella griglia del mese lo stesso ruolo diventa il colore del pallino: rosso chi
+cerca un OFF, verde chi si offre di lavorare, blu il cambio orario, oro la
+priorità. Un pallino per ruolo, non uno per richiesta: dal mese serve sapere se
+su quel giorno c'è qualcuno che se ne vuole andare, qualcuno che vuole venire, o
+tutt'e due.
 - Ogni match elenca le ragioni. Un suggerimento senza spiegazione non viene
   usato.
 - Modalità chiara e scura, aree di sicurezza dell'iPhone, tocchi da 44px.

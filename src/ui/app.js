@@ -11,11 +11,23 @@ import { parseICS } from '../core/ics.js';
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
 
+// Quattro icone disegnate con lo stesso tratto, invece di caratteri presi da
+// alfabeti diversi: il glifo della faccina non stava insieme agli altri.
+const ICONE = {
+  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
+  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  bacheca: '<path d="M4 7h16M4 12h16M4 17h10"/>',
+  profilo: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
+};
+
+const icona = (nome) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONE[nome]}</svg>`;
+
 const TABS = [
-  { hash: '#/home', icona: '⌂', label: 'Home' },
-  { hash: '#/calendario', icona: '▦', label: 'Calendario' },
-  { hash: '#/bacheca', icona: '☰', label: 'Bacheca' },
-  { hash: '#/profilo', icona: '☺', label: 'Profilo' },
+  { hash: '#/home', icona: 'home', label: 'Home' },
+  { hash: '#/calendario', icona: 'calendario', label: 'Calendario' },
+  { hash: '#/bacheca', icona: 'bacheca', label: 'Bacheca' },
+  { hash: '#/profilo', icona: 'profilo', label: 'Profilo' },
 ];
 
 function parseHash() {
@@ -32,6 +44,7 @@ function render() {
     calendario: V.calendario,
     bacheca: V.bacheca,
     profilo: V.profilo,
+    inbox: F.inbox,
     rapido: F.vistaRapida,
     nuovo: F.nuovo,
     match: F.match,
@@ -44,7 +57,7 @@ function render() {
   const attivo = TABS.find((t) => t.hash === `#/${percorso}`);
   tabbar.innerHTML = TABS.map((t) => html`
     <button class="tab ${t === attivo ? 'attivo' : ''}" data-act="vai" data-to="${t.hash}">
-      <span class="tab-icona">${t.icona}</span><span>${t.label}</span>
+      <span class="tab-icona">${raw(icona(t.icona))}</span><span>${t.label}</span>
     </button>`).join('');
   tabbar.hidden = !attivo;
 }
@@ -179,8 +192,56 @@ const AZIONI = {
     render();
   },
 
-  accetta: (_, el) => { store.accetta(el.dataset.id); render(); },
-  rifiuta: (_, el) => { store.rifiuta(el.dataset.id); toast('Proposta rifiutata'); render(); },
+  accetta: (_, el) => {
+    const id = el.dataset.id;
+    store.accetta(id);
+    render();
+    // Se con la mia accettazione si chiude l'accordo, il grazie è il gesto
+    // naturale subito dopo: si offre, non si impone.
+    const p = store.state.proposals.find((x) => x.id === id);
+    if (p?.status === 'ACCORDO' && !store.haGiaRingraziato(id)) AZIONI['chiedi-grazie'](null, el);
+  },
+
+  'chiedi-rifiuto': (_, el) => {
+    const w = sheet('Rifiuta lo scambio', F.formRifiuto(el.dataset.id), {
+      azioni: '<button class="btn pericolo largo" data-act="conferma-rifiuto">Rifiuta</button>',
+    });
+    w.el.dataset.proposta = el.dataset.id;
+  },
+
+  'motivo-veloce': (_, el) => {
+    const area = el.closest('.sheet-backdrop').querySelector('[data-campo="motivo"]');
+    area.value = el.dataset.testo;
+  },
+
+  'conferma-rifiuto': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    store.rifiuta(wrap.dataset.proposta, wrap.querySelector('[data-campo="motivo"]').value);
+    wrap.querySelector('[data-chiudi]').click();
+    toast('Proposta rifiutata');
+    render();
+  },
+
+  'chiedi-grazie': (_, el) => {
+    const w = sheet('💛 Ringrazia', F.formGrazie(el.dataset.id), {
+      azioni: '<button class="btn primario largo" data-act="conferma-grazie">Invia</button>',
+    });
+    w.el.dataset.proposta = el.dataset.id;
+  },
+
+  'grazie-veloce': (_, el) => {
+    const area = el.closest('.sheet-backdrop').querySelector('[data-campo="grazie"]');
+    area.value = el.dataset.testo;
+  },
+
+  'conferma-grazie': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const testo = wrap.querySelector('[data-campo="grazie"]').value;
+    const { errori } = store.ringrazia(wrap.dataset.proposta, testo);
+    wrap.querySelector('[data-chiudi]').click();
+    toast(errori ? errori[0] : 'Grazie inviato 💛');
+    render();
+  },
   'cambio-inserito': (_, el) => { store.cambioInserito(el.dataset.id); toast('Richiesta chiusa'); vai('#/home'); },
 
   cancella: (_, el) => {

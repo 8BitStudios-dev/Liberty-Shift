@@ -166,6 +166,7 @@ export function seed() {
     shifts,
     requests,
     proposals: [],
+    ringraziamenti: [],
     notifications: [],
   };
 }

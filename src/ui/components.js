@@ -1,6 +1,8 @@
 import { html, raw, esc } from './dom.js';
 import { store } from '../core/store.js';
-import { shiftLabel, wantLabel, hasPriority, trasformaTurno } from '../core/model.js';
+import {
+  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno as ruoloCore,
+} from '../core/model.js';
 import { STATUS_META, TIPO_META, TIPO_CAMBIO } from '../core/rules.js';
 import { formatDay } from '../core/time.js';
 
@@ -63,24 +65,36 @@ export function sintesiRichiesta(request) {
   return `${formatDay(cedo?.data)} · ${shiftLabel(cedo)} → ${wantLabel(request.cerco)}`;
 }
 
+/** Il ruolo della richiesta nel giorno guardato, col turno ceduto già risolto. */
+export function ruoloNelGiorno(request, giorno) {
+  const r = ruoloCore(request, giorno, store.shift(request.cedo.shiftId));
+  return r.sintesi ? r : { ...r, sintesi: sintesiRichiesta(request) };
+}
+
 /**
  * La riga della bacheca. Sta in due righe di testo: nome e una sintesi.
  * Tutto il resto — orari, note, stato, proposte — vive nel dettaglio, che si
  * apre toccandola.
+ *
+ * Con un `giorno` la sintesi viene riscritta dal punto di vista di quella
+ * data: è la differenza fra "questa richiesta esiste" e "questa richiesta ti
+ * riguarda oggi".
  */
-export function cardRichiesta(request) {
+export function cardRichiesta(request, giorno = null) {
   const autore = store.user(request.userId);
   const prio = hasPriority(request);
   const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
+  const ctx = giorno ? ruoloNelGiorno(request, giorno) : null;
   return html`
-    <button class="riga-richiesta ${prio ? 'prioritaria' : ''}" data-act="apri-richiesta" data-id="${request.id}">
+    <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''}"
+            data-act="apri-richiesta" data-id="${request.id}">
       <span class="avatar piccolo">${iniziali(autore)}</span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${prio ? '⭐ ' : ''}${nomeUtente(autore)}
-          <span class="tipo-pill">${meta.icona} ${meta.breve}</span>
+          <span class="tipo-pill">${ctx ? `${ctx.icona} ${ctx.verbo}` : `${meta.icona} ${meta.breve}`}</span>
         </span>
-        <span class="riga-sintesi">${sintesiRichiesta(request)}</span>
+        <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
       </span>
       <span class="chevron">›</span>
     </button>`;

@@ -16,6 +16,8 @@ export const store = {
 
   init() {
     this.state = carica() || seed();
+    // Dati salvati da una versione precedente possono non avere i campi nuovi.
+    this.state.ringraziamenti = this.state.ringraziamenti || [];
     this.scadenze();
     return this.state;
   },
@@ -229,12 +231,79 @@ export const store = {
     this.commit();
   },
 
-  rifiuta(proposalId) {
+  /**
+   * Rifiutare con due parole di spiegazione costa poco e cambia molto: chi
+   * ha proposto sa se riprovare o lasciar perdere.
+   */
+  rifiuta(proposalId, motivo = '') {
     const p = this.state.proposals.find((x) => x.id === proposalId);
     if (!p) return;
+    const me = this.state.currentUserId;
     p.status = 'RIFIUTATA';
+    p.motivoRifiuto = motivo.trim();
+    p.rifiutataDa = me;
+    const altro = p.daUserId === me ? p.aUserId : p.daUserId;
+    this.notifica(altro, motivo.trim()
+      ? `${this.user(me).nome} ha rifiutato: "${motivo.trim()}"`
+      : `${this.user(me).nome} ha rifiutato lo scambio.`);
     this.aggiornaStato(this.request(p.requestId));
     this.commit();
+  },
+
+  /**
+   * Un grazie è l'unica cosa che resta dopo che il cambio è fatto. Si
+   * conserva nel profilo di chi lo riceve.
+   */
+  ringrazia(proposalId, testo) {
+    const p = this.state.proposals.find((x) => x.id === proposalId);
+    if (!p) return { errori: ['Proposta non trovata.'] };
+    const me = this.state.currentUserId;
+    const a = p.daUserId === me ? p.aUserId : p.daUserId;
+    if (this.state.ringraziamenti.some((r) => r.proposalId === proposalId && r.daUserId === me)) {
+      return { errori: ['Hai già ringraziato per questo scambio.'] };
+    }
+    this.state.ringraziamenti.unshift({
+      id: newId('gr'),
+      proposalId,
+      daUserId: me,
+      aUserId: a,
+      testo: (testo || '').trim(),
+      createdAt: new Date().toISOString(),
+    });
+    this.notifica(a, `${this.user(me).nome} ti ha ringraziato 💛`);
+    this.commit();
+    return { ok: true };
+  },
+
+  ringraziamentiRicevuti(userId = this.state.currentUserId) {
+    return this.state.ringraziamenti.filter((r) => r.aUserId === userId);
+  },
+
+  haGiaRingraziato(proposalId) {
+    return this.state.ringraziamenti.some(
+      (r) => r.proposalId === proposalId && r.daUserId === this.state.currentUserId,
+    );
+  },
+
+  /**
+   * Tutto quello che aspetta una risposta, mia o dell'altra persona.
+   * In cima quelle che aspettano me: sono le uniche su cui posso agire.
+   */
+  inbox() {
+    const me = this.state.currentUserId;
+    return this.state.proposals
+      .filter((p) => (p.daUserId === me || p.aUserId === me) && !p.cambioInserito)
+      .map((p) => ({
+        proposta: p,
+        richiesta: this.request(p.requestId),
+        altro: this.user(p.daUserId === me ? p.aUserId : p.daUserId),
+        aspettaMe: p.status === 'IN_ATTESA' && !p.accettataDa.includes(me),
+        daRingraziare: p.status === 'ACCORDO' && !this.haGiaRingraziato(p.id),
+      }))
+      .filter((x) => x.richiesta)
+      .sort((a, b) => (b.aspettaMe - a.aspettaMe)
+        || (b.daRingraziare - a.daRingraziare)
+        || b.proposta.createdAt.localeCompare(a.proposta.createdAt));
   },
 
   // "Cambio inserito": chiude la partita, l'app non tocca il sistema ufficiale.

@@ -10,7 +10,7 @@ import { WANT_MODE, RULES, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
-  impattoMonteOre, shiftLabel, isExpired,
+  impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno,
 } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
@@ -438,4 +438,45 @@ test('richiesteSulGiorno conta anche quelle che non posso risolvere', () => {
   const mie = opportunitaPerMe('u_giulia', s).filter((o) => o.giorni.includes(giorno));
   assert.ok(tutte.length >= mie.length);
   assert.ok(!tutte.some((x) => x.userId === 'u_giulia'));
+});
+
+// --- ruolo di una richiesta nel giorno guardato ------------------------
+
+test('la stessa richiesta OFF cambia ruolo a seconda del giorno che si guarda', () => {
+  const cedo = { id: 's1', userId: 'u_marco', data: '2026-09-12', tipo: 'WORK', start: '10:00', end: '19:00' };
+  const richiesta = {
+    id: 'r1',
+    userId: 'u_marco',
+    tipo: TIPO_CAMBIO.OFF,
+    cedo: { shiftId: 's1' },
+    cerco: { giorni: ['2026-09-14', '2026-09-16'], mode: WANT_MODE.ANY },
+  };
+
+  const sabato = ruoloNelGiorno(richiesta, '2026-09-12', cedo);
+  assert.equal(sabato.ruolo, 'CERCA');
+  assert.match(sabato.sintesi, /vuole libero questo giorno/);
+
+  const lunedi = ruoloNelGiorno(richiesta, '2026-09-14', cedo);
+  const mercoledi = ruoloNelGiorno(richiesta, '2026-09-16', cedo);
+  assert.equal(lunedi.ruolo, 'OFFRE');
+  assert.equal(mercoledi.ruolo, 'OFFRE');
+  // Guardando il 14 non si legge il 16, e viceversa: ogni giorno parla di sé.
+  assert.equal(lunedi.sintesi, mercoledi.sintesi);
+  assert.match(lunedi.sintesi, /offre di lavorare questo giorno/);
+  assert.doesNotMatch(lunedi.sintesi, /1[46]/);
+});
+
+test('un cambio orario ha un ruolo solo, nel suo giorno', () => {
+  const cedo = { id: 's2', userId: 'u_lea', data: '2026-09-15', tipo: 'WORK', start: '12:00', end: '21:00' };
+  const richiesta = {
+    id: 'r2',
+    userId: 'u_lea',
+    tipo: TIPO_CAMBIO.ORARIO,
+    cedo: { shiftId: 's2' },
+    cerco: { giorni: ['2026-09-15'], mode: WANT_MODE.RANGE, entroLe: '19:00' },
+  };
+  const r = ruoloNelGiorno(richiesta, '2026-09-15', cedo);
+  assert.equal(r.ruolo, 'ORARIO');
+  assert.match(r.sintesi, /12:00–21:00/);
+  assert.match(r.sintesi, /entro le 19:00/);
 });

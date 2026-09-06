@@ -2,6 +2,7 @@ import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
+  ruoloNelGiorno,
 } from './components.js';
 import { hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana } from '../core/model.js';
 import {
@@ -133,6 +134,14 @@ export function calendario(params) {
     const richieste = perGiorno.get(data) || [];
     const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
     const prio = richieste.some(hasPriority);
+    // Un pallino per ruolo, non uno per richiesta: quello che serve sapere
+    // guardando il mese è se su quel giorno qualcuno vuole andarsene, qualcuno
+    // vuole venire, o entrambe le cose.
+    const ruoli = new Set(richieste.map((r) => ruoloNelGiorno(r, data).ruolo));
+    const pallini = ['CERCA', 'OFFRE', 'ORARIO']
+      .filter((k) => ruoli.has(k))
+      .map((k) => `<i class="dot ${k.toLowerCase()}"></i>`)
+      .join('');
     celle.push(html`
       <button class="giorno ${data === todayISO() ? 'oggi' : ''}"
               data-act="giorno" data-data="${data}">
@@ -140,7 +149,8 @@ export function calendario(params) {
         <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
         <span class="indicatori">
           ${raw(prio ? '<i class="dot prio"></i>' : '')}
-          ${raw(richieste.length ? `<i class="dot"></i><small>${richieste.length}</small>` : '')}
+          ${raw(pallini)}
+          ${raw(richieste.length > 1 ? `<small>${richieste.length}</small>` : '')}
         </span>
       </button>`);
   }
@@ -159,19 +169,42 @@ export function calendario(params) {
     </div>
     <div class="griglia-mese">${celle.map(raw)}</div>
     <p class="legenda">
-      <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità.
+      <i class="dot cerca"></i> cercano OFF · <i class="dot offre"></i> offrono di lavorare ·
+      <i class="dot orario"></i> cambio orario · <i class="dot prio"></i> priorità.
       Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>
     <button class="btn secondario largo" data-act="vai" data-to="#/profilo">Inserisci i tuoi turni</button>`;
 }
+
+/**
+ * I tre gruppi in cui si divide una giornata. L'ordine è quello in cui uno
+ * legge la casella: prima chi vuole andarsene, poi chi si offre di coprire,
+ * infine chi resta e sposta solo l'orario.
+ */
+const GRUPPI_GIORNO = [
+  { ruolo: 'CERCA', titolo: '🔴 Cercano di liberarsi questo giorno', nota: 'Se questo giorno sei libero, puoi prendere il loro turno.' },
+  { ruolo: 'OFFRE', titolo: '🟢 Offrono di lavorare questo giorno', nota: 'Sono già a casa e verrebbero, in cambio di un altro giorno.' },
+  { ruolo: 'ORARIO', titolo: '🕐 Cambio orario in giornata', nota: 'Restano in turno, cambia solo la fascia oraria.' },
+];
 
 export function dettaglioGiorno(data) {
   const richieste = store.state.requests.filter((r) => {
     if (!isOpen(r)) return false;
     const cedo = store.shift(r.cedo.shiftId);
     return cedo?.data === data || (r.cerco.giorni || []).includes(data);
-  });
+  }).sort((a, b) => hasPriority(b) - hasPriority(a));
   const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
+
+  const sezioni = GRUPPI_GIORNO.map((g) => {
+    const dentro = richieste.filter((r) => ruoloNelGiorno(r, data).ruolo === g.ruolo);
+    if (!dentro.length) return '';
+    return html`
+      <section class="gruppo-giorno ${g.ruolo}">
+        <h3>${g.titolo} · ${dentro.length}</h3>
+        <p class="testo-tenue">${g.nota}</p>
+        ${raw(dentro.map((r) => cardRichiesta(r, data)).join(''))}
+      </section>`;
+  }).join('');
 
   return html`
     <div class="giorno-dettaglio">
@@ -179,10 +212,7 @@ export function dettaglioGiorno(data) {
         Il tuo turno: <strong>${mio ? shiftLabel(mio) : 'non inserito'}</strong>
         ${raw(mio && etichettaFascia(mio) ? `<span class="tag">${etichettaFascia(mio)}</span>` : '')}
       </p>
-      <h3>${richieste.length} ${richieste.length === 1 ? 'richiesta' : 'richieste'}</h3>
-      ${raw(richieste.length
-    ? richieste.sort((a, b) => hasPriority(b) - hasPriority(a)).map((r) => cardRichiesta(r)).join('')
-    : '<p class="testo-tenue">Nessuna richiesta su questo giorno.</p>')}
+      ${raw(sezioni || '<p class="testo-tenue">Nessuna richiesta su questo giorno.</p>')}
     </div>`;
 }
 
@@ -238,6 +268,10 @@ export function profilo() {
     </header>
 
     <section class="sezione">
+      ${raw(bottoneInbox())}
+    </section>
+
+    <section class="sezione">
       <h2>Le tue due settimane</h2>
       <p class="testo-tenue">
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
@@ -245,6 +279,8 @@ export function profilo() {
       ${raw(dueSettimane())}
       <button class="btn secondario largo" data-act="importa">📥 Importa da calendario</button>
     </section>
+
+    ${raw(sezioneRingraziamenti())}
 
     <section class="sezione">
       <h2>Preferenze</h2>
@@ -287,6 +323,55 @@ export function profilo() {
   ))}
       </select>
       <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
+    </section>`;
+}
+
+/** Il tasto per le proposte, con quante ne aspettano una risposta. */
+function bottoneInbox() {
+  const voci = store.inbox();
+  const daFare = voci.filter((v) => v.aspettaMe || v.daRingraziare).length;
+  return html`
+    <button class="tile" data-act="vai" data-to="#/inbox">
+      <span class="tile-icona">📬</span>
+      <span>
+        <strong>Proposte ricevute</strong>
+        <em>${voci.length
+    ? `${voci.length} in corso${daFare ? `, ${daFare} aspetta${daFare === 1 ? '' : 'no'} te` : ''}`
+    : 'Nessuna proposta al momento'}</em>
+      </span>
+      ${raw(daFare ? `<span class="badge-conta">${daFare}</span>` : '<span class="chevron">›</span>')}
+    </button>`;
+}
+
+/** I ringraziamenti ricevuti: l'unica cosa che resta dopo il cambio. */
+function sezioneRingraziamenti() {
+  const grazie = store.ringraziamentiRicevuti();
+  if (!grazie.length) {
+    return html`
+      <section class="sezione">
+        <h2>Ringraziamenti</h2>
+        <p class="testo-tenue">
+          Ancora nessuno. Arrivano da chi accetta uno scambio con te, e restano qui.
+        </p>
+      </section>`;
+  }
+  return html`
+    <section class="sezione">
+      <h2>Ringraziamenti · ${grazie.length}</h2>
+      <div class="grazie-lista">
+        ${grazie.map((g) => {
+    const da = store.user(g.daUserId);
+    return html`
+          <div class="grazie">
+            <span class="avatar piccolo">${iniziali(da)}</span>
+            <div>
+              <strong>${g.testo || 'Grazie!'}</strong>
+              <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
+            </div>
+            <span class="cuore">💛</span>
+          </div>`;
+  })}
+      </div>
     </section>`;
 }
 

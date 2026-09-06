@@ -145,6 +145,16 @@ Restano segnalati e non risolti d'ufficio:
   mai scambiate;
 - gli adattamenti che uscirebbero dalla fascia 08:00–21:00.
 
+## R8b — Una richiesta OFF ha ruoli diversi in giorni diversi
+La stessa richiesta compare su più date, e non vuol dire la stessa cosa su
+ciascuna: nel giorno che l'autore vuole liberare **cerca**, nei giorni che
+offre **offre**. `ruoloNelGiorno(request, giorno, cedo)` restituisce quale dei
+due, ed è quello che decide testo, colore e blocco nel calendario.
+
+Conseguenza pratica: chi apre il 16 legge solo cosa succede il 16. I giorni
+alternativi della stessa richiesta non vengono elencati lì, perché hanno una
+casella loro.
+
 ## R17 — Monte ore settimanale
 Uno scambio fra due turni interi è **a somma zero**: ciascuno riceve un turno
 con le ore di quello che lascia, quindi il totale della settimana non cambia.
