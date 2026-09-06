@@ -15,12 +15,37 @@ sopra. Routing a hash, quindi ogni schermata ha un indirizzo condivisibile.
 | `#/match?id=` | risultati del matching |
 | `#/richiesta?id=` | dettaglio, proposta, accettazione |
 
-## Cambio Rapido
-La prima domanda è sempre "Cosa vuoi fare?" con tre porte (cedere, cercare,
-scambio specifico). Le tre porte entrano nello stesso wizard cambiando il punto
-di partenza: cedere parte con CERCO su "qualsiasi turno", cercare e scambio
-specifico partono su "orario preciso". Il risultato è comunque una richiesta a
-due lati.
+## Cambio Rapido e Nuovo cambio
+Sono due cose diverse, e la differenza è quanto lavoro fa l'app al posto tuo.
+
+**⚡ Cambio rapido** non fa domande. Prendi un tuo turno e vedi subito chi
+potrebbe prenderlo: il motore prova tutti i giorni della tua settimana Apple in
+cui sei libero, mette insieme i risultati e li ordina. È il principio UX numero
+4 della specifica, "il Cambio Rapido deve fare il lavoro pesante", preso alla
+lettera. Sopra ai risultati c'è la lista dei tuoi turni, per guardarne un altro
+con un tocco.
+
+**Nuovo cambio** è il percorso quando sai già cosa vuoi. Apre con la domanda
+"Cosa vuoi fare?" e le tre porte della specifica (cedere, cercare, scambio
+specifico), che entrano nello stesso wizard cambiando il punto di partenza:
+cedere parte con CERCO su "qualsiasi turno", cercare e scambio specifico
+partono su "orario preciso". Il risultato è comunque una richiesta a due lati.
+
+Dal Cambio rapido si passa a Nuovo cambio con un pulsante, e viceversa: nessuno
+dei due è un vicolo cieco.
+
+### Cosa si può fare con un risultato
+Dipende da come è nato il match, e i pulsanti lo dicono:
+
+| Il match viene da | Pulsante | Cosa succede |
+|---|---|---|
+| una richiesta pubblicata | Proponi lo scambio | proposta sulla sua richiesta, vale come tua accettazione |
+| una disponibilità di profilo, con la tua richiesta già pubblicata | Avvisa *nome* | gli arriva una notifica, sarà lui a proporre |
+| una disponibilità di profilo, dal Cambio rapido | Pubblica e avvisa *nome* | pubblica la tua richiesta su quel giorno e lo avvisa |
+
+Su una disponibilità non si può "proporre": non esiste una sua richiesta su cui
+farlo. L'unica cosa onesta è avvisarlo. Prima il pulsante c'era comunque e non
+faceva niente.
 
 ## Wizard in tre passi
 1. **Quale turno cedi** — solo i tuoi turni lavorati futuri.

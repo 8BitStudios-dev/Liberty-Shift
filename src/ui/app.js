@@ -31,7 +31,7 @@ function render() {
     bacheca: V.bacheca,
     profilo: V.profilo,
     turni: V.turni,
-    rapido: () => { if (F.draft.step !== 1) F.resetDraft(null); return F.nuovo(); },
+    rapido: F.vistaRapida,
     nuovo: F.nuovo,
     match: F.match,
     richiesta: F.dettaglio,
@@ -49,7 +49,10 @@ function render() {
 }
 
 function vai(to) {
-  location.hash = to;
+  // Navigare dove si è già non emette hashchange: se lo stato interno è
+  // cambiato (una scelta nel wizard) va ridisegnato lo stesso.
+  if (location.hash === to) render();
+  else location.hash = to;
 }
 
 // ------------------------------------------------------------ azioni
@@ -74,6 +77,36 @@ const AZIONI = {
     F.draft.step = Number(el.dataset.step);
     F.draft.errori = [];
     render();
+  },
+
+  'rapido-turno': (_, el) => { F.rapido.shiftId = el.dataset.id; render(); },
+
+  // Chi ha solo una disponibilità non ha una richiesta su cui proporre:
+  // si avvisa, e sarà lui a rispondere.
+  avvisa: (_, el) => {
+    const { errori } = store.avvisa(el.dataset.user, el.dataset.richiesta);
+    toast(errori ? errori[0] : `${store.user(el.dataset.user).nome} è stato avvisato`);
+    render();
+  },
+
+  // Dal Cambio rapido la richiesta non esiste ancora: si crea al volo sul
+  // giorno che il motore ha trovato, poi si avvisa la persona.
+  'pubblica-avvisa': (_, el) => {
+    const me = store.me;
+    const { errori, richiesta } = store.creaRichiesta({
+      cedo: { shiftId: F.rapido.shiftId, flessibile: false },
+      cerco: {
+        data: el.dataset.data,
+        mode: 'ANY',
+        evitaChiusura: Boolean(me.preferenze?.evitaChiusure),
+        note: '',
+      },
+      usaPriorita: false,
+    });
+    if (errori) return toast(errori[0]);
+    store.avvisa(el.dataset.user, richiesta.id);
+    toast(`Richiesta pubblicata, ${store.user(el.dataset.user).nome} è stato avvisato`);
+    vai(`#/richiesta?id=${richiesta.id}`);
   },
 
   'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },

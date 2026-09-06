@@ -284,7 +284,8 @@ input[type="time"], textarea, .select {
 .card.match.verde { border-left: 4px solid var(--verde); }
 .card.match.giallo { border-left: 4px solid var(--giallo); }
 .match-tipo { font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
-.turno-offerto { font-size: 15px; margin-bottom: 8px; }
+.turno-offerto { font-size: 15px; }
+.turno-ceduto { font-size: 14px; color: var(--testo-tenue); margin-bottom: 8px; }
 .perche { margin: 0 0 10px; padding-left: 18px; font-size: 13px; color: var(--testo-tenue); }
 .perche li { margin: 3px 0; }
 .card.match .btn { width: 100%; }
@@ -806,7 +807,7 @@ const M_engine = (() => {
 // e perché, perché il match senza spiegazione non serve a nessuno.
 
 const { RULES, STATUS, WANT_MODE } = M_rules;
-const { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey } = M_time;
+const { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey, addDays, todayISO } = M_time;
 const { isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre } = M_model;
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -1071,6 +1072,61 @@ function findMatches(request, ctx) {
   return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
 }
 
+/**
+ * Cambio Rapido: dato un tuo turno, chi potrebbe prenderlo.
+ *
+ * Fa il lavoro che altrimenti tocca all'utente. Invece di chiedergli quale
+ * giorno vuole in cambio, prova tutti i giorni della settimana Apple in cui
+ * è libero e mette insieme i risultati. È il principio UX numero 4 della
+ * specifica: il Cambio Rapido deve fare il lavoro pesante.
+ */
+function cambioRapido(shiftId, ctx) {
+  const idx = indexShifts(ctx.shifts);
+  const mioCedo = idx.byId[shiftId];
+  if (!mioCedo || mioCedo.tipo !== 'WORK') return [];
+  const autore = ctx.users.find((u) => u.id === mioCedo.userId);
+  if (!autore) return [];
+
+  const settimana = appleWeekKey(mioCedo.data);
+  const oggi = todayISO();
+  const risultati = [];
+  const visti = new Set();
+
+  for (let i = 0; i < 7; i += 1) {
+    const data = addDays(settimana, i);
+    if (data === mioCedo.data || data < oggi) continue;
+    // Nei giorni in cui lavoro già non posso prendere un secondo turno (R16).
+    const mio = idx.get(autore.id, data);
+    if (mio && mio.tipo === 'WORK') continue;
+
+    const ipotesi = {
+      id: `rapido_${data}`,
+      userId: autore.id,
+      status: STATUS.APERTA,
+      createdAt: new Date().toISOString(),
+      prioritaFinoA: null,
+      cedo: { shiftId, altriShiftIds: [], flessibile: false },
+      cerco: {
+        data,
+        mode: WANT_MODE.ANY,
+        // Le preferenze del profilo valgono: chi evita le chiusure non se le
+        // vede proporre nemmeno qui.
+        evitaChiusura: Boolean(autore.preferenze?.evitaChiusure),
+        note: '',
+      },
+    };
+
+    for (const m of findMatches(ipotesi, ctx)) {
+      const chiave = `${m.userId}|${m.shiftOffertoId}`;
+      if (visti.has(chiave)) continue;
+      visti.add(chiave);
+      risultati.push({ ...m, data, cercoIpotizzato: ipotesi.cerco });
+    }
+  }
+
+  return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+}
+
 /** Disponibilità dichiarata settimana per settimana (cap. 20). */
 function disponibileIl(user, dataISO) {
   const settimana = user.disponibilita?.[appleWeekKey(dataISO)];
@@ -1101,7 +1157,7 @@ function nextStatus(request, proposte) {
   return STATUS.APERTA;
 }
 
-return { satisfies, validateRequest, findMatches, disponibileIl, slotSettimana, nextStatus };
+return { satisfies, validateRequest, findMatches, cambioRapido, disponibileIl, slotSettimana, nextStatus };
 })();
 
 // ---- src/core/seed.js
@@ -1158,7 +1214,12 @@ const PERSONE = [
 function seed() {
   const w0 = appleWeekKey(todayISO());
   const w1 = addDays(w0, 7);
-  const giorno = (settimana, i) => (settimana === 0 ? addDays(w0, i) : addDays(w1, i));
+  const w2 = addDays(w0, 14);
+  const SETTIMANE = [w0, w1, w2];
+  // Le richieste vanno sulla settimana successiva, che è sempre interamente
+  // futura: così la demo funziona qualunque giorno la si apra, senza
+  // ritrovarsi tutto scaduto perché è già mercoledì.
+  const wRef = w1;
 
   const users = [];
   const shifts = [];
@@ -1175,13 +1236,13 @@ function seed() {
       oreSettimanali: p.oreSettimanali,
       admin: p.admin,
       preferenze: p.preferenze,
-      disponibilita: { [w0]: [...p.disponibilita], [w1]: [...p.disponibilita] },
+      disponibilita: Object.fromEntries(SETTIMANE.map((w) => [w, [...p.disponibilita]])),
       prioritaUsata: {},
     });
-    for (const settimana of [0, 1]) {
+    for (const inizio of SETTIMANE) {
       p.settimana.forEach((t, i) => {
         n += 1;
-        const data = giorno(settimana, i);
+        const data = addDays(inizio, i);
         shifts.push(t === o
           ? { id: `sh_${p.id}_${n}`, userId: p.id, data, tipo: 'OFF', start: null, end: null }
           : { id: `sh_${p.id}_${n}`, userId: p.id, data, tipo: 'WORK', start: t[0], end: t[1] });
@@ -1198,32 +1259,32 @@ function seed() {
     // le ore che farebbe davvero sul turno di Lorenzo, 11:00-20:00 adattato.
     {
       id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_lorenzo', addDays(w0, 0)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 1), mode: WANT_MODE.ANY, evitaChiusura: true, note: '' },
+      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 0)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 1), mode: WANT_MODE.ANY, evitaChiusura: true, note: '' },
     },
     {
       id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_martina', addDays(w0, 1)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
+      cedo: { shiftId: turno('u_martina', addDays(wRef, 1)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
     },
     // Luca cerca un OFF: nessuna richiesta corrispondente, solo disponibilità.
     {
       id: 'rq_luca_1', userId: 'u_luca', createdAt: iso(20), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_luca', addDays(w0, 6)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 5), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.' },
+      cedo: { shiftId: turno('u_luca', addDays(wRef, 6)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 5), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.' },
     },
     // Giulia usa una fascia oraria.
     {
       id: 'rq_giulia_1', userId: 'u_giulia', createdAt: iso(30), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_giulia', addDays(w0, 4)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
+      cedo: { shiftId: turno('u_giulia', addDays(wRef, 4)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
     },
     // Marco cede la notte visual e ha speso la sua priorità del mese.
     {
       id: 'rq_marco_1', userId: 'u_marco', createdAt: iso(2), status: STATUS.APERTA,
       prioritaFinoA: new Date(ora.getTime() + 46 * 3600 * 1000).toISOString(),
-      cedo: { shiftId: turno('u_marco', addDays(w0, 5)).id, altriShiftIds: [], flessibile: true },
-      cerco: { data: addDays(w0, 6), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Matrimonio, non posso proprio.' },
+      cedo: { shiftId: turno('u_marco', addDays(wRef, 5)).id, altriShiftIds: [], flessibile: true },
+      cerco: { data: addDays(wRef, 6), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Matrimonio, non posso proprio.' },
     },
   ];
 
@@ -1497,6 +1558,21 @@ const store = {
     this.commit();
   },
 
+  /**
+   * Segnala la propria richiesta a chi ha una disponibilità compatibile ma
+   * non ha pubblicato niente: non c'è una sua richiesta su cui proporre,
+   * quindi l'unica cosa onesta è avvisarlo.
+   */
+  avvisa(userId, requestId) {
+    const r = this.request(requestId);
+    if (!r) return { errori: ['Richiesta non trovata.'] };
+    if (r.avvisati?.includes(userId)) return { errori: ['Hai già avvisato questa persona.'] };
+    r.avvisati = [...(r.avvisati || []), userId];
+    this.notifica(userId, `${this.me.nome} cerca un cambio che potrebbe interessarti.`);
+    this.commit();
+    return { ok: true };
+  },
+
   notifica(userId, testo) {
     this.state.notifications.unshift({
       id: newId('nt'), userId, testo, letta: false, createdAt: new Date().toISOString(),
@@ -1611,7 +1687,7 @@ return { esc, html, raw, on, toast, sheet };
 
 // ---- src/ui/components.js
 const M_components = (() => {
-const { html, raw } = M_dom;
+const { html, raw, esc } = M_dom;
 const { store } = M_store;
 const { shiftLabel, wantLabel, hasPriority } = M_model;
 const { STATUS_META } = M_rules;
@@ -1670,7 +1746,7 @@ function cardRichiesta(request, { azione = 'Vedi cambio' } = {}) {
     </article>`;
 }
 
-function cardMatch(match) {
+function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);
   const turno = store.shift(match.shiftOffertoId);
   const verde = match.tipo === 'MATCH';
@@ -1693,15 +1769,42 @@ function cardMatch(match) {
         <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
         ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
       </div>
+      ${raw(opzioni.mioCedo
+    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · ${esc(shiftLabel(opzioni.mioCedo))}</div>`
+    : '')}
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
       </ul>
       ${raw(match.avvisi.length ? `<div class="avviso">⚠️ ${match.avvisi.join(' ')}</div>` : '')}
-      <button class="btn primario" data-act="proponi" data-user="${match.userId}"
-              data-richiesta="${match.requestId || ''}" data-shift="${match.shiftOffertoId}">
-        Proponi lo scambio
-      </button>
+      ${raw(azioneMatch(match, opzioni))}
     </article>`;
+}
+
+/**
+ * Cosa si può fare con un match dipende da come è nato.
+ * Chi ha pubblicato una richiesta si può contattare subito; chi ha solo
+ * dichiarato una disponibilità va avvisato, perché non c'è una richiesta
+ * sua su cui proporre.
+ */
+function azioneMatch(match, { miaRichiestaId } = {}) {
+  const u = store.user(match.userId);
+  if (match.requestId) {
+    return html`
+      <button class="btn primario" data-act="proponi" data-user="${match.userId}"
+              data-richiesta="${match.requestId}" data-shift="${match.shiftOffertoId}">
+        Proponi lo scambio
+      </button>`;
+  }
+  if (miaRichiestaId) {
+    return html`
+      <button class="btn secondario" data-act="avvisa" data-user="${match.userId}" data-richiesta="${miaRichiestaId}">
+        Avvisa ${u?.nome}
+      </button>`;
+  }
+  return html`
+    <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}" data-data="${match.data}">
+      Pubblica e avvisa ${u?.nome}
+    </button>`;
 }
 
 function vuoto(titolo, sottotitolo, azione = '') {
@@ -1739,6 +1842,7 @@ function home() {
   const proposte = store.propostePerMe();
   const credito = store.creditoPriorita();
   const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
+  const prossimo = store.shiftsOf(me.id, { soloFuturi: true }).find((s) => s.tipo === 'WORK');
 
   const bloccoMiei = miei.length || proposte.length
     ? [
@@ -1778,7 +1882,6 @@ function home() {
     <section class="sezione">
       <h2>I tuoi cambi</h2>
       <div class="lista-cambi">${raw(bloccoMiei)}</div>
-      <button class="btn primario largo" data-act="vai" data-to="#/nuovo">+ Nuovo cambio</button>
     </section>
 
     <section class="sezione">
@@ -1786,7 +1889,15 @@ function home() {
         <span class="tile-icona">⚡</span>
         <span>
           <strong>Cambio rapido</strong>
-          <em>Trova subito qualcuno per il tuo turno</em>
+          <em>Chi può prenderti ${prossimo ? formatDay(prossimo.data) : 'un turno'}, senza domande</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+      <button class="tile" data-act="vai" data-to="#/nuovo">
+        <span class="tile-icona">＋</span>
+        <span>
+          <strong>Nuovo cambio</strong>
+          <em>Scegli tu il giorno e l'orario che cerchi</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -2066,7 +2177,7 @@ const M_flows = (() => {
 
 const { html, raw, toast } = M_dom;
 const { store } = M_store;
-const { findMatches, validateRequest, satisfies } = M_engine;
+const { findMatches, validateRequest, satisfies, cambioRapido } = M_engine;
 const { RULES, WANT_MODE, STATUS } = M_rules;
 const { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } = M_model;
 const { appleWeekKey, addDays, formatDay, todayISO } = M_time;
@@ -2094,11 +2205,14 @@ function resetDraft(intent = null) {
   draft.errori = [];
 }
 
-// ------------------------------------------------------- CAMBIO RAPIDO
+// --------------------------------------------------------- NUOVO CAMBIO
 
 function scelta() {
   return html`
-    <header class="testata"><h1>⚡ Cambio rapido</h1></header>
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Nuovo cambio</h1>
+    </header>
     <p class="occhiello">Cosa vuoi fare?</p>
     <button class="tile scelta rosso" data-act="intent" data-intent="CEDERE">
       <span class="tile-icona">🔴</span>
@@ -2115,7 +2229,71 @@ function scelta() {
     <p class="testo-tenue nota-regola">
       In ogni caso la richiesta avrà sempre due lati: quello che cedi e quello che cerchi.
       È la regola che tiene in piedi tutto il resto.
-    </p>`;
+    </p>
+    <p class="testo-tenue">
+      Se ti basta sapere chi può prenderti un turno, il <strong>Cambio rapido</strong> te lo dice senza domande.
+    </p>
+    <button class="btn secondario largo" data-act="vai" data-to="#/rapido">⚡ Cambio rapido</button>`;
+}
+
+// ------------------------------------------------------- CAMBIO RAPIDO
+
+const rapido = { shiftId: null };
+
+/**
+ * Un tap e vedi chi può prendere il tuo turno. Nessuna domanda: il motore
+ * prova tutti i giorni liberi della tua settimana e mette insieme i
+ * risultati. Il percorso con le domande è "Nuovo cambio".
+ */
+function vistaRapida() {
+  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
+    .filter((s) => s.tipo === 'WORK');
+
+  if (!miei.length) {
+    return html`
+      ${raw(testataRapido())}
+      ${raw(vuoto('Nessun turno da cedere', 'Aggiungi i tuoi turni e torna qui.',
+    '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}`;
+  }
+
+  if (!rapido.shiftId || !miei.some((s) => s.id === rapido.shiftId)) {
+    rapido.shiftId = miei[0].id;
+  }
+  const cedo = store.shift(rapido.shiftId);
+  const risultati = cambioRapido(rapido.shiftId, store.state);
+  const pieni = risultati.filter((m) => m.tipo === 'MATCH');
+  const potenziali = risultati.filter((m) => m.tipo === 'POTENZIALE');
+
+  const scelta = miei.map((s) => html`
+    <button class="pill ${s.id === rapido.shiftId ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}">
+      ${formatDay(s.data)}
+      <em>${shiftLabel(s)}</em>
+    </button>`).join('');
+
+  return html`
+    ${raw(testataRapido())}
+    <p class="occhiello">Quale turno vuoi lasciare?</p>
+    <div class="pillole">${raw(scelta)}</div>
+
+    <h2 class="titolo-gruppo">Chi può prenderti ${formatDay(cedo.data)} · ${shiftLabel(cedo)}</h2>
+    ${raw(pieni.map((m) => cardMatch(m, { mioCedo: cedo })).join(''))}
+    ${raw(potenziali.length ? `<h3>Forse interessati</h3>${potenziali.map((m) => cardMatch(m, { mioCedo: cedo })).join('')}` : '')}
+    ${raw(risultati.length ? '' : vuoto(
+    'Nessuno per ora',
+    `Per ${formatDay(cedo.data)} non risulta nessun collega con una richiesta compatibile o una disponibilità dichiarata. Pubblicare la richiesta la mette comunque in bacheca.`,
+    '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
+  ))}
+    ${raw(risultati.length ? `
+      <p class="testo-tenue">Nessuno di questi va bene? Con <strong>Nuovo cambio</strong> scegli tu il giorno e l'orario che cerchi.</p>
+      <button class="btn secondario largo" data-act="vai" data-to="#/nuovo">Nuovo cambio</button>` : '')}`;
+}
+
+function testataRapido() {
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>⚡ Cambio rapido</h1>
+    </header>`;
 }
 
 // -------------------------------------------------- COSTRUZIONE RICHIESTA
@@ -2323,8 +2501,8 @@ function match(params) {
     </header>
     <div class="card riepilogo">${raw(coppiaCedoCerco(r, { compatto: true }))}</div>
 
-    ${raw(pieni.length ? `<h2 class="titolo-gruppo">🟢 Match (${pieni.length})</h2>${pieni.map(cardMatch).join('')}` : '')}
-    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map(cardMatch).join('')}` : '')}
+    ${raw(pieni.length ? `<h2 class="titolo-gruppo">🟢 Match (${pieni.length})</h2>${pieni.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
+    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
     ${raw(risultati.length ? '' : vuoto(
     'Ancora nessuno',
     'Nessun collega ha pubblicato una richiesta compatibile né dichiarato disponibilità su quel giorno. La richiesta resta in bacheca.',
@@ -2475,7 +2653,7 @@ function pubblica() {
   return richiesta;
 }
 
-return { draft, resetDraft, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica };
+return { draft, resetDraft, scelta, rapido, vistaRapida, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica };
 })();
 
 // ---- src/ui/app.js
@@ -2513,7 +2691,7 @@ function render() {
     bacheca: V.bacheca,
     profilo: V.profilo,
     turni: V.turni,
-    rapido: () => { if (F.draft.step !== 1) F.resetDraft(null); return F.nuovo(); },
+    rapido: F.vistaRapida,
     nuovo: F.nuovo,
     match: F.match,
     richiesta: F.dettaglio,
@@ -2531,7 +2709,10 @@ function render() {
 }
 
 function vai(to) {
-  location.hash = to;
+  // Navigare dove si è già non emette hashchange: se lo stato interno è
+  // cambiato (una scelta nel wizard) va ridisegnato lo stesso.
+  if (location.hash === to) render();
+  else location.hash = to;
 }
 
 // ------------------------------------------------------------ azioni
@@ -2556,6 +2737,36 @@ const AZIONI = {
     F.draft.step = Number(el.dataset.step);
     F.draft.errori = [];
     render();
+  },
+
+  'rapido-turno': (_, el) => { F.rapido.shiftId = el.dataset.id; render(); },
+
+  // Chi ha solo una disponibilità non ha una richiesta su cui proporre:
+  // si avvisa, e sarà lui a rispondere.
+  avvisa: (_, el) => {
+    const { errori } = store.avvisa(el.dataset.user, el.dataset.richiesta);
+    toast(errori ? errori[0] : `${store.user(el.dataset.user).nome} è stato avvisato`);
+    render();
+  },
+
+  // Dal Cambio rapido la richiesta non esiste ancora: si crea al volo sul
+  // giorno che il motore ha trovato, poi si avvisa la persona.
+  'pubblica-avvisa': (_, el) => {
+    const me = store.me;
+    const { errori, richiesta } = store.creaRichiesta({
+      cedo: { shiftId: F.rapido.shiftId, flessibile: false },
+      cerco: {
+        data: el.dataset.data,
+        mode: 'ANY',
+        evitaChiusura: Boolean(me.preferenze?.evitaChiusure),
+        note: '',
+      },
+      usaPriorita: false,
+    });
+    if (errori) return toast(errori[0]);
+    store.avvisa(el.dataset.user, richiesta.id);
+    toast(`Richiesta pubblicata, ${store.user(el.dataset.user).nome} è stato avvisato`);
+    vai(`#/richiesta?id=${richiesta.id}`);
   },
 
   'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },

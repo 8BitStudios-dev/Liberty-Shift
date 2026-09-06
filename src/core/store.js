@@ -249,6 +249,21 @@ export const store = {
     this.commit();
   },
 
+  /**
+   * Segnala la propria richiesta a chi ha una disponibilità compatibile ma
+   * non ha pubblicato niente: non c'è una sua richiesta su cui proporre,
+   * quindi l'unica cosa onesta è avvisarlo.
+   */
+  avvisa(userId, requestId) {
+    const r = this.request(requestId);
+    if (!r) return { errori: ['Richiesta non trovata.'] };
+    if (r.avvisati?.includes(userId)) return { errori: ['Hai già avvisato questa persona.'] };
+    r.avvisati = [...(r.avvisati || []), userId];
+    this.notifica(userId, `${this.me.nome} cerca un cambio che potrebbe interessarti.`);
+    this.commit();
+    return { ok: true };
+  },
+
   notifica(userId, testo) {
     this.state.notifications.unshift({
       id: newId('nt'), userId, testo, letta: false, createdAt: new Date().toISOString(),

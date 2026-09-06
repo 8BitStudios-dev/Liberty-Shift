@@ -50,7 +50,12 @@ const PERSONE = [
 export function seed() {
   const w0 = appleWeekKey(todayISO());
   const w1 = addDays(w0, 7);
-  const giorno = (settimana, i) => (settimana === 0 ? addDays(w0, i) : addDays(w1, i));
+  const w2 = addDays(w0, 14);
+  const SETTIMANE = [w0, w1, w2];
+  // Le richieste vanno sulla settimana successiva, che è sempre interamente
+  // futura: così la demo funziona qualunque giorno la si apra, senza
+  // ritrovarsi tutto scaduto perché è già mercoledì.
+  const wRef = w1;
 
   const users = [];
   const shifts = [];
@@ -67,13 +72,13 @@ export function seed() {
       oreSettimanali: p.oreSettimanali,
       admin: p.admin,
       preferenze: p.preferenze,
-      disponibilita: { [w0]: [...p.disponibilita], [w1]: [...p.disponibilita] },
+      disponibilita: Object.fromEntries(SETTIMANE.map((w) => [w, [...p.disponibilita]])),
       prioritaUsata: {},
     });
-    for (const settimana of [0, 1]) {
+    for (const inizio of SETTIMANE) {
       p.settimana.forEach((t, i) => {
         n += 1;
-        const data = giorno(settimana, i);
+        const data = addDays(inizio, i);
         shifts.push(t === o
           ? { id: `sh_${p.id}_${n}`, userId: p.id, data, tipo: 'OFF', start: null, end: null }
           : { id: `sh_${p.id}_${n}`, userId: p.id, data, tipo: 'WORK', start: t[0], end: t[1] });
@@ -90,32 +95,32 @@ export function seed() {
     // le ore che farebbe davvero sul turno di Lorenzo, 11:00-20:00 adattato.
     {
       id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_lorenzo', addDays(w0, 0)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 1), mode: WANT_MODE.ANY, evitaChiusura: true, note: '' },
+      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 0)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 1), mode: WANT_MODE.ANY, evitaChiusura: true, note: '' },
     },
     {
       id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_martina', addDays(w0, 1)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
+      cedo: { shiftId: turno('u_martina', addDays(wRef, 1)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
     },
     // Luca cerca un OFF: nessuna richiesta corrispondente, solo disponibilità.
     {
       id: 'rq_luca_1', userId: 'u_luca', createdAt: iso(20), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_luca', addDays(w0, 6)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 5), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.' },
+      cedo: { shiftId: turno('u_luca', addDays(wRef, 6)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 5), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.' },
     },
     // Giulia usa una fascia oraria.
     {
       id: 'rq_giulia_1', userId: 'u_giulia', createdAt: iso(30), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_giulia', addDays(w0, 4)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(w0, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
+      cedo: { shiftId: turno('u_giulia', addDays(wRef, 4)).id, altriShiftIds: [], flessibile: false },
+      cerco: { data: addDays(wRef, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
     },
     // Marco cede la notte visual e ha speso la sua priorità del mese.
     {
       id: 'rq_marco_1', userId: 'u_marco', createdAt: iso(2), status: STATUS.APERTA,
       prioritaFinoA: new Date(ora.getTime() + 46 * 3600 * 1000).toISOString(),
-      cedo: { shiftId: turno('u_marco', addDays(w0, 5)).id, altriShiftIds: [], flessibile: true },
-      cerco: { data: addDays(w0, 6), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Matrimonio, non posso proprio.' },
+      cedo: { shiftId: turno('u_marco', addDays(wRef, 5)).id, altriShiftIds: [], flessibile: true },
+      cerco: { data: addDays(wRef, 6), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Matrimonio, non posso proprio.' },
     },
   ];
 

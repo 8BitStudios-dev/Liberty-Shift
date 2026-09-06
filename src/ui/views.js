@@ -18,6 +18,7 @@ export function home() {
   const proposte = store.propostePerMe();
   const credito = store.creditoPriorita();
   const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
+  const prossimo = store.shiftsOf(me.id, { soloFuturi: true }).find((s) => s.tipo === 'WORK');
 
   const bloccoMiei = miei.length || proposte.length
     ? [
@@ -57,7 +58,6 @@ export function home() {
     <section class="sezione">
       <h2>I tuoi cambi</h2>
       <div class="lista-cambi">${raw(bloccoMiei)}</div>
-      <button class="btn primario largo" data-act="vai" data-to="#/nuovo">+ Nuovo cambio</button>
     </section>
 
     <section class="sezione">
@@ -65,7 +65,15 @@ export function home() {
         <span class="tile-icona">⚡</span>
         <span>
           <strong>Cambio rapido</strong>
-          <em>Trova subito qualcuno per il tuo turno</em>
+          <em>Chi può prenderti ${prossimo ? formatDay(prossimo.data) : 'un turno'}, senza domande</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+      <button class="tile" data-act="vai" data-to="#/nuovo">
+        <span class="tile-icona">＋</span>
+        <span>
+          <strong>Nuovo cambio</strong>
+          <em>Scegli tu il giorno e l'orario che cerchi</em>
         </span>
         <span class="chevron">›</span>
       </button>

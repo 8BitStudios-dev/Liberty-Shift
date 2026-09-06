@@ -280,7 +280,8 @@ input[type="time"], textarea, .select {
 .card.match.verde { border-left: 4px solid var(--verde); }
 .card.match.giallo { border-left: 4px solid var(--giallo); }
 .match-tipo { font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
-.turno-offerto { font-size: 15px; margin-bottom: 8px; }
+.turno-offerto { font-size: 15px; }
+.turno-ceduto { font-size: 14px; color: var(--testo-tenue); margin-bottom: 8px; }
 .perche { margin: 0 0 10px; padding-left: 18px; font-size: 13px; color: var(--testo-tenue); }
 .perche li { margin: 3px 0; }
 .card.match .btn { width: 100%; }

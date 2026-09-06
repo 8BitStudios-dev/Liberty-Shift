@@ -3,7 +3,7 @@
 
 import { html, raw, toast } from './dom.js';
 import { store } from '../core/store.js';
-import { findMatches, validateRequest, satisfies } from '../core/engine.js';
+import { findMatches, validateRequest, satisfies, cambioRapido } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS } from '../core/rules.js';
 import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } from '../core/model.js';
 import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
@@ -31,11 +31,14 @@ export function resetDraft(intent = null) {
   draft.errori = [];
 }
 
-// ------------------------------------------------------- CAMBIO RAPIDO
+// --------------------------------------------------------- NUOVO CAMBIO
 
 export function scelta() {
   return html`
-    <header class="testata"><h1>⚡ Cambio rapido</h1></header>
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Nuovo cambio</h1>
+    </header>
     <p class="occhiello">Cosa vuoi fare?</p>
     <button class="tile scelta rosso" data-act="intent" data-intent="CEDERE">
       <span class="tile-icona">🔴</span>
@@ -52,7 +55,71 @@ export function scelta() {
     <p class="testo-tenue nota-regola">
       In ogni caso la richiesta avrà sempre due lati: quello che cedi e quello che cerchi.
       È la regola che tiene in piedi tutto il resto.
-    </p>`;
+    </p>
+    <p class="testo-tenue">
+      Se ti basta sapere chi può prenderti un turno, il <strong>Cambio rapido</strong> te lo dice senza domande.
+    </p>
+    <button class="btn secondario largo" data-act="vai" data-to="#/rapido">⚡ Cambio rapido</button>`;
+}
+
+// ------------------------------------------------------- CAMBIO RAPIDO
+
+export const rapido = { shiftId: null };
+
+/**
+ * Un tap e vedi chi può prendere il tuo turno. Nessuna domanda: il motore
+ * prova tutti i giorni liberi della tua settimana e mette insieme i
+ * risultati. Il percorso con le domande è "Nuovo cambio".
+ */
+export function vistaRapida() {
+  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
+    .filter((s) => s.tipo === 'WORK');
+
+  if (!miei.length) {
+    return html`
+      ${raw(testataRapido())}
+      ${raw(vuoto('Nessun turno da cedere', 'Aggiungi i tuoi turni e torna qui.',
+    '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}`;
+  }
+
+  if (!rapido.shiftId || !miei.some((s) => s.id === rapido.shiftId)) {
+    rapido.shiftId = miei[0].id;
+  }
+  const cedo = store.shift(rapido.shiftId);
+  const risultati = cambioRapido(rapido.shiftId, store.state);
+  const pieni = risultati.filter((m) => m.tipo === 'MATCH');
+  const potenziali = risultati.filter((m) => m.tipo === 'POTENZIALE');
+
+  const scelta = miei.map((s) => html`
+    <button class="pill ${s.id === rapido.shiftId ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}">
+      ${formatDay(s.data)}
+      <em>${shiftLabel(s)}</em>
+    </button>`).join('');
+
+  return html`
+    ${raw(testataRapido())}
+    <p class="occhiello">Quale turno vuoi lasciare?</p>
+    <div class="pillole">${raw(scelta)}</div>
+
+    <h2 class="titolo-gruppo">Chi può prenderti ${formatDay(cedo.data)} · ${shiftLabel(cedo)}</h2>
+    ${raw(pieni.map((m) => cardMatch(m, { mioCedo: cedo })).join(''))}
+    ${raw(potenziali.length ? `<h3>Forse interessati</h3>${potenziali.map((m) => cardMatch(m, { mioCedo: cedo })).join('')}` : '')}
+    ${raw(risultati.length ? '' : vuoto(
+    'Nessuno per ora',
+    `Per ${formatDay(cedo.data)} non risulta nessun collega con una richiesta compatibile o una disponibilità dichiarata. Pubblicare la richiesta la mette comunque in bacheca.`,
+    '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
+  ))}
+    ${raw(risultati.length ? `
+      <p class="testo-tenue">Nessuno di questi va bene? Con <strong>Nuovo cambio</strong> scegli tu il giorno e l'orario che cerchi.</p>
+      <button class="btn secondario largo" data-act="vai" data-to="#/nuovo">Nuovo cambio</button>` : '')}`;
+}
+
+function testataRapido() {
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>⚡ Cambio rapido</h1>
+    </header>`;
 }
 
 // -------------------------------------------------- COSTRUZIONE RICHIESTA
@@ -260,8 +327,8 @@ export function match(params) {
     </header>
     <div class="card riepilogo">${raw(coppiaCedoCerco(r, { compatto: true }))}</div>
 
-    ${raw(pieni.length ? `<h2 class="titolo-gruppo">🟢 Match (${pieni.length})</h2>${pieni.map(cardMatch).join('')}` : '')}
-    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map(cardMatch).join('')}` : '')}
+    ${raw(pieni.length ? `<h2 class="titolo-gruppo">🟢 Match (${pieni.length})</h2>${pieni.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
+    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
     ${raw(risultati.length ? '' : vuoto(
     'Ancora nessuno',
     'Nessun collega ha pubblicato una richiesta compatibile né dichiarato disponibilità su quel giorno. La richiesta resta in bacheca.',

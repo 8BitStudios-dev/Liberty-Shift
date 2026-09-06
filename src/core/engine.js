@@ -3,7 +3,7 @@
 // e perché, perché il match senza spiegazione non serve a nessuno.
 
 import { RULES, STATUS, WANT_MODE } from './rules.js';
-import { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey } from './time.js';
+import { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey, addDays, todayISO } from './time.js';
 import { isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -263,6 +263,61 @@ export function findMatches(request, ctx) {
       reasons,
       avvisi,
     });
+  }
+
+  return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+}
+
+/**
+ * Cambio Rapido: dato un tuo turno, chi potrebbe prenderlo.
+ *
+ * Fa il lavoro che altrimenti tocca all'utente. Invece di chiedergli quale
+ * giorno vuole in cambio, prova tutti i giorni della settimana Apple in cui
+ * è libero e mette insieme i risultati. È il principio UX numero 4 della
+ * specifica: il Cambio Rapido deve fare il lavoro pesante.
+ */
+export function cambioRapido(shiftId, ctx) {
+  const idx = indexShifts(ctx.shifts);
+  const mioCedo = idx.byId[shiftId];
+  if (!mioCedo || mioCedo.tipo !== 'WORK') return [];
+  const autore = ctx.users.find((u) => u.id === mioCedo.userId);
+  if (!autore) return [];
+
+  const settimana = appleWeekKey(mioCedo.data);
+  const oggi = todayISO();
+  const risultati = [];
+  const visti = new Set();
+
+  for (let i = 0; i < 7; i += 1) {
+    const data = addDays(settimana, i);
+    if (data === mioCedo.data || data < oggi) continue;
+    // Nei giorni in cui lavoro già non posso prendere un secondo turno (R16).
+    const mio = idx.get(autore.id, data);
+    if (mio && mio.tipo === 'WORK') continue;
+
+    const ipotesi = {
+      id: `rapido_${data}`,
+      userId: autore.id,
+      status: STATUS.APERTA,
+      createdAt: new Date().toISOString(),
+      prioritaFinoA: null,
+      cedo: { shiftId, altriShiftIds: [], flessibile: false },
+      cerco: {
+        data,
+        mode: WANT_MODE.ANY,
+        // Le preferenze del profilo valgono: chi evita le chiusure non se le
+        // vede proporre nemmeno qui.
+        evitaChiusura: Boolean(autore.preferenze?.evitaChiusure),
+        note: '',
+      },
+    };
+
+    for (const m of findMatches(ipotesi, ctx)) {
+      const chiave = `${m.userId}|${m.shiftOffertoId}`;
+      if (visti.has(chiave)) continue;
+      visti.add(chiave);
+      risultati.push({ ...m, data, cercoIpotizzato: ipotesi.cerco });
+    }
   }
 
   return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));

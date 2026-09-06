@@ -1,4 +1,4 @@
-import { html, raw } from './dom.js';
+import { html, raw, esc } from './dom.js';
 import { store } from '../core/store.js';
 import { shiftLabel, wantLabel, hasPriority } from '../core/model.js';
 import { STATUS_META } from '../core/rules.js';
@@ -57,7 +57,7 @@ export function cardRichiesta(request, { azione = 'Vedi cambio' } = {}) {
     </article>`;
 }
 
-export function cardMatch(match) {
+export function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);
   const turno = store.shift(match.shiftOffertoId);
   const verde = match.tipo === 'MATCH';
@@ -80,15 +80,42 @@ export function cardMatch(match) {
         <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
         ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
       </div>
+      ${raw(opzioni.mioCedo
+    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · ${esc(shiftLabel(opzioni.mioCedo))}</div>`
+    : '')}
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
       </ul>
       ${raw(match.avvisi.length ? `<div class="avviso">⚠️ ${match.avvisi.join(' ')}</div>` : '')}
-      <button class="btn primario" data-act="proponi" data-user="${match.userId}"
-              data-richiesta="${match.requestId || ''}" data-shift="${match.shiftOffertoId}">
-        Proponi lo scambio
-      </button>
+      ${raw(azioneMatch(match, opzioni))}
     </article>`;
+}
+
+/**
+ * Cosa si può fare con un match dipende da come è nato.
+ * Chi ha pubblicato una richiesta si può contattare subito; chi ha solo
+ * dichiarato una disponibilità va avvisato, perché non c'è una richiesta
+ * sua su cui proporre.
+ */
+function azioneMatch(match, { miaRichiestaId } = {}) {
+  const u = store.user(match.userId);
+  if (match.requestId) {
+    return html`
+      <button class="btn primario" data-act="proponi" data-user="${match.userId}"
+              data-richiesta="${match.requestId}" data-shift="${match.shiftOffertoId}">
+        Proponi lo scambio
+      </button>`;
+  }
+  if (miaRichiestaId) {
+    return html`
+      <button class="btn secondario" data-act="avvisa" data-user="${match.userId}" data-richiesta="${miaRichiestaId}">
+        Avvisa ${u?.nome}
+      </button>`;
+  }
+  return html`
+    <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}" data-data="${match.data}">
+      Pubblica e avvisa ${u?.nome}
+    </button>`;
 }
 
 export function vuoto(titolo, sottotitolo, azione = '') {

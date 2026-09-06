@@ -17,7 +17,7 @@ In locale:
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 36 test sul motore di matching
+npm test        # 39 test sul motore di matching
 npm run build   # dist/cambio-turno.html, tutta l'app in un file solo
 ```
 
@@ -25,8 +25,8 @@ Nessuna dipendenza, nessun build step: moduli ES aperti direttamente dal
 browser. Dal Profilo si cambia persona, così vedi lo stesso scambio dai due
 lati.
 
-Il giro che conviene fare: Home → Cambio rapido → cedi un turno → cerca
-"qualsiasi turno che finisca entro le 20:00" → pubblica → guarda i match →
+Il giro che conviene fare: Home → ⚡ Cambio rapido, che senza domande mostra
+chi può prendere il tuo turno. Poi Nuovo cambio per il percorso completo →
 proponi a Martina → dal Profilo diventa Martina → accetta.
 
 ## Com'è fatta
@@ -64,6 +64,7 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
   giorno, e mostra le ore che faresti tu
 - Matching su due sorgenti, richieste pubblicate e disponibilità di profilo,
   con punteggio e spiegazione in italiano
+- Cambio rapido che prova da solo tutti i giorni liberi della tua settimana
 - Proposta, accettazione bilaterale, "Cambio inserito", scadenza automatica
 - Priorità mensile con durata di 48 ore
 - Bacheca con filtri, profilo con disponibilità settimana per settimana

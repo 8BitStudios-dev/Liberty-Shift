@@ -2,12 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
-import { satisfies, validateRequest, findMatches, disponibileIl } from '../src/core/engine.js';
+import {
+  satisfies, validateRequest, findMatches, disponibileIl, cambioRapido,
+} from '../src/core/engine.js';
 import { WANT_MODE, RULES } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
-  durataTurnoDi, impattoMonteOre, shiftLabel,
+  durataTurnoDi, impattoMonteOre, shiftLabel, isExpired,
 } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
@@ -317,5 +319,39 @@ test('i dati di esempio sono coerenti: ogni turno dura quanto il contratto di ch
     for (const t of suoi) {
       assert.equal(durataOre(t), durataTurnoDi(u), `${u.nome} ha ${shiftLabel(t)} ma fa turni da ${durataTurnoDi(u)}h`);
     }
+  }
+});
+
+test('le richieste di esempio non nascono già scadute, qualunque giorno sia oggi', () => {
+  const s = seed();
+  const byId = Object.fromEntries(s.shifts.map((x) => [x.id, x]));
+  for (const r of s.requests) {
+    assert.equal(isExpired(r, byId), false, `${r.id} è scaduta appena creata`);
+  }
+});
+
+test('il Cambio rapido trova chi può prendere un turno senza fare domande', () => {
+  const s = seed();
+  const turno = s.shifts.find((x) => x.userId === 'u_lorenzo' && x.tipo === 'WORK'
+    && appleWeekKey(x.data) === appleWeekKey(s.requests[0].cerco.data));
+  const risultati = cambioRapido(turno.id, s);
+  assert.ok(risultati.length > 0);
+  // Ogni risultato dice su quale giorno si incastra e perché.
+  for (const m of risultati) {
+    assert.ok(m.data && m.data !== turno.data);
+    assert.ok(m.reasons.length > 0);
+    assert.notEqual(m.userId, 'u_lorenzo');
+  }
+});
+
+test('il Cambio rapido non propone giorni in cui lavori già', () => {
+  const s = seed();
+  const lorenzo = 'u_lorenzo';
+  const turno = s.shifts.find((x) => x.userId === lorenzo && x.tipo === 'WORK');
+  const occupati = new Set(s.shifts
+    .filter((x) => x.userId === lorenzo && x.tipo === 'WORK')
+    .map((x) => x.data));
+  for (const m of cambioRapido(turno.id, s)) {
+    assert.ok(!occupati.has(m.data), `proposto ${m.data}, ma quel giorno lavora`);
   }
 });
