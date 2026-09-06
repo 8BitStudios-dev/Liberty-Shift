@@ -9,7 +9,7 @@
 import { html, raw } from './dom.js';
 
 /** La versione del testo: cambiarla ripropone l'accettazione a tutti. */
-export const VERSIONE_NOTE = '2026-09-1';
+export const VERSIONE_NOTE = '2026-09-2';
 
 /**
  * Il testo integrale, usato sia nella schermata del profilo sia nel
@@ -40,21 +40,86 @@ export function noteLegali({ compatte = false } = {}) {
           procedure lo richiedono.</li>
       </ul>
 
-      <h3>2. I dati</h3>
+      <h3>2. Dove stanno i dati</h3>
+      <p>
+        Non è tutto uguale, e la differenza vale la pena saperla: quello che è
+        <strong>tuo e basta</strong> resta sul tuo dispositivo, quello che
+        <strong>pubblichi perché lo vedano i colleghi</strong> passa da un server.
+        Non potrebbe essere altrimenti: una bacheca che nessuno può leggere non
+        è una bacheca.
+      </p>
+
+      <table class="tabella-dati">
+        <tr>
+          <th>Resta su questo dispositivo</th>
+          <th>Va sul server</th>
+        </tr>
+        <tr>
+          <td>
+            i tuoi turni e i tuoi OFF<br>
+            le preferenze (mattine, chiusure…)<br>
+            il tuo profilo<br>
+            il calendario che importi
+          </td>
+          <td>
+            le richieste che pubblichi<br>
+            i giorni per cui ti dichiari disponibile<br>
+            le proposte, le accettazioni, i rifiuti<br>
+            il tuo nome e l'iniziale del cognome
+          </td>
+        </tr>
+      </table>
+
       <ul class="elenco piccolo">
-        <li>Tutto quello che inserisci resta <strong>nel browser di questo
-          dispositivo</strong>. Non esiste un server, non c'è un account, niente
-          viene inviato da nessuna parte.</li>
-        <li>Cancellando i dati del sito, o usando un altro dispositivo, si
-          riparte da zero: non c'è nessuna copia altrove.</li>
-        <li>Le persone che compaiono nella versione dimostrativa sono
-          inventate.</li>
+        <li>Il server è <strong>Supabase</strong>, con accesso protetto: si legge e
+          si scrive solo da autenticati, e ognuno può modificare soltanto le
+          proprie richieste.</li>
+        <li>Pubblicare una richiesta è un atto volontario: finché non tocchi
+          "pubblica", quel turno non esce da qui. Lo stesso vale per la
+          disponibilità dichiarata su un giorno.</li>
+        <li>Una richiesta cancellata sparisce dalla bacheca; il diritto di
+          chiedere che i propri dati siano rimossi resta comunque di chi li ha
+          messi.</li>
         ${raw(esteso(`<li>Non inserire dati di clienti, informazioni commerciali,
           numeri di vendita o qualsiasi altra informazione riservata di Apple.
-          I turni non lo sono (vedi il punto 3); molte altre cose sì.</li>`))}
+          I turni non lo sono (vedi il punto 4); molte altre cose sì.</li>`))}
       </ul>
 
-      <h3>3. Perché i turni si possono trattare</h3>
+      ${raw(esteso(`
+        <p class="testo-tenue">
+          <strong>Stato attuale.</strong> In questa versione di prova il server non
+          è ancora collegato: tutto, comprese le richieste, sta nel browser. Le
+          persone che vedi sono inventate. Questa sezione descrive come funziona
+          l'app quando il server c'è, ed è scritta ora perché è ora che si
+          decide come trattare i dati, non dopo.
+        </p>`))}
+
+      <h3>3. Dati di altre persone</h3>
+      <p>
+        Sul server finiscono anche nome, turni e disponibilità dei colleghi che
+        usano l'app. Sono <strong>dati personali</strong>, e questo comporta delle
+        conseguenze che è meglio conoscere prima:
+      </p>
+      <ul class="elenco piccolo">
+        <li>ci si iscrive volontariamente, e chi non vuole esserci non ci sta;</li>
+        <li>i dati servono solo a organizzare i cambi, e a nient'altro: niente
+          statistiche su chi cambia più spesso, niente esportazioni, niente
+          usi che chi si è iscritto non si aspetta;</li>
+        <li>chi vuole andarsene se ne va, e i suoi dati vengono cancellati;</li>
+        <li>i turni non sono informazioni riservate di Apple (punto 4), ma
+          restano informazioni sulle persone: vanno trattati con la stessa
+          discrezione con cui si tratterebbe il numero di telefono di un
+          collega.</li>
+      </ul>
+      ${raw(esteso(`
+        <p class="testo-tenue">
+          Se l'app venisse usata da più persone, chi la mette a disposizione ne
+          diventa responsabile anche verso di loro. È una delle ragioni per cui
+          il passaggio dalla prova personale all'uso condiviso non è un dettaglio
+          tecnico: vedi il punto 5.
+        </p>`))}
+
+      <h3>4. Perché i turni si possono trattare</h3>
       <p>
         La Business Conduct Policy, alla sezione <em>Diritti del personale
         dipendente</em>, dice che «è consentito comunicare o divulgare
@@ -69,7 +134,7 @@ export function noteLegali({ compatte = false } = {}) {
           dati finanziari e piani di marketing.
         </p>`))}
 
-      <h3>4. Il limite che conta: la condivisione</h3>
+      <h3>5. Il limite che conta: la condivisione</h3>
       <p>
         La stessa policy, alla sezione <em>Creazione di app</em>, dice che
         «è possibile creare app solo per scopi personali o didattici» e che
@@ -87,7 +152,7 @@ export function noteLegali({ compatte = false } = {}) {
         <li>Finché quella verifica non c'è, questa resta una prova personale.</li>
       </ul>
 
-      <h3>5. Come è stata fatta</h3>
+      <h3>6. Come è stata fatta</h3>
       <ul class="elenco piccolo">
         <li>Sviluppata <strong>fuori dall'orario di lavoro e senza risorse
           Apple</strong>: la policy vieta di usare «le ore di lavoro o le risorse
@@ -98,7 +163,7 @@ export function noteLegali({ compatte = false } = {}) {
           costruirla.</li>
       </ul>
 
-      <h3>6. Responsabilità di chi la usa</h3>
+      <h3>7. Responsabilità di chi la usa</h3>
       <ul class="elenco piccolo">
         <li>Ognuno resta responsabile della propria presenza in turno secondo il
           sistema ufficiale, non secondo quello che si legge qui.</li>
@@ -108,7 +173,7 @@ export function noteLegali({ compatte = false } = {}) {
         <li>Un cambio va comunque fatto e approvato dove va fatto.</li>
       </ul>
 
-      <h3>7. Quello che questo testo non è</h3>
+      <h3>8. Quello che questo testo non è</h3>
       <p class="testo-tenue">
         Non è un parere legale e non è un'autorizzazione. È una ricostruzione
         onesta e verificabile di cosa dice la policy, con le citazioni per
@@ -137,8 +202,9 @@ export function accettazioneNote() {
         <li><strong>Non è un'app Apple</strong> e non è approvata da Apple.</li>
         <li><strong>Non fa nessun cambio turno.</strong> Serve a mettersi
           d'accordo; il cambio va poi inserito nel sistema ufficiale.</li>
-        <li><strong>I dati restano su questo dispositivo.</strong> Nessun server,
-          nessun account, niente che esca da qui.</li>
+        <li><strong>I tuoi turni restano su questo dispositivo</strong>; quello che
+          pubblichi in bacheca passa da un server protetto, perché i colleghi
+          devono poterlo leggere.</li>
       </ul>
       <p class="testo-tenue">
         Il testo completo, con le citazioni della Business Conduct Policy su cui

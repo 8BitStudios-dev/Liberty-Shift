@@ -105,3 +105,29 @@ una persona è sempre da trattare come possibilmente sbagliato.
 Il parser è separato da come il testo arriva. Oggi si incolla; se un giorno ci
 sarà un server che scarica il calendario sottoscritto, cambia solo chi passa la
 stringa: il resto è già scritto e coperto da test.
+
+
+## Dove staranno i dati
+
+L'MVP tiene tutto in `localStorage`, ma il sistema previsto è diviso in due, e
+la divisione non è tecnica: è la stessa che si spiega nelle note legali.
+
+| Resta sul dispositivo | Va su Supabase |
+|---|---|
+| turni e OFF personali | le richieste pubblicate |
+| preferenze | le disponibilità dichiarate |
+| profilo (cognome intero compreso) | proposte, accettazioni, rifiuti |
+| calendario importato | nome e iniziale del cognome |
+
+Il criterio è uno solo: **esce di qui solo quello che una persona pubblica
+apposta perché i colleghi lo leggano.** Il proprio calendario non serve a
+nessun altro, e non c'è ragione di caricarlo.
+
+Il `store` è già scritto per reggere il cambio: `salva()` e `carica()` sono due
+funzioni sole, e nessun'altra parte dell'app sa dove finiscono i dati. Il motore
+non lo sa affatto.
+
+**Da decidere prima di collegare il server**: come si autenticano le persone,
+chi tiene il progetto Supabase, e le regole di riga (chi legge cosa, chi
+modifica cosa). E prima ancora la domanda del capitolo 27, che con un server
+condiviso diventa più netta, non meno.

@@ -329,7 +329,11 @@ export function profilo() {
 
     <section class="sezione">
       <h2>Demo</h2>
-      <p class="testo-tenue">Prototipo: i dati stanno solo su questo telefono. Cambia persona per vedere l'app dall'altro lato di uno scambio.</p>
+      <p class="testo-tenue">
+        In questa versione di prova il server non è ancora collegato: tutto sta
+        nel browser e le persone sono inventate. Cambia persona per vedere lo
+        stesso scambio dall'altro lato.
+      </p>
       <select data-act="cambia-utente" class="select">
         ${store.state.users.map((u) => raw(
     `<option value="${u.id}" ${u.id === me.id ? 'selected' : ''}>${u.nome} ${u.cognomeIniziale}. — ${u.contratto}</option>`,

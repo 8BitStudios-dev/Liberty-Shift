@@ -1,4 +1,32 @@
-# Decisioni aperte
+# Fase 5 — Decisioni aperte
+
+## Il server cambia la domanda del capitolo 27
+
+Fino a ieri la risposta era comoda: prototipo personale, dati solo nel browser,
+nessuna distribuzione. Con Supabase in mezzo cambia tutto il quadro, e conviene
+dirlo prima di scrivere la prima riga di codice del backend.
+
+1. **Non è più uso personale.** Un server condiviso serve più persone per
+   definizione. La sezione *Creazione di app* della Business Conduct Policy
+   permette di creare app «solo per scopi personali o didattici» e vieta di
+   «condividere, vendere o distribuire» senza necessità commerciale di Apple.
+   Un'app che i colleghi usano è condivisa, quale che sia il modo in cui ci
+   arrivano.
+2. **Ci sono dati personali di terzi.** Nome, turni e disponibilità di altri
+   dipendenti su un server gestito da una persona privata comportano
+   responsabilità verso di loro, oltre che verso l'azienda.
+3. **Il contenuto resta lecito.** Gli orari di lavoro si possono comunicare
+   liberamente (*Diritti del personale dipendente*): il problema non è mai
+   stato cosa c'è dentro, ma chi lo tiene e per chi.
+
+**Conclusione operativa, che non cambia:** il backend si può progettare e
+scrivere, ma non va aperto ai colleghi prima di aver sentito Business Conduct.
+La domanda da porre è precisa, e questo aiuta ad avere una risposta utile:
+*«Vorrei mettere a disposizione dei colleghi del mio store uno strumento che ho
+scritto io, per organizzare i cambi turno fra di noi. Non tratta informazioni
+Apple oltre agli orari dei nostri turni, non è collegato a nessun sistema
+aziendale, non ci guadagno niente. È ammesso?»*
+
 
 Aggiornamento del capitolo 30 della specifica, con lo stato di ogni punto dopo
 aver costruito il prototipo. Le domande sono in ordine di quanto bloccano.

@@ -170,6 +170,11 @@ export const GUIDE = {
         trovarlo stanno dentro la finestra dell'import — oppure si inseriscono a
         mano, giorno per giorno.
       </p>
+      <p class="testo-tenue">
+        Il tuo calendario resta sul tuo dispositivo. Esce di qui solo quello che
+        pubblichi: una richiesta, o la disponibilità su un giorno. Il dettaglio
+        sta nelle Note legali.
+      </p>
 
       <h3>Preferenze</h3>
       <p>Due gruppi che si comportano in modo <strong>molto</strong> diverso.</p>
