@@ -96,7 +96,7 @@ export function validateRequest(request, shiftsById, shifts = null) {
   if (!giorni.length) {
     errori.push(tipo === TIPO_CAMBIO.ORARIO
       ? 'Manca l\'orario che cerchi.'
-      : 'Devi indicare in quale giorno sei disposto a lavorare in cambio.');
+      : 'Devi offrire almeno un giorno in cui saresti disposto a lavorare.');
   }
 
   if (mio && tipo === TIPO_CAMBIO.ORARIO) {
@@ -113,7 +113,7 @@ export function validateRequest(request, shiftsById, shifts = null) {
   if (mio && tipo === TIPO_CAMBIO.OFF) {
     for (const g of giorni) {
       if (g === mio.data) {
-        errori.push('Il giorno che vuoi liberare non può essere anche quello in cui lavoreresti.');
+        errori.push('Il giorno che vuoi liberare non può essere anche quello che offri.');
         continue;
       }
       if (!sameAppleWeek(mio.data, g)) {

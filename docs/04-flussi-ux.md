@@ -46,8 +46,8 @@ settimana perché non si cambia giornata.
 
 ### 📅 Cambio OFF — 3 passi
 1. **Quale giorno vuoi libero** — scegli il turno di quel giorno.
-2. **Quando lavori in cambio** — compaiono solo i tuoi giorni liberi della
-   stessa settimana Apple, e se ne possono scegliere più d'uno. La regola della
+2. **Cosa offri in cambio** — compaiono solo i tuoi giorni liberi della
+   stessa settimana Apple, e se ne possono offrire più d'uno. La regola della
    settimana non è un messaggio d'errore: è l'assenza dell'opzione sbagliata.
    Poi, se vuoi, una preferenza sul turno che prenderesti.
 3. **Controlla e pubblica**.

@@ -627,7 +627,7 @@ const { minutes, todayISO, appleWeekKey } = M_time;
  *   cedo: { shiftId, flessibile: bool },      // il turno che lascio
  *   cerco: {
  *     giorni: ['YYYY-MM-DD'],   // ORARIO: solo il giorno del turno ceduto
- *                               // OFF: i giorni in cui sono disposto a lavorare
+ *                               // OFF: i giorni che offro, in cui sono libero
  *     mode, start, end, entroLe, dalleOre, evitaChiusura, note
  *   }
  * }
@@ -960,7 +960,7 @@ function validateRequest(request, shiftsById, shifts = null) {
   if (!giorni.length) {
     errori.push(tipo === TIPO_CAMBIO.ORARIO
       ? 'Manca l\'orario che cerchi.'
-      : 'Devi indicare in quale giorno sei disposto a lavorare in cambio.');
+      : 'Devi offrire almeno un giorno in cui saresti disposto a lavorare.');
   }
 
   if (mio && tipo === TIPO_CAMBIO.ORARIO) {
@@ -977,7 +977,7 @@ function validateRequest(request, shiftsById, shifts = null) {
   if (mio && tipo === TIPO_CAMBIO.OFF) {
     for (const g of giorni) {
       if (g === mio.data) {
-        errori.push('Il giorno che vuoi liberare non può essere anche quello in cui lavoreresti.');
+        errori.push('Il giorno che vuoi liberare non può essere anche quello che offri.');
         continue;
       }
       if (!sameAppleWeek(mio.data, g)) {
@@ -2119,7 +2119,7 @@ function coppiaCedoCerco(request, { compatto = false } = {}) {
       </div>`
     : html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 LAVORO</span>
+        <span class="etichetta">🟢 OFFRO</span>
         <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`;
@@ -2145,7 +2145,7 @@ function sintesiRichiesta(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   if (request.tipo === TIPO_CAMBIO.OFF) {
-    return `vuole libero ${formatDay(cedo?.data)} · lavora ${giorni.map((g) => formatDay(g)).join(' o ')}`;
+    return `vuole libero ${formatDay(cedo?.data)} · offre ${giorni.map((g) => formatDay(g)).join(' o ')}`;
   }
   return `${formatDay(cedo?.data)} · ${shiftLabel(cedo)} → ${wantLabel(request.cerco)}`;
 }
@@ -2923,12 +2923,12 @@ function passoCercoOff() {
     <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
 
   return html`
-    ${raw(barra('Quando lavori in cambio?', 2))}
+    ${raw(barra('Cosa offri in cambio?', 2))}
     <div class="card riepilogo">
       <p>Vuoi libero <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
     </div>
     ${raw(liberi.length ? `
-      <p class="testo-tenue">Scegli in quali dei tuoi giorni liberi sei disposto a lavorare. Più ne indichi, più è probabile trovare qualcuno.</p>
+      <p class="testo-tenue">Offri i giorni liberi in cui saresti disposto a lavorare. Più ne offri, più è probabile trovare qualcuno.</p>
       <div class="pillole">${pillole}</div>`
     : vuoto('Nessun giorno libero', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
 

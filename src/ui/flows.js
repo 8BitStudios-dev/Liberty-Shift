@@ -249,12 +249,12 @@ function passoCercoOff() {
     <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
 
   return html`
-    ${raw(barra('Quando lavori in cambio?', 2))}
+    ${raw(barra('Cosa offri in cambio?', 2))}
     <div class="card riepilogo">
       <p>Vuoi libero <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
     </div>
     ${raw(liberi.length ? `
-      <p class="testo-tenue">Scegli in quali dei tuoi giorni liberi sei disposto a lavorare. Più ne indichi, più è probabile trovare qualcuno.</p>
+      <p class="testo-tenue">Offri i giorni liberi in cui saresti disposto a lavorare. Più ne offri, più è probabile trovare qualcuno.</p>
       <div class="pillole">${pillole}</div>`
     : vuoto('Nessun giorno libero', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
 

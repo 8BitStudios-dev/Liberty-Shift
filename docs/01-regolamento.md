@@ -24,8 +24,8 @@ frequente in assoluto.
 ### 📅 Cambio OFF — due giornate
 > «CERCO 08/09 OFF, CEDO 10-11/09 OFF»
 
-Vuoi libera una giornata in cui lavori. In cambio lavori in uno dei giorni in
-cui adesso sei a casa, e **prendi il turno della persona che ti cede il
+Vuoi libera una giornata in cui lavori. In cambio **offri** uno dei giorni in
+cui adesso sei a casa e ci lavori, e **prendi il turno della persona che ti cede il
 giorno**. È uno scambio simmetrico di due giornate intere: dopo, ciascuno ha
 il turno che aveva l'altro.
 

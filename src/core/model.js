@@ -24,7 +24,7 @@ import { minutes, todayISO, appleWeekKey } from './time.js';
  *   cedo: { shiftId, flessibile: bool },      // il turno che lascio
  *   cerco: {
  *     giorni: ['YYYY-MM-DD'],   // ORARIO: solo il giorno del turno ceduto
- *                               // OFF: i giorni in cui sono disposto a lavorare
+ *                               // OFF: i giorni che offro, in cui sono libero
  *     mode, start, end, entroLe, dalleOre, evitaChiusura, note
  *   }
  * }

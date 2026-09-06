@@ -32,7 +32,7 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
       </div>`
     : html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 LAVORO</span>
+        <span class="etichetta">🟢 OFFRO</span>
         <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`;
@@ -58,7 +58,7 @@ export function sintesiRichiesta(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   if (request.tipo === TIPO_CAMBIO.OFF) {
-    return `vuole libero ${formatDay(cedo?.data)} · lavora ${giorni.map((g) => formatDay(g)).join(' o ')}`;
+    return `vuole libero ${formatDay(cedo?.data)} · offre ${giorni.map((g) => formatDay(g)).join(' o ')}`;
   }
   return `${formatDay(cedo?.data)} · ${shiftLabel(cedo)} → ${wantLabel(request.cerco)}`;
 }
