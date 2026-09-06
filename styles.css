@@ -93,7 +93,14 @@ p { margin: 8px 0; }
   border: 1px solid var(--oro); color: var(--oro); background: none;
   border-radius: 999px; padding: 5px 12px; margin-top: 8px; flex: 0 0 auto;
 }
-.hero.compatta { text-align: center; padding-top: 24px; }
+.hero.compatta { text-align: center; padding-top: 24px; position: relative; }
+/* Un contatore in alto a destra: cresce senza occupare una sezione intera. */
+.grazie-chip {
+  position: absolute; top: 12px; right: 0;
+  appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
+  border: 1px solid var(--bordo); background: var(--superficie); color: inherit;
+  border-radius: 999px; padding: 5px 12px;
+}
 
 .testata { display: flex; align-items: center; gap: 10px; padding: 14px 0 12px; }
 .testata h1 { flex: 1; font-size: 22px; text-align: center; }
@@ -424,6 +431,8 @@ input[type="time"], textarea, .select {
 .vuoto strong { display: block; color: var(--testo); margin-bottom: 4px; }
 .elenco { padding-left: 18px; font-size: 15px; }
 .elenco li { margin: 6px 0; }
+.elenco.piccolo { font-size: 13px; }
+.elenco.piccolo li { margin: 5px 0; }
 
 /* ------------------------------------------------------------ tabbar */
 

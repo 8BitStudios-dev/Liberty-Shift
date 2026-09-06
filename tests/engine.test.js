@@ -10,7 +10,7 @@ import { WANT_MODE, RULES, PREFERENZE, TIPO_CAMBIO } from '../src/core/rules.js'
 import { seed } from '../src/core/seed.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
-  impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno, applicaPreferenze,
+  impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno, applicaPreferenze, fasceDi,
 } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
@@ -129,12 +129,13 @@ test('Lorenzo e Martina sono il match perfetto del capitolo 11', () => {
   assert.equal(martina.tipo, 'MATCH');
   assert.ok(martina.reasons.length >= 2);
   // Entrambi i lati sono soddisfatti al 100%. Da lì si tolgono i due
-  // adattamenti di contratto, uno per parte, e si aggiungono le due
-  // preferenze soddisfatte: Lorenzo riceve una mattina e le preferisce,
-  // Martina riceve una chiusura e le preferisce.
+  // adattamenti di contratto, uno per parte, e si aggiunge una preferenza
+  // soddisfatta: Martina riceve 15:00–21:00, una chiusura, e le preferisce.
+  // Lorenzo riceve 09:00–18:00, che con le soglie vere è un'apertura e non
+  // una mattina, quindi la sua preferenza non scatta.
   assert.equal(
     martina.score,
-    100 - 2 * RULES.adattamentoPenalty + 2 * RULES.preferenzaBonus,
+    100 - 2 * RULES.adattamentoPenalty + RULES.preferenzaBonus,
   );
 });
 
@@ -490,16 +491,43 @@ test('un cambio orario è una proposta, quindi sta fra chi offre', () => {
 
 // --- preferenze --------------------------------------------------------
 
+test('le fasce hanno i confini veri dello store, e possono sovrapporsi', () => {
+  const f = (start, end) => fasceDi({ tipo: 'WORK', start, end });
+
+  assert.deepEqual(f('08:00', '17:00'), ['APERTURA']);   // 07:30–09:00
+  assert.deepEqual(f('09:30', '18:30'), ['MATTINA']);    // 09:30–10:00
+  assert.deepEqual(f('09:15', '18:00'), []);             // in mezzo: nessuna
+  assert.deepEqual(f('12:00', '21:00'), ['CHIUSURA']);   // finisce dopo le 20:15
+  assert.deepEqual(f('12:00', '20:10'), []);             // finisce prima della soglia
+  assert.deepEqual(f('22:00', '06:30'), ['NOTTE']);
+  // Due fasce insieme: una guarda l'inizio, l'altra la fine.
+  assert.deepEqual(f('10:00', '19:45'), ['MATTINA', 'POMERIGGIO']);
+});
+
 test('quello che eviti esclude, quello che preferisci vale qualche punto', () => {
-  const mattina = { tipo: 'WORK', start: '09:00', end: '18:00' };
+  const mattina = { tipo: 'WORK', start: '09:30', end: '18:30' };
   const chiusura = { tipo: 'WORK', start: '12:00', end: '21:00' };
   const evita = { nome: 'Lorenzo', preferenze: { evitaChiusure: true, preferisceMattine: true } };
 
   assert.equal(applicaPreferenze(evita, chiusura).escluso, true);
   assert.equal(applicaPreferenze(evita, mattina).escluso, false);
   assert.equal(applicaPreferenze(evita, mattina).bonus, RULES.preferenzaBonus);
-  // Un turno che non è né mattina né chiusura non tocca niente.
+  // Un turno fuori da ogni fascia non tocca niente.
   assert.equal(applicaPreferenze(evita, { tipo: 'WORK', start: '11:00', end: '18:00' }).bonus, 0);
+});
+
+test('se una sola fascia è da evitare, il turno è escluso comunque', () => {
+  // 10:00–20:30 è insieme mattina e chiusura: la preferenza per le mattine
+  // non annulla il rifiuto delle chiusure.
+  const doppio = { tipo: 'WORK', start: '10:00', end: '20:30' };
+  const u = { nome: 'Lorenzo', preferenze: { preferisceMattine: true, evitaChiusure: true } };
+  assert.equal(applicaPreferenze(u, doppio).escluso, true);
+});
+
+test('due fasce preferite valgono un bonus solo', () => {
+  const doppio = { tipo: 'WORK', start: '10:00', end: '19:45' };
+  const u = { nome: 'Luca', preferenze: { preferisceMattine: true, preferiscePomeriggi: true } };
+  assert.equal(applicaPreferenze(u, doppio).bonus, RULES.preferenzaBonus);
 });
 
 test('una preferenza esclude chi ha solo dichiarato una disponibilità', () => {

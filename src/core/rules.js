@@ -15,9 +15,20 @@ export const RULES = {
     ultimaUscita: '21:00',
   },
 
-  // "Chiusura" e "mattina" si ricavano dagli orari qui sopra: chiude chi
-  // resta oltre l'orario di chiusura, è di mattina chi entra entro
-  // l'apertura. Nessuna soglia separata da tenere allineata a mano.
+  /**
+   * Le fasce con cui in store si chiamano i turni.
+   *
+   * Non si ricavano dagli orari del negozio: sono i confini veri, quelli che
+   * la gente usa parlando. Un turno può stare in due fasce insieme, perché
+   * due guardano l'inizio e due la fine: un 10:00–19:45 è mattina e
+   * pomeriggio, ed è giusto così.
+   */
+  fasce: {
+    APERTURA: { label: 'apertura', inizioDa: '07:30', inizioA: '09:00' },
+    MATTINA: { label: 'mattina', inizioDa: '09:30', inizioA: '10:00' },
+    POMERIGGIO: { label: 'pomeriggio', fineDa: '19:30', fineA: '20:00' },
+    CHIUSURA: { label: 'chiusura', fineDopo: '20:15' },
+  },
 
   // Tolleranza per i quasi-match sugli orari (minuti).
   nearMissMinutes: 90,
@@ -62,35 +73,24 @@ export const RULES = {
  * mentre quello che **preferisci** sposta il punteggio di pochi punti e basta.
  * Metterle nella stessa lista senza dirlo sarebbe una bugia comoda.
  *
- * `fascia` collega la preferenza a una classificazione del turno (R6, R7), così
- * il motore non ha una catena di `if` da tenere allineata a mano, e `opposta`
- * impedisce di dichiarare insieme due cose incompatibili.
+ * `fascia` collega la preferenza a una fascia oraria (R6), così il motore non ha
+ * una catena di `if` da tenere allineata a mano, e `opposta` impedisce di
+ * dichiarare insieme due cose incompatibili. L'aiuto sotto l'etichetta si
+ * scrive solo dove serve: le fasce si spiegano da sole nella legenda.
  */
 export const PREFERENZE = [
+  { key: 'evitaAperture', label: 'Evito le aperture', gruppo: 'evita', fascia: 'APERTURA', opposta: 'preferisceAperture' },
+  { key: 'evitaMattine', label: 'Evito le mattine', gruppo: 'evita', fascia: 'MATTINA', opposta: 'preferisceMattine' },
+  { key: 'evitaPomeriggi', label: 'Evito i pomeriggi', gruppo: 'evita', fascia: 'POMERIGGIO', opposta: 'preferiscePomeriggi' },
+  { key: 'evitaChiusure', label: 'Evito le chiusure', gruppo: 'evita', fascia: 'CHIUSURA', opposta: 'preferisceChiusure' },
   {
-    key: 'evitaMattine', label: 'Evito le mattine', gruppo: 'evita', fascia: 'MATTINA',
-    opposta: 'preferisceMattine', aiuto: 'I turni che iniziano entro l\'apertura non ti verranno proposti.',
+    key: 'evitaNotti', label: 'Evito le notti visual', gruppo: 'evita', fascia: 'NOTTE', opposta: null,
+    aiuto: 'Sono rare, e la durata va comunque concordata a parte.',
   },
-  {
-    key: 'evitaChiusure', label: 'Evito le chiusure', gruppo: 'evita', fascia: 'CHIUSURA',
-    opposta: 'preferisceChiusure', aiuto: 'I turni che finiscono dopo la chiusura del negozio non ti verranno proposti.',
-  },
-  {
-    key: 'evitaNotti', label: 'Evito le notti visual', gruppo: 'evita', fascia: 'NOTTE',
-    opposta: null, aiuto: 'Sono rare, e la durata va comunque concordata a parte.',
-  },
-  {
-    key: 'preferisceMattine', label: 'Preferisco le mattine', gruppo: 'preferisce', fascia: 'MATTINA',
-    opposta: 'evitaMattine', aiuto: '',
-  },
-  {
-    key: 'preferisceChiusure', label: 'Preferisco le chiusure', gruppo: 'preferisce', fascia: 'CHIUSURA',
-    opposta: 'evitaChiusure', aiuto: '',
-  },
-  {
-    key: 'disponibileWeekend', label: 'Disponibile nel weekend', gruppo: 'altro', fascia: null,
-    opposta: null, aiuto: '',
-  },
+  { key: 'preferisceAperture', label: 'Preferisco le aperture', gruppo: 'preferisce', fascia: 'APERTURA', opposta: 'evitaAperture' },
+  { key: 'preferisceMattine', label: 'Preferisco le mattine', gruppo: 'preferisce', fascia: 'MATTINA', opposta: 'evitaMattine' },
+  { key: 'preferiscePomeriggi', label: 'Preferisco i pomeriggi', gruppo: 'preferisce', fascia: 'POMERIGGIO', opposta: 'evitaPomeriggi' },
+  { key: 'preferisceChiusure', label: 'Preferisco le chiusure', gruppo: 'preferisce', fascia: 'CHIUSURA', opposta: 'evitaChiusure' },
 ];
 
 export const STATUS = {

@@ -100,6 +100,8 @@ const AZIONI = {
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
 
+  'vedi-grazie': () => sheet('💛 Ringraziamenti ricevuti', V.listaRingraziamenti()),
+
   // Il calendario del profilo: turno, disponibilità e chi puoi aiutare.
   'giorno-profilo': (_, el) => apriGiornoProfilo(el.dataset.data),
 
@@ -283,10 +285,27 @@ const AZIONI = {
   importa: () => {
     const w = sheet('📥 Importa turni', html`
       <p class="testo-tenue">
-        Incolla qui il calendario dei turni in formato ICS. Dal calendario del telefono:
-        tieni premuto sul calendario dei turni, <strong>Condividi</strong> o
-        <strong>Esporta</strong>, e incolla il contenuto del file.
+        Incolla qui il contenuto del calendario dei turni in formato ICS.
       </p>
+      <details class="riquadro">
+        <summary><span>Dove trovo il file .ics</span><span class="conteggio">istruzioni</span></summary>
+        <ol class="elenco piccolo">
+          <li><strong>Da iPhone</strong>, calendario sottoscritto: apri Calendario, tieni
+            premuto sul calendario dei turni e scegli <em>Condividi</em> o
+            <em>Esporta</em>. Se compare solo l'indirizzo, copialo: è un link che
+            finisce in <code>.ics</code>.</li>
+          <li><strong>Da Mac</strong>: Calendario, seleziona il calendario dei turni,
+            poi <em>Archivio ▸ Esporta ▸ Esporta</em>.</li>
+          <li><strong>Da Google Calendar</strong>: Impostazioni ▸ il calendario dei turni
+            ▸ <em>Esporta calendario</em>, oppure copia l'indirizzo segreto in
+            formato iCal.</li>
+          <li>Apri il file con un editor di testo e incolla tutto qui sotto.</li>
+        </ol>
+        <p class="testo-tenue">
+          L'import sostituisce solo i giorni che il calendario nomina: non cancella
+          mai un giorno di cui il file non parla.
+        </p>
+      </details>
       <label class="campo">
         <span>Contenuto del calendario</span>
         <textarea data-campo="ics" rows="5" placeholder="BEGIN:VCALENDAR…"></textarea>

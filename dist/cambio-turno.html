@@ -97,7 +97,14 @@ p { margin: 8px 0; }
   border: 1px solid var(--oro); color: var(--oro); background: none;
   border-radius: 999px; padding: 5px 12px; margin-top: 8px; flex: 0 0 auto;
 }
-.hero.compatta { text-align: center; padding-top: 24px; }
+.hero.compatta { text-align: center; padding-top: 24px; position: relative; }
+/* Un contatore in alto a destra: cresce senza occupare una sezione intera. */
+.grazie-chip {
+  position: absolute; top: 12px; right: 0;
+  appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
+  border: 1px solid var(--bordo); background: var(--superficie); color: inherit;
+  border-radius: 999px; padding: 5px 12px;
+}
 
 .testata { display: flex; align-items: center; gap: 10px; padding: 14px 0 12px; }
 .testata h1 { flex: 1; font-size: 22px; text-align: center; }
@@ -428,6 +435,8 @@ input[type="time"], textarea, .select {
 .vuoto strong { display: block; color: var(--testo); margin-bottom: 4px; }
 .elenco { padding-left: 18px; font-size: 15px; }
 .elenco li { margin: 6px 0; }
+.elenco.piccolo { font-size: 13px; }
+.elenco.piccolo li { margin: 5px 0; }
 
 /* ------------------------------------------------------------ tabbar */
 
@@ -509,9 +518,20 @@ const RULES = {
     ultimaUscita: '21:00',
   },
 
-  // "Chiusura" e "mattina" si ricavano dagli orari qui sopra: chiude chi
-  // resta oltre l'orario di chiusura, è di mattina chi entra entro
-  // l'apertura. Nessuna soglia separata da tenere allineata a mano.
+  /**
+   * Le fasce con cui in store si chiamano i turni.
+   *
+   * Non si ricavano dagli orari del negozio: sono i confini veri, quelli che
+   * la gente usa parlando. Un turno può stare in due fasce insieme, perché
+   * due guardano l'inizio e due la fine: un 10:00–19:45 è mattina e
+   * pomeriggio, ed è giusto così.
+   */
+  fasce: {
+    APERTURA: { label: 'apertura', inizioDa: '07:30', inizioA: '09:00' },
+    MATTINA: { label: 'mattina', inizioDa: '09:30', inizioA: '10:00' },
+    POMERIGGIO: { label: 'pomeriggio', fineDa: '19:30', fineA: '20:00' },
+    CHIUSURA: { label: 'chiusura', fineDopo: '20:15' },
+  },
 
   // Tolleranza per i quasi-match sugli orari (minuti).
   nearMissMinutes: 90,
@@ -556,35 +576,24 @@ const RULES = {
  * mentre quello che **preferisci** sposta il punteggio di pochi punti e basta.
  * Metterle nella stessa lista senza dirlo sarebbe una bugia comoda.
  *
- * `fascia` collega la preferenza a una classificazione del turno (R6, R7), così
- * il motore non ha una catena di `if` da tenere allineata a mano, e `opposta`
- * impedisce di dichiarare insieme due cose incompatibili.
+ * `fascia` collega la preferenza a una fascia oraria (R6), così il motore non ha
+ * una catena di `if` da tenere allineata a mano, e `opposta` impedisce di
+ * dichiarare insieme due cose incompatibili. L'aiuto sotto l'etichetta si
+ * scrive solo dove serve: le fasce si spiegano da sole nella legenda.
  */
 const PREFERENZE = [
+  { key: 'evitaAperture', label: 'Evito le aperture', gruppo: 'evita', fascia: 'APERTURA', opposta: 'preferisceAperture' },
+  { key: 'evitaMattine', label: 'Evito le mattine', gruppo: 'evita', fascia: 'MATTINA', opposta: 'preferisceMattine' },
+  { key: 'evitaPomeriggi', label: 'Evito i pomeriggi', gruppo: 'evita', fascia: 'POMERIGGIO', opposta: 'preferiscePomeriggi' },
+  { key: 'evitaChiusure', label: 'Evito le chiusure', gruppo: 'evita', fascia: 'CHIUSURA', opposta: 'preferisceChiusure' },
   {
-    key: 'evitaMattine', label: 'Evito le mattine', gruppo: 'evita', fascia: 'MATTINA',
-    opposta: 'preferisceMattine', aiuto: 'I turni che iniziano entro l\'apertura non ti verranno proposti.',
+    key: 'evitaNotti', label: 'Evito le notti visual', gruppo: 'evita', fascia: 'NOTTE', opposta: null,
+    aiuto: 'Sono rare, e la durata va comunque concordata a parte.',
   },
-  {
-    key: 'evitaChiusure', label: 'Evito le chiusure', gruppo: 'evita', fascia: 'CHIUSURA',
-    opposta: 'preferisceChiusure', aiuto: 'I turni che finiscono dopo la chiusura del negozio non ti verranno proposti.',
-  },
-  {
-    key: 'evitaNotti', label: 'Evito le notti visual', gruppo: 'evita', fascia: 'NOTTE',
-    opposta: null, aiuto: 'Sono rare, e la durata va comunque concordata a parte.',
-  },
-  {
-    key: 'preferisceMattine', label: 'Preferisco le mattine', gruppo: 'preferisce', fascia: 'MATTINA',
-    opposta: 'evitaMattine', aiuto: '',
-  },
-  {
-    key: 'preferisceChiusure', label: 'Preferisco le chiusure', gruppo: 'preferisce', fascia: 'CHIUSURA',
-    opposta: 'evitaChiusure', aiuto: '',
-  },
-  {
-    key: 'disponibileWeekend', label: 'Disponibile nel weekend', gruppo: 'altro', fascia: null,
-    opposta: null, aiuto: '',
-  },
+  { key: 'preferisceAperture', label: 'Preferisco le aperture', gruppo: 'preferisce', fascia: 'APERTURA', opposta: 'evitaAperture' },
+  { key: 'preferisceMattine', label: 'Preferisco le mattine', gruppo: 'preferisce', fascia: 'MATTINA', opposta: 'evitaMattine' },
+  { key: 'preferiscePomeriggi', label: 'Preferisco i pomeriggi', gruppo: 'preferisce', fascia: 'POMERIGGIO', opposta: 'evitaPomeriggi' },
+  { key: 'preferisceChiusure', label: 'Preferisco le chiusure', gruppo: 'preferisce', fascia: 'CHIUSURA', opposta: 'evitaChiusure' },
 ];
 
 const STATUS = {
@@ -779,30 +788,47 @@ function durataOre(shift) {
   return (fineMinuti(shift) - minutes(shift.start)) / 60;
 }
 
-/** Chiude chi resta oltre l'orario di chiusura del negozio. */
-function isClosing(shift) {
-  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
-  return minutes(shift.end) > minutes(RULES.store.chiude);
+/**
+ * Le fasce a cui appartiene un turno, secondo i confini di `RULES.fasce`.
+ *
+ * Sono più d'una, e non è un caso limite: due fasce guardano l'inizio
+ * (apertura, mattina) e due la fine (pomeriggio, chiusura), quindi un
+ * 10:00–19:45 è insieme mattina e pomeriggio. Chi lo usa deve saperlo
+ * gestire, invece di far finta che ce ne sia sempre una sola.
+ */
+function fasceDi(shift) {
+  if (shift?.tipo !== 'WORK') return [];
+  if (isNotturno(shift)) return ['NOTTE'];
+  const inizio = minutes(shift.start);
+  const fine = minutes(shift.end);
+  const dentro = (v, da, a) => v >= minutes(da) && v <= minutes(a);
+
+  return Object.entries(RULES.fasce)
+    .filter(([, f]) => (f.inizioDa ? dentro(inizio, f.inizioDa, f.inizioA) : false)
+      || (f.fineDa ? dentro(fine, f.fineDa, f.fineA) : false)
+      || (f.fineDopo ? fine > minutes(f.fineDopo) : false))
+    .map(([key]) => key);
 }
 
-/** È di mattina chi entra entro l'apertura del negozio. */
-function isMorning(shift) {
-  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
-  return minutes(shift.start) <= minutes(RULES.store.apre);
-}
+const inFascia = (shift, fascia) => fasceDi(shift).includes(fascia);
 
-/** Il turno inizia prima dell'apertura: allestimento, pulizia, consegne. */
-function isPreApertura(shift) {
-  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
-  return minutes(shift.start) < minutes(RULES.store.apre);
-}
+/** Chiude chi resta oltre la soglia di chiusura. */
+const isClosing = (shift) => inFascia(shift, 'CHIUSURA');
+/** È di mattina chi entra nella finestra dichiarata per le mattine. */
+const isMorning = (shift) => inFascia(shift, 'MATTINA');
+/** L'apertura: si entra prima che il negozio venda, per allestire e pulire. */
+const isPreApertura = (shift) => inFascia(shift, 'APERTURA');
 
 /** Etichetta breve per il tipo di turno, quando c'è qualcosa da dire. */
 function etichettaFascia(shift) {
-  if (isNotturno(shift)) return 'notte';
-  if (isClosing(shift)) return 'chiusura';
-  if (isPreApertura(shift)) return 'apertura';
-  return null;
+  const fasce = fasceDi(shift);
+  if (!fasce.length) return null;
+  if (fasce.includes('NOTTE')) return 'notte';
+  // Con due fasce si nomina quella che condiziona di più la giornata: uscire
+  // tardi pesa più che entrare presto.
+  const ordine = ['CHIUSURA', 'APERTURA', 'POMERIGGIO', 'MATTINA'];
+  const scelta = ordine.find((f) => fasce.includes(f));
+  return scelta ? RULES.fasce[scelta].label : null;
 }
 
 /** Il turno esce dalla fascia normale dello store senza essere una notte. */
@@ -1018,42 +1044,39 @@ function ruoloNelGiorno(request, giorno, cedo) {
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
 }
 
-/** La fascia di un turno, nel vocabolario delle preferenze (R6, R7). */
-function fasciaDi(shift) {
-  if (!shift || shift.tipo !== 'WORK') return null;
-  if (isNotturno(shift)) return 'NOTTE';
-  if (isClosing(shift)) return 'CHIUSURA';
-  if (isMorning(shift)) return 'MATTINA';
-  return null;
-}
-
 /**
  * Le preferenze applicate a un turno che una persona riceverebbe.
  *
  * Restituisce { escluso, bonus, reasons }. La differenza fra i due gruppi è
  * tutta qui: quello che si evita esclude il turno, quello che si preferisce
- * vale qualche punto. Un turno può soddisfare al massimo una preferenza,
- * perché le fasce sono mutuamente esclusive.
+ * vale qualche punto.
+ *
+ * Un turno può stare in due fasce, quindi può incrociare due preferenze. Se
+ * anche una sola dice "evito", il turno è escluso: chi ha detto che non vuole
+ * le chiusure non cambia idea perché quel turno è anche una mattina. Il bonus
+ * invece si prende una volta sola, altrimenti bastava un turno lungo per
+ * scalare la classifica.
  */
 function applicaPreferenze(user, shift) {
-  const fascia = fasciaDi(shift);
-  if (!fascia || !user?.preferenze) return { escluso: false, bonus: 0, reasons: [] };
+  const fasce = fasceDi(shift);
+  if (!fasce.length || !user?.preferenze) return { escluso: false, bonus: 0, reasons: [] };
 
-  for (const p of PREFERENZE) {
-    if (p.fascia !== fascia || !user.preferenze[p.key]) continue;
-    if (p.gruppo === 'evita') {
-      return { escluso: true, bonus: 0, reasons: [`${user.nome}: ${p.label.toLowerCase()}`] };
-    }
-    return {
-      escluso: false,
-      bonus: RULES.preferenzaBonus,
-      reasons: [`${p.label.toLowerCase()}, e ${shiftLabel(shift)} lo è`],
-    };
+  const attive = PREFERENZE.filter((p) => user.preferenze[p.key] && fasce.includes(p.fascia));
+  const evitata = attive.find((p) => p.gruppo === 'evita');
+  if (evitata) {
+    return { escluso: true, bonus: 0, reasons: [`${user.nome}: ${evitata.label.toLowerCase()}`] };
   }
-  return { escluso: false, bonus: 0, reasons: [] };
+
+  const preferite = attive.filter((p) => p.gruppo === 'preferisce');
+  if (!preferite.length) return { escluso: false, bonus: 0, reasons: [] };
+  return {
+    escluso: false,
+    bonus: RULES.preferenzaBonus,
+    reasons: [`${preferite.map((p) => p.label.toLowerCase()).join(' e ')}, e ${shiftLabel(shift)} lo è`],
+  };
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, fasciaDi, applicaPreferenze };
+return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
 })();
 
 // ---- src/core/engine.js
@@ -1721,38 +1744,38 @@ const o = 'OFF';
 const PERSONE = [
   {
     id: 'u_lorenzo', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
-    preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true, disponibileWeekend: true },
+    preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true },
     disponibilita: [true, false, true, true, false, true, false],
     settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
   },
   {
     id: 'u_martina', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
-    preferenze: { preferisceChiusure: true, evitaMattine: true, disponibileWeekend: true },
+    preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, true, true, false, true, true],
     settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:00', '15:00'], ['15:00', '21:00']]),
   },
   {
     id: 'u_luca', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
-    preferenze: { disponibileWeekend: false },
+    preferenze: { preferiscePomeriggi: true },
     disponibilita: [false, true, true, false, true, true, true],
     settimana: W([['12:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
   },
   {
     id: 'u_giulia', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
-    preferenze: { preferisceMattine: true, evitaChiusure: true, disponibileWeekend: false },
+    preferenze: { preferisceAperture: true, evitaChiusure: true },
     disponibilita: [true, false, true, true, true, false, true],
     settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:00', '14:00'], ['10:00', '15:00'], o]),
   },
   {
     // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
     id: 'u_marco', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
-    preferenze: { preferisceChiusure: true, evitaMattine: true, disponibileWeekend: true },
+    preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, false, true, true, true, true],
     settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], o, ['22:00', '06:30'], o]),
   },
   {
     id: 'u_sara', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
-    preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true, disponibileWeekend: true },
+    preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true },
     disponibilita: [true, true, true, true, true, true, true],
     settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
   },
@@ -1907,6 +1930,19 @@ function seed() {
     },
   ];
 
+  // Due ringraziamenti già ricevuti: senza, il contatore nel profilo non
+  // esisterebbe e non si vedrebbe come si comporta.
+  const ringraziamenti = [
+    {
+      id: 'gr_1', proposalId: 'pr_giulia_2', daUserId: 'u_giulia', aUserId: 'u_lorenzo',
+      testo: 'Mi hai salvato la giornata, grazie!', createdAt: iso(40),
+    },
+    {
+      id: 'gr_2', proposalId: 'pr_vecchia', daUserId: 'u_sara', aUserId: 'u_lorenzo',
+      testo: 'Sempre disponibile 💛', createdAt: iso(200),
+    },
+  ];
+
   const marco = users.find((u) => u.id === 'u_marco');
   marco.prioritaUsata[todayISO().slice(0, 7)] = 1;
 
@@ -1917,7 +1953,7 @@ function seed() {
     shifts,
     requests,
     proposals,
-    ringraziamenti: [],
+    ringraziamenti,
     notifications: [],
   };
 }
@@ -2690,7 +2726,6 @@ function home() {
   const proposte = store.propostePerMe();
   const credito = store.creditoPriorita();
   const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
-  const prossimo = store.shiftsOf(me.id, { soloFuturi: true }).find((s) => s.tipo === 'WORK');
   const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
   const bloccoMiei = miei.length || proposte.length
@@ -2755,7 +2790,6 @@ function home() {
         <span class="tile-icona">⚡</span>
         <span>
           <strong>Cambio rapido</strong>
-          <em>Chi può prenderti ${prossimo ? formatDay(prossimo.data) : 'un turno'}, senza domande</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -2931,6 +2965,7 @@ function profilo() {
 
   return html`
     <header class="hero compatta">
+      ${raw(chipRingraziamenti())}
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
       <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
@@ -2941,11 +2976,6 @@ function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>I tuoi turni</h2>
-      ${raw(sezioneTurni())}
-    </section>
-
-    <section class="sezione">
       <h2>Le tue due settimane</h2>
       <p class="testo-tenue">
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
@@ -2953,7 +2983,10 @@ function profilo() {
       ${raw(dueSettimane())}
     </section>
 
-    ${raw(sezioneRingraziamenti())}
+    <section class="sezione">
+      <h2>I tuoi turni</h2>
+      ${raw(sezioneTurni())}
+    </section>
 
     <section class="sezione">
       <h2>Preferenze</h2>
@@ -3011,12 +3044,12 @@ function sezionePreferenze(me) {
   const gruppi = [
     {
       key: 'evita',
-      titolo: 'Quello che non vuoi',
+      titolo: 'Turni da evitare',
       nota: 'Filtro netto: questi turni non ti vengono proposti, nemmeno con un punteggio basso.',
     },
     {
       key: 'preferisce',
-      titolo: 'Quello che preferisci',
+      titolo: 'Turni preferiti',
       nota: `Sposta il punteggio di ${RULES.preferenzaBonus} punti, non esclude niente.`,
     },
   ];
@@ -3042,19 +3075,32 @@ function sezionePreferenze(me) {
       </details>`;
   }).join('');
 
-  const altre = PREFERENZE.filter((p) => p.gruppo === 'altro').map((p) => html`
-    <label class="switch">
-      <input type="checkbox" data-act="pref" data-key="${p.key}" ${raw(me.preferenze[p.key] ? 'checked' : '')}>
-      <span>${p.label}</span>
-    </label>`).join('');
-
   return html`
     ${raw(box)}
-    ${raw(altre)}
+    ${raw(legendaFasce())}
     <p class="testo-tenue">
       Due preferenze opposte non possono stare accese insieme: attivandone una,
       l'altra si spegne da sola.
     </p>`;
+}
+
+/** Cosa vuol dire ciascuna fascia, con gli orari veri. */
+function legendaFasce() {
+  const righe = Object.values(RULES.fasce).map((f) => {
+    const quando = f.inizioDa ? `inizia fra le ${f.inizioDa} e le ${f.inizioA}`
+      : f.fineDa ? `finisce fra le ${f.fineDa} e le ${f.fineA}`
+        : `finisce dopo le ${f.fineDopo}`;
+    return `<li><strong>${f.label}</strong>: ${quando}</li>`;
+  }).join('');
+  return html`
+    <details class="riquadro" data-riquadro="legenda-fasce" ${raw(riquadriAperti.has('legenda-fasce') ? 'open' : '')}>
+      <summary><span>Cosa vuol dire ogni fascia</span><span class="conteggio">orari</span></summary>
+      <ul class="elenco piccolo">${raw(righe)}</ul>
+      <p class="testo-tenue">
+        Un turno può stare in due fasce insieme, perché due guardano l'inizio e
+        due la fine: un 10:00–19:45 è mattina e pomeriggio.
+      </p>
+    </details>`;
 }
 
 /**
@@ -3072,31 +3118,6 @@ function sezioneTurni() {
       </span>
       <span class="chevron">›</span>
     </button>
-
-    <details class="riquadro" data-riquadro="istruzioni-ics" ${raw(riquadriAperti.has('istruzioni-ics') ? 'open' : '')}>
-      <summary>
-        <span>Come si prende il file .ics</span>
-        <span class="conteggio">istruzioni</span>
-      </summary>
-      <ol class="elenco">
-        <li><strong>Da un calendario sottoscritto</strong> (quello dei turni): apri
-          l'app Calendario, tieni premuto sul calendario dei turni e scegli
-          <em>Condividi</em> o <em>Esporta</em>. Se compare solo l'indirizzo del
-          calendario, copialo: è un link che finisce in <code>.ics</code> e va bene lo stesso.</li>
-        <li><strong>Da Mac</strong>: Calendario, seleziona il calendario dei turni,
-          poi <em>Archivio ▸ Esporta ▸ Esporta</em>. Ottieni un file <code>.ics</code>.</li>
-        <li><strong>Da Google Calendar</strong>: Impostazioni ▸ il calendario dei turni
-          ▸ <em>Esporta calendario</em>, oppure copia l'indirizzo segreto in formato iCal.</li>
-        <li>Torna qui, tocca <strong>Importa da calendario</strong> e incolla il
-          contenuto del file o il link.</li>
-      </ol>
-      <p class="testo-tenue">
-        Prima di scrivere qualcosa vedi l'anteprima di quello che l'app ha capito,
-        con il conto di quello che ha scartato e perché. L'import sostituisce solo
-        i giorni che il calendario nomina: non cancella mai un giorno di cui il
-        file non parla.
-      </p>
-    </details>
 
     <button class="tile" data-act="giorno-profilo" data-data="${todayISO()}">
       <span class="tile-icona">✍️</span>
@@ -3125,36 +3146,48 @@ function bottoneInbox() {
     </button>`;
 }
 
+/**
+ * I ringraziamenti in alto a destra, come un contatore.
+ *
+ * Erano una sezione a metà pagina che, senza ringraziamenti, occupava spazio
+ * per dire che non c'era niente. Qui invece è un numero che cresce, e la
+ * lista si apre toccandolo.
+ */
+function chipRingraziamenti() {
+  const quanti = store.ringraziamentiRicevuti().length;
+  if (!quanti) return '';
+  return html`
+    <button class="grazie-chip" data-act="vedi-grazie" title="Ringraziamenti ricevuti">
+      💛 ${quanti}
+    </button>`;
+}
+
 /** I ringraziamenti ricevuti: l'unica cosa che resta dopo il cambio. */
-function sezioneRingraziamenti() {
+function listaRingraziamenti() {
   const grazie = store.ringraziamentiRicevuti();
   if (!grazie.length) {
     return html`
-      <section class="sezione">
-        <h2>Ringraziamenti</h2>
-        <p class="testo-tenue">
-          Ancora nessuno. Arrivano da chi accetta uno scambio con te, e restano qui.
-        </p>
-      </section>`;
+      <p class="testo-tenue">
+        Ancora nessuno. Arrivano da chi accetta uno scambio con te, e restano qui.
+      </p>`;
   }
-  return html`
-    <section class="sezione">
-      <h2>Ringraziamenti · ${grazie.length}</h2>
-      <div class="grazie-lista">
-        ${grazie.map((g) => {
+
+  // join('') dentro raw(): un array interpolato in html`` finisce escapato,
+  // e la lista comparirebbe come testo con i tag in chiaro.
+  const righe = grazie.map((g) => {
     const da = store.user(g.daUserId);
     return html`
-          <div class="grazie">
-            <span class="avatar piccolo">${iniziali(da)}</span>
-            <div>
-              <strong>${g.testo || 'Grazie!'}</strong>
-              <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
-            </div>
-            <span class="cuore">💛</span>
-          </div>`;
-  })}
-      </div>
-    </section>`;
+      <div class="grazie">
+        <span class="avatar piccolo">${iniziali(da)}</span>
+        <div>
+          <strong>${g.testo || 'Grazie!'}</strong>
+          <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
+        </div>
+        <span class="cuore">💛</span>
+      </div>`;
+  }).join('');
+
+  return html`<div class="grazie-lista">${raw(righe)}</div>`;
 }
 
 /**
@@ -3241,7 +3274,7 @@ function dettaglioGiornoProfilo(data) {
     </div>`;
 }
 
-return { home, calendario, dettaglioGiorno, bacheca, profilo, dueSettimane, dettaglioGiornoProfilo };
+return { home, calendario, dettaglioGiorno, bacheca, profilo, listaRingraziamenti, dueSettimane, dettaglioGiornoProfilo };
 })();
 
 // ---- src/ui/flows.js
@@ -4080,6 +4113,8 @@ const AZIONI = {
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
 
+  'vedi-grazie': () => sheet('💛 Ringraziamenti ricevuti', V.listaRingraziamenti()),
+
   // Il calendario del profilo: turno, disponibilità e chi puoi aiutare.
   'giorno-profilo': (_, el) => apriGiornoProfilo(el.dataset.data),
 
@@ -4263,10 +4298,27 @@ const AZIONI = {
   importa: () => {
     const w = sheet('📥 Importa turni', html`
       <p class="testo-tenue">
-        Incolla qui il calendario dei turni in formato ICS. Dal calendario del telefono:
-        tieni premuto sul calendario dei turni, <strong>Condividi</strong> o
-        <strong>Esporta</strong>, e incolla il contenuto del file.
+        Incolla qui il contenuto del calendario dei turni in formato ICS.
       </p>
+      <details class="riquadro">
+        <summary><span>Dove trovo il file .ics</span><span class="conteggio">istruzioni</span></summary>
+        <ol class="elenco piccolo">
+          <li><strong>Da iPhone</strong>, calendario sottoscritto: apri Calendario, tieni
+            premuto sul calendario dei turni e scegli <em>Condividi</em> o
+            <em>Esporta</em>. Se compare solo l'indirizzo, copialo: è un link che
+            finisce in <code>.ics</code>.</li>
+          <li><strong>Da Mac</strong>: Calendario, seleziona il calendario dei turni,
+            poi <em>Archivio ▸ Esporta ▸ Esporta</em>.</li>
+          <li><strong>Da Google Calendar</strong>: Impostazioni ▸ il calendario dei turni
+            ▸ <em>Esporta calendario</em>, oppure copia l'indirizzo segreto in
+            formato iCal.</li>
+          <li>Apri il file con un editor di testo e incolla tutto qui sotto.</li>
+        </ol>
+        <p class="testo-tenue">
+          L'import sostituisce solo i giorni che il calendario nomina: non cancella
+          mai un giorno di cui il file non parla.
+        </p>
+      </details>
       <label class="campo">
         <span>Contenuto del calendario</span>
         <textarea data-campo="ics" rows="5" placeholder="BEGIN:VCALENDAR…"></textarea>

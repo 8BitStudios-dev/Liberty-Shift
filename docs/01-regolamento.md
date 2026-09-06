@@ -65,22 +65,31 @@ orario resta dentro una giornata, quindi non c'entra.
 Anche il calendario parte dal sabato: ogni riga è una settimana Apple, e due
 giorni scambiabili sono sempre sulla stessa riga.
 
-## R6 — Orari dello store
+## R6 — Orari dello store e fasce
 Il negozio vende dalle **10:00 alle 20:00**. I turni però vanno dalle **08:00
 alle 21:00**: prima e dopo l'orario di vendita si lavora comunque (apertura,
 pulizia, visual). In `RULES.store`.
 
-Da qui si ricavano due classificazioni, senza soglie separate da tenere
-allineate a mano:
+Le **fasce** sono un'altra cosa, e non si ricavano dagli orari del negozio: sono
+i confini con cui in store si chiamano i turni parlando fra colleghi. Stanno in
+`RULES.fasce`.
 
-- **chiusura**: il turno finisce **dopo** l'orario di chiusura, quindi oltre le
-  20:00. Un 11:00–20:00 finisce col negozio e non è una chiusura; un
-  12:00–21:00 sì.
-- **mattina**: il turno inizia entro l'apertura, quindi alle 10:00 o prima.
+| Fascia | Quando |
+|---|---|
+| apertura | inizia fra le 07:30 e le 09:00 |
+| mattina | inizia fra le 09:30 e le 10:00 |
+| pomeriggio | finisce fra le 19:30 e le 20:00 |
+| chiusura | finisce dopo le 20:15 |
 
-Il flag "non voglio la chiusura" è un filtro netto: un turno di chiusura non
-compare fra i match, non compare con punteggio basso. La preferenza "mattina"
-invece è morbida, sposta il punteggio di pochi punti.
+Due guardano l'inizio e due la fine, quindi **un turno può stare in due fasce
+insieme**: un 10:00–19:45 è mattina e pomeriggio. `fasceDi()` restituisce una
+lista, non un valore, e chi la usa deve saperlo gestire.
+
+Ci sono anche turni che non stanno in nessuna fascia — un 11:00–18:00 non è
+niente di particolare — ed è corretto: nessuna preferenza li tocca.
+
+Il flag "non voglio la chiusura" su una richiesta è un filtro netto: un turno di
+chiusura non compare fra i match, non compare con punteggio basso.
 
 Un turno che esce dalla fascia 08:00–21:00 senza essere una notte viene
 segnalato in fase di inserimento, ma non bloccato: i casi particolari esistono.
@@ -216,11 +225,16 @@ perché si comportano in modo diverso.
 
 | Gruppo | Effetto | Voci |
 |---|---|---|
-| **Quello che non vuoi** | filtro netto: quei turni non compaiono, nemmeno con un punteggio basso | evito le mattine, evito le chiusure, evito le notti visual |
-| **Quello che preferisci** | sposta il punteggio di `RULES.preferenzaBonus` punti | preferisco le mattine, preferisco le chiusure |
+| **Turni da evitare** | filtro netto: quei turni non compaiono, nemmeno con un punteggio basso | aperture, mattine, pomeriggi, chiusure, notti visual |
+| **Turni preferiti** | sposta il punteggio di `RULES.preferenzaBonus` punti | aperture, mattine, pomeriggi, chiusure |
 
-Le voci stanno in `RULES.PREFERENZE`, ciascuna collegata a una fascia (R6, R7)
-invece che a una catena di `if`: aggiungerne una è una riga di tabella.
+Le voci stanno in `PREFERENZE`, ciascuna collegata a una fascia di R6 invece che
+a una catena di `if`: aggiungerne una è una riga di tabella.
+
+Un turno in due fasce può incrociare due preferenze. Se anche una sola dice
+"evito", il turno è **escluso**: chi non vuole le chiusure non cambia idea
+perché quel turno è anche una mattina. Il bonus invece si prende **una volta
+sola**, altrimenti bastava un turno lungo per scalare la classifica.
 
 **Due preferenze opposte non possono stare accese insieme.** "Evito le mattine"
 e "preferisco le mattine" insieme non vogliono dire niente, quindi attivarne una
@@ -230,6 +244,9 @@ sapere che esiste.
 Il filtro netto vale solo per chi compare **da una disponibilità dichiarata**:
 chi ha pubblicato una richiesta ha già detto cosa cerca, e quella prevale sulla
 preferenza generica del profilo.
+
+"Disponibile nel weekend" non esiste più: non incideva su niente, e una
+preferenza che non fa nulla è peggio di una che manca.
 
 Nota: `preferisceMattina` esisteva già nel modello ma il motore non la leggeva.
 Era una preferenza che non faceva niente, e la documentazione diceva il

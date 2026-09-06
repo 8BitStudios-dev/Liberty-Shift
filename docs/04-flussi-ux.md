@@ -156,18 +156,19 @@ La voce "Inserisci i tuoi turni" non sta più in fondo al calendario, dove era u
 invito a uscire dalla schermata appena aperta. I turni si gestiscono nel
 Profilo, in una sezione con due strade in ordine di comodità:
 
-1. **Importa da calendario**, con accanto un riquadro *Come si prende il file
-   .ics* che spiega dove trovarlo da iPhone, da Mac e da Google Calendar. Un
-   pulsante "importa da calendario" senza istruzioni è un pulsante che nessuno
-   preme.
+1. **Importa da calendario**. Le istruzioni su dove trovare il file .ics —
+   iPhone, Mac, Google Calendar — stanno **dentro** la finestra dell'import, in
+   un riquadro che si apre: è lì che servono, nel momento in cui uno le cerca,
+   non nel profilo dove occupavano spazio a chi passava per altro.
 2. **Inserisci manualmente i turni**, che apre il giorno di oggi nel calendario
    delle due settimane, cioè lo stesso posto dove si correggono.
 
 ## Le preferenze, in due riquadri che si aprono
-Sei interruttori in fila nascondevano la sola cosa che conta saperne: quello che
-**eviti** è un filtro netto e quei turni spariscono, quello che **preferisci**
-vale qualche punto. Ora sono due riquadri chiusi, ciascuno col titolo di quello
-che fa e il conto di quante ne hai attive.
+Nove interruttori in fila nasconderebbero la sola cosa che conta saperne: quello
+che **eviti** è un filtro netto e quei turni spariscono, quello che
+**preferisci** vale qualche punto. Ora sono due riquadri chiusi — **Turni da
+evitare** e **Turni preferiti** — ciascuno col conto di quante ne hai attive, e
+sotto un terzo riquadro che dice cosa vuol dire ogni fascia, con gli orari veri.
 
 Attivando una preferenza si spegne la sua opposta, e la schermata si ridisegna
 per farlo vedere: senza il ridisegno la casella dell'opposta restava accesa a
@@ -175,6 +176,15 @@ mentire, e il tocco successivo la spegneva invece di accenderla.
 
 I riquadri aperti restano aperti dopo una modifica. È stato della finestra, non
 dei dati, e vive in `riquadriAperti` dentro `dom.js`.
+
+## L'ordine del Profilo
+Dall'alto: le proposte ricevute, poi **le tue due settimane** — è la cosa che si
+guarda ogni giorno, e stava sotto due sezioni di configurazione — poi i turni,
+le preferenze, la priorità, il contratto.
+
+I ringraziamenti non sono più una sezione a metà pagina, che senza
+ringraziamenti occupava spazio per dire che non ce n'erano: sono un contatore in
+alto a destra, 💛 con il numero, e la lista si apre toccandolo.
 
 ## Il Profilo: le tue due settimane
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di

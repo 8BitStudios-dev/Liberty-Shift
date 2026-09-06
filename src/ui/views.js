@@ -24,7 +24,6 @@ export function home() {
   const proposte = store.propostePerMe();
   const credito = store.creditoPriorita();
   const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
-  const prossimo = store.shiftsOf(me.id, { soloFuturi: true }).find((s) => s.tipo === 'WORK');
   const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
   const bloccoMiei = miei.length || proposte.length
@@ -89,7 +88,6 @@ export function home() {
         <span class="tile-icona">⚡</span>
         <span>
           <strong>Cambio rapido</strong>
-          <em>Chi può prenderti ${prossimo ? formatDay(prossimo.data) : 'un turno'}, senza domande</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -265,6 +263,7 @@ export function profilo() {
 
   return html`
     <header class="hero compatta">
+      ${raw(chipRingraziamenti())}
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
       <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
@@ -275,11 +274,6 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>I tuoi turni</h2>
-      ${raw(sezioneTurni())}
-    </section>
-
-    <section class="sezione">
       <h2>Le tue due settimane</h2>
       <p class="testo-tenue">
         Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
@@ -287,7 +281,10 @@ export function profilo() {
       ${raw(dueSettimane())}
     </section>
 
-    ${raw(sezioneRingraziamenti())}
+    <section class="sezione">
+      <h2>I tuoi turni</h2>
+      ${raw(sezioneTurni())}
+    </section>
 
     <section class="sezione">
       <h2>Preferenze</h2>
@@ -345,12 +342,12 @@ function sezionePreferenze(me) {
   const gruppi = [
     {
       key: 'evita',
-      titolo: 'Quello che non vuoi',
+      titolo: 'Turni da evitare',
       nota: 'Filtro netto: questi turni non ti vengono proposti, nemmeno con un punteggio basso.',
     },
     {
       key: 'preferisce',
-      titolo: 'Quello che preferisci',
+      titolo: 'Turni preferiti',
       nota: `Sposta il punteggio di ${RULES.preferenzaBonus} punti, non esclude niente.`,
     },
   ];
@@ -376,19 +373,32 @@ function sezionePreferenze(me) {
       </details>`;
   }).join('');
 
-  const altre = PREFERENZE.filter((p) => p.gruppo === 'altro').map((p) => html`
-    <label class="switch">
-      <input type="checkbox" data-act="pref" data-key="${p.key}" ${raw(me.preferenze[p.key] ? 'checked' : '')}>
-      <span>${p.label}</span>
-    </label>`).join('');
-
   return html`
     ${raw(box)}
-    ${raw(altre)}
+    ${raw(legendaFasce())}
     <p class="testo-tenue">
       Due preferenze opposte non possono stare accese insieme: attivandone una,
       l'altra si spegne da sola.
     </p>`;
+}
+
+/** Cosa vuol dire ciascuna fascia, con gli orari veri. */
+function legendaFasce() {
+  const righe = Object.values(RULES.fasce).map((f) => {
+    const quando = f.inizioDa ? `inizia fra le ${f.inizioDa} e le ${f.inizioA}`
+      : f.fineDa ? `finisce fra le ${f.fineDa} e le ${f.fineA}`
+        : `finisce dopo le ${f.fineDopo}`;
+    return `<li><strong>${f.label}</strong>: ${quando}</li>`;
+  }).join('');
+  return html`
+    <details class="riquadro" data-riquadro="legenda-fasce" ${raw(riquadriAperti.has('legenda-fasce') ? 'open' : '')}>
+      <summary><span>Cosa vuol dire ogni fascia</span><span class="conteggio">orari</span></summary>
+      <ul class="elenco piccolo">${raw(righe)}</ul>
+      <p class="testo-tenue">
+        Un turno può stare in due fasce insieme, perché due guardano l'inizio e
+        due la fine: un 10:00–19:45 è mattina e pomeriggio.
+      </p>
+    </details>`;
 }
 
 /**
@@ -406,31 +416,6 @@ function sezioneTurni() {
       </span>
       <span class="chevron">›</span>
     </button>
-
-    <details class="riquadro" data-riquadro="istruzioni-ics" ${raw(riquadriAperti.has('istruzioni-ics') ? 'open' : '')}>
-      <summary>
-        <span>Come si prende il file .ics</span>
-        <span class="conteggio">istruzioni</span>
-      </summary>
-      <ol class="elenco">
-        <li><strong>Da un calendario sottoscritto</strong> (quello dei turni): apri
-          l'app Calendario, tieni premuto sul calendario dei turni e scegli
-          <em>Condividi</em> o <em>Esporta</em>. Se compare solo l'indirizzo del
-          calendario, copialo: è un link che finisce in <code>.ics</code> e va bene lo stesso.</li>
-        <li><strong>Da Mac</strong>: Calendario, seleziona il calendario dei turni,
-          poi <em>Archivio ▸ Esporta ▸ Esporta</em>. Ottieni un file <code>.ics</code>.</li>
-        <li><strong>Da Google Calendar</strong>: Impostazioni ▸ il calendario dei turni
-          ▸ <em>Esporta calendario</em>, oppure copia l'indirizzo segreto in formato iCal.</li>
-        <li>Torna qui, tocca <strong>Importa da calendario</strong> e incolla il
-          contenuto del file o il link.</li>
-      </ol>
-      <p class="testo-tenue">
-        Prima di scrivere qualcosa vedi l'anteprima di quello che l'app ha capito,
-        con il conto di quello che ha scartato e perché. L'import sostituisce solo
-        i giorni che il calendario nomina: non cancella mai un giorno di cui il
-        file non parla.
-      </p>
-    </details>
 
     <button class="tile" data-act="giorno-profilo" data-data="${todayISO()}">
       <span class="tile-icona">✍️</span>
@@ -459,36 +444,48 @@ function bottoneInbox() {
     </button>`;
 }
 
+/**
+ * I ringraziamenti in alto a destra, come un contatore.
+ *
+ * Erano una sezione a metà pagina che, senza ringraziamenti, occupava spazio
+ * per dire che non c'era niente. Qui invece è un numero che cresce, e la
+ * lista si apre toccandolo.
+ */
+function chipRingraziamenti() {
+  const quanti = store.ringraziamentiRicevuti().length;
+  if (!quanti) return '';
+  return html`
+    <button class="grazie-chip" data-act="vedi-grazie" title="Ringraziamenti ricevuti">
+      💛 ${quanti}
+    </button>`;
+}
+
 /** I ringraziamenti ricevuti: l'unica cosa che resta dopo il cambio. */
-function sezioneRingraziamenti() {
+export function listaRingraziamenti() {
   const grazie = store.ringraziamentiRicevuti();
   if (!grazie.length) {
     return html`
-      <section class="sezione">
-        <h2>Ringraziamenti</h2>
-        <p class="testo-tenue">
-          Ancora nessuno. Arrivano da chi accetta uno scambio con te, e restano qui.
-        </p>
-      </section>`;
+      <p class="testo-tenue">
+        Ancora nessuno. Arrivano da chi accetta uno scambio con te, e restano qui.
+      </p>`;
   }
-  return html`
-    <section class="sezione">
-      <h2>Ringraziamenti · ${grazie.length}</h2>
-      <div class="grazie-lista">
-        ${grazie.map((g) => {
+
+  // join('') dentro raw(): un array interpolato in html`` finisce escapato,
+  // e la lista comparirebbe come testo con i tag in chiaro.
+  const righe = grazie.map((g) => {
     const da = store.user(g.daUserId);
     return html`
-          <div class="grazie">
-            <span class="avatar piccolo">${iniziali(da)}</span>
-            <div>
-              <strong>${g.testo || 'Grazie!'}</strong>
-              <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
-            </div>
-            <span class="cuore">💛</span>
-          </div>`;
-  })}
-      </div>
-    </section>`;
+      <div class="grazie">
+        <span class="avatar piccolo">${iniziali(da)}</span>
+        <div>
+          <strong>${g.testo || 'Grazie!'}</strong>
+          <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
+        </div>
+        <span class="cuore">💛</span>
+      </div>`;
+  }).join('');
+
+  return html`<div class="grazie-lista">${raw(righe)}</div>`;
 }
 
 /**

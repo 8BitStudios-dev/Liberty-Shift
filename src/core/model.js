@@ -61,30 +61,47 @@ export function durataOre(shift) {
   return (fineMinuti(shift) - minutes(shift.start)) / 60;
 }
 
-/** Chiude chi resta oltre l'orario di chiusura del negozio. */
-export function isClosing(shift) {
-  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
-  return minutes(shift.end) > minutes(RULES.store.chiude);
+/**
+ * Le fasce a cui appartiene un turno, secondo i confini di `RULES.fasce`.
+ *
+ * Sono più d'una, e non è un caso limite: due fasce guardano l'inizio
+ * (apertura, mattina) e due la fine (pomeriggio, chiusura), quindi un
+ * 10:00–19:45 è insieme mattina e pomeriggio. Chi lo usa deve saperlo
+ * gestire, invece di far finta che ce ne sia sempre una sola.
+ */
+export function fasceDi(shift) {
+  if (shift?.tipo !== 'WORK') return [];
+  if (isNotturno(shift)) return ['NOTTE'];
+  const inizio = minutes(shift.start);
+  const fine = minutes(shift.end);
+  const dentro = (v, da, a) => v >= minutes(da) && v <= minutes(a);
+
+  return Object.entries(RULES.fasce)
+    .filter(([, f]) => (f.inizioDa ? dentro(inizio, f.inizioDa, f.inizioA) : false)
+      || (f.fineDa ? dentro(fine, f.fineDa, f.fineA) : false)
+      || (f.fineDopo ? fine > minutes(f.fineDopo) : false))
+    .map(([key]) => key);
 }
 
-/** È di mattina chi entra entro l'apertura del negozio. */
-export function isMorning(shift) {
-  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
-  return minutes(shift.start) <= minutes(RULES.store.apre);
-}
+export const inFascia = (shift, fascia) => fasceDi(shift).includes(fascia);
 
-/** Il turno inizia prima dell'apertura: allestimento, pulizia, consegne. */
-export function isPreApertura(shift) {
-  if (shift?.tipo !== 'WORK' || isNotturno(shift)) return false;
-  return minutes(shift.start) < minutes(RULES.store.apre);
-}
+/** Chiude chi resta oltre la soglia di chiusura. */
+export const isClosing = (shift) => inFascia(shift, 'CHIUSURA');
+/** È di mattina chi entra nella finestra dichiarata per le mattine. */
+export const isMorning = (shift) => inFascia(shift, 'MATTINA');
+/** L'apertura: si entra prima che il negozio venda, per allestire e pulire. */
+export const isPreApertura = (shift) => inFascia(shift, 'APERTURA');
 
 /** Etichetta breve per il tipo di turno, quando c'è qualcosa da dire. */
 export function etichettaFascia(shift) {
-  if (isNotturno(shift)) return 'notte';
-  if (isClosing(shift)) return 'chiusura';
-  if (isPreApertura(shift)) return 'apertura';
-  return null;
+  const fasce = fasceDi(shift);
+  if (!fasce.length) return null;
+  if (fasce.includes('NOTTE')) return 'notte';
+  // Con due fasce si nomina quella che condiziona di più la giornata: uscire
+  // tardi pesa più che entrare presto.
+  const ordine = ['CHIUSURA', 'APERTURA', 'POMERIGGIO', 'MATTINA'];
+  const scelta = ordine.find((f) => fasce.includes(f));
+  return scelta ? RULES.fasce[scelta].label : null;
 }
 
 /** Il turno esce dalla fascia normale dello store senza essere una notte. */
@@ -300,37 +317,34 @@ export function ruoloNelGiorno(request, giorno, cedo) {
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
 }
 
-/** La fascia di un turno, nel vocabolario delle preferenze (R6, R7). */
-export function fasciaDi(shift) {
-  if (!shift || shift.tipo !== 'WORK') return null;
-  if (isNotturno(shift)) return 'NOTTE';
-  if (isClosing(shift)) return 'CHIUSURA';
-  if (isMorning(shift)) return 'MATTINA';
-  return null;
-}
-
 /**
  * Le preferenze applicate a un turno che una persona riceverebbe.
  *
  * Restituisce { escluso, bonus, reasons }. La differenza fra i due gruppi è
  * tutta qui: quello che si evita esclude il turno, quello che si preferisce
- * vale qualche punto. Un turno può soddisfare al massimo una preferenza,
- * perché le fasce sono mutuamente esclusive.
+ * vale qualche punto.
+ *
+ * Un turno può stare in due fasce, quindi può incrociare due preferenze. Se
+ * anche una sola dice "evito", il turno è escluso: chi ha detto che non vuole
+ * le chiusure non cambia idea perché quel turno è anche una mattina. Il bonus
+ * invece si prende una volta sola, altrimenti bastava un turno lungo per
+ * scalare la classifica.
  */
 export function applicaPreferenze(user, shift) {
-  const fascia = fasciaDi(shift);
-  if (!fascia || !user?.preferenze) return { escluso: false, bonus: 0, reasons: [] };
+  const fasce = fasceDi(shift);
+  if (!fasce.length || !user?.preferenze) return { escluso: false, bonus: 0, reasons: [] };
 
-  for (const p of PREFERENZE) {
-    if (p.fascia !== fascia || !user.preferenze[p.key]) continue;
-    if (p.gruppo === 'evita') {
-      return { escluso: true, bonus: 0, reasons: [`${user.nome}: ${p.label.toLowerCase()}`] };
-    }
-    return {
-      escluso: false,
-      bonus: RULES.preferenzaBonus,
-      reasons: [`${p.label.toLowerCase()}, e ${shiftLabel(shift)} lo è`],
-    };
+  const attive = PREFERENZE.filter((p) => user.preferenze[p.key] && fasce.includes(p.fascia));
+  const evitata = attive.find((p) => p.gruppo === 'evita');
+  if (evitata) {
+    return { escluso: true, bonus: 0, reasons: [`${user.nome}: ${evitata.label.toLowerCase()}`] };
   }
-  return { escluso: false, bonus: 0, reasons: [] };
+
+  const preferite = attive.filter((p) => p.gruppo === 'preferisce');
+  if (!preferite.length) return { escluso: false, bonus: 0, reasons: [] };
+  return {
+    escluso: false,
+    bonus: RULES.preferenzaBonus,
+    reasons: [`${preferite.map((p) => p.label.toLowerCase()).join(' e ')}, e ${shiftLabel(shift)} lo è`],
+  };
 }
