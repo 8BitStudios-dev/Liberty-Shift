@@ -1,8 +1,12 @@
 import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
-import { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } from './components.js';
+import {
+  cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
+} from './components.js';
 import { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } from '../core/model.js';
-import { slotSettimana } from '../core/engine.js';
+import {
+  slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
+} from '../core/engine.js';
 import { RULES, TIPO_CAMBIO } from '../core/rules.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
@@ -159,7 +163,7 @@ export function calendario(params) {
       <i class="dot"></i> richieste sul giorno · <i class="dot prio"></i> priorità.
       Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>
-    <button class="btn secondario largo" data-act="vai" data-to="#/turni">Gestisci i tuoi turni</button>`;
+    <button class="btn secondario largo" data-act="vai" data-to="#/profilo">Inserisci i tuoi turni</button>`;
 }
 
 export function dettaglioGiorno(data) {
@@ -215,26 +219,7 @@ export function bacheca(params) {
 export function profilo() {
   const me = store.me;
   const settimana = appleWeekKey(todayISO());
-  const prossima = addDays(settimana, 7);
   const credito = store.creditoPriorita();
-
-  const settimane = [settimana, prossima].map((wk) => {
-    const disp = me.disponibilita?.[wk] || Array(7).fill(false);
-    const celle = disp.map((v, i) => {
-      const data = addDays(wk, i);
-      return html`
-        <button class="disp ${v ? 'si' : 'no'}" data-act="toggle-disp" data-week="${wk}" data-slot="${i}">
-          <span>${GIORNI[weekday(data)]}</span>
-          <em>${toDate(data).getUTCDate()}</em>
-          <b>${v ? '✅' : '❌'}</b>
-        </button>`;
-    }).join('');
-    return html`
-      <div class="settimana-disp">
-        <h3>Settimana ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
-        <div class="griglia-disp">${raw(celle)}</div>
-      </div>`;
-  }).join('');
 
   const pref = [
     ['preferisceMattina', 'Preferisco i turni di mattina'],
@@ -254,9 +239,11 @@ export function profilo() {
     </header>
 
     <section class="sezione">
-      <h2>Disponibilità allo scambio</h2>
-      <p class="testo-tenue">Si imposta settimana per settimana: quello che dichiari qui ti fa comparire fra i match potenziali degli altri.</p>
-      ${raw(settimane)}
+      <h2>Le tue due settimane</h2>
+      <p class="testo-tenue">
+        Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
+      </p>
+      ${raw(dueSettimane())}
     </section>
 
     <section class="sezione">
@@ -295,8 +282,7 @@ export function profilo() {
       </p>
       <p class="testo-tenue">
         Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore,
-        il contratto ne prevede ${me.oreSettimanali}. Uno scambio fra due turni interi
-        non cambia il totale; se c'è di mezzo un OFF sì, e l'app te lo dice prima.
+        il contratto ne prevede ${me.oreSettimanali}.
       </p>
     </section>
 
@@ -312,35 +298,86 @@ export function profilo() {
     </section>`;
 }
 
-// ---------------------------------------------------------------- TURNI
-
-export function turni() {
+/**
+ * Le prossime due settimane Apple, sabato → venerdì. È il posto unico dove
+ * si inseriscono i turni e si scopre chi ha bisogno di te: prima erano tre
+ * schermate diverse, e la disponibilità era una griglia di ✅ che nessuno
+ * avrebbe aggiornato ogni settimana.
+ */
+export function dueSettimane() {
   const me = store.me;
-  const settimane = [appleWeekKey(todayISO()), addDays(appleWeekKey(todayISO()), 7)];
+  const oggi = todayISO();
+  const prima = appleWeekKey(oggi);
 
-  const blocchi = settimane.map((wk) => {
-    const righe = Array.from({ length: 7 }, (_, i) => {
+  // Una volta sola per tutta la griglia: il motore è lo stesso che usano i match.
+  const opportunita = opportunitaPerMe(me.id, store.state);
+  const perGiorno = new Map();
+  for (const o of opportunita) {
+    for (const g of o.giorni) {
+      perGiorno.set(g, [...(perGiorno.get(g) || []), o]);
+    }
+  }
+
+  return [prima, addDays(prima, 7)].map((wk) => {
+    const celle = Array.from({ length: 7 }, (_, i) => {
       const data = addDays(wk, i);
-      const s = store.state.shifts.find((x) => x.userId === me.id && x.data === data);
+      const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
+      const mie = perGiorno.get(data) || [];
+      const migliore = mie[0];
+      const disponibile = disponibileIl(me, data);
       return html`
-        <button class="riga-turno" data-act="modifica-turno" data-data="${data}">
-          <span class="giorno-nome">${formatDay(data)}</span>
-          <span class="turno-valore ${s?.tipo === 'OFF' ? 'off' : ''}">${s ? shiftLabel(s) : '— da inserire'}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
-          <span class="chevron">›</span>
+        <button class="giorno-due ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''} ${disponibile ? 'disponibile' : ''}"
+                data-act="giorno-profilo" data-data="${data}">
+          <span class="dow">${GIORNI[weekday(data)]}</span>
+          <span class="numero">${toDate(data).getUTCDate()}</span>
+          <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '—'}</span>
+          ${raw(migliore ? `<span class="quota">${migliore.match.score}%</span>` : '<span class="quota vuota"></span>')}
         </button>`;
     }).join('');
+
     return html`
-      <section class="sezione">
-        <h2>Settimana ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h2>
-        <div class="lista-turni">${raw(righe)}</div>
-      </section>`;
+      <div class="settimana-due">
+        <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
+        <div class="griglia-due">${raw(celle)}</div>
+      </div>`;
   }).join('');
+}
+
+/** Il dettaglio di un giorno: il tuo turno, e chi puoi aiutare. */
+export function dettaglioGiornoProfilo(data) {
+  const me = store.me;
+  const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
+  const disponibile = disponibileIl(me, data);
+  const mie = opportunitaPerMe(me.id, store.state).filter((o) => o.giorni.includes(data));
+  const tutte = richiesteSulGiorno(me.id, data, store.state);
+  const senzaRisposta = tutte.length - mie.length;
 
   return html`
-    <header class="testata"><h1>I tuoi turni</h1></header>
-    <p class="testo-tenue avviso-box">
-      I turni non arrivano dal sistema ufficiale: li inserisci tu. Questa app serve a mettersi d'accordo,
-      il cambio va poi fatto nell'app ufficiale dei turni.
-    </p>
-    ${raw(blocchi)}`;
+    <div class="giorno-profilo">
+      <button class="riga-turno" data-act="modifica-turno" data-data="${data}">
+        <span class="giorno-nome">Il tuo turno</span>
+        <span class="turno-valore ${turno?.tipo === 'OFF' ? 'off' : ''}">
+          ${turno ? shiftLabel(turno) : '— da inserire'}${raw(etichettaFascia(turno) ? ` <span class="tag">${etichettaFascia(turno)}</span>` : '')}
+        </span>
+        <span class="chevron">›</span>
+      </button>
+
+      <label class="switch">
+        <input type="checkbox" data-act="toggle-disp-giorno" data-data="${data}" ${raw(disponibile ? 'checked' : '')}>
+        <span>Disponibile a scambiare questo giorno</span>
+      </label>
+      <p class="testo-tenue">
+        Dichiararlo ti fa comparire fra i match potenziali di chi cerca, anche se tu non hai pubblicato niente.
+      </p>
+
+      <h3>${mie.length ? `Puoi aiutare ${mie.length === 1 ? 'una persona' : `${mie.length} persone`}` : 'Nessuno da aiutare qui'}</h3>
+      ${raw(mie.length
+    ? mie.map((o) => cardOpportunita(o)).join('')
+    : `<p class="testo-tenue">${tutte.length
+      ? `Ci sono ${tutte.length} richieste su questo giorno, ma nessuna che tu possa risolvere con i turni che hai.`
+      : 'Nessuna richiesta aperta su questo giorno.'}</p>`)}
+      ${raw(mie.length && senzaRisposta > 0
+    ? `<p class="testo-tenue">Altre ${senzaRisposta} richieste su questo giorno non tornano con i tuoi turni.</p>`
+    : '')}
+    </div>`;
 }

@@ -8,8 +8,7 @@ sopra. Routing a hash, quindi ogni schermata ha un indirizzo condivisibile.
 | `#/home` | panoramica e azioni |
 | `#/calendario?mese=YYYY-MM` | mese, con dettaglio giorno in sheet |
 | `#/bacheca?filtro=TUTTI\|CEDO\|CERCO\|OFF` | richieste degli altri |
-| `#/profilo` | disponibilità, preferenze, contratto |
-| `#/turni` | inserimento manuale dei propri turni |
+| `#/profilo` | le tue due settimane, preferenze, contratto |
 | `#/rapido` | "Cosa vuoi fare?" |
 | `#/nuovo` | wizard in 3 passi |
 | `#/match?id=` | risultati del matching |
@@ -95,6 +94,36 @@ nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 - Ogni match elenca le ragioni. Un suggerimento senza spiegazione non viene
   usato.
 - Modalità chiara e scura, aree di sicurezza dell'iPhone, tocchi da 44px.
+
+## Il Profilo: le tue due settimane
+Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
+✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.
+Ora sono una griglia sola, sabato → venerdì per due settimane, dove ogni cella
+mostra il tuo turno di quel giorno e, se c'è, la **percentuale del miglior
+cambio che potresti risolvere**.
+
+Toccando un giorno si apre tutto quello che riguarda quella data:
+
+- il tuo turno, da inserire o correggere;
+- l'interruttore "disponibile a scambiare questo giorno", che è quello che ti
+  fa comparire fra i match potenziali di chi cerca;
+- **chi puoi aiutare**: le richieste aperte su quel giorno che tu sei in grado
+  di risolvere, ciascuna con la percentuale e con le due righe che contano —
+  che turno faresti tu, che turno farebbe l'altra persona.
+
+Quando ci sono richieste che non puoi risolvere, l'app lo dice e conta quante
+sono, invece di far finta che non esistano.
+
+### Il matching al contrario
+La percentuale è la stessa che vedrebbe l'altra persona guardando i suoi match:
+`opportunitaPerMe` non riscrive le regole, chiede a `findMatches` chi va bene
+per ogni richiesta aperta e guarda se in quella lista ci sei tu. Le due
+direzioni non possono divergere, e un test lo verifica.
+
+Da qui viene anche una regola di scrittura: le spiegazioni non danno del tu a
+nessuno. La stessa frase viene letta da chi ha pubblicato la richiesta e da chi
+può risolverla, e un "sei Part Time" giusto da un lato è falso dall'altro. Si
+usano i nomi propri, e c'è un test che rifiuta le frasi di parte.
 
 ## Modalità demo
 Dal Profilo si cambia persona. Serve a vedere lo stesso scambio dai due lati

@@ -17,7 +17,7 @@ In locale:
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 44 test sul motore di matching
+npm test        # 48 test sul motore di matching
 npm run build   # dist/cambio-turno.html, tutta l'app in un file solo
 ```
 
@@ -51,7 +51,8 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 
 ## Cosa funziona già
 
-- Inserimento manuale dei turni, calendario mensile con dettaglio giorno
+- Inserimento dei turni dal calendario delle due settimane, calendario mensile
+  che parte dal sabato con il dettaglio di ogni giornata
 - Due tipi di cambio, presi dai messaggi veri del gruppo: **cambio orario**
   (stessa giornata, orario diverso) e **cambio OFF** (due giornate che si
   scambiano per intero), ciascuno con le sue regole e il suo wizard
@@ -69,7 +70,9 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 - Cambio rapido che prova da solo entrambi i tipi e tutti i giorni liberi
 - Proposta, accettazione bilaterale, "Cambio inserito", scadenza automatica
 - Priorità mensile con durata di 48 ore
-- Bacheca con filtri, profilo con disponibilità settimana per settimana
+- Bacheca con filtri per tipo e priorità
+- Profilo con il calendario delle due settimane: turni, disponibilità e, per
+  ogni giorno, chi puoi aiutare con la relativa percentuale
 - Funziona offline, si aggiunge alla schermata Home dell'iPhone
 
 ## Cosa manca, di proposito

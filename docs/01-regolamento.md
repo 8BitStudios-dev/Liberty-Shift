@@ -198,9 +198,14 @@ più.
 ## R15 — Chi può comparire fra i match
 Solo chi ha dato un segnale:
 1. una richiesta pubblicata compatibile;
-2. una disponibilità dichiarata nel profilo per quella settimana.
+2. una disponibilità dichiarata per quel giorno.
 
 Chi non ha fatto né l'una né l'altra cosa non viene mai mostrato.
+
+La disponibilità si dichiara giorno per giorno, dal calendario delle due
+settimane nel Profilo: è un interruttore sul dettaglio del giorno, nello stesso
+posto dove si inserisce il turno. Prima era una griglia di ✅ separata, che
+nessuno avrebbe aggiornato ogni settimana.
 
 ## R16 — Niente doppio impegno
 Nel cambio OFF puoi offrire solo i giorni in cui sei libero, e la controparte

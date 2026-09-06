@@ -57,7 +57,7 @@ export function vistaRapida() {
     return html`
       ${raw(testataRapido())}
       ${raw(vuoto('Nessun turno da lasciare', 'Aggiungi i tuoi turni e torna qui.',
-    '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}`;
+    '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}`;
   }
 
   if (!rapido.shiftId || !miei.some((s) => s.id === rapido.shiftId)) {
@@ -174,7 +174,7 @@ function passoCedo() {
     ? 'Scegli il turno del giorno che ti serve libero. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
     : 'Scegli il turno di cui vuoi cambiare l\'orario. Resti nello stesso giorno.'}</p>
     ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
-    : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}
+    : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}
     ${raw(off ? `
       <label class="switch">
         <input type="checkbox" data-act="flessibile" ${draft.flessibile ? 'checked' : ''}>

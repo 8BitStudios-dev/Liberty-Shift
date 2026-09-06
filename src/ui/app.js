@@ -2,7 +2,8 @@ import { html, raw, on, toast, sheet } from './dom.js';
 import { store } from '../core/store.js';
 import * as V from './views.js';
 import * as F from './flows.js';
-import { formatDay } from '../core/time.js';
+import { formatDay, appleWeekKey } from '../core/time.js';
+import { slotSettimana } from '../core/engine.js';
 import { durataOre, isNotturno, fuoriFascia, etichettaFascia } from '../core/model.js';
 import { RULES } from '../core/rules.js';
 
@@ -30,7 +31,6 @@ function render() {
     calendario: V.calendario,
     bacheca: V.bacheca,
     profilo: V.profilo,
-    turni: V.turni,
     rapido: F.vistaRapida,
     nuovo: F.nuovo,
     match: F.match,
@@ -46,6 +46,13 @@ function render() {
       <span class="tab-icona">${t.icona}</span><span>${t.label}</span>
     </button>`).join('');
   tabbar.hidden = !attivo;
+}
+
+/** La sheet del giorno nel profilo, riapribile dopo aver salvato un turno. */
+function apriGiornoProfilo(data) {
+  document.querySelectorAll('.sheet-backdrop [data-chiudi]').forEach((b) => b.click());
+  const s = sheet(formatDay(data, true), V.dettaglioGiornoProfilo(data));
+  s.el.dataset.giornoProfilo = data;
 }
 
 function vai(to) {
@@ -66,6 +73,15 @@ const AZIONI = {
   giorno: (_, el) => {
     const data = el.dataset.data;
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
+  },
+
+  // Il calendario del profilo: turno, disponibilità e chi puoi aiutare.
+  'giorno-profilo': (_, el) => apriGiornoProfilo(el.dataset.data),
+
+  'toggle-disp-giorno': (e, el) => {
+    const data = el.dataset.data;
+    store.impostaDisponibilita(appleWeekKey(data), slotSettimana(data), e.target.checked);
+    render();
   },
 
   'tipo-cambio': (_, el) => {
@@ -173,13 +189,6 @@ const AZIONI = {
     vai('#/home');
   },
 
-  'toggle-disp': (_, el) => {
-    const { week, slot } = el.dataset;
-    const attuale = store.me.disponibilita?.[week]?.[Number(slot)];
-    store.impostaDisponibilita(week, Number(slot), !attuale);
-    render();
-  },
-
   pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); },
   'durata-turno': (e) => { store.impostaContratto({ durataTurno: Number(e.target.value) }); render(); },
   'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
@@ -263,9 +272,11 @@ const AZIONI = {
       start: tipo === 'OFF' ? null : wrap.querySelector('[data-campo="start"]').value,
       end: tipo === 'OFF' ? null : wrap.querySelector('[data-campo="end"]').value,
     });
+    const giorno = document.querySelector('[data-giorno-profilo]')?.dataset.giornoProfilo;
     wrap.querySelector('[data-chiudi]').click();
     toast('Turno salvato');
     render();
+    if (giorno) apriGiornoProfilo(giorno);
   },
 
   'elimina-turno': (_, el) => {

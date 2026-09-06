@@ -31,7 +31,7 @@ export function satisfies(cerco, shift) {
   }
 
   if (cerco.evitaChiusura && isClosing(shift)) {
-    return { score: 0, reasons: ['è un turno di chiusura, che hai escluso'] };
+    return { score: 0, reasons: ['è un turno di chiusura, escluso dalla richiesta'] };
   }
 
   let score = 0;
@@ -44,10 +44,10 @@ export function satisfies(cerco, shift) {
       const scarto = Math.max(dStart, dEnd);
       if (scarto === 0) {
         score = 100;
-        reasons.push(`orario identico a quello che cerchi (${cerco.start}–${cerco.end})`);
+        reasons.push(`orario identico a quello cercato (${cerco.start}–${cerco.end})`);
       } else if (scarto <= RULES.nearMissMinutes) {
         score = Math.round(100 - 40 * (scarto / RULES.nearMissMinutes));
-        reasons.push(`${scarto} minuti di scarto dal tuo orario (${shiftLabel(shift)} contro ${cerco.start}–${cerco.end})`);
+        reasons.push(`${scarto} minuti di scarto (${shiftLabel(shift)} contro ${cerco.start}–${cerco.end})`);
       } else {
         score = 0;
         reasons.push('orario troppo lontano da quello richiesto');
@@ -64,7 +64,7 @@ export function satisfies(cerco, shift) {
       }
       if (violazioni.length === 0) {
         score = 100;
-        reasons.push(`rientra nella fascia che hai indicato (${wantLabel(cerco)})`);
+        reasons.push(`rientra nella fascia indicata (${wantLabel(cerco)})`);
       } else {
         const sforo = Math.max(...violazioni);
         score = sforo <= RULES.nearMissMinutes
@@ -77,7 +77,7 @@ export function satisfies(cerco, shift) {
     }
     default: {
       score = 100;
-      reasons.push('ti va bene qualsiasi turno');
+      reasons.push('va bene qualsiasi turno');
     }
   }
   return { score: clamp(score), reasons };
@@ -152,8 +152,14 @@ function indexShifts(shifts) {
 const nome = (u) => `${u.nome} ${u.cognomeIniziale}.`;
 const contrattoDi = (u) => RULES.contracts[u.contratto]?.label || u.contratto;
 
-/** Le due frasi che spiegano l'adattamento e l'impatto sul monte ore. */
-function verificheIncrociate(coppie, autoreId, shifts) {
+/**
+ * Le frasi che spiegano l'adattamento e l'impatto sul monte ore.
+ *
+ * Sempre con il nome proprio, mai con "sei" o "per te": la stessa scheda
+ * viene letta da chi pubblica la richiesta e da chi può risolverla, e un "tu"
+ * giusto da un lato è sbagliato dall'altro.
+ */
+function verificheIncrociate(coppie, shifts) {
   const reasons = [];
   const avvisi = [];
   let penalita = 0;
@@ -161,14 +167,12 @@ function verificheIncrociate(coppie, autoreId, shifts) {
     const t = trasformaTurno(riceve, chi);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
-      reasons.push(chi.id === autoreId
-        ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
-        : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
+      reasons.push(`${chi.nome} è ${contrattoDi(chi)}: ${t.originale} diventa ${t.start}–${t.end}`);
     }
     if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
     if (cede) {
       const ore = impattoMonteOre(chi, cede, riceve, shifts);
-      if (ore.avviso) avvisi.push(`${chi.id === autoreId ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
+      if (ore.avviso) avvisi.push(`${nome(chi)}: ${ore.avviso}.`);
     }
   }
   return { reasons, avvisi, penalita };
@@ -219,7 +223,7 @@ function matchOrario(request, ctx) {
       score = Math.round((perMe.score + perLui.score) / 2);
       origine = 'RICHIESTA';
       reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno: ${perMe.reasons[0]}`);
-      reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}, che è il tuo turno`);
+      reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
     } else {
       if (!disponibileIl(u, giorno)) continue;
       if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
@@ -228,7 +232,7 @@ function matchOrario(request, ctx) {
       reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e si è dichiarato disponibile a scambiare`);
     }
 
-    const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], autore.id, ctx.shifts);
+    const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
     score = clamp(Math.round(score - v.penalita), 0,
       origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
     if (score < RULES.potentialThreshold) continue;
@@ -293,7 +297,7 @@ function matchOff(request, ctx) {
         if (perLui.score === 0) continue;
         score = Math.round((perMe.score + perLui.score) / 2);
         origine = 'RICHIESTA';
-        reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario del tuo`);
+        reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
         if (!disponibileIl(u, mioCedo.data)) continue;
         if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
@@ -301,9 +305,9 @@ function matchOff(request, ctx) {
         origine = 'DISPONIBILITA';
         reasons.push(`è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`);
       }
-      reasons.push(`tu lavoreresti ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
+      reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
 
-      const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], autore.id, ctx.shifts);
+      const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
       score = clamp(Math.round(score - v.penalita), 0,
         origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
       if (score < RULES.potentialThreshold) continue;
@@ -362,6 +366,41 @@ export function turnoOfferibile(request, shift, shifts, shiftsById) {
   const s = satisfies(request.cerco, shift);
   if (s.score === 0) return { ok: false, motivo: `Non è quello che cerca: ${s.reasons[0]}.` };
   return { ok: true };
+}
+
+/**
+ * Il matching al contrario: non "chi può aiutare la mia richiesta", ma
+ * "quali richieste degli altri posso risolvere io".
+ *
+ * Riusa findMatches invece di riscrivere le regole: per ogni richiesta aperta
+ * chiede al motore chi va bene, e guarda se in quella lista ci sono io. Con i
+ * numeri di uno store costa niente, e non c'è modo che le due direzioni
+ * finiscano per rispondere cose diverse.
+ */
+export function opportunitaPerMe(userId, ctx) {
+  const byId = Object.fromEntries(ctx.shifts.map((s) => [s.id, s]));
+  const risultati = [];
+  for (const r of ctx.requests) {
+    if (!isOpen(r) || r.userId === userId) continue;
+    const mio = findMatches(r, ctx).find((m) => m.userId === userId);
+    if (!mio) continue;
+    const cedo = byId[r.cedo.shiftId];
+    risultati.push({
+      richiesta: r,
+      match: mio,
+      // I giorni su cui questa richiesta ti riguarda: quello che la persona
+      // vuole lasciare e quelli in cui è disposta a lavorare.
+      giorni: [...new Set([cedo?.data, ...(r.cerco.giorni || [])].filter(Boolean))],
+    });
+  }
+  return risultati.sort((a, b) => b.match.score - a.match.score);
+}
+
+/** Quante richieste aperte toccano un giorno, mie escluse. */
+export function richiesteSulGiorno(userId, giorno, ctx) {
+  const byId = Object.fromEntries(ctx.shifts.map((s) => [s.id, s]));
+  return ctx.requests.filter((r) => isOpen(r) && r.userId !== userId
+    && (byId[r.cedo.shiftId]?.data === giorno || (r.cerco.giorni || []).includes(giorno)));
 }
 
 /** I giorni della settimana Apple di un turno in cui la persona è libera. */

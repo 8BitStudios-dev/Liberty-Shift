@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
 import {
   satisfies, validateRequest, findMatches, disponibileIl, cambioRapido, turnoOfferibile,
+  opportunitaPerMe, richiesteSulGiorno,
 } from '../src/core/engine.js';
 import { WANT_MODE, RULES, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
@@ -406,4 +407,53 @@ test('un turno si può offrire solo nel giorno giusto', () => {
   const esito = turnoOfferibile(r, altroGiorno, s.shifts, byId);
   assert.equal(esito.ok, false);
   assert.match(esito.motivo, /quel giorno/);
+});
+
+// --- il calendario del profilo: chi posso aiutare io -------------------
+
+test('opportunitaPerMe è il matching al contrario e resta coerente con findMatches', () => {
+  const s = seed();
+  for (const u of s.users) {
+    for (const o of opportunitaPerMe(u.id, s)) {
+      // Se compaio fra le opportunità, devo comparire anche fra i match
+      // della richiesta, con lo stesso punteggio: è la stessa domanda.
+      const daLaltraParte = findMatches(o.richiesta, s).find((m) => m.userId === u.id);
+      assert.ok(daLaltraParte, 'le due direzioni devono trovare la stessa cosa');
+      assert.equal(daLaltraParte.score, o.match.score);
+      assert.notEqual(o.richiesta.userId, u.id, 'nessuno aiuta se stesso');
+    }
+  }
+});
+
+test('le opportunità sono agganciate ai giorni giusti', () => {
+  const s = seed();
+  const byId = Object.fromEntries(s.shifts.map((x) => [x.id, x]));
+  for (const o of opportunitaPerMe('u_sara', s)) {
+    const cedo = byId[o.richiesta.cedo.shiftId];
+    assert.ok(o.giorni.includes(cedo.data));
+    for (const g of o.richiesta.cerco.giorni) assert.ok(o.giorni.includes(g));
+  }
+});
+
+test('le spiegazioni non danno del tu a nessuno: valgono da entrambi i lati', () => {
+  const s = seed();
+  for (const r of s.requests) {
+    for (const m of findMatches(r, s)) {
+      for (const frase of [...m.reasons, ...m.avvisi]) {
+        assert.doesNotMatch(frase, /\b(sei|tuo|tua|tuoi|per te|hai)\b/i,
+          `frase di parte: "${frase}"`);
+      }
+    }
+  }
+});
+
+test('richiesteSulGiorno conta anche quelle che non posso risolvere', () => {
+  const s = seed();
+  const byId = Object.fromEntries(s.shifts.map((x) => [x.id, x]));
+  const r = s.requests[0];
+  const giorno = byId[r.cedo.shiftId].data;
+  const tutte = richiesteSulGiorno('u_giulia', giorno, s);
+  const mie = opportunitaPerMe('u_giulia', s).filter((o) => o.giorni.includes(giorno));
+  assert.ok(tutte.length >= mie.length);
+  assert.ok(!tutte.some((x) => x.userId === 'u_giulia'));
 });

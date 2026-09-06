@@ -1,6 +1,6 @@
 import { html, raw, esc } from './dom.js';
 import { store } from '../core/store.js';
-import { shiftLabel, wantLabel, hasPriority } from '../core/model.js';
+import { shiftLabel, wantLabel, hasPriority, trasformaTurno } from '../core/model.js';
 import { STATUS_META, TIPO_META, TIPO_CAMBIO } from '../core/rules.js';
 import { formatDay } from '../core/time.js';
 
@@ -141,4 +141,46 @@ export function vuoto(titolo, sottotitolo, azione = '') {
       <p>${sottotitolo}</p>
       ${raw(azione)}
     </div>`;
+}
+
+/**
+ * Una richiesta altrui vista dal lato di chi può risolverla: la percentuale
+ * è quanto tu sei una buona risposta per lei, non il contrario.
+ */
+export function cardOpportunita({ richiesta, match }) {
+  const u = store.user(richiesta.userId);
+  const verde = match.tipo === 'MATCH';
+  const mioTurno = store.shift(match.shiftOffertoId);
+  const me = store.me;
+  // Le due cose che contano: che turno farei io, e che turno farebbe l'altra
+  // persona. Entrambi già adattati al contratto di chi li riceve.
+  const suoCedo = store.shift(richiesta.cedo.shiftId);
+  const perMeT = trasformaTurno(suoCedo, me);
+  const perMe = { data: suoCedo?.data, orario: perMeT.trasformato ? `${perMeT.start}–${perMeT.end}` : shiftLabel(suoCedo) };
+  const perLei = match.adattato?.trasformato
+    ? `${match.adattato.start}–${match.adattato.end}`
+    : shiftLabel(mioTurno);
+  return html`
+    <article class="card match ${verde ? 'verde' : 'giallo'} ${hasPriority(richiesta) ? 'prioritaria' : ''}">
+      <header class="card-head">
+        <span class="avatar">${iniziali(u)}</span>
+        <div>
+          <strong>${hasPriority(richiesta) ? '⭐ ' : ''}${nomeUtente(u)}</strong>
+          <div class="meta">${u?.ruolo} · ${u?.contratto}</div>
+        </div>
+        <span class="score">${match.score}%</span>
+      </header>
+      ${raw(coppiaCedoCerco(richiesta, { compatto: true }))}
+      ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
+      <div class="scambio-secco">
+        <div><span>Tu faresti</span><strong>${formatDay(perMe.data)} · ${perMe.orario}</strong></div>
+        <div><span>${u?.nome} farebbe</span><strong>${formatDay(mioTurno?.data)} · ${perLei}</strong></div>
+      </div>
+      <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
+      ${raw(match.avvisi.length ? `<div class="avviso">⚠️ ${esc(match.avvisi.join(' '))}</div>` : '')}
+      <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
+              data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}">
+        Proponi lo scambio
+      </button>
+    </article>`;
 }

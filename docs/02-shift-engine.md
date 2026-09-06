@@ -105,6 +105,15 @@ Sul monte ore settimanale (R17) il motore fa un conto a parte: uno scambio fra
 turni interi è a somma zero, ma se c'è di mezzo un OFF le ore si spostano, e
 allora l'avviso dice di quanto, per entrambe le persone.
 
+## Il matching al contrario
+`opportunitaPerMe(userId, ctx)` risponde alla domanda opposta: non "chi può
+aiutare la mia richiesta" ma "quali richieste degli altri posso risolvere io".
+È quello che alimenta il calendario del Profilo.
+
+Non riscrive le regole: per ogni richiesta aperta chiama `findMatches` e guarda
+se nella lista dei candidati ci sei tu. Con i numeri di uno store costa niente,
+e non c'è modo che le due direzioni finiscano per rispondere cose diverse.
+
 ## Classificazione finale
 
 | Punteggio | Esito |

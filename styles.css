@@ -288,6 +288,9 @@ input[type="time"], textarea, .select {
 .match-tipo { font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
 .turno-offerto { font-size: 15px; }
 .turno-ceduto { font-size: 14px; color: var(--testo-tenue); margin-bottom: 8px; }
+.scambio-secco { display: grid; gap: 4px; margin: 10px 0; }
+.scambio-secco > div { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; }
+.scambio-secco span { color: var(--testo-tenue); }
 .perche { margin: 0 0 10px; padding-left: 18px; font-size: 13px; color: var(--testo-tenue); }
 .perche li { margin: 3px 0; }
 .card.match .btn { width: 100%; }
@@ -295,19 +298,33 @@ input[type="time"], textarea, .select {
 .accordo { background: color-mix(in srgb, var(--verde) 12%, transparent); border-radius: 12px; padding: 12px; margin-top: 10px; }
 .accettazioni { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 
-/* ----------------------------------------------------- disponibilità */
+/* ------------------------------------------------ le tue due settimane */
 
-.settimana-disp { margin-bottom: 18px; }
-.griglia-disp { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-.disp {
+.settimana-due { margin-bottom: 16px; }
+.settimana-due h3 { margin: 0 0 6px; font-size: 13px; color: var(--testo-tenue); font-weight: 600; }
+.griglia-due { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
+.giorno-due {
   appearance: none; border: 1px solid var(--bordo); border-radius: 10px;
-  background: var(--superficie); color: inherit; font: inherit;
-  padding: 7px 2px; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer;
+  background: var(--superficie); color: inherit; font: inherit; cursor: pointer;
+  min-height: 72px; padding: 6px 2px;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
 }
-.disp span { font-size: 11px; color: var(--testo-tenue); }
-.disp em { font-style: normal; font-size: 13px; font-weight: 600; }
-.disp b { font-size: 12px; }
-.disp.si { border-color: var(--verde); background: color-mix(in srgb, var(--verde) 10%, transparent); }
+.giorno-due .dow { font-size: 10px; color: var(--testo-tenue); }
+.giorno-due .numero { font-size: 15px; font-weight: 700; line-height: 1.1; }
+.giorno-due .turno { font-size: 10px; color: var(--testo-tenue); }
+.giorno-due .quota {
+  margin-top: auto; font-size: 10px; font-weight: 700;
+  color: #fff; background: var(--accento); border-radius: 999px; padding: 1px 5px;
+}
+.giorno-due .quota.vuota { background: none; min-height: 14px; }
+.giorno-due.oggi { border-color: var(--accento); background: var(--accento-tenue); }
+.giorno-due.passato { opacity: .45; }
+.giorno-due.disponibile { box-shadow: inset 0 -3px 0 var(--verde); }
+
+.giorno-profilo .riga-turno {
+  border: 1px solid var(--bordo); border-radius: 12px; background: var(--superficie);
+}
 
 /* -------------------------------------------------------------- vuoto */
 
