@@ -115,13 +115,17 @@ export function noteLegali({ compatte = false } = {}) {
 export function accettazioneNote() {
   return html`
     <div class="legale-intro">
+      <p>Prima di cominciare, tre cose che vale la pena sapere.</p>
       <ul class="elenco">
-        <li>Strumento <strong>non ufficiale</strong>, fatto fra colleghi.</li>
-        <li><strong>Non fa i cambi</strong>: servono comunque le procedure del
-          negozio.</li>
-        <li>I tuoi turni restano sul telefono. <strong>Esce solo quello che
-          pubblichi.</strong></li>
+        <li><strong>Non è un'app aziendale</strong> e non è approvata da nessuno.
+          L'abbiamo fatta fra colleghi.</li>
+        <li><strong>Non fa nessun cambio turno.</strong> Serve a mettersi
+          d'accordo; il cambio va poi inserito nel sistema ufficiale.</li>
+        <li><strong>I tuoi turni restano su questo dispositivo.</strong> Esce di
+          qui solo quello che pubblichi, perché i colleghi possano leggerlo.</li>
       </ul>
-      <p class="testo-tenue">Il testo completo è nelle Note del Profilo.</p>
+      <p class="testo-tenue">
+        Il testo completo sta nelle Note del Profilo.
+      </p>
     </div>`;
 }

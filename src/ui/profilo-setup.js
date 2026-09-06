@@ -158,7 +158,6 @@ function passoContratto() {
 function passoNote() {
   const b = bozzaProfilo;
   return html`
-    <h2 class="titolo-gruppo">Prima di cominciare</h2>
     ${raw(accettazioneNote())}
 
     <details class="riquadro">
