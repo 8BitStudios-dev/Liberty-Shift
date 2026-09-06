@@ -7,6 +7,9 @@ import { slotSettimana } from '../core/engine.js';
 import { durataOre, isNotturno, fuoriFascia, etichettaFascia } from '../core/model.js';
 import { RULES } from '../core/rules.js';
 import { parseICS } from '../core/ics.js';
+import * as P from './profilo-setup.js';
+import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
+import { noteLegali, VERSIONE_NOTE } from './legale.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -37,8 +40,51 @@ function parseHash() {
   return { percorso: percorso || 'home', params };
 }
 
+/**
+ * Le schede della guida già viste, per sezione.
+ * Stanno in localStorage e non nello stato: sono una cosa di questo browser,
+ * non un dato dell'app, e non devono finire in un eventuale backend.
+ */
+const CHIAVE_GUIDA = 'cambio-turno:guida';
+
+function guideViste() {
+  try {
+    const salvato = JSON.parse(localStorage.getItem(CHIAVE_GUIDA) || '{}');
+    return salvato.versione === VERSIONE_GUIDA ? salvato : { versione: VERSIONE_GUIDA, viste: [] };
+  } catch {
+    return { versione: VERSIONE_GUIDA, viste: [] };
+  }
+}
+
+function segnaGuidaVista(chiave) {
+  const g = guideViste();
+  if (g.viste.includes(chiave)) return;
+  g.viste.push(chiave);
+  try { localStorage.setItem(CHIAVE_GUIDA, JSON.stringify(g)); } catch { /* privata */ }
+}
+
+/** Apre la guida di una sezione: da sola la prima volta, o su richiesta. */
+function apriGuida(chiave, { automatica = false } = {}) {
+  const g = GUIDE[chiave];
+  if (!g) return;
+  if (automatica && guideViste().viste.includes(chiave)) return;
+  segnaGuidaVista(chiave);
+  sheet(`${g.icona} ${g.titolo}`, schedaGuida(chiave), {
+    azioni: '<button class="btn primario largo" data-chiudi>Ho capito</button>',
+  });
+}
+
 function render() {
   const { percorso, params } = parseHash();
+
+  // Finché il profilo non c'è, non si va da nessuna parte: l'app senza sapere
+  // chi sei mostrerebbe i turni di una persona inventata.
+  if (store.profiloDaCompletare(VERSIONE_NOTE) && percorso !== 'setup') {
+    P.apriProfilo({ modifica: false });
+    location.hash = '#/setup';
+    return;
+  }
+
   const viste = {
     home: V.home,
     calendario: V.calendario,
@@ -50,10 +96,20 @@ function render() {
     nuovo: F.nuovo,
     match: F.match,
     richiesta: F.dettaglio,
+    setup: P.schermataProfilo,
+    legale: () => html`
+      <header class="testata">
+        <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+        <h1>Note legali</h1>
+      </header>
+      ${raw(noteLegali())}`,
   };
   const vista = viste[percorso] || V.home;
   app.innerHTML = vista(params);
   app.scrollTop = 0;
+
+  // La guida della sezione, la prima volta che ci si entra.
+  if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
 
   const attivo = TABS.find((t) => t.hash === `#/${percorso}`);
   tabbar.innerHTML = TABS.map((t) => html`
@@ -99,6 +155,40 @@ const AZIONI = {
     const data = el.dataset.data;
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
+
+  // --- creazione e modifica del profilo ---
+  'profilo-genere': (_, el) => { P.bozzaProfilo.genere = el.dataset.valore; render(); },
+  'profilo-contratto': (_, el) => { P.bozzaProfilo.contratto = el.dataset.valore; render(); },
+  'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
+  'profilo-accetta': (e) => { P.bozzaProfilo.accettate = e.target.checked; render(); },
+  'profilo-indietro': () => {
+    if (P.bozzaProfilo.passo > 1) { P.bozzaProfilo.passo -= 1; P.bozzaProfilo.errori = []; render(); }
+    else vai('#/profilo');
+  },
+  'profilo-avanti': () => {
+    const b = P.bozzaProfilo;
+    // Si controlla un passo per volta: un errore sul contratto mentre stai
+    // scrivendo il nome è solo rumore.
+    const mancanti = b.passo === 1
+      ? P.validaProfilo().filter((e) => /nome|cognome|opzioni/.test(e))
+      : P.validaProfilo().filter((e) => /contratto|monte ore/.test(e));
+    if (mancanti.length) { b.errori = mancanti; return render(); }
+    b.errori = [];
+    if (b.modifica && b.passo === 2) return AZIONI['profilo-salva']();
+    b.passo += 1;
+    render();
+  },
+  'profilo-salva': () => {
+    const errori = P.validaProfilo();
+    if (errori.length) { P.bozzaProfilo.errori = errori; return render(); }
+    store.completaProfilo({ ...P.bozzaProfilo, versioneNote: VERSIONE_NOTE });
+    toast(P.bozzaProfilo.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
+    vai('#/home');
+  },
+  'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
+
+  // La guida, riaperta a mano dal punto interrogativo nella testata.
+  guida: (_, el) => apriGuida(el.dataset.sezione),
 
   'vedi-grazie': () => sheet('💛 Ringraziamenti ricevuti', V.listaRingraziamenti()),
 
@@ -463,6 +553,10 @@ on(document.body, 'change', '[data-act]', (e, el) => {
 // Campi liberi del wizard (orari, note): aggiornano la bozza senza rerender.
 on(document.body, 'input', '[data-campo]', (e, el) => {
   const chiave = el.dataset.campo;
+  // I campi del profilo non passano da render(): riscrivere il DOM a ogni
+  // lettera sposterebbe il cursore a fine riga sotto le dita di chi scrive.
+  if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
+  if (chiave === 'cognome') { P.bozzaProfilo.cognomeIniziale = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 

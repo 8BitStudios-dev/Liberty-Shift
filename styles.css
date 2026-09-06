@@ -88,6 +88,9 @@ p { margin: 8px 0; }
 .hero h1 { font-size: 32px; }
 .hero .sottotitolo { color: var(--testo-tenue); font-size: 14px; margin: 2px 0 0; }
 .hero-riga { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.hero-azioni { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex: 0 0 auto; }
+.hero-azioni .priorita-chip { margin-top: 0; }
+.guida-profilo { position: absolute; top: 12px; left: 0; }
 .priorita-chip {
   appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
   border: 1px solid var(--oro); color: var(--oro); background: none;
@@ -316,6 +319,16 @@ p { margin: 8px 0; }
 .riquadro > *:last-child { margin-bottom: 14px; }
 .riquadro .switch:last-of-type { border-bottom: 0; }
 .switch .aiuto { display: block; font-style: normal; font-size: 12px; color: var(--testo-tenue); }
+.esempio {
+  background: var(--superficie-2); border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; margin: 8px 0;
+}
+.guida h3 { margin: 18px 0 6px; }
+.guida p { font-size: 15px; }
+.legale h3 { margin: 20px 0 6px; font-size: 15px; }
+.legale p { font-size: 14px; }
+.legale .elenco { font-size: 14px; }
+.legale-intro .elenco { font-size: 15px; }
 .riquadro code {
   font-size: 12px; background: var(--superficie-2); border-radius: 4px; padding: 1px 4px;
 }
@@ -357,7 +370,7 @@ p { margin: 8px 0; }
 
 .campo { display: block; margin: 14px 0; }
 .campo > span { display: block; font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
-input[type="time"], textarea, .select {
+input[type="time"], input.testo, textarea, .select {
   width: 100%; font: inherit; color: inherit;
   background: var(--superficie); border: 1px solid var(--bordo);
   border-radius: 11px; padding: 11px 12px;

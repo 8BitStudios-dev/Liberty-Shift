@@ -11,6 +11,7 @@ import { seed } from '../src/core/seed.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
   impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno, applicaPreferenze, fasceDi,
+  oreRetribuite, concorda,
 } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
@@ -556,4 +557,36 @@ test('due preferenze opposte non restano accese insieme', () => {
   const mattine = PREFERENZE.find((p) => p.key === 'evitaMattine');
   assert.equal(mattine.opposta, 'preferisceMattine');
   assert.equal(PREFERENZE.find((p) => p.key === 'preferisceMattine').opposta, 'evitaMattine');
+});
+
+// --- ore retribuite e pausa pranzo ------------------------------------
+
+test('la pausa pranzo non è retribuita: 5 turni da 9 ore fanno 40 ore', () => {
+  const nove = shift('2026-09-14', '09:00', '18:00');
+  assert.equal(durataOre(nove), 9);        // presenza
+  assert.equal(oreRetribuite(nove), 8);    // pagate
+  assert.equal(5 * oreRetribuite(nove), 40);
+
+  // Sotto la soglia non si scala niente: un Part Time da 5 ore non fa pausa.
+  assert.equal(oreRetribuite(shift('2026-09-14', '10:00', '15:00')), 5);
+});
+
+test('l\'adattamento guarda la presenza, non le ore pagate', () => {
+  // Chi lascia un turno da 9 ore di presenza ne fa 9 di presenza, non 8:
+  // altrimenti entrerebbe o uscirebbe un'ora fuori posto.
+  const cede = shift('2026-09-14', '09:00', '18:00');     // 9h presenza
+  const riceve = shift('2026-09-14', '12:00', '21:00');   // chiusura
+  const t = trasformaTurno(riceve, cede);
+  assert.equal(t.trasformato, false, 'stessa presenza, niente da adattare');
+});
+
+// --- concordanze -------------------------------------------------------
+
+test('senza genere dichiarato si usa una forma neutra, non il maschile', () => {
+  const forme = { m: 'dichiarato', f: 'dichiarata', n: 'neutro' };
+  assert.equal(concorda({ genere: 'F' }, forme), 'dichiarata');
+  assert.equal(concorda({ genere: 'M' }, forme), 'dichiarato');
+  assert.equal(concorda({ genere: 'X' }, forme), 'neutro');
+  assert.equal(concorda({}, forme), 'neutro');
+  assert.equal(concorda(undefined, forme), 'neutro');
 });

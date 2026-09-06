@@ -23,10 +23,16 @@ const MODULI = [
   'src/ui/components.js',
   'src/ui/views.js',
   'src/ui/flows.js',
+  'src/ui/legale.js',
+  'src/ui/guida.js',
+  'src/ui/profilo-setup.js',
   'src/ui/app.js',
 ];
 
-const nomeModulo = (percorso) => `M_${percorso.split('/').pop().replace('.js', '')}`;
+// I trattini nei nomi dei file sono normali; negli identificatori no.
+// Senza questa sostituzione `profilo-setup.js` diventava `M_profilo-setup`,
+// cioè una sottrazione, e il bundle non era codice valido.
+const nomeModulo = (percorso) => `M_${percorso.split('/').pop().replace('.js', '').replace(/[^A-Za-z0-9_$]/g, '_')}`;
 
 /** Nomi esportati da un modulo, per ricostruire il suo oggetto. */
 function esportati(codice) {
@@ -54,10 +60,31 @@ function riscriviImport(codice) {
       (_, alias, da) => `const ${alias} = ${nomeModulo(da)}.default;`);
 }
 
+/**
+ * Un modulo dimenticato in MODULI non dà errore: sparisce, e la sua funzione
+ * risulta "non definita" solo a pagina aperta. Meglio accorgersene qui,
+ * leggendo gli import veri di ogni file.
+ */
+function controllaElenco(percorso, sorgente) {
+  const mancanti = [];
+  for (const m of sorgente.matchAll(/from\s+'(\.[^']+)'/g)) {
+    const risolto = join(dirname(percorso), m[1]).replace(/\\/g, '/');
+    if (!MODULI.includes(risolto)) mancanti.push(risolto);
+  }
+  return mancanti;
+}
+
 async function costruisci() {
   const pezzi = [];
   for (const percorso of MODULI) {
     const sorgente = await readFile(join(RADICE, percorso), 'utf8');
+    const mancanti = controllaElenco(percorso, sorgente);
+    if (mancanti.length) {
+      console.error(`${percorso} importa moduli che non sono in MODULI: ${mancanti.join(', ')}`);
+      console.error('Aggiungili in ordine di dipendenza. Niente da pubblicare.');
+      process.exitCode = 1;
+      return;
+    }
     const nomi = esportati(sorgente);
     const corpo = riscriviImport(sorgente)
       // In file unico non c'è un service worker da registrare.

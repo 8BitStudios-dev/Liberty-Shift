@@ -216,6 +216,33 @@ nessuno. La stessa frase viene letta da chi ha pubblicato la richiesta e da chi
 può risolverla, e un "sei Part Time" giusto da un lato è falso dall'altro. Si
 usano i nomi propri, e c'è un test che rifiuta le frasi di parte.
 
+## La prima apertura
+Tre passi, e non si salta nessuno: **chi sei** (nome, iniziale del cognome,
+come preferisci essere chiamato), **il contratto** (tipo e monte ore), **le
+note d'uso**. Il pulsante finale resta spento finché non si dichiara di averle
+lette.
+
+La validazione è per passo: mentre scrivi il nome non ti viene detto che manca
+il contratto.
+
+Dal Profilo si riapre lo stesso modulo con "Modifica profilo", saltando le note
+già accettate.
+
+## La guida
+Ogni sezione ha una scheda che si apre **da sola la prima volta** che ci si
+entra, e si riapre dal **?** nella testata. Non spiega dove sono i pulsanti:
+spiega le regole, e ognuna con un esempio concreto, perché "chi prende un turno
+fa le ore di quello che lascia" non si capisce finché non diventa "Giulia
+prende un 12:00–21:00 e, siccome chiude, esce con lui: farà 16:00–21:00".
+
+Quali schede sono già state viste sta in `localStorage`, non nello stato: è una
+cosa di questo browser, non un dato dell'app.
+
+## Note legali
+Nel Profilo, e per intero dentro l'ultimo passo della prima apertura. Ogni
+affermazione è ancorata a un punto citato della Business Conduct Policy, così
+chi legge può verificarla invece di fidarsi.
+
 ## Modalità demo
 Dal Profilo si cambia persona. Serve a vedere lo stesso scambio dai due lati
 senza sei telefoni: pubblichi come Lorenzo, accetti come Martina.

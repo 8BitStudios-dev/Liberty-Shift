@@ -18,6 +18,8 @@ export const store = {
     this.state = carica() || seed();
     // Dati salvati da una versione precedente possono non avere i campi nuovi.
     this.state.ringraziamenti = this.state.ringraziamenti || [];
+    this.state.profilo = this.state.profilo
+      || { completato: false, noteAccettateIl: null, versioneNote: null };
     this.scadenze();
     return this.state;
   },
@@ -359,6 +361,37 @@ export const store = {
    * entrambe accese scaricherebbe sul motore una contraddizione che si può
    * togliere qui, dove nasce.
    */
+  /**
+   * Il profilo della persona che usa l'app.
+   *
+   * Non crea un utente nuovo: riscrive quello corrente. Così i turni e le
+   * richieste della demo restano coerenti e l'app è viva dal primo minuto,
+   * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
+   */
+  completaProfilo({ nome, cognomeIniziale, genere, contratto, oreSettimanali, versioneNote }) {
+    const me = this.me;
+    Object.assign(me, {
+      nome: (nome || '').trim() || me.nome,
+      cognomeIniziale: (cognomeIniziale || '').trim().slice(0, 1).toUpperCase() || me.cognomeIniziale,
+      genere: genere || 'X',
+      contratto: contratto || me.contratto,
+      oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,
+    });
+    this.state.profilo = {
+      completato: true,
+      noteAccettateIl: new Date().toISOString(),
+      versioneNote: versioneNote || this.state.profilo?.versioneNote || null,
+    };
+    this.commit();
+    return { ok: true };
+  },
+
+  /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */
+  profiloDaCompletare(versioneNote) {
+    const p = this.state.profilo;
+    return !p?.completato || p.versioneNote !== versioneNote;
+  },
+
   impostaPreferenze(patch) {
     for (const [key, valore] of Object.entries(patch)) {
       this.me.preferenze[key] = valore;

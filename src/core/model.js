@@ -9,7 +9,8 @@ import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
  * {
  *   id, nome, cognomeIniziale, contratto: 'FT'|'PT',
  *   oreSettimanali: 20|25|30|40, admin: bool,
- *   preferenze: { preferisceMattina, evitaChiusure, disponibileWeekend },
+ *   genere: 'F'|'M'|'X',   // X = non specificato: si usano forme neutre
+ *   preferenze: { evita*, preferisce* },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
  *   prioritaUsata: { '<YYYY-MM>': true }
  * }
@@ -132,6 +133,20 @@ export function wantLabel(cerco) {
   }
 }
 
+/**
+ * Concorda una parola col genere dichiarato.
+ *
+ * Il genere è un campo del profilo, scelto dalla persona: quando non lo
+ * dichiara si usa una forma neutra, mai una maschile "di default". Serve per
+ * frasi come "si è dichiarata disponibile", che al maschile su una collega
+ * suonano come una svista dell'app — perché lo sono.
+ */
+export function concorda(user, { m, f, n }) {
+  if (user?.genere === 'F') return f;
+  if (user?.genere === 'M') return m;
+  return n;
+}
+
 export function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
 }
@@ -214,11 +229,25 @@ export function turnoAdattato(riceve, cede) {
   return { ...riceve, start: t.start, end: t.end };
 }
 
-/** Ore lavorate da una persona in una settimana Apple. */
+/**
+ * Ore retribuite di un turno: la presenza meno la pausa pranzo.
+ *
+ * `durataOre` resta la presenza, ed è quella che conta per l'adattamento di
+ * R9: chi riceve un turno sta in store per lo stesso tempo che ci sarebbe
+ * stato nel proprio. Il monte ore del contratto invece si misura sulle ore
+ * pagate, ed è un'altra cosa.
+ */
+export function oreRetribuite(shift) {
+  const presenza = durataOre(shift);
+  if (presenza <= RULES.pausa.oltreOre) return presenza;
+  return presenza - RULES.pausa.minuti / 60;
+}
+
+/** Ore retribuite da una persona in una settimana Apple. */
 export function oreSettimana(userId, weekKey, shifts) {
   return shifts
     .filter((s) => s.userId === userId && s.tipo === 'WORK' && appleWeekKey(s.data) === weekKey)
-    .reduce((tot, s) => tot + durataOre(s), 0);
+    .reduce((tot, s) => tot + oreRetribuite(s), 0);
 }
 
 /**
@@ -231,7 +260,7 @@ export function oreSettimana(userId, weekKey, shifts) {
 export function impattoMonteOre(user, cedo, ricevuto, shifts) {
   const weekKey = appleWeekKey(cedo.data);
   const prima = oreSettimana(user.id, weekKey, shifts);
-  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, cedo));
+  const dopo = prima - oreRetribuite(cedo) + oreRetribuite(turnoAdattato(ricevuto, cedo));
   const contratto = user.oreSettimanali;
   const cambia = Math.abs(dopo - prima) > 0.01;
   if (!cambia || !contratto) return { cambia: false, prima, dopo };

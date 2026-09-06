@@ -92,6 +92,9 @@ p { margin: 8px 0; }
 .hero h1 { font-size: 32px; }
 .hero .sottotitolo { color: var(--testo-tenue); font-size: 14px; margin: 2px 0 0; }
 .hero-riga { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.hero-azioni { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex: 0 0 auto; }
+.hero-azioni .priorita-chip { margin-top: 0; }
+.guida-profilo { position: absolute; top: 12px; left: 0; }
 .priorita-chip {
   appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
   border: 1px solid var(--oro); color: var(--oro); background: none;
@@ -320,6 +323,16 @@ p { margin: 8px 0; }
 .riquadro > *:last-child { margin-bottom: 14px; }
 .riquadro .switch:last-of-type { border-bottom: 0; }
 .switch .aiuto { display: block; font-style: normal; font-size: 12px; color: var(--testo-tenue); }
+.esempio {
+  background: var(--superficie-2); border-radius: 10px; padding: 10px 12px;
+  font-size: 14px; margin: 8px 0;
+}
+.guida h3 { margin: 18px 0 6px; }
+.guida p { font-size: 15px; }
+.legale h3 { margin: 20px 0 6px; font-size: 15px; }
+.legale p { font-size: 14px; }
+.legale .elenco { font-size: 14px; }
+.legale-intro .elenco { font-size: 15px; }
 .riquadro code {
   font-size: 12px; background: var(--superficie-2); border-radius: 4px; padding: 1px 4px;
 }
@@ -361,7 +374,7 @@ p { margin: 8px 0; }
 
 .campo { display: block; margin: 14px 0; }
 .campo > span { display: block; font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
-input[type="time"], textarea, .select {
+input[type="time"], input.testo, textarea, .select {
   width: 100%; font: inherit; color: inherit;
   background: var(--superficie); border: 1px solid var(--bordo);
   border-radius: 11px; padding: 11px 12px;
@@ -552,6 +565,18 @@ const RULES = {
     canBeAddedLater: false,
   },
 
+  /**
+   * La pausa pranzo non è retribuita: un Full Time fa 5 turni da 9 ore di
+   * presenza, che sono 40 ore pagate. È la ragione per cui il monte ore
+   * settimanale (40) e la somma dei turni (45) non coincidono, e senza questa
+   * regola l'app segnalava uno sforamento su una settimana perfettamente
+   * normale.
+   *
+   * **Assunzione**: la soglia oltre la quale scatta la pausa. Sei ore è il
+   * valore di partenza; un Part Time con turni da 5 ore non la fa.
+   */
+  pausa: { oltreOre: 6, minuti: 60 },
+
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
   // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
   // è il monte ore settimanale, che sta sull'utente.
@@ -736,7 +761,8 @@ const { minutes, todayISO, appleWeekKey, formatDay } = M_time;
  * {
  *   id, nome, cognomeIniziale, contratto: 'FT'|'PT',
  *   oreSettimanali: 20|25|30|40, admin: bool,
- *   preferenze: { preferisceMattina, evitaChiusure, disponibileWeekend },
+ *   genere: 'F'|'M'|'X',   // X = non specificato: si usano forme neutre
+ *   preferenze: { evita*, preferisce* },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
  *   prioritaUsata: { '<YYYY-MM>': true }
  * }
@@ -859,6 +885,20 @@ function wantLabel(cerco) {
   }
 }
 
+/**
+ * Concorda una parola col genere dichiarato.
+ *
+ * Il genere è un campo del profilo, scelto dalla persona: quando non lo
+ * dichiara si usa una forma neutra, mai una maschile "di default". Serve per
+ * frasi come "si è dichiarata disponibile", che al maschile su una collega
+ * suonano come una svista dell'app — perché lo sono.
+ */
+function concorda(user, { m, f, n }) {
+  if (user?.genere === 'F') return f;
+  if (user?.genere === 'M') return m;
+  return n;
+}
+
 function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
 }
@@ -941,11 +981,25 @@ function turnoAdattato(riceve, cede) {
   return { ...riceve, start: t.start, end: t.end };
 }
 
-/** Ore lavorate da una persona in una settimana Apple. */
+/**
+ * Ore retribuite di un turno: la presenza meno la pausa pranzo.
+ *
+ * `durataOre` resta la presenza, ed è quella che conta per l'adattamento di
+ * R9: chi riceve un turno sta in store per lo stesso tempo che ci sarebbe
+ * stato nel proprio. Il monte ore del contratto invece si misura sulle ore
+ * pagate, ed è un'altra cosa.
+ */
+function oreRetribuite(shift) {
+  const presenza = durataOre(shift);
+  if (presenza <= RULES.pausa.oltreOre) return presenza;
+  return presenza - RULES.pausa.minuti / 60;
+}
+
+/** Ore retribuite da una persona in una settimana Apple. */
 function oreSettimana(userId, weekKey, shifts) {
   return shifts
     .filter((s) => s.userId === userId && s.tipo === 'WORK' && appleWeekKey(s.data) === weekKey)
-    .reduce((tot, s) => tot + durataOre(s), 0);
+    .reduce((tot, s) => tot + oreRetribuite(s), 0);
 }
 
 /**
@@ -958,7 +1012,7 @@ function oreSettimana(userId, weekKey, shifts) {
 function impattoMonteOre(user, cedo, ricevuto, shifts) {
   const weekKey = appleWeekKey(cedo.data);
   const prima = oreSettimana(user.id, weekKey, shifts);
-  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, cedo));
+  const dopo = prima - oreRetribuite(cedo) + oreRetribuite(turnoAdattato(ricevuto, cedo));
   const contratto = user.oreSettimanali;
   const cambia = Math.abs(dopo - prima) > 0.01;
   if (!cambia || !contratto) return { cambia: false, prima, dopo };
@@ -1076,7 +1130,7 @@ function applicaPreferenze(user, shift) {
   };
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
+return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, concorda, contractOf, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
 })();
 
 // ---- src/core/engine.js
@@ -1092,7 +1146,7 @@ const {
 const {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
-  applicaPreferenze,
+  applicaPreferenze, concorda,
 } = M_model;
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -1323,7 +1377,10 @@ function matchOrario(request, ctx) {
       if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
       origine = 'DISPONIBILITA';
-      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e si è dichiarato disponibile a scambiare`);
+      const dichiarato = concorda(u, {
+        m: 'si è dichiarato disponibile', f: 'si è dichiarata disponibile', n: 'ha dato la disponibilità',
+      });
+      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a scambiare`);
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
@@ -1397,7 +1454,11 @@ function matchOff(request, ctx) {
         if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
         score = Math.min(perMe.score, RULES.availabilityScoreCap);
         origine = 'DISPONIBILITA';
-        reasons.push(`è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`);
+        reasons.push(concorda(u, {
+          m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
+          f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
+          n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
+        }));
       }
       reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
 
@@ -1743,38 +1804,39 @@ const o = 'OFF';
 
 const PERSONE = [
   {
-    id: 'u_lorenzo', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
+    id: 'u_lorenzo', genere: 'M', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
     preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true },
     disponibilita: [true, false, true, true, false, true, false],
     settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
+    // Cinque turni da nove ore di presenza: 40 ore pagate, pausa esclusa.
   },
   {
-    id: 'u_martina', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
+    id: 'u_martina', genere: 'F', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
     preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, true, true, false, true, true],
     settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:00', '15:00'], ['15:00', '21:00']]),
   },
   {
-    id: 'u_luca', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
+    id: 'u_luca', genere: 'M', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
     preferenze: { preferiscePomeriggi: true },
     disponibilita: [false, true, true, false, true, true, true],
     settimana: W([['12:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
   },
   {
-    id: 'u_giulia', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
+    id: 'u_giulia', genere: 'F', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
     preferenze: { preferisceAperture: true, evitaChiusure: true },
     disponibilita: [true, false, true, true, true, false, true],
     settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:00', '14:00'], ['10:00', '15:00'], o]),
   },
   {
     // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
-    id: 'u_marco', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
+    id: 'u_marco', genere: 'M', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
     preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, false, true, true, true, true],
     settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], o, ['22:00', '06:30'], o]),
   },
   {
-    id: 'u_sara', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
+    id: 'u_sara', genere: 'F', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
     preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true },
     disponibilita: [true, true, true, true, true, true, true],
     settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
@@ -1801,6 +1863,7 @@ function seed() {
       nome: p.nome,
       cognomeIniziale: p.cognomeIniziale,
       contratto: p.contratto,
+      genere: p.genere || 'X',
       oreSettimanali: p.oreSettimanali,
       admin: p.admin,
       preferenze: p.preferenze,
@@ -1949,6 +2012,8 @@ function seed() {
   return {
     versione: 1,
     currentUserId: 'u_lorenzo',
+    // Finché non è completato, all'avvio compare la creazione del profilo.
+    profilo: { completato: false, noteAccettateIl: null, versioneNote: null },
     users,
     shifts,
     requests,
@@ -1983,6 +2048,8 @@ const store = {
     this.state = carica() || seed();
     // Dati salvati da una versione precedente possono non avere i campi nuovi.
     this.state.ringraziamenti = this.state.ringraziamenti || [];
+    this.state.profilo = this.state.profilo
+      || { completato: false, noteAccettateIl: null, versioneNote: null };
     this.scadenze();
     return this.state;
   },
@@ -2324,6 +2391,37 @@ const store = {
    * entrambe accese scaricherebbe sul motore una contraddizione che si può
    * togliere qui, dove nasce.
    */
+  /**
+   * Il profilo della persona che usa l'app.
+   *
+   * Non crea un utente nuovo: riscrive quello corrente. Così i turni e le
+   * richieste della demo restano coerenti e l'app è viva dal primo minuto,
+   * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
+   */
+  completaProfilo({ nome, cognomeIniziale, genere, contratto, oreSettimanali, versioneNote }) {
+    const me = this.me;
+    Object.assign(me, {
+      nome: (nome || '').trim() || me.nome,
+      cognomeIniziale: (cognomeIniziale || '').trim().slice(0, 1).toUpperCase() || me.cognomeIniziale,
+      genere: genere || 'X',
+      contratto: contratto || me.contratto,
+      oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,
+    });
+    this.state.profilo = {
+      completato: true,
+      noteAccettateIl: new Date().toISOString(),
+      versioneNote: versioneNote || this.state.profilo?.versioneNote || null,
+    };
+    this.commit();
+    return { ok: true };
+  },
+
+  /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */
+  profiloDaCompletare(versioneNote) {
+    const p = this.state.profilo;
+    return !p?.completato || p.versioneNote !== versioneNote;
+  },
+
   impostaPreferenze(patch) {
     for (const [key, valore] of Object.entries(patch)) {
       this.me.preferenze[key] = valore;
@@ -2770,10 +2868,11 @@ function home() {
           <p class="saluto">${saluto}</p>
           <h1>${me.nome}</h1>
         </div>
-        ${raw(credito > 0 ? `
-          <button class="priorita-chip" data-act="spiega-priorita">
-            ⭐ ${credito}
-          </button>` : '')}
+        <span class="hero-azioni">
+          ${raw(credito > 0 ? `
+            <button class="priorita-chip" data-act="spiega-priorita">⭐ ${credito}</button>` : '')}
+          <button class="icon-btn" data-act="guida" data-sezione="home" title="Come funziona">?</button>
+        </span>
       </div>
       ${raw(credito > 0
     ? `<p class="sottotitolo">Hai ancora una priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</p>`
@@ -2877,6 +2976,7 @@ function calendario(params) {
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}">‹</button>
       <h1>${MESI[m - 1]} ${anno}</h1>
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
+      <button class="icon-btn" data-act="guida" data-sezione="calendario" title="Come funziona">?</button>
     </header>
     <div class="griglia-intestazione">
       ${['S', 'D', 'L', 'M', 'M', 'G', 'V'].map((d) => raw(`<span>${d}</span>`))}
@@ -2945,7 +3045,10 @@ function bacheca(params) {
     .filter(FILTRI[filtro].test);
 
   return html`
-    <header class="testata"><h1>Bacheca</h1></header>
+    <header class="testata">
+      <h1>Bacheca</h1>
+      <button class="icon-btn" data-act="guida" data-sezione="bacheca" title="Come funziona">?</button>
+    </header>
     <div class="chips">
       ${Object.entries(FILTRI).map(([k, v]) => raw(
     `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.label}</button>`,
@@ -2965,6 +3068,7 @@ function profilo() {
 
   return html`
     <header class="hero compatta">
+      <button class="icon-btn guida-profilo" data-act="guida" data-sezione="profilo" title="Come funziona">?</button>
       ${raw(chipRingraziamenti())}
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
@@ -2999,24 +3103,23 @@ function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>Contratto · ${RULES.contracts[me.contratto].label}</h2>
-      <label class="campo">
-        <span>Monte ore settimanale</span>
-        <select class="select" data-act="monte-ore">
-          ${RULES.monteOreAmmessi.map((h) => raw(
-    `<option value="${h}" ${h === me.oreSettimanali ? 'selected' : ''}>${h} ore</option>`,
-  ))}
-        </select>
-      </label>
-      <p class="testo-tenue">
-        Puoi scambiare con chiunque, anche con l'altro contratto: chi prende un turno
-        fa le ore di quello che sta lasciando. Se chi te lo cede apre, entri quando
-        entra lui; se chiude, esci quando esce lui.
-      </p>
-      <p class="testo-tenue">
-        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore,
-        il contratto ne prevede ${me.oreSettimanali}.
-      </p>
+      <h2>Il tuo profilo</h2>
+      <button class="tile" data-act="modifica-profilo">
+        <span class="tile-icona">✏️</span>
+        <span>
+          <strong>Modifica profilo</strong>
+          <em>${nomeUtente(me)} · ${RULES.contracts[me.contratto].label} · ${me.oreSettimanali} ore</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+      <button class="tile" data-act="vai" data-to="#/legale">
+        <span class="tile-icona">📄</span>
+        <span>
+          <strong>Note legali e limiti d'uso</strong>
+          <em>Cosa fa questa app, cosa non fa, e su cosa si basa</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
     </section>
 
     <section class="sezione">
@@ -3077,11 +3180,7 @@ function sezionePreferenze(me) {
 
   return html`
     ${raw(box)}
-    ${raw(legendaFasce())}
-    <p class="testo-tenue">
-      Due preferenze opposte non possono stare accese insieme: attivandone una,
-      l'altra si spegne da sola.
-    </p>`;
+    ${raw(legendaFasce())}`;
 }
 
 /** Cosa vuol dire ciascuna fascia, con gli orari veri. */
@@ -3099,6 +3198,10 @@ function legendaFasce() {
       <p class="testo-tenue">
         Un turno può stare in due fasce insieme, perché due guardano l'inizio e
         due la fine: un 10:00–19:45 è mattina e pomeriggio.
+      </p>
+      <p class="testo-tenue">
+        Due preferenze opposte non possono stare accese insieme: attivandone
+        una, l'altra si spegne da sola.
       </p>
     </details>`;
 }
@@ -4009,6 +4112,570 @@ function aiuta() {
 return { draft, resetDraft, rapido, vistaRapida, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica, inbox, formRifiuto, formGrazie, aiuta };
 })();
 
+// ---- src/ui/legale.js
+const M_legale = (() => {
+// Note legali e limiti d'uso.
+//
+// Ogni affermazione qui dentro è ancorata a un punto preciso della Business
+// Conduct Policy di Apple (edizione febbraio 2026), citato dov'è rilevante.
+// Non è un parere legale — non sono un avvocato e questa app non è stata
+// esaminata da nessun ufficio Apple: è una dichiarazione onesta di cosa
+// l'app fa, cosa non fa, e quali sono i confini che chi la usa deve conoscere.
+
+const { html, raw } = M_dom;
+
+/** La versione del testo: cambiarla ripropone l'accettazione a tutti. */
+const VERSIONE_NOTE = '2026-09-1';
+
+/**
+ * Il testo integrale, usato sia nella schermata del profilo sia nel
+ * riquadro che compare alla prima apertura.
+ */
+function noteLegali({ compatte = false } = {}) {
+  const esteso = (contenuto) => (compatte ? '' : contenuto);
+
+  return html`
+    <div class="legale">
+      <p class="occhiello">
+        Strumento personale per organizzare fra colleghi i cambi turno. Non è
+        un'app Apple, non è approvata da Apple e non sostituisce nessuno
+        strumento aziendale.
+      </p>
+
+      <h3>1. Che cosa è, e cosa non è</h3>
+      <ul class="elenco piccolo">
+        <li>È un <strong>blocco per appunti condiviso</strong>: aiuta a capire chi
+          può scambiare un turno con chi. Nient'altro.</li>
+        <li><strong>Non effettua nessun cambio.</strong> Un accordo raggiunto qui non
+          ha alcun valore finché non viene inserito nel sistema ufficiale dei
+          turni e approvato secondo le procedure del negozio. L'app lo ripete
+          alla fine di ogni accordo.</li>
+        <li>Non è collegata a nessun sistema Apple, non vi accede e non vi
+          scrive.</li>
+        <li>Non sostituisce il confronto con il proprio manager, dove le
+          procedure lo richiedono.</li>
+      </ul>
+
+      <h3>2. I dati</h3>
+      <ul class="elenco piccolo">
+        <li>Tutto quello che inserisci resta <strong>nel browser di questo
+          dispositivo</strong>. Non esiste un server, non c'è un account, niente
+          viene inviato da nessuna parte.</li>
+        <li>Cancellando i dati del sito, o usando un altro dispositivo, si
+          riparte da zero: non c'è nessuna copia altrove.</li>
+        <li>Le persone che compaiono nella versione dimostrativa sono
+          inventate.</li>
+        ${raw(esteso(`<li>Non inserire dati di clienti, informazioni commerciali,
+          numeri di vendita o qualsiasi altra informazione riservata di Apple.
+          I turni non lo sono (vedi il punto 3); molte altre cose sì.</li>`))}
+      </ul>
+
+      <h3>3. Perché i turni si possono trattare</h3>
+      <p>
+        La Business Conduct Policy, alla sezione <em>Diritti del personale
+        dipendente</em>, dice che «è consentito comunicare o divulgare
+        liberamente i salari, <strong>gli orari</strong>, le condizioni di
+        assunzione e le condizioni di lavoro in Apple».
+      </p>
+      ${raw(esteso(`
+        <p class="testo-tenue">
+          I turni sono orari di lavoro. Non rientrano nella definizione di
+          «informazioni riservate di Apple», che la policy riferisce a prodotti,
+          servizi, forniture, vendite, prezzi, operazioni, fonti dei materiali,
+          dati finanziari e piani di marketing.
+        </p>`))}
+
+      <h3>4. Il limite che conta: la condivisione</h3>
+      <p>
+        La stessa policy, alla sezione <em>Creazione di app</em>, dice che
+        «è possibile creare app solo per scopi personali o didattici» e che
+        «non si può partecipare al Developer Program né condividere, vendere o
+        distribuire app, adesivi o altri contenuti […] a meno che non sia
+        necessario per fini commerciali di Apple».
+      </p>
+      <p><strong>Conseguenza pratica, e va presa sul serio:</strong></p>
+      <ul class="elenco piccolo">
+        <li>Usarla da soli, sul proprio dispositivo, rientra in «scopi
+          personali».</li>
+        <li><strong>Distribuirla ai colleghi è un'altra cosa</strong>, e la policy
+          chiede di verificarlo prima. Il canale è Business Conduct, che la
+          policy indica esplicitamente per i dubbi su cosa è ammesso.</li>
+        <li>Finché quella verifica non c'è, questa resta una prova personale.</li>
+      </ul>
+
+      <h3>5. Come è stata fatta</h3>
+      <ul class="elenco piccolo">
+        <li>Sviluppata <strong>fuori dall'orario di lavoro e senza risorse
+          Apple</strong>: la policy vieta di usare «le ore di lavoro o le risorse
+          di Apple» per attività esterne.</li>
+        <li>Nessun marchio, logo, nome di prodotto o elemento grafico Apple.
+          Nessun riferimento che possa far pensare a un prodotto ufficiale.</li>
+        <li>Nessuna informazione riservata di Apple è stata usata per
+          costruirla.</li>
+      </ul>
+
+      <h3>6. Responsabilità di chi la usa</h3>
+      <ul class="elenco piccolo">
+        <li>Ognuno resta responsabile della propria presenza in turno secondo il
+          sistema ufficiale, non secondo quello che si legge qui.</li>
+        <li>Le percentuali e i suggerimenti sono <strong>indicazioni</strong>: l'app
+          non conosce permessi, recuperi, straordinari, esigenze del negozio né
+          l'ultima parola del management.</li>
+        <li>Un cambio va comunque fatto e approvato dove va fatto.</li>
+      </ul>
+
+      <h3>7. Quello che questo testo non è</h3>
+      <p class="testo-tenue">
+        Non è un parere legale e non è un'autorizzazione. È una ricostruzione
+        onesta e verificabile di cosa dice la policy, con le citazioni per
+        controllarla. In caso di dubbi la policy stessa indica cosa fare:
+        parlarne con il proprio manager, con il People Business Partner o con
+        Business Conduct.
+      </p>
+
+      <p class="testo-tenue">
+        Riferimento: Apple, <em>Business Conduct — Il nostro modo di operare</em>,
+        febbraio 2026. Sezioni citate: Diritti del personale dipendente;
+        Tutela delle risorse e delle informazioni riservate di Apple;
+        Conflitti d'interessi e attività esterne; Creazione di app.
+      </p>
+    </div>`;
+}
+
+/** Il riquadro della prima apertura: corto, con il link al testo intero. */
+function accettazioneNote() {
+  return html`
+    <div class="legale-intro">
+      <p>
+        Prima di cominciare, tre cose che vale la pena sapere.
+      </p>
+      <ul class="elenco">
+        <li><strong>Non è un'app Apple</strong> e non è approvata da Apple.</li>
+        <li><strong>Non fa nessun cambio turno.</strong> Serve a mettersi
+          d'accordo; il cambio va poi inserito nel sistema ufficiale.</li>
+        <li><strong>I dati restano su questo dispositivo.</strong> Nessun server,
+          nessun account, niente che esca da qui.</li>
+      </ul>
+      <p class="testo-tenue">
+        Il testo completo, con le citazioni della Business Conduct Policy su cui
+        si basa, sta nelle Note legali del Profilo.
+      </p>
+    </div>`;
+}
+
+return { VERSIONE_NOTE, noteLegali, accettazioneNote };
+})();
+
+// ---- src/ui/guida.js
+const M_guida = (() => {
+// La guida: una scheda per sezione, che compare la prima volta che ci si
+// entra e poi si riapre dal punto interrogativo nella testata.
+//
+// Il criterio di scrittura è uno solo: spiegare la regola con un esempio
+// concreto invece che con una definizione. "Chi prende un turno fa le ore di
+// quello che lascia" non si capisce; "Marco lascia 9 ore e prende il turno
+// 12:00–21:00 di Giulia, quindi lo farà 12:00–21:00" sì.
+
+const { html, raw } = M_dom;
+
+/** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
+const VERSIONE_GUIDA = '1';
+
+const GUIDE = {
+  home: {
+    titolo: 'La Home',
+    icona: '🏠',
+    corpo: () => html`
+      <p>Da qui parte tutto. Tre strade, in ordine di quanta fatica ti risparmiano.</p>
+
+      <h3>⚡ Cambio rapido</h3>
+      <p>
+        Non fa domande. Scegli un tuo turno e l'app ti dice subito chi potrebbe
+        prenderlo, provando da sola tutte le strade possibili: lo scambio di
+        orario nella stessa giornata e lo scambio di giornata intera, su tutti i
+        giorni in cui sei libero.
+      </p>
+      <p class="esempio">
+        <strong>Esempio.</strong> Giovedì lavori 12:00–21:00 e vorresti staccare
+        prima. Apri Cambio rapido, tocchi giovedì, e vedi che Martina quel giorno
+        fa 09:00–15:00 e cerca proprio un turno che inizi più tardi. Uno scambio
+        che va bene a entrambi, trovato senza scrivere niente.
+      </p>
+
+      <h3>🤝 Aiuta un collega</h3>
+      <p>
+        Il contrario: non chi può aiutare te, ma di chi puoi risolvere il
+        problema tu. Compaiono solo le richieste che i tuoi turni risolvono
+        davvero, con la percentuale di quanto sei una buona risposta.
+      </p>
+
+      <h3>＋ Nuovo cambio</h3>
+      <p>
+        Quando vuoi decidere tu le condizioni. Ti chiede prima di tutto che tipo
+        di cambio ti serve, perché le domande successive cambiano.
+      </p>
+
+      <h3>I tuoi cambi</h3>
+      <p>
+        In cima trovi le tue richieste aperte e le proposte in corso. Il pallino
+        rosso vuol dire che qualcuno aspetta una risposta da te.
+      </p>
+      <p class="testo-tenue">
+        In alto a destra, la ⭐ dice se hai ancora la priorità del mese: una
+        richiesta prioritaria sta in cima alla bacheca per 48 ore. Una al mese,
+        e dà visibilità, non precedenza.
+      </p>`,
+  },
+
+  calendario: {
+    titolo: 'Il Calendario',
+    icona: '📅',
+    corpo: () => html`
+      <p>
+        Il mese di tutti: dove si vede a colpo d'occhio su quali giorni c'è
+        movimento.
+      </p>
+
+      <h3>Perché parte dal sabato</h3>
+      <p>
+        La settimana Apple va da <strong>sabato a venerdì</strong>, e uno scambio di
+        giornate deve restare dentro la stessa settimana. Facendo partire la
+        griglia dal sabato, ogni riga <em>è</em> una settimana: due giorni
+        scambiabili sono sempre sulla stessa riga, e la regola non ha bisogno di
+        essere spiegata.
+      </p>
+
+      <h3>Le barre colorate</h3>
+      <ul class="elenco piccolo">
+        <li><span class="barre in-legenda"><i class="cerca"></i></span>
+          <strong>rossa</strong>: qualcuno vuole liberarsi quel giorno.</li>
+        <li><span class="barre in-legenda"><i class="offre"></i></span>
+          <strong>verde</strong>: qualcuno mette qualcosa a disposizione, un turno o
+          una giornata.</li>
+        <li><strong>Bordo oro</strong>: c'è una richiesta con la priorità.</li>
+      </ul>
+      <p>Dentro ogni casella c'è anche il tuo turno di quel giorno.</p>
+
+      <h3>Toccando un giorno</h3>
+      <p>
+        Si apre quel giorno, diviso in due: <strong>Cercano</strong> e
+        <strong>Offrono</strong>. Ogni richiesta è scritta dal punto di vista del
+        giorno che stai guardando, non in generale.
+      </p>
+      <p class="esempio">
+        <strong>Esempio.</strong> Marco vuole libero sabato 12 e in cambio offre
+        lunedì 14 o mercoledì 16. Aprendo il <strong>12</strong> leggi «vuole libero
+        questo giorno»; aprendo il <strong>16</strong> leggi «offre di lavorare
+        questo giorno, in cambio vuole libero sabato 12». Stessa richiesta, due
+        cose diverse a seconda di dove ti trovi.
+      </p>
+      <p class="testo-tenue">
+        Se sotto una richiesta compare in rosso <em>al momento non puoi
+        cambiare</em>, vuol dire che con i turni che hai non c'è modo di
+        rispondere. Aprendola ti dice esattamente perché.
+      </p>`,
+  },
+
+  bacheca: {
+    titolo: 'La Bacheca',
+    icona: '📋',
+    corpo: () => html`
+      <p>
+        Tutte le richieste aperte, dalla più recente. Quelle con la priorità
+        stanno in cima.
+      </p>
+
+      <h3>I due tipi, e perché sono diversi</h3>
+      <p>
+        <strong>🕐 Orario</strong> — resti nel tuo giorno e cambi solo la fascia con
+        un collega che quel giorno lavora. Nessuno dei due deve essere libero:
+        anzi, servono entrambi in turno. È il caso più frequente.
+      </p>
+      <p class="esempio">
+        «Lascio mercoledì 12:00–21:00, cerco mercoledì un turno che finisca
+        prima.»
+      </p>
+      <p>
+        <strong>📅 OFF</strong> — vuoi libera una giornata in cui lavori, e in
+        cambio ne offri una in cui adesso sei a casa. Sono due giornate che si
+        scambiano davvero: dopo, ciascuno ha il turno che aveva l'altro.
+      </p>
+      <p class="esempio">
+        «Cerco OFF sabato 12, offro lunedì 14 o mercoledì 16.» Chi risponde deve
+        essere <strong>libero sabato 12</strong> e <strong>lavorare</strong> lunedì o
+        mercoledì. Non è una copertura a senso unico.
+      </p>
+
+      <h3>Le due righe</h3>
+      <p>
+        Ogni richiesta occupa due righe: chi è, di che tipo, e la sintesi.
+        Toccandola si aprono orari, note, stato e proposte.
+      </p>`,
+  },
+
+  profilo: {
+    titolo: 'Il Profilo',
+    icona: '👤',
+    corpo: () => html`
+      <p>Le tue cose: i turni, quello che ti va bene, e cosa aspetta una risposta.</p>
+
+      <h3>Le tue due settimane</h3>
+      <p>
+        La griglia sabato → venerdì per due settimane. Ogni casella mostra il tuo
+        turno e, se c'è, la <strong>percentuale del miglior cambio che potresti
+        risolvere</strong> quel giorno. Toccando un giorno puoi inserire o
+        correggere il turno, dichiararti disponibile a scambiare, e vedere chi
+        puoi aiutare.
+      </p>
+      <p class="testo-tenue">
+        L'interruttore «disponibile a scambiare questo giorno» è quello che ti fa
+        comparire fra i match potenziali di chi cerca, anche se tu non hai
+        pubblicato niente. Senza un segnale — una richiesta o una disponibilità —
+        non compari mai: nessuno viene proposto a sua insaputa.
+      </p>
+
+      <h3>I tuoi turni</h3>
+      <p>
+        Si importano da un calendario in formato .ics — le istruzioni per
+        trovarlo stanno dentro la finestra dell'import — oppure si inseriscono a
+        mano, giorno per giorno.
+      </p>
+
+      <h3>Preferenze</h3>
+      <p>Due gruppi che si comportano in modo <strong>molto</strong> diverso.</p>
+      <ul class="elenco piccolo">
+        <li><strong>Turni da evitare</strong>: filtro netto. Quei turni non ti
+          vengono proposti affatto, nemmeno con un punteggio basso.</li>
+        <li><strong>Turni preferiti</strong>: sposta il punteggio di pochi punti.
+          Non esclude niente.</li>
+      </ul>
+      <p class="esempio">
+        <strong>Esempio.</strong> Se attivi «evito le chiusure», un turno che finisce
+        alle 20:30 sparisce dai tuoi risultati. Se invece attivi «preferisco le
+        chiusure», quei turni salgono un po' in classifica, ma tutti gli altri
+        restano lì.
+      </p>
+
+      <h3>Contratto e ore</h3>
+      <p>
+        Puoi scambiare con chiunque, anche con l'altro contratto, ma nessuno
+        cambia il proprio monte ore: <strong>chi prende il turno di un altro fa le
+        ore del turno che sta lasciando</strong>.
+      </p>
+      <p class="esempio">
+        <strong>Esempio.</strong> Giulia è Part Time e quel giorno farebbe 5 ore.
+        Prende il turno 12:00–21:00 di un Full Time: siccome quel turno chiude,
+        Giulia esce quando sarebbe uscito lui e fa <strong>16:00–21:00</strong>. Se
+        invece il turno fosse stato 09:00–18:00, che apre, Giulia sarebbe entrata
+        con lui e avrebbe fatto <strong>09:00–14:00</strong>.
+      </p>
+      <p class="testo-tenue">
+        Le ore del contratto sono al netto della pausa pranzo: cinque turni da
+        nove ore di presenza fanno quaranta ore pagate.
+      </p>`,
+  },
+};
+
+/** La scheda di una sezione, per la finestra che si apre. */
+function schedaGuida(chiave) {
+  const g = GUIDE[chiave];
+  if (!g) return '';
+  return html`<div class="guida">${raw(g.corpo())}</div>`;
+}
+
+return { VERSIONE_GUIDA, GUIDE, schedaGuida };
+})();
+
+// ---- src/ui/profilo-setup.js
+const M_profilo_setup = (() => {
+// Creazione e modifica del profilo.
+//
+// Lo stesso modulo serve due momenti diversi: la prima apertura, dove è un
+// percorso obbligato che finisce con l'accettazione delle note, e la modifica
+// dal Profilo, dove è solo un modulo da correggere. Cambia il contorno, non
+// le domande.
+
+const { html, raw } = M_dom;
+const { store } = M_store;
+const { RULES } = M_rules;
+const { noteLegali, accettazioneNote, VERSIONE_NOTE } = M_legale;
+
+/** La bozza in corso di compilazione. */
+const bozzaProfilo = {
+  passo: 1,
+  nome: '',
+  cognomeIniziale: '',
+  genere: '',
+  contratto: '',
+  oreSettimanali: null,
+  accettate: false,
+  errori: [],
+};
+
+function apriProfilo({ modifica = false } = {}) {
+  const me = store.me;
+  Object.assign(bozzaProfilo, {
+    passo: 1,
+    nome: modifica ? me.nome : '',
+    cognomeIniziale: modifica ? me.cognomeIniziale : '',
+    genere: modifica ? me.genere || '' : '',
+    contratto: modifica ? me.contratto : '',
+    oreSettimanali: modifica ? me.oreSettimanali : null,
+    // In modifica le note sono già state accettate: non si richiede due volte.
+    accettate: modifica,
+    modifica,
+    errori: [],
+  });
+}
+
+const GENERI = [
+  { key: 'F', label: 'Donna' },
+  { key: 'M', label: 'Uomo' },
+  { key: 'X', label: 'Preferisco non dirlo' },
+];
+
+/** Cosa manca perché il profilo si possa salvare. */
+function validaProfilo() {
+  const b = bozzaProfilo;
+  const errori = [];
+  if (!b.nome.trim()) errori.push('Manca il nome.');
+  if (!b.cognomeIniziale.trim()) errori.push('Manca l\'iniziale del cognome.');
+  if (!b.genere) errori.push('Scegli una delle tre opzioni, anche "preferisco non dirlo".');
+  if (!b.contratto) errori.push('Scegli il tipo di contratto.');
+  if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
+  if (!b.accettate) errori.push('Per usare l\'app bisogna prendere visione delle note.');
+  return errori;
+}
+
+function schermataProfilo() {
+  const b = bozzaProfilo;
+  const totale = b.modifica ? 2 : 3;
+  const passo = Math.min(b.passo, totale);
+
+  const contenuto = passo === 1 ? passoChiSei()
+    : passo === 2 ? passoContratto()
+      : passoNote();
+
+  return html`
+    <header class="testata">
+      ${raw(b.modifica || b.passo > 1
+    ? '<button class="icon-btn" data-act="profilo-indietro">‹</button>'
+    : '')}
+      <h1>${b.modifica ? 'Modifica profilo' : 'Benvenuto'}</h1>
+      <span class="passo">${passo}/${totale}</span>
+    </header>
+    <div class="progresso"><i style="width:${(passo / totale) * 100}%"></i></div>
+    ${raw(b.errori.length
+    ? `<div class="errori">${b.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>`
+    : '')}
+    ${raw(contenuto)}`;
+}
+
+function passoChiSei() {
+  const b = bozzaProfilo;
+  return html`
+    <h2 class="titolo-gruppo">Chi sei</h2>
+    <p class="testo-tenue">
+      Il nome è quello che vedono i colleghi accanto alle tue richieste. Del
+      cognome basta l'iniziale: in un negozio serve solo a distinguere due
+      persone che si chiamano uguale.
+    </p>
+
+    <label class="campo">
+      <span>Nome</span>
+      <input type="text" class="testo" data-campo="nome" value="${b.nome}"
+             placeholder="Lorenzo" autocomplete="given-name">
+    </label>
+
+    <label class="campo">
+      <span>Iniziale del cognome</span>
+      <input type="text" class="testo" data-campo="cognome" value="${b.cognomeIniziale}"
+             placeholder="B" maxlength="1" autocomplete="family-name">
+    </label>
+
+    <div class="campo">
+      <span>Come preferisci essere chiamato o chiamata</span>
+      <div class="pillole">
+        ${raw(GENERI.map((g) => `
+          <button class="pill ${b.genere === g.key ? 'attivo' : ''}"
+                  data-act="profilo-genere" data-valore="${g.key}">${g.label}</button>`).join(''))}
+      </div>
+      <p class="testo-tenue">
+        Serve solo a scrivere bene le frasi dell'app: "si è dichiarata
+        disponibile" invece di "dichiarato". Scegliendo di non dirlo, l'app usa
+        forme che vanno bene per chiunque.
+      </p>
+    </div>
+
+    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+}
+
+function passoContratto() {
+  const b = bozzaProfilo;
+  return html`
+    <h2 class="titolo-gruppo">Il tuo contratto</h2>
+
+    <div class="campo">
+      <span>Tipo di contratto</span>
+      <div class="pillole">
+        ${raw(Object.entries(RULES.contracts).map(([key, c]) => `
+          <button class="pill ${b.contratto === key ? 'attivo' : ''}"
+                  data-act="profilo-contratto" data-valore="${key}">${c.label}</button>`).join(''))}
+      </div>
+    </div>
+
+    <div class="campo">
+      <span>Monte ore settimanale</span>
+      <div class="pillole">
+        ${raw(RULES.monteOreAmmessi.map((h) => `
+          <button class="pill ${b.oreSettimanali === h ? 'attivo' : ''}"
+                  data-act="profilo-ore" data-valore="${h}">${h} ore</button>`).join(''))}
+      </div>
+    </div>
+
+    <p class="testo-tenue">
+      Le ore del contratto sono quelle <strong>pagate</strong>, al netto della
+      pausa pranzo: cinque turni da nove ore di presenza fanno quaranta ore.
+      L'app tiene conto della differenza da sola.
+    </p>
+    <p class="testo-tenue">
+      Il contratto non limita con chi puoi scambiare: puoi farlo con chiunque,
+      anche con l'altro tipo. Quello che non cambia mai sono le tue ore, perché
+      chi prende un turno fa le ore di quello che sta lasciando.
+    </p>
+
+    <button class="btn primario largo" data-act="profilo-avanti">
+      ${b.modifica ? 'Salva' : 'Continua'}
+    </button>`;
+}
+
+function passoNote() {
+  const b = bozzaProfilo;
+  return html`
+    <h2 class="titolo-gruppo">Prima di cominciare</h2>
+    ${raw(accettazioneNote())}
+
+    <details class="riquadro">
+      <summary><span>Note legali complete</span><span class="conteggio">testo integrale</span></summary>
+      ${raw(noteLegali({ compatte: false }))}
+    </details>
+
+    <label class="switch">
+      <input type="checkbox" data-act="profilo-accetta" ${raw(b.accettate ? 'checked' : '')}>
+      <span>
+        Ho preso visione delle note
+        <em class="aiuto">Le trovi sempre nel Profilo, in fondo.</em>
+      </span>
+    </label>
+
+    <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate ? '' : 'disabled')}>
+      Comincia
+    </button>`;
+}
+
+return { bozzaProfilo, apriProfilo, validaProfilo, schermataProfilo };
+})();
+
 // ---- src/ui/app.js
 const M_app = (() => {
 const { html, raw, on, toast, sheet } = M_dom;
@@ -4020,6 +4687,9 @@ const { slotSettimana } = M_engine;
 const { durataOre, isNotturno, fuoriFascia, etichettaFascia } = M_model;
 const { RULES } = M_rules;
 const { parseICS } = M_ics;
+const P = M_profilo_setup;
+const { GUIDE, schedaGuida, VERSIONE_GUIDA } = M_guida;
+const { noteLegali, VERSIONE_NOTE } = M_legale;
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -4050,8 +4720,51 @@ function parseHash() {
   return { percorso: percorso || 'home', params };
 }
 
+/**
+ * Le schede della guida già viste, per sezione.
+ * Stanno in localStorage e non nello stato: sono una cosa di questo browser,
+ * non un dato dell'app, e non devono finire in un eventuale backend.
+ */
+const CHIAVE_GUIDA = 'cambio-turno:guida';
+
+function guideViste() {
+  try {
+    const salvato = JSON.parse(localStorage.getItem(CHIAVE_GUIDA) || '{}');
+    return salvato.versione === VERSIONE_GUIDA ? salvato : { versione: VERSIONE_GUIDA, viste: [] };
+  } catch {
+    return { versione: VERSIONE_GUIDA, viste: [] };
+  }
+}
+
+function segnaGuidaVista(chiave) {
+  const g = guideViste();
+  if (g.viste.includes(chiave)) return;
+  g.viste.push(chiave);
+  try { localStorage.setItem(CHIAVE_GUIDA, JSON.stringify(g)); } catch { /* privata */ }
+}
+
+/** Apre la guida di una sezione: da sola la prima volta, o su richiesta. */
+function apriGuida(chiave, { automatica = false } = {}) {
+  const g = GUIDE[chiave];
+  if (!g) return;
+  if (automatica && guideViste().viste.includes(chiave)) return;
+  segnaGuidaVista(chiave);
+  sheet(`${g.icona} ${g.titolo}`, schedaGuida(chiave), {
+    azioni: '<button class="btn primario largo" data-chiudi>Ho capito</button>',
+  });
+}
+
 function render() {
   const { percorso, params } = parseHash();
+
+  // Finché il profilo non c'è, non si va da nessuna parte: l'app senza sapere
+  // chi sei mostrerebbe i turni di una persona inventata.
+  if (store.profiloDaCompletare(VERSIONE_NOTE) && percorso !== 'setup') {
+    P.apriProfilo({ modifica: false });
+    location.hash = '#/setup';
+    return;
+  }
+
   const viste = {
     home: V.home,
     calendario: V.calendario,
@@ -4063,10 +4776,20 @@ function render() {
     nuovo: F.nuovo,
     match: F.match,
     richiesta: F.dettaglio,
+    setup: P.schermataProfilo,
+    legale: () => html`
+      <header class="testata">
+        <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+        <h1>Note legali</h1>
+      </header>
+      ${raw(noteLegali())}`,
   };
   const vista = viste[percorso] || V.home;
   app.innerHTML = vista(params);
   app.scrollTop = 0;
+
+  // La guida della sezione, la prima volta che ci si entra.
+  if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
 
   const attivo = TABS.find((t) => t.hash === `#/${percorso}`);
   tabbar.innerHTML = TABS.map((t) => html`
@@ -4112,6 +4835,40 @@ const AZIONI = {
     const data = el.dataset.data;
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
+
+  // --- creazione e modifica del profilo ---
+  'profilo-genere': (_, el) => { P.bozzaProfilo.genere = el.dataset.valore; render(); },
+  'profilo-contratto': (_, el) => { P.bozzaProfilo.contratto = el.dataset.valore; render(); },
+  'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
+  'profilo-accetta': (e) => { P.bozzaProfilo.accettate = e.target.checked; render(); },
+  'profilo-indietro': () => {
+    if (P.bozzaProfilo.passo > 1) { P.bozzaProfilo.passo -= 1; P.bozzaProfilo.errori = []; render(); }
+    else vai('#/profilo');
+  },
+  'profilo-avanti': () => {
+    const b = P.bozzaProfilo;
+    // Si controlla un passo per volta: un errore sul contratto mentre stai
+    // scrivendo il nome è solo rumore.
+    const mancanti = b.passo === 1
+      ? P.validaProfilo().filter((e) => /nome|cognome|opzioni/.test(e))
+      : P.validaProfilo().filter((e) => /contratto|monte ore/.test(e));
+    if (mancanti.length) { b.errori = mancanti; return render(); }
+    b.errori = [];
+    if (b.modifica && b.passo === 2) return AZIONI['profilo-salva']();
+    b.passo += 1;
+    render();
+  },
+  'profilo-salva': () => {
+    const errori = P.validaProfilo();
+    if (errori.length) { P.bozzaProfilo.errori = errori; return render(); }
+    store.completaProfilo({ ...P.bozzaProfilo, versioneNote: VERSIONE_NOTE });
+    toast(P.bozzaProfilo.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
+    vai('#/home');
+  },
+  'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
+
+  // La guida, riaperta a mano dal punto interrogativo nella testata.
+  guida: (_, el) => apriGuida(el.dataset.sezione),
 
   'vedi-grazie': () => sheet('💛 Ringraziamenti ricevuti', V.listaRingraziamenti()),
 
@@ -4476,6 +5233,10 @@ on(document.body, 'change', '[data-act]', (e, el) => {
 // Campi liberi del wizard (orari, note): aggiornano la bozza senza rerender.
 on(document.body, 'input', '[data-campo]', (e, el) => {
   const chiave = el.dataset.campo;
+  // I campi del profilo non passano da render(): riscrivere il DOM a ogni
+  // lettera sposterebbe il cursore a fine riga sotto le dita di chi scrive.
+  if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
+  if (chiave === 'cognome') { P.bozzaProfilo.cognomeIniziale = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 

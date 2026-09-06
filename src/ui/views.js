@@ -68,10 +68,11 @@ export function home() {
           <p class="saluto">${saluto}</p>
           <h1>${me.nome}</h1>
         </div>
-        ${raw(credito > 0 ? `
-          <button class="priorita-chip" data-act="spiega-priorita">
-            ⭐ ${credito}
-          </button>` : '')}
+        <span class="hero-azioni">
+          ${raw(credito > 0 ? `
+            <button class="priorita-chip" data-act="spiega-priorita">⭐ ${credito}</button>` : '')}
+          <button class="icon-btn" data-act="guida" data-sezione="home" title="Come funziona">?</button>
+        </span>
       </div>
       ${raw(credito > 0
     ? `<p class="sottotitolo">Hai ancora una priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</p>`
@@ -175,6 +176,7 @@ export function calendario(params) {
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}">‹</button>
       <h1>${MESI[m - 1]} ${anno}</h1>
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
+      <button class="icon-btn" data-act="guida" data-sezione="calendario" title="Come funziona">?</button>
     </header>
     <div class="griglia-intestazione">
       ${['S', 'D', 'L', 'M', 'M', 'G', 'V'].map((d) => raw(`<span>${d}</span>`))}
@@ -243,7 +245,10 @@ export function bacheca(params) {
     .filter(FILTRI[filtro].test);
 
   return html`
-    <header class="testata"><h1>Bacheca</h1></header>
+    <header class="testata">
+      <h1>Bacheca</h1>
+      <button class="icon-btn" data-act="guida" data-sezione="bacheca" title="Come funziona">?</button>
+    </header>
     <div class="chips">
       ${Object.entries(FILTRI).map(([k, v]) => raw(
     `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.label}</button>`,
@@ -263,6 +268,7 @@ export function profilo() {
 
   return html`
     <header class="hero compatta">
+      <button class="icon-btn guida-profilo" data-act="guida" data-sezione="profilo" title="Come funziona">?</button>
       ${raw(chipRingraziamenti())}
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
@@ -297,24 +303,23 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>Contratto · ${RULES.contracts[me.contratto].label}</h2>
-      <label class="campo">
-        <span>Monte ore settimanale</span>
-        <select class="select" data-act="monte-ore">
-          ${RULES.monteOreAmmessi.map((h) => raw(
-    `<option value="${h}" ${h === me.oreSettimanali ? 'selected' : ''}>${h} ore</option>`,
-  ))}
-        </select>
-      </label>
-      <p class="testo-tenue">
-        Puoi scambiare con chiunque, anche con l'altro contratto: chi prende un turno
-        fa le ore di quello che sta lasciando. Se chi te lo cede apre, entri quando
-        entra lui; se chiude, esci quando esce lui.
-      </p>
-      <p class="testo-tenue">
-        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore,
-        il contratto ne prevede ${me.oreSettimanali}.
-      </p>
+      <h2>Il tuo profilo</h2>
+      <button class="tile" data-act="modifica-profilo">
+        <span class="tile-icona">✏️</span>
+        <span>
+          <strong>Modifica profilo</strong>
+          <em>${nomeUtente(me)} · ${RULES.contracts[me.contratto].label} · ${me.oreSettimanali} ore</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
+      <button class="tile" data-act="vai" data-to="#/legale">
+        <span class="tile-icona">📄</span>
+        <span>
+          <strong>Note legali e limiti d'uso</strong>
+          <em>Cosa fa questa app, cosa non fa, e su cosa si basa</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
     </section>
 
     <section class="sezione">
@@ -375,11 +380,7 @@ function sezionePreferenze(me) {
 
   return html`
     ${raw(box)}
-    ${raw(legendaFasce())}
-    <p class="testo-tenue">
-      Due preferenze opposte non possono stare accese insieme: attivandone una,
-      l'altra si spegne da sola.
-    </p>`;
+    ${raw(legendaFasce())}`;
 }
 
 /** Cosa vuol dire ciascuna fascia, con gli orari veri. */
@@ -397,6 +398,10 @@ function legendaFasce() {
       <p class="testo-tenue">
         Un turno può stare in due fasce insieme, perché due guardano l'inizio e
         due la fine: un 10:00–19:45 è mattina e pomeriggio.
+      </p>
+      <p class="testo-tenue">
+        Due preferenze opposte non possono stare accese insieme: attivandone
+        una, l'altra si spegne da sola.
       </p>
     </details>`;
 }

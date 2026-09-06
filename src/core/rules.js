@@ -49,6 +49,18 @@ export const RULES = {
     canBeAddedLater: false,
   },
 
+  /**
+   * La pausa pranzo non è retribuita: un Full Time fa 5 turni da 9 ore di
+   * presenza, che sono 40 ore pagate. È la ragione per cui il monte ore
+   * settimanale (40) e la somma dei turni (45) non coincidono, e senza questa
+   * regola l'app segnalava uno sforamento su una settimana perfettamente
+   * normale.
+   *
+   * **Assunzione**: la soglia oltre la quale scatta la pausa. Sei ore è il
+   * valore di partenza; un Part Time con turni da 5 ore non la fa.
+   */
+  pausa: { oltreOre: 6, minuti: 60 },
+
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
   // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
   // è il monte ore settimanale, che sta sull'utente.

@@ -9,7 +9,7 @@ import {
 import {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
-  applicaPreferenze,
+  applicaPreferenze, concorda,
 } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -240,7 +240,10 @@ function matchOrario(request, ctx) {
       if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
       origine = 'DISPONIBILITA';
-      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e si è dichiarato disponibile a scambiare`);
+      const dichiarato = concorda(u, {
+        m: 'si è dichiarato disponibile', f: 'si è dichiarata disponibile', n: 'ha dato la disponibilità',
+      });
+      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a scambiare`);
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
@@ -314,7 +317,11 @@ function matchOff(request, ctx) {
         if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
         score = Math.min(perMe.score, RULES.availabilityScoreCap);
         origine = 'DISPONIBILITA';
-        reasons.push(`è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`);
+        reasons.push(concorda(u, {
+          m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
+          f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
+          n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
+        }));
       }
       reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
 

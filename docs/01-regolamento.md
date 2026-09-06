@@ -219,6 +219,44 @@ cercato. Sparisce da bacheca, calendario e match; resta nei dati.
 Effetto: prima posizione in bacheca, evidenza nel calendario. Nessun diritto in
 più.
 
+## R20 — Monte ore e pausa pranzo
+Un **Full Time fa cinque turni da nove ore di presenza**, che sono **quaranta
+ore pagate**: la pausa pranzo non è retribuita.
+
+Da qui due misure diverse, che l'app tiene separate perché servono a cose
+diverse:
+
+| Misura | Cos'è | Dove si usa |
+|---|---|---|
+| `durataOre` | la **presenza**: dall'inizio alla fine del turno | adattamento del turno (R9) |
+| `oreRetribuite` | la presenza meno la pausa | confronto col monte ore (R17) |
+
+Chi riceve un turno resta in store per lo stesso tempo che ci sarebbe stato nel
+proprio, pausa compresa: per l'adattamento conta la presenza. Il contratto
+invece si misura sulle ore pagate.
+
+**Assunzione**: la pausa è di un'ora e scatta oltre le sei ore di turno
+(`RULES.pausa`). Un Part Time con turni da cinque ore non la fa.
+
+Senza questa distinzione l'app segnalava uno sforamento — «sei a 45 ore, il
+contratto ne prevede 40» — su una settimana perfettamente normale.
+
+## R21 — Profilo
+L'app non parte finché non sa chi la sta usando: nome, iniziale del cognome,
+genere, contratto, monte ore, e presa visione delle note d'uso. Prima mostrava
+i turni di una persona inventata come se fossero i tuoi.
+
+Il **genere** serve a una cosa sola, le concordanze: «si è dichiarata
+disponibile» invece di «dichiarato». Chi sceglie di non dirlo ottiene forme
+neutre, mai un maschile di ripiego (`concorda()`).
+
+Compilare il profilo **riscrive l'utente corrente** invece di crearne uno nuovo:
+così i turni e le richieste dimostrative restano coerenti e c'è subito qualcosa
+da provare, invece di un calendario vuoto.
+
+La presa visione è legata alla versione del testo: se le note cambiano, viene
+richiesta di nuovo.
+
 ## R19 — Preferenze
 Le preferenze del profilo sono due cose diverse, e l'app le tiene separate
 perché si comportano in modo diverso.
