@@ -11,29 +11,56 @@ del sabato che la apre.
 - `weekStartsOn: 6`
 - Verifica: `appleWeekKey('2026-09-18') === '2026-09-12'`
 
-## R2 — CEDO e CERCO nella stessa settimana
-Una richiesta è valida solo se il giorno ceduto e il giorno cercato hanno la
-stessa chiave di settimana. Venerdì 18 ↔ Sabato 19 è rifiutato in fase di
-creazione, non dopo.
+## R2 — I due tipi di cambio
+Dai messaggi veri del gruppo WhatsApp emergono due cose diverse, e solo due.
 
-## R3 — CEDO e CERCO sono sempre una coppia
-Non esiste una richiesta con un lato solo. La validazione blocca anche il caso
-in cui CEDO e CERCO cadano nello stesso giorno.
+### 🕐 Cambio orario — una giornata sola
+> «Cedo mercoledì 9/09 12:00–21:00, cerco mercoledì un turno che finisce prima»
 
-## R4 — Il CEDO è un turno reale
-Si sceglie fra i turni presenti nel proprio calendario, e solo fra quelli
-futuri e lavorati. Un OFF non si cede: al massimo si cerca.
+Resti nel tuo giorno e cambi l'orario con un collega che quel giorno lavora.
+Entrambi restano in turno: nessuno dei due deve essere libero. È il caso più
+frequente in assoluto.
 
-Il flag `flessibile` ("sono disponibile a cedere anche altri turni") è
-informativo: compare nella card ma per ora non allarga il matching.
+### 📅 Cambio OFF — due giornate
+> «CERCO 08/09 OFF, CEDO 10-11/09 OFF»
 
-## R5 — I tre livelli di CERCO
-| Livello | Significato | Punteggio pieno quando |
+Vuoi libera una giornata in cui lavori. In cambio lavori in uno dei giorni in
+cui adesso sei a casa, e **prendi il turno della persona che ti cede il
+giorno**. È uno scambio simmetrico di due giornate intere: dopo, ciascuno ha
+il turno che aveva l'altro.
+
+Il tipo non è un'etichetta: cambia le regole, la validazione, il matching e le
+domande che l'app fa.
+
+## R3 — Ogni richiesta ha due lati
+Non esiste una richiesta con un lato solo, in nessuno dei due tipi: c'è sempre
+quello che lasci e quello che prendi. Nel cambio orario il secondo lato è un
+orario, nel cambio OFF è una giornata.
+
+## R4 — Si lascia sempre un turno vero
+Il turno che lasci si sceglie fra quelli del tuo calendario, futuri e lavorati.
+Non si "cede un OFF": nel cambio OFF si cede il turno del giorno che vuoi
+libero, e si **offrono** i giorni in cui sei a casa.
+
+Il flag `flessibile` ("disponibile a lasciare anche altri turni") è
+informativo: compare nella card ma non allarga il matching.
+
+## R5 — Quanto sei rigido sul turno che prendi
+| Livello | Significato | Dove ha senso |
 |---|---|---|
-| `SPECIFIC` | orario preciso | inizio e fine coincidono |
-| `RANGE` | fascia (finisce entro le X, inizia dopo le Y) | il turno rispetta tutti i limiti indicati |
-| `ANY` | qualsiasi turno in quella data | sempre, se è un turno lavorato |
-| `OFF` | quel giorno libero | il turno dell'altra persona è un OFF |
+| `RANGE` | «che finisca entro le 19:00», «che inizi dopo le 11:00» | entrambi; è come si scrive in chat |
+| `SPECIFIC` | un orario preciso | entrambi; si sceglie fra i turni reali del giorno |
+| `ANY` | qualsiasi turno | solo cambio OFF |
+
+In un cambio orario "qualsiasi turno" non dice niente — vorrebbe dire che ti va
+bene anche il tuo — quindi la validazione lo rifiuta.
+
+## R2b — Settimana Apple
+La settimana va da **sabato a venerdì**, e la chiave è la data del sabato.
+
+Il vincolo si applica **solo al cambio OFF**, che tocca due giornate: il giorno
+che lasci e i giorni che offri devono stare nella stessa settimana. Il cambio
+orario resta dentro una giornata, quindi non c'entra.
 
 ## R6 — Orari dello store
 Il negozio vende dalle **10:00 alle 20:00**. I turni però vanno dalle **08:00
@@ -67,18 +94,21 @@ che 06:30 è prima delle 20:00.
 Una notte non è mai classificata come chiusura né come mattina: è una categoria
 a sé, etichettata "notte" nell'interfaccia.
 
-## R8 — OFF
-"Cerco un OFF venerdì" significa **scambio col giorno libero**: prendo il tuo
-venerdì libero e tu prendi il mio turno. Non è una copertura a senso unico.
+## R8 — Come funziona davvero lo scambio di OFF
+Perché un cambio OFF regga servono quattro condizioni, e l'app le controlla
+tutte:
 
-Ne segue che un OFF e un turno lavorato non sono intercambiabili in nessuna
-direzione:
+1. tu lavori il giorno che vuoi liberare;
+2. sei libero nel giorno che offri;
+3. la controparte è **libera** nel giorno che vuoi liberare;
+4. la controparte **lavora** nel giorno che offri.
 
-- chi cerca un OFF può ricevere solo un OFF;
-- chi cerca un turno non riceve proposte da chi quel giorno è OFF.
+Dopo lo scambio ciascuno prende il turno che aveva l'altro, adattato al proprio
+contratto (R9). Non è una copertura a senso unico: le due giornate si scambiano
+davvero.
 
-Conseguenza visibile nell'app: se qualcuno cerca un OFF di venerdì e tu venerdì
-lavori, non ti viene proposto di rispondere. Non hai un venerdì libero da dargli.
+Conseguenza visibile: se qualcuno vuole liberare il venerdì e tu venerdì lavori,
+non ti viene proposto di rispondere. Non hai un venerdì libero da dargli.
 
 ## R9 — Full Time / Part Time
 Uno scambio fra contratti diversi **è permesso**, ma ciascuno resta sul proprio
@@ -170,9 +200,9 @@ Solo chi ha dato un segnale:
 Chi non ha fatto né l'una né l'altra cosa non viene mai mostrato.
 
 ## R16 — Niente doppio impegno
-Non puoi cercare un turno in un giorno in cui lavori già: ne avresti due. La
-regola è applicata due volte, in fase di validazione e nella scelta dei giorni,
-dove quelli occupati sono spenti con il motivo a vista.
+Nel cambio OFF puoi offrire solo i giorni in cui sei libero, e la controparte
+deve essere libera nel giorno che prende: altrimenti qualcuno si ritroverebbe
+con due turni nello stesso giorno. La regola è applicata alla creazione e nella
+scelta dei giorni, dove compaiono solo i tuoi OFF.
 
-**Eccezione**: il CERCO di tipo OFF, dove la semantica è ancora da definire
-(vedi `05-decisioni-aperte.md`).
+Nel cambio orario il problema non si pone: si resta dentro una giornata sola.

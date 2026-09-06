@@ -68,8 +68,8 @@ const AZIONI = {
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
 
-  intent: (_, el) => {
-    F.resetDraft(el.dataset.intent);
+  'tipo-cambio': (_, el) => {
+    F.resetDraft(el.dataset.tipo);
     vai('#/nuovo');
   },
 
@@ -95,9 +95,11 @@ const AZIONI = {
     const me = store.me;
     const { errori, richiesta } = store.creaRichiesta({
       cedo: { shiftId: F.rapido.shiftId, flessibile: false },
+      tipo: el.dataset.cambio,
       cerco: {
-        data: el.dataset.data,
-        mode: 'ANY',
+        giorni: [el.dataset.data],
+        mode: el.dataset.cambio === 'ORARIO' ? 'RANGE' : 'ANY',
+        entroLe: '', dalleOre: '',
         evitaChiusura: Boolean(me.preferenze?.evitaChiusure),
         note: '',
       },
@@ -110,12 +112,17 @@ const AZIONI = {
   },
 
   'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },
-  'scegli-data': (_, el) => { F.draft.cerco.data = el.dataset.data; render(); },
+  // Nel cambio OFF i giorni offerti sono più d'uno: si aggiungono e si tolgono.
+  'giorno-off': (_, el) => {
+    const g = el.dataset.data;
+    const giorni = F.draft.cerco.giorni;
+    F.draft.cerco.giorni = giorni.includes(g) ? giorni.filter((x) => x !== g) : [...giorni, g].sort();
+    render();
+  },
   modo: (_, el) => { F.draft.cerco.mode = el.dataset.modo; render(); },
   'scegli-orario': (_, el) => {
     F.draft.cerco.start = el.dataset.start;
     F.draft.cerco.end = el.dataset.end;
-    F.draft.cerco.daTurno = el.dataset.originale;
     render();
   },
   'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },

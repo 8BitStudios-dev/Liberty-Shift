@@ -1,7 +1,7 @@
 import { html, raw, esc } from './dom.js';
 import { store } from '../core/store.js';
 import { shiftLabel, wantLabel, hasPriority } from '../core/model.js';
-import { STATUS_META } from '../core/rules.js';
+import { STATUS_META, TIPO_META, TIPO_CAMBIO } from '../core/rules.js';
 import { formatDay } from '../core/time.js';
 
 export function nomeUtente(u) {
@@ -17,24 +17,38 @@ export function badgeStato(status) {
   return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
 }
 
-/** Il blocco CEDO/CERCO: è l'unità visiva di tutta l'app. */
+/** Il blocco della richiesta: è l'unità visiva di tutta l'app. */
 export function coppiaCedoCerco(request, { compatto = false } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
-  const extra = request.cedo.flessibile
-    ? '<div class="nota">disponibile a cedere anche altri turni</div>' : '';
-  return html`
-    <div class="coppia ${compatto ? 'compatta' : ''}">
-      <div class="lato cedo">
-        <span class="etichetta">🔴 CEDO</span>
-        <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
-        <span class="orario">${shiftLabel(cedo)}</span>
-        ${raw(extra)}
-      </div>
-      <div class="freccia">⇄</div>
+  const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
+  const giorni = request.cerco.giorni || [];
+
+  const lato = request.tipo === TIPO_CAMBIO.ORARIO
+    ? html`
       <div class="lato cerco">
         <span class="etichetta">🟢 CERCO</span>
-        <strong>${formatDay(request.cerco.data)}</strong>
+        <strong>stesso giorno</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
+      </div>`
+    : html`
+      <div class="lato cerco">
+        <span class="etichetta">🟢 LAVORO</span>
+        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
+        <span class="orario">${wantLabel(request.cerco)}</span>
+      </div>`;
+
+  return html`
+    <div class="coppia ${compatto ? 'compatta' : ''}">
+      <div class="tipo-cambio">${meta.icona} ${meta.label}</div>
+      <div class="lati">
+        <div class="lato cedo">
+          <span class="etichetta">🔴 LASCIO</span>
+          <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
+          <span class="orario">${shiftLabel(cedo)}</span>
+          ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}
+        </div>
+        <div class="freccia">⇄</div>
+        ${raw(lato)}
       </div>
     </div>`;
 }
@@ -113,7 +127,8 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
       </button>`;
   }
   return html`
-    <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}" data-data="${match.data}">
+    <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}"
+            data-data="${match.data}" data-cambio="${match.cambio}">
       Pubblica e avvisa ${u?.nome}
     </button>`;
 }

@@ -2,7 +2,7 @@ import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
 import { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } from './components.js';
 import { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } from '../core/model.js';
-import { RULES, WANT_MODE } from '../core/rules.js';
+import { RULES, TIPO_CAMBIO } from '../core/rules.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
 } from '../core/time.js';
@@ -112,7 +112,7 @@ export function calendario(params) {
   const perGiorno = new Map();
   for (const r of aperte) {
     const cedo = store.shift(r.cedo.shiftId);
-    for (const d of [cedo?.data, r.cerco.data]) {
+    for (const d of [cedo?.data, ...(r.cerco.giorni || [])]) {
       if (!d) continue;
       const lista = perGiorno.get(d) || [];
       lista.push(r);
@@ -164,7 +164,7 @@ export function dettaglioGiorno(data) {
   const richieste = store.state.requests.filter((r) => {
     if (!isOpen(r)) return false;
     const cedo = store.shift(r.cedo.shiftId);
-    return cedo?.data === data || r.cerco.data === data;
+    return cedo?.data === data || (r.cerco.giorni || []).includes(data);
   });
   const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
 
@@ -185,9 +185,9 @@ export function dettaglioGiorno(data) {
 
 const FILTRI = {
   TUTTI: { label: 'Tutti', test: () => true },
-  CEDO: { label: 'Cedo', test: (r) => store.shift(r.cedo.shiftId)?.tipo === 'WORK' },
-  CERCO: { label: 'Cerco', test: (r) => r.cerco.mode === WANT_MODE.SPECIFIC || r.cerco.mode === WANT_MODE.RANGE },
-  OFF: { label: 'OFF', test: (r) => r.cerco.mode === WANT_MODE.OFF },
+  ORARIO: { label: '🕐 Orario', test: (r) => r.tipo === TIPO_CAMBIO.ORARIO },
+  OFF: { label: '📅 OFF', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
+  PRIORITA: { label: '⭐ Priorità', test: (r) => hasPriority(r) },
 };
 
 export function bacheca(params) {

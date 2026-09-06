@@ -70,10 +70,30 @@ export const STATUS_META = {
   SCADUTA: { dot: '⚫', label: 'Scaduta' },
 };
 
-// Flessibilità del lato CERCO
+/**
+ * I due tipi di cambio che si fanno davvero in store.
+ *
+ * ORARIO — dentro la stessa giornata. "Cedo mercoledì 12:00-21:00, cerco
+ * mercoledì un turno che finisca prima." Entrambi lavorano quel giorno e si
+ * scambiano gli orari. È il caso più frequente.
+ *
+ * OFF — due giornate. "Voglio libero martedì; in cambio lavoro giovedì, che
+ * per me è OFF." Chi accetta è OFF martedì e lavora giovedì: le due persone
+ * si scambiano i due giorni, e ciascuno prende il turno che l'altro aveva.
+ */
+export const TIPO_CAMBIO = {
+  ORARIO: 'ORARIO',
+  OFF: 'OFF',
+};
+
+export const TIPO_META = {
+  ORARIO: { icona: '🕐', label: 'Cambio orario', breve: 'orario' },
+  OFF: { icona: '📅', label: 'Cambio OFF', breve: 'OFF' },
+};
+
+// Quanto sei rigido sul turno che vuoi ricevere.
 export const WANT_MODE = {
-  SPECIFIC: 'SPECIFIC', // Venerdì 18 · 14:00-20:00
-  RANGE: 'RANGE',       // Venerdì 18 · che finisca entro le 20:00
-  ANY: 'ANY',           // Venerdì 18 · qualsiasi turno
-  OFF: 'OFF',           // Venerdì 18 · OFF
+  SPECIFIC: 'SPECIFIC', // 14:00-20:00
+  RANGE: 'RANGE',       // che finisca entro le 20:00
+  ANY: 'ANY',           // qualsiasi turno
 };

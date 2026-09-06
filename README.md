@@ -17,7 +17,7 @@ In locale:
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 39 test sul motore di matching
+npm test        # 44 test sul motore di matching
 npm run build   # dist/cambio-turno.html, tutta l'app in un file solo
 ```
 
@@ -52,9 +52,11 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 ## Cosa funziona già
 
 - Inserimento manuale dei turni, calendario mensile con dettaglio giorno
-- Creazione richiesta CEDO + CERCO con i tre livelli di flessibilità e OFF
-- Regola della settimana Apple applicata alla sorgente: i giorni di un'altra
-  settimana non compaiono proprio, e nemmeno quelli in cui lavori già
+- Due tipi di cambio, presi dai messaggi veri del gruppo: **cambio orario**
+  (stessa giornata, orario diverso) e **cambio OFF** (due giornate che si
+  scambiano per intero), ciascuno con le sue regole e il suo wizard
+- Regola della settimana Apple applicata alla sorgente sul cambio OFF: i giorni
+  di un'altra settimana non compaiono proprio, e nemmeno quelli in cui lavori
 - Orari dello store (vendita 10–20, turni 08–21) e notti visual che scavalcano
   la mezzanotte
 - Adattamento del turno alla persona che lo riceve: uno scambio FT/PT accorcia
@@ -64,7 +66,7 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
   giorno, e mostra le ore che faresti tu
 - Matching su due sorgenti, richieste pubblicate e disponibilità di profilo,
   con punteggio e spiegazione in italiano
-- Cambio rapido che prova da solo tutti i giorni liberi della tua settimana
+- Cambio rapido che prova da solo entrambi i tipi e tutti i giorni liberi
 - Proposta, accettazione bilaterale, "Cambio inserito", scadenza automatica
 - Priorità mensile con durata di 48 ore
 - Bacheca con filtri, profilo con disponibilità settimana per settimana

@@ -160,8 +160,12 @@ p { margin: 8px 0; }
 /* ----------------------------------------------------- coppia CEDO/CERCO */
 
 .coppia {
-  display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch;
   background: var(--superficie-2); border-radius: 12px; padding: 12px;
+}
+.coppia .lati { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; }
+.tipo-cambio {
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  color: var(--testo-tenue); margin-bottom: 10px;
 }
 .coppia .lato { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .coppia .etichetta { font-size: 11px; letter-spacing: .06em; font-weight: 700; }
@@ -449,15 +453,35 @@ const STATUS_META = {
   SCADUTA: { dot: '⚫', label: 'Scaduta' },
 };
 
-// Flessibilità del lato CERCO
-const WANT_MODE = {
-  SPECIFIC: 'SPECIFIC', // Venerdì 18 · 14:00-20:00
-  RANGE: 'RANGE',       // Venerdì 18 · che finisca entro le 20:00
-  ANY: 'ANY',           // Venerdì 18 · qualsiasi turno
-  OFF: 'OFF',           // Venerdì 18 · OFF
+/**
+ * I due tipi di cambio che si fanno davvero in store.
+ *
+ * ORARIO — dentro la stessa giornata. "Cedo mercoledì 12:00-21:00, cerco
+ * mercoledì un turno che finisca prima." Entrambi lavorano quel giorno e si
+ * scambiano gli orari. È il caso più frequente.
+ *
+ * OFF — due giornate. "Voglio libero martedì; in cambio lavoro giovedì, che
+ * per me è OFF." Chi accetta è OFF martedì e lavora giovedì: le due persone
+ * si scambiano i due giorni, e ciascuno prende il turno che l'altro aveva.
+ */
+const TIPO_CAMBIO = {
+  ORARIO: 'ORARIO',
+  OFF: 'OFF',
 };
 
-return { RULES, STATUS, STATUS_META, WANT_MODE };
+const TIPO_META = {
+  ORARIO: { icona: '🕐', label: 'Cambio orario', breve: 'orario' },
+  OFF: { icona: '📅', label: 'Cambio OFF', breve: 'OFF' },
+};
+
+// Quanto sei rigido sul turno che vuoi ricevere.
+const WANT_MODE = {
+  SPECIFIC: 'SPECIFIC', // 14:00-20:00
+  RANGE: 'RANGE',       // che finisca entro le 20:00
+  ANY: 'ANY',           // qualsiasi turno
+};
+
+return { RULES, STATUS, STATUS_META, TIPO_CAMBIO, TIPO_META, WANT_MODE };
 })();
 
 // ---- src/core/time.js
@@ -549,7 +573,8 @@ const { minutes, todayISO, appleWeekKey } = M_time;
 /**
  * User
  * {
- *   id, nome, cognomeIniziale, ruolo, contratto: 'FT'|'PT', admin: bool,
+ *   id, nome, cognomeIniziale, ruolo, contratto: 'FT'|'PT',
+ *   durataTurno: 5|6|9, oreSettimanali: 20|25|30|40, admin: bool,
  *   preferenze: { preferisceMattina, evitaChiusure, disponibileWeekend },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
  *   prioritaUsata: { '<YYYY-MM>': true }
@@ -561,8 +586,13 @@ const { minutes, todayISO, appleWeekKey } = M_time;
  * Request
  * {
  *   id, userId, createdAt, status, prioritaFinoA: iso-datetime | null,
- *   cedo: { shiftId, altriShiftIds: [], flessibile: bool },
- *   cerco: { data, mode, start, end, entroLe, dalleOre, evitaChiusura, note }
+ *   tipo: 'ORARIO' | 'OFF',
+ *   cedo: { shiftId, flessibile: bool },      // il turno che lascio
+ *   cerco: {
+ *     giorni: ['YYYY-MM-DD'],   // ORARIO: solo il giorno del turno ceduto
+ *                               // OFF: i giorni in cui sono disposto a lavorare
+ *     mode, start, end, entroLe, dalleOre, evitaChiusura, note
+ *   }
  * }
  *
  * Proposal
@@ -646,8 +676,6 @@ function wantLabel(cerco) {
       if (cerco.dalleOre) parti.push(`che inizi dopo le ${cerco.dalleOre}`);
       return `qualsiasi turno ${parti.join(' e ')}`.trim();
     }
-    case WANT_MODE.OFF:
-      return 'OFF';
     default:
       return cerco.evitaChiusura ? 'qualsiasi turno non di chiusura' : 'qualsiasi turno';
   }
@@ -780,11 +808,13 @@ function arrotonda(n) {
   return Number(n.toFixed(1)).toString().replace('.', ',');
 }
 
-/** La richiesta è scaduta quando è passata la data del turno ceduto (cap. 24). */
+/** La richiesta è scaduta quando i giorni che tocca sono passati (cap. 24). */
 function isExpired(request, shiftsById, oggi = todayISO()) {
   const cedo = shiftsById[request.cedo.shiftId];
   if (!cedo) return true;
-  return cedo.data < oggi || request.cerco.data < oggi;
+  if (cedo.data < oggi) return true;
+  const giorni = request.cerco?.giorni || [];
+  return giorni.length > 0 && giorni.every((g) => g < oggi);
 }
 
 function hasPriority(request, now = new Date()) {
@@ -806,35 +836,32 @@ const M_engine = (() => {
 // Definisce matematicamente quando due richieste sono compatibili
 // e perché, perché il match senza spiegazione non serve a nessuno.
 
-const { RULES, STATUS, WANT_MODE } = M_rules;
-const { minutes, sameAppleWeek, formatDay, weekday, appleWeekKey, addDays, todayISO } = M_time;
-const { isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel, fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre } = M_model;
+const { RULES, STATUS, WANT_MODE, TIPO_CAMBIO } = M_rules;
+const {
+  minutes, sameAppleWeek, formatDay, weekday, appleWeekKey, addDays, todayISO,
+} = M_time;
+const {
+  isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
+  fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre,
+} = M_model;
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 
-/** Fine del CERCO sulla scala del giorno di inizio, notti comprese. */
+/** Fine del turno cercato sulla scala del giorno di inizio, notti comprese. */
 function fineCerco(cerco) {
   const fine = minutes(cerco.end);
   return fine <= minutes(cerco.start) ? fine + 1440 : fine;
 }
 
 /**
- * Quanto un turno reale soddisfa un lato CERCO.
+ * Quanto un turno reale soddisfa quello che si sta cercando.
  * Restituisce { score 0-100, reasons: [] }. Score 0 = incompatibile.
+ * Il giorno non è nel `cerco`: una richiesta può candidare più giorni.
  */
 function satisfies(cerco, shift) {
   const reasons = [];
-  if (!shift) return { score: 0, reasons: ['nessun turno in quella data'] };
-  if (shift.data !== cerco.data) return { score: 0, reasons: ['data diversa'] };
-
-  if (cerco.mode === WANT_MODE.OFF) {
-    return shift.tipo === 'OFF'
-      ? { score: 100, reasons: ['è un OFF, esattamente quello che cerchi'] }
-      : { score: 0, reasons: ['cerchi un OFF ma quel giorno è un turno lavorato'] };
-  }
-
-  if (shift.tipo === 'OFF') {
-    return { score: 0, reasons: ['quel giorno è un OFF, non un turno scambiabile'] };
+  if (!shift || shift.tipo !== 'WORK') {
+    return { score: 0, reasons: ['non è un turno lavorato'] };
   }
 
   if (cerco.evitaChiusura && isClosing(shift)) {
@@ -884,49 +911,66 @@ function satisfies(cerco, shift) {
     }
     default: {
       score = 100;
-      reasons.push('accetti qualsiasi turno in quella data');
+      reasons.push('ti va bene qualsiasi turno');
     }
   }
   return { score: clamp(score), reasons };
 }
 
-/**
- * Validazione di una richiesta prima della pubblicazione (cap. 6 e 18).
- * `shifts`, se passato, abilita anche il controllo di doppio impegno.
- */
-function validateRequest({ cedo, cerco, userId }, shiftsById, shifts = null) {
+/** Validazione prima della pubblicazione, diversa per i due tipi di cambio. */
+function validateRequest(request, shiftsById, shifts = null) {
+  const { tipo, cedo, cerco, userId } = request;
   const errori = [];
-  const shift = shiftsById[cedo?.shiftId];
+  const mio = shiftsById[cedo?.shiftId];
 
-  // Non puoi prendere un turno in un giorno in cui lavori già: ne avresti due.
-  // Il CERCO di tipo OFF è escluso, lì la semantica è ancora da definire.
-  if (shifts && cerco?.data && cerco.mode !== WANT_MODE.OFF) {
-    const mio = shifts.find((s) => s.userId === (userId ?? cedo?.userId) && s.data === cerco.data);
-    if (mio && mio.tipo === 'WORK') {
-      errori.push(
-        `Il ${formatDay(cerco.data)} hai già un turno (${shiftLabel(mio)}): non puoi prenderne un altro. Se vuoi liberarti quel giorno, cedi quello.`,
-      );
+  if (!mio) errori.push('Devi scegliere il turno che vuoi lasciare.');
+  if (mio && mio.tipo !== 'WORK') errori.push('Un giorno di OFF non si cede: si cede il turno che vuoi lasciare.');
+
+  const giorni = cerco?.giorni || [];
+  if (!giorni.length) {
+    errori.push(tipo === TIPO_CAMBIO.ORARIO
+      ? 'Manca l\'orario che cerchi.'
+      : 'Devi indicare in quale giorno sei disposto a lavorare in cambio.');
+  }
+
+  if (mio && tipo === TIPO_CAMBIO.ORARIO) {
+    // Cambio orario: si resta dentro la giornata, quindi niente da
+    // controllare sulla settimana Apple.
+    if (giorni.some((g) => g !== mio.data)) {
+      errori.push('Il cambio orario resta nello stesso giorno. Per cambiare giornata serve un cambio OFF.');
+    }
+    if (cerco.mode === WANT_MODE.ANY) {
+      errori.push('In un cambio orario "qualsiasi turno" non dice niente: indica un orario o una fascia.');
     }
   }
-  if (!shift) errori.push('Devi scegliere un turno da cedere fra i tuoi.');
-  if (!cerco?.data) errori.push('Devi indicare cosa cerchi in cambio.');
-  if (shift && cerco?.data) {
-    if (shift.data === cerco.data) {
-      errori.push('Il turno ceduto e quello cercato sono nello stesso giorno.');
-    }
-    if (!sameAppleWeek(shift.data, cerco.data)) {
-      errori.push(
-        `Settimane Apple diverse: ${formatDay(shift.data)} e ${formatDay(cerco.data)} non sono scambiabili. La settimana va da sabato a venerdì.`,
-      );
+
+  if (mio && tipo === TIPO_CAMBIO.OFF) {
+    for (const g of giorni) {
+      if (g === mio.data) {
+        errori.push('Il giorno che vuoi liberare non può essere anche quello in cui lavoreresti.');
+        continue;
+      }
+      if (!sameAppleWeek(mio.data, g)) {
+        errori.push(
+          `Settimane Apple diverse: ${formatDay(mio.data)} e ${formatDay(g)} non sono scambiabili. La settimana va da sabato a venerdì.`,
+        );
+      }
+      if (shifts) {
+        const suo = shifts.find((s) => s.userId === (userId ?? mio.userId) && s.data === g);
+        if (suo && suo.tipo === 'WORK') {
+          errori.push(`Il ${formatDay(g)} lavori già (${shiftLabel(suo)}): puoi offrire solo i giorni in cui sei libero.`);
+        }
+      }
     }
   }
+
   if (cerco?.mode === WANT_MODE.SPECIFIC && (!cerco.start || !cerco.end)) {
-    errori.push('Per un CERCO specifico servono orario di inizio e fine.');
+    errori.push('Per un orario preciso servono inizio e fine.');
   }
   if (cerco?.mode === WANT_MODE.RANGE && !cerco.entroLe && !cerco.dalleOre) {
     errori.push('Per una fascia serve almeno un limite orario.');
   }
-  return errori;
+  return [...new Set(errori)];
 }
 
 function indexShifts(shifts) {
@@ -939,146 +983,241 @@ function indexShifts(shifts) {
   return { byId, get: (userId, data) => byUserDate.get(`${userId}|${data}`) };
 }
 
+const nome = (u) => `${u.nome} ${u.cognomeIniziale}.`;
+const contrattoDi = (u) => RULES.contracts[u.contratto]?.label || u.contratto;
+
+/** Le due frasi che spiegano l'adattamento e l'impatto sul monte ore. */
+function verificheIncrociate(coppie, autoreId, shifts) {
+  const reasons = [];
+  const avvisi = [];
+  let penalita = 0;
+  for (const [chi, cede, riceve] of coppie) {
+    const t = trasformaTurno(riceve, chi);
+    if (t.trasformato) {
+      penalita += RULES.adattamentoPenalty;
+      reasons.push(chi.id === autoreId
+        ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
+        : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
+    }
+    if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
+    if (cede) {
+      const ore = impattoMonteOre(chi, cede, riceve, shifts);
+      if (ore.avviso) avvisi.push(`${chi.id === autoreId ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
+    }
+  }
+  return { reasons, avvisi, penalita };
+}
+
 /**
- * Trova i match per una richiesta.
- * ctx = { users, shifts, requests }
- * Restituisce match ordinati per punteggio, senza chi non ha dato alcun
- * segnale di interesse (cap. 10).
+ * Trova i match per una richiesta, secondo il suo tipo.
+ * Non mostra mai chi non ha dato alcun segnale di interesse (cap. 10).
  */
 function findMatches(request, ctx) {
+  return request.tipo === TIPO_CAMBIO.ORARIO
+    ? matchOrario(request, ctx)
+    : matchOff(request, ctx);
+}
+
+/**
+ * CAMBIO ORARIO — stesso giorno.
+ * Entrambi lavorano quella giornata e si scambiano gli orari. Nessuno deve
+ * essere libero: al contrario, serve che l'altro sia in turno.
+ */
+function matchOrario(request, ctx) {
   const idx = indexShifts(ctx.shifts);
-  const usersById = Object.fromEntries(ctx.users.map((u) => [u.id, u]));
-  const autore = usersById[request.userId];
+  const autore = ctx.users.find((u) => u.id === request.userId);
   const mioCedo = idx.byId[request.cedo.shiftId];
   if (!mioCedo || !autore) return [];
+  const giorno = mioCedo.data;
 
   const risultati = [];
-  const coperti = new Set();
-
-  // 1. Match richiesta contro richiesta: due bisogni che si incastrano.
-  for (const altra of ctx.requests) {
-    if (altra.id === request.id || altra.userId === request.userId) continue;
-    if (!isOpen(altra)) continue;
-    const controparte = usersById[altra.userId];
-    const suoCedo = idx.byId[altra.cedo.shiftId];
-    if (!controparte || !suoCedo) continue;
-
-    // Quello che riceverei non è il turno com'è, ma com'è dopo essere stato
-    // adattato al mio contratto. Il punteggio si calcola su quello.
-    const perMeTurno = turnoAdattato(suoCedo, autore);
-    const perLuiTurno = turnoAdattato(mioCedo, controparte);
-
-    const perMe = satisfies(request.cerco, perMeTurno);
-    if (perMe.score === 0) continue;
-    const perLui = satisfies(altra.cerco, perLuiTurno);
-    if (perLui.score === 0) continue;
-
-    let score = Math.round((perMe.score + perLui.score) / 2);
-    const reasons = [
-      `${nome(controparte)} cede ${formatDay(suoCedo.data)} · ${shiftLabel(suoCedo)}: ${perMe.reasons[0]}`,
-      `e cerca proprio ${formatDay(mioCedo.data)} · ${wantLabel(altra.cerco)}`,
-    ];
-    const avvisi = [];
-    for (const [chi, cede, riceve] of [[autore, mioCedo, suoCedo], [controparte, suoCedo, mioCedo]]) {
-      const t = trasformaTurno(riceve, chi);
-      if (t.trasformato) {
-        score -= RULES.adattamentoPenalty;
-        reasons.push(chi.id === autore.id
-          ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
-          : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
-      }
-      if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
-      const ore = impattoMonteOre(chi, cede, riceve, ctx.shifts);
-      if (ore.avviso) avvisi.push(`${chi.id === autore.id ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
-    }
-    if (score < RULES.potentialThreshold) continue;
-
-    coperti.add(controparte.id);
-    risultati.push({
-      origine: 'RICHIESTA',
-      tipo: score >= RULES.matchThreshold ? 'MATCH' : 'POTENZIALE',
-      score: clamp(score),
-      userId: controparte.id,
-      requestId: altra.id,
-      shiftOffertoId: suoCedo.id,
-      adattato: trasformaTurno(suoCedo, autore),
-      prioritaria: hasPriority(altra),
-      reasons,
-      avvisi,
-    });
-  }
-
-  // 2. Match da disponibilità di profilo: interesse dichiarato, non richiesta.
   for (const u of ctx.users) {
-    if (u.id === request.userId || coperti.has(u.id)) continue;
+    if (u.id === autore.id) continue;
+    const suo = idx.get(u.id, giorno);
+    if (!suo || suo.tipo !== 'WORK') continue;
+    if (suo.start === mioCedo.start && suo.end === mioCedo.end) continue; // stesso turno
 
-    const suoTurno = idx.get(u.id, request.cerco.data);
-    const perMe = satisfies(request.cerco, turnoAdattato(suoTurno, autore));
+    const perMe = satisfies(request.cerco, turnoAdattato(suo, autore));
     if (perMe.score === 0) continue;
 
-    // Deve poter prendere il mio turno: quel giorno dev'essere libero.
-    const suoImpegno = idx.get(u.id, mioCedo.data);
-    if (suoImpegno && suoImpegno.tipo !== 'OFF') continue;
+    // Ha chiesto lui stesso un cambio orario quel giorno?
+    const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
+      && r.tipo === TIPO_CAMBIO.ORARIO && idx.byId[r.cedo.shiftId]?.data === giorno);
 
-    if (!disponibileIl(u, request.cerco.data)) continue;
-
-    const reasons = [`ha ${shiftLabel(suoTurno)} il ${formatDay(request.cerco.data)} e ha dichiarato disponibilità a scambiare quel giorno`];
-    let score = Math.min(perMe.score, RULES.availabilityScoreCap);
-
-    // Le preferenze si valutano sul turno che riceverebbe davvero.
-    const perLuiTurno = turnoAdattato(mioCedo, u);
-    if (u.preferenze?.evitaChiusure && isClosing(perLuiTurno)) continue;
-    if (u.preferenze?.preferisceMattina) {
-      if (isMorning(perLuiTurno)) {
-        score += 5;
-        reasons.push('preferisce i turni di mattina e il tuo lo è');
-      } else {
-        score -= 10;
-        reasons.push('preferisce i turni di mattina, il tuo no');
-      }
+    let score;
+    let origine;
+    const reasons = [];
+    if (suaRichiesta) {
+      const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, u));
+      if (perLui.score === 0) continue;
+      score = Math.round((perMe.score + perLui.score) / 2);
+      origine = 'RICHIESTA';
+      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno: ${perMe.reasons[0]}`);
+      reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}, che è il tuo turno`);
+    } else {
+      if (!disponibileIl(u, giorno)) continue;
+      if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
+      score = Math.min(perMe.score, RULES.availabilityScoreCap);
+      origine = 'DISPONIBILITA';
+      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e si è dichiarato disponibile a scambiare`);
     }
-    if (!suoImpegno) reasons.push(`${formatDay(mioCedo.data)} non risulta occupato nel suo calendario`);
 
-    const avvisi = [];
-    for (const [chi, cede, riceve] of [[autore, mioCedo, suoTurno], [u, suoTurno, mioCedo]]) {
-      const t = trasformaTurno(riceve, chi);
-      if (t.trasformato) {
-        score -= RULES.adattamentoPenalty;
-        reasons.push(chi.id === autore.id
-          ? `sei ${contrattoDi(chi)}: ${t.originale} per te diventa ${t.start}–${t.end}`
-          : `${nome(chi)} è ${contrattoDi(chi)}: ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
-      }
-      if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
-      const ore = impattoMonteOre(chi, cede, riceve, ctx.shifts);
-      if (ore.avviso) avvisi.push(`${chi.id === autore.id ? 'Per te' : nome(chi)}: ${ore.avviso}.`);
-    }
-    score = clamp(Math.round(score), 0, RULES.availabilityScoreCap);
+    const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], autore.id, ctx.shifts);
+    score = clamp(Math.round(score - v.penalita), 0,
+      origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
     if (score < RULES.potentialThreshold) continue;
 
     risultati.push({
-      origine: 'DISPONIBILITA',
-      tipo: 'POTENZIALE',
+      origine,
+      tipo: score >= RULES.matchThreshold ? 'MATCH' : 'POTENZIALE',
+      cambio: TIPO_CAMBIO.ORARIO,
       score,
       userId: u.id,
-      requestId: null,
-      shiftOffertoId: suoTurno.id,
-      adattato: trasformaTurno(suoTurno, autore),
-      prioritaria: false,
-      reasons,
-      avvisi,
+      requestId: suaRichiesta?.id || null,
+      shiftOffertoId: suo.id,
+      data: giorno,
+      adattato: trasformaTurno(suo, autore),
+      prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
+      reasons: [...reasons, ...v.reasons],
+      avvisi: v.avvisi,
     });
   }
-
   return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
 }
 
 /**
+ * CAMBIO OFF — due giornate.
+ * Io voglio libero il giorno che cedo; in cambio lavoro in uno dei giorni in
+ * cui sono OFF. Serve qualcuno che quel giorno sia libero e che lavori in uno
+ * dei giorni che offro: ci scambiamo le due giornate intere.
+ */
+function matchOff(request, ctx) {
+  const idx = indexShifts(ctx.shifts);
+  const autore = ctx.users.find((u) => u.id === request.userId);
+  const mioCedo = idx.byId[request.cedo.shiftId];
+  if (!mioCedo || !autore) return [];
+
+  const risultati = [];
+  const visti = new Set();
+
+  for (const giorno of request.cerco.giorni || []) {
+    for (const u of ctx.users) {
+      if (u.id === autore.id) continue;
+
+      // Deve essere libero il giorno che voglio lasciare...
+      const suoNelMioGiorno = idx.get(u.id, mioCedo.data);
+      if (suoNelMioGiorno && suoNelMioGiorno.tipo !== 'OFF') continue;
+      // ...e lavorare nel giorno che gli offro.
+      const suo = idx.get(u.id, giorno);
+      if (!suo || suo.tipo !== 'WORK') continue;
+
+      const perMe = satisfies(request.cerco, turnoAdattato(suo, autore));
+      if (perMe.score === 0) continue;
+
+      const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
+        && r.tipo === TIPO_CAMBIO.OFF
+        && idx.byId[r.cedo.shiftId]?.data === giorno
+        && (r.cerco.giorni || []).includes(mioCedo.data));
+
+      let score;
+      let origine;
+      const reasons = [];
+      if (suaRichiesta) {
+        const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, u));
+        if (perLui.score === 0) continue;
+        score = Math.round((perMe.score + perLui.score) / 2);
+        origine = 'RICHIESTA';
+        reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario del tuo`);
+      } else {
+        if (!disponibileIl(u, mioCedo.data)) continue;
+        if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
+        score = Math.min(perMe.score, RULES.availabilityScoreCap);
+        origine = 'DISPONIBILITA';
+        reasons.push(`è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`);
+      }
+      reasons.push(`tu lavoreresti ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
+
+      const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], autore.id, ctx.shifts);
+      score = clamp(Math.round(score - v.penalita), 0,
+        origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
+      if (score < RULES.potentialThreshold) continue;
+
+      const chiave = `${u.id}|${suo.id}`;
+      if (visti.has(chiave)) continue;
+      visti.add(chiave);
+
+      risultati.push({
+        origine,
+        tipo: score >= RULES.matchThreshold ? 'MATCH' : 'POTENZIALE',
+        cambio: TIPO_CAMBIO.OFF,
+        score,
+        userId: u.id,
+        requestId: suaRichiesta?.id || null,
+        shiftOffertoId: suo.id,
+        data: giorno,
+        adattato: trasformaTurno(suo, autore),
+        prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
+        reasons: [...reasons, ...v.reasons],
+        avvisi: v.avvisi,
+      });
+    }
+  }
+  return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+}
+
+/**
+ * Un turno può essere offerto su una richiesta?
+ * Il giorno deve tornare (stesso giorno per un cambio orario, uno dei giorni
+ * candidati per un cambio OFF), l'orario deve soddisfare quello che chiedono,
+ * e su un cambio OFF chi offre dev'essere libero il giorno da liberare.
+ */
+function turnoOfferibile(request, shift, shifts, shiftsById) {
+  const mioCedo = shiftsById[request.cedo.shiftId];
+  if (!shift || shift.tipo !== 'WORK' || !mioCedo) return { ok: false, motivo: 'Turno non valido.' };
+  if (shift.userId === request.userId) return { ok: false, motivo: 'È un tuo turno.' };
+
+  const giorni = request.cerco.giorni || [];
+  if (!giorni.includes(shift.data)) {
+    return {
+      ok: false,
+      motivo: request.tipo === TIPO_CAMBIO.ORARIO
+        ? `Il cambio è per ${formatDay(mioCedo.data)}: serve un turno di quel giorno.`
+        : `${formatDay(shift.data)} non è fra i giorni che ha offerto.`,
+    };
+  }
+
+  if (request.tipo === TIPO_CAMBIO.OFF) {
+    const mioNelSuoGiorno = shifts.find((x) => x.userId === shift.userId && x.data === mioCedo.data);
+    if (mioNelSuoGiorno && mioNelSuoGiorno.tipo !== 'OFF') {
+      return { ok: false, motivo: `Il ${formatDay(mioCedo.data)} lavori già: non puoi prendere anche il suo turno.` };
+    }
+  }
+
+  const s = satisfies(request.cerco, shift);
+  if (s.score === 0) return { ok: false, motivo: `Non è quello che cerca: ${s.reasons[0]}.` };
+  return { ok: true };
+}
+
+/** I giorni della settimana Apple di un turno in cui la persona è libera. */
+function giorniLiberi(userId, dataRiferimento, shifts) {
+  const idx = indexShifts(shifts);
+  const settimana = appleWeekKey(dataRiferimento);
+  const oggi = todayISO();
+  const liberi = [];
+  for (let i = 0; i < 7; i += 1) {
+    const g = addDays(settimana, i);
+    if (g === dataRiferimento || g < oggi) continue;
+    const s = idx.get(userId, g);
+    if (!s || s.tipo === 'OFF') liberi.push(g);
+  }
+  return liberi;
+}
+
+/**
  * Cambio Rapido: dato un tuo turno, chi potrebbe prenderlo.
- *
- * Fa il lavoro che altrimenti tocca all'utente. Invece di chiedergli quale
- * giorno vuole in cambio, prova tutti i giorni della settimana Apple in cui
- * è libero e mette insieme i risultati. È il principio UX numero 4 della
- * specifica: il Cambio Rapido deve fare il lavoro pesante.
+ * Prova entrambe le strade senza chiedere niente — prima lo scambio di orario
+ * nella stessa giornata, poi lo scambio di OFF su tutti i giorni in cui sei
+ * libero — e mette insieme i risultati.
  */
 function cambioRapido(shiftId, ctx) {
   const idx = indexShifts(ctx.shifts);
@@ -1087,44 +1226,31 @@ function cambioRapido(shiftId, ctx) {
   const autore = ctx.users.find((u) => u.id === mioCedo.userId);
   if (!autore) return [];
 
-  const settimana = appleWeekKey(mioCedo.data);
-  const oggi = todayISO();
-  const risultati = [];
-  const visti = new Set();
+  const base = {
+    userId: autore.id,
+    status: STATUS.APERTA,
+    createdAt: new Date().toISOString(),
+    prioritaFinoA: null,
+    cedo: { shiftId, flessibile: false },
+  };
+  const evitaChiusura = Boolean(autore.preferenze?.evitaChiusure);
 
-  for (let i = 0; i < 7; i += 1) {
-    const data = addDays(settimana, i);
-    if (data === mioCedo.data || data < oggi) continue;
-    // Nei giorni in cui lavoro già non posso prendere un secondo turno (R16).
-    const mio = idx.get(autore.id, data);
-    if (mio && mio.tipo === 'WORK') continue;
+  const orario = findMatches({
+    ...base,
+    id: 'rapido_orario',
+    tipo: TIPO_CAMBIO.ORARIO,
+    cerco: { giorni: [mioCedo.data], mode: WANT_MODE.RANGE, entroLe: '', dalleOre: '', evitaChiusura },
+  }, ctx);
 
-    const ipotesi = {
-      id: `rapido_${data}`,
-      userId: autore.id,
-      status: STATUS.APERTA,
-      createdAt: new Date().toISOString(),
-      prioritaFinoA: null,
-      cedo: { shiftId, altriShiftIds: [], flessibile: false },
-      cerco: {
-        data,
-        mode: WANT_MODE.ANY,
-        // Le preferenze del profilo valgono: chi evita le chiusure non se le
-        // vede proporre nemmeno qui.
-        evitaChiusura: Boolean(autore.preferenze?.evitaChiusure),
-        note: '',
-      },
-    };
+  const liberi = giorniLiberi(autore.id, mioCedo.data, ctx.shifts);
+  const off = liberi.length ? findMatches({
+    ...base,
+    id: 'rapido_off',
+    tipo: TIPO_CAMBIO.OFF,
+    cerco: { giorni: liberi, mode: WANT_MODE.ANY, evitaChiusura },
+  }, ctx) : [];
 
-    for (const m of findMatches(ipotesi, ctx)) {
-      const chiave = `${m.userId}|${m.shiftOffertoId}`;
-      if (visti.has(chiave)) continue;
-      visti.add(chiave);
-      risultati.push({ ...m, data, cercoIpotizzato: ipotesi.cerco });
-    }
-  }
-
-  return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+  return [...orario, ...off].sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
 }
 
 /** Disponibilità dichiarata settimana per settimana (cap. 20). */
@@ -1139,14 +1265,6 @@ function slotSettimana(dataISO) {
   return (weekday(dataISO) - RULES.weekStartsOn + 7) % 7;
 }
 
-function nome(u) {
-  return `${u.nome} ${u.cognomeIniziale}.`;
-}
-
-function contrattoDi(u) {
-  return RULES.contracts[u.contratto]?.label || u.contratto;
-}
-
 /** Transizioni di stato ammesse (cap. 14-15). */
 function nextStatus(request, proposte) {
   if (request.status === STATUS.CHIUSA || request.status === STATUS.ACCORDO) return request.status;
@@ -1157,7 +1275,7 @@ function nextStatus(request, proposte) {
   return STATUS.APERTA;
 }
 
-return { satisfies, validateRequest, findMatches, cambioRapido, disponibileIl, slotSettimana, nextStatus };
+return { satisfies, validateRequest, findMatches, turnoOfferibile, giorniLiberi, cambioRapido, disponibileIl, slotSettimana, nextStatus };
 })();
 
 // ---- src/core/seed.js
@@ -1166,7 +1284,7 @@ const M_seed = (() => {
 // così la demo non invecchia. Riproducono gli esempi del capitolo 11.
 
 const { appleWeekKey, addDays, todayISO } = M_time;
-const { STATUS, WANT_MODE } = M_rules;
+const { STATUS, WANT_MODE, TIPO_CAMBIO } = M_rules;
 
 const W = (turni) => turni; // [sab, dom, lun, mar, mer, gio, ven]
 const o = 'OFF';
@@ -1255,36 +1373,70 @@ function seed() {
   const iso = (h) => new Date(ora.getTime() - h * 3600 * 1000).toISOString();
 
   const requests = [
-    // Cap. 11: Lorenzo e Martina si incastrano. Martina è Part Time e chiede
-    // le ore che farebbe davvero sul turno di Lorenzo, 11:00-20:00 adattato.
+    // Ricalcano i messaggi veri del gruppo WhatsApp.
+
+    // "Cedo mercoledì 12:00-21:00, cerco mercoledì un turno che finisce prima"
     {
-      id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 0)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 1), mode: WANT_MODE.ANY, evitaChiusura: true, note: '' },
+      id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.ORARIO,
+      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 5)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 5)], mode: WANT_MODE.RANGE, entroLe: '19:00',
+        evitaChiusura: false, note: 'Ho la macchina dal meccanico.',
+      },
     },
+    // L'altra metà dello stesso cambio orario: chi vuole finire tardi.
     {
-      id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_martina', addDays(wRef, 1)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
+      id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.ORARIO,
+      cedo: { shiftId: turno('u_martina', addDays(wRef, 5)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 5)], mode: WANT_MODE.RANGE, dalleOre: '11:00',
+        evitaChiusura: false, note: '',
+      },
     },
-    // Luca cerca un OFF: nessuna richiesta corrispondente, solo disponibilità.
+    // "CERCO 08/09 OFF, CEDO 10-11/09 OFF": voglio libero il venerdì e in
+    // cambio lavoro uno dei giorni in cui sono a casa.
     {
-      id: 'rq_luca_1', userId: 'u_luca', createdAt: iso(20), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_luca', addDays(wRef, 6)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 5), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.' },
+      id: 'rq_luca_1', userId: 'u_luca', createdAt: iso(20), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_luca', addDays(wRef, 6)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 2), addDays(wRef, 4)], mode: WANT_MODE.ANY,
+        evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.',
+      },
     },
-    // Giulia usa una fascia oraria.
+    // Cambio OFF con una preferenza di orario sul giorno di ritorno.
     {
-      id: 'rq_giulia_1', userId: 'u_giulia', createdAt: iso(30), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_giulia', addDays(wRef, 4)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
+      id: 'rq_giulia_1', userId: 'u_giulia', createdAt: iso(30), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_giulia', addDays(wRef, 4)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 1), addDays(wRef, 3)], mode: WANT_MODE.RANGE,
+        entroLe: '17:00', evitaChiusura: true, note: '',
+      },
     },
-    // Marco cede la notte visual e ha speso la sua priorità del mese.
+    // L'altra metà di un cambio OFF: Sara vuole liberare il lunedì e lavorare
+    // il venerdì, cioè esattamente il contrario di Luca.
+    {
+      id: 'rq_sara_1', userId: 'u_sara', createdAt: iso(8), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_sara', addDays(wRef, 2)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 6)], mode: WANT_MODE.ANY,
+        evitaChiusura: false, note: '',
+      },
+    },
+    // Cambio OFF con la priorità del mese: quello che non si può rimandare.
     {
       id: 'rq_marco_1', userId: 'u_marco', createdAt: iso(2), status: STATUS.APERTA,
       prioritaFinoA: new Date(ora.getTime() + 46 * 3600 * 1000).toISOString(),
-      cedo: { shiftId: turno('u_marco', addDays(wRef, 5)).id, altriShiftIds: [], flessibile: true },
-      cerco: { data: addDays(wRef, 6), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Matrimonio, non posso proprio.' },
+      tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_marco', addDays(wRef, 0)).id, flessibile: true },
+      cerco: {
+        giorni: [addDays(wRef, 2), addDays(wRef, 4), addDays(wRef, 6)], mode: WANT_MODE.ANY,
+        evitaChiusura: false, note: 'Matrimonio, non posso proprio.',
+      },
     },
   ];
 
@@ -1312,8 +1464,8 @@ const M_store = (() => {
 // chiamate a un backend non tocca né il motore né la UI.
 
 const { RULES, STATUS } = M_rules;
-const { newId, isExpired, hasPriority, isOpen, turnoAdattato } = M_model;
-const { validateRequest, nextStatus, satisfies } = M_engine;
+const { newId, isExpired, hasPriority, isOpen } = M_model;
+const { validateRequest, nextStatus, turnoOfferibile } = M_engine;
 const { monthKey, todayISO } = M_time;
 const { seed } = M_seed;
 
@@ -1414,9 +1566,9 @@ const store = {
     return null;
   },
 
-  creaRichiesta({ cedo, cerco, usaPriorita }) {
+  creaRichiesta({ tipo, cedo, cerco, usaPriorita }) {
     const errori = validateRequest(
-      { cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
+      { tipo, cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
     );
     if (errori.length) return { errori };
     if (usaPriorita && this.creditoPriorita() < 1) {
@@ -1430,7 +1582,8 @@ const store = {
       createdAt: new Date().toISOString(),
       status: STATUS.APERTA,
       prioritaFinoA: null,
-      cedo: { shiftId: cedo.shiftId, altriShiftIds: cedo.altriShiftIds || [], flessibile: Boolean(cedo.flessibile) },
+      tipo,
+      cedo: { shiftId: cedo.shiftId, flessibile: Boolean(cedo.flessibile) },
       cerco: { ...cerco },
     };
 
@@ -1467,13 +1620,12 @@ const store = {
     if (this.state.proposals.some((p) => p.requestId === requestId && p.daUserId === me && p.status !== 'RIFIUTATA')) {
       return { errori: ['Hai già una proposta aperta su questa richiesta.'] };
     }
-    // Il turno offerto deve davvero soddisfare il CERCO: la regola vale qui,
-    // non solo nel modulo, così nessuna scorciatoia della UI la aggira.
+    // Il turno offerto deve reggere davvero: la regola vale qui, non solo nel
+    // modulo, così nessuna scorciatoia della UI la aggira.
     const offerto = this.shift(shiftOffertoId);
     if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido.'] };
-    if (satisfies(r.cerco, turnoAdattato(offerto, this.user(r.userId))).score === 0) {
-      return { errori: ['Quel turno non corrisponde a quello che la persona sta cercando.'] };
-    }
+    const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById());
+    if (!verifica.ok) return { errori: [verifica.motivo] };
 
     const proposta = {
       id: newId('pr'),
@@ -1690,7 +1842,7 @@ const M_components = (() => {
 const { html, raw, esc } = M_dom;
 const { store } = M_store;
 const { shiftLabel, wantLabel, hasPriority } = M_model;
-const { STATUS_META } = M_rules;
+const { STATUS_META, TIPO_META, TIPO_CAMBIO } = M_rules;
 const { formatDay } = M_time;
 
 function nomeUtente(u) {
@@ -1706,24 +1858,38 @@ function badgeStato(status) {
   return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
 }
 
-/** Il blocco CEDO/CERCO: è l'unità visiva di tutta l'app. */
+/** Il blocco della richiesta: è l'unità visiva di tutta l'app. */
 function coppiaCedoCerco(request, { compatto = false } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
-  const extra = request.cedo.flessibile
-    ? '<div class="nota">disponibile a cedere anche altri turni</div>' : '';
-  return html`
-    <div class="coppia ${compatto ? 'compatta' : ''}">
-      <div class="lato cedo">
-        <span class="etichetta">🔴 CEDO</span>
-        <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
-        <span class="orario">${shiftLabel(cedo)}</span>
-        ${raw(extra)}
-      </div>
-      <div class="freccia">⇄</div>
+  const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
+  const giorni = request.cerco.giorni || [];
+
+  const lato = request.tipo === TIPO_CAMBIO.ORARIO
+    ? html`
       <div class="lato cerco">
         <span class="etichetta">🟢 CERCO</span>
-        <strong>${formatDay(request.cerco.data)}</strong>
+        <strong>stesso giorno</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
+      </div>`
+    : html`
+      <div class="lato cerco">
+        <span class="etichetta">🟢 LAVORO</span>
+        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
+        <span class="orario">${wantLabel(request.cerco)}</span>
+      </div>`;
+
+  return html`
+    <div class="coppia ${compatto ? 'compatta' : ''}">
+      <div class="tipo-cambio">${meta.icona} ${meta.label}</div>
+      <div class="lati">
+        <div class="lato cedo">
+          <span class="etichetta">🔴 LASCIO</span>
+          <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
+          <span class="orario">${shiftLabel(cedo)}</span>
+          ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}
+        </div>
+        <div class="freccia">⇄</div>
+        ${raw(lato)}
       </div>
     </div>`;
 }
@@ -1802,7 +1968,8 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
       </button>`;
   }
   return html`
-    <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}" data-data="${match.data}">
+    <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}"
+            data-data="${match.data}" data-cambio="${match.cambio}">
       Pubblica e avvisa ${u?.nome}
     </button>`;
 }
@@ -1826,7 +1993,7 @@ const { html, raw } = M_dom;
 const { store } = M_store;
 const { cardRichiesta, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato } = M_components;
 const { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } = M_model;
-const { RULES, WANT_MODE } = M_rules;
+const { RULES, TIPO_CAMBIO } = M_rules;
 const {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
 } = M_time;
@@ -1936,7 +2103,7 @@ function calendario(params) {
   const perGiorno = new Map();
   for (const r of aperte) {
     const cedo = store.shift(r.cedo.shiftId);
-    for (const d of [cedo?.data, r.cerco.data]) {
+    for (const d of [cedo?.data, ...(r.cerco.giorni || [])]) {
       if (!d) continue;
       const lista = perGiorno.get(d) || [];
       lista.push(r);
@@ -1988,7 +2155,7 @@ function dettaglioGiorno(data) {
   const richieste = store.state.requests.filter((r) => {
     if (!isOpen(r)) return false;
     const cedo = store.shift(r.cedo.shiftId);
-    return cedo?.data === data || r.cerco.data === data;
+    return cedo?.data === data || (r.cerco.giorni || []).includes(data);
   });
   const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
 
@@ -2009,9 +2176,9 @@ function dettaglioGiorno(data) {
 
 const FILTRI = {
   TUTTI: { label: 'Tutti', test: () => true },
-  CEDO: { label: 'Cedo', test: (r) => store.shift(r.cedo.shiftId)?.tipo === 'WORK' },
-  CERCO: { label: 'Cerco', test: (r) => r.cerco.mode === WANT_MODE.SPECIFIC || r.cerco.mode === WANT_MODE.RANGE },
-  OFF: { label: 'OFF', test: (r) => r.cerco.mode === WANT_MODE.OFF },
+  ORARIO: { label: '🕐 Orario', test: (r) => r.tipo === TIPO_CAMBIO.ORARIO },
+  OFF: { label: '📅 OFF', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
+  PRIORITA: { label: '⭐ Priorità', test: (r) => hasPriority(r) },
 };
 
 function bacheca(params) {
@@ -2177,63 +2344,41 @@ const M_flows = (() => {
 
 const { html, raw, toast } = M_dom;
 const { store } = M_store;
-const { findMatches, validateRequest, satisfies, cambioRapido } = M_engine;
-const { RULES, WANT_MODE, STATUS } = M_rules;
+const {
+  findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
+} = M_engine;
+const { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } = M_rules;
 const { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } = M_model;
 const { appleWeekKey, addDays, formatDay, todayISO } = M_time;
 const { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } = M_components;
 
 const draft = {
-  intent: null,
+  tipo: null,
   step: 1,
   cedoShiftId: null,
   flessibile: false,
-  cerco: { data: null, mode: WANT_MODE.ANY, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' },
+  cerco: {
+    giorni: [], mode: WANT_MODE.RANGE, start: '', end: '',
+    entroLe: '', dalleOre: '', evitaChiusura: false, note: '',
+  },
   usaPriorita: false,
   orarioManuale: false,
   errori: [],
 };
 
-function resetDraft(intent = null) {
-  draft.intent = intent;
-  draft.step = intent ? 2 : 1;
+function resetDraft(tipo = null) {
+  draft.tipo = tipo;
+  draft.step = tipo ? 2 : 1;
   draft.cedoShiftId = null;
   draft.flessibile = false;
-  draft.cerco = { data: null, mode: intent === 'CEDERE' ? WANT_MODE.ANY : WANT_MODE.SPECIFIC, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' };
+  draft.cerco = {
+    giorni: [],
+    mode: tipo === TIPO_CAMBIO.OFF ? WANT_MODE.ANY : WANT_MODE.RANGE,
+    start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '',
+  };
   draft.usaPriorita = false;
   draft.orarioManuale = false;
   draft.errori = [];
-}
-
-// --------------------------------------------------------- NUOVO CAMBIO
-
-function scelta() {
-  return html`
-    <header class="testata">
-      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
-      <h1>Nuovo cambio</h1>
-    </header>
-    <p class="occhiello">Cosa vuoi fare?</p>
-    <button class="tile scelta rosso" data-act="intent" data-intent="CEDERE">
-      <span class="tile-icona">🔴</span>
-      <span><strong>Cedere un turno</strong><em>Ho un turno che non riesco a fare e cerco chi lo prende</em></span>
-    </button>
-    <button class="tile scelta verde" data-act="intent" data-intent="CERCARE">
-      <span class="tile-icona">🟢</span>
-      <span><strong>Cercare un turno</strong><em>Voglio un giorno preciso e offro uno dei miei in cambio</em></span>
-    </button>
-    <button class="tile scelta blu" data-act="intent" data-intent="SCAMBIO">
-      <span class="tile-icona">🔄</span>
-      <span><strong>Scambio specifico</strong><em>So già quale combinazione voglio</em></span>
-    </button>
-    <p class="testo-tenue nota-regola">
-      In ogni caso la richiesta avrà sempre due lati: quello che cedi e quello che cerchi.
-      È la regola che tiene in piedi tutto il resto.
-    </p>
-    <p class="testo-tenue">
-      Se ti basta sapere chi può prenderti un turno, il <strong>Cambio rapido</strong> te lo dice senza domande.
-    </p>
-    <button class="btn secondario largo" data-act="vai" data-to="#/rapido">⚡ Cambio rapido</button>`;
 }
 
 // ------------------------------------------------------- CAMBIO RAPIDO
@@ -2241,9 +2386,9 @@ function scelta() {
 const rapido = { shiftId: null };
 
 /**
- * Un tap e vedi chi può prendere il tuo turno. Nessuna domanda: il motore
- * prova tutti i giorni liberi della tua settimana e mette insieme i
- * risultati. Il percorso con le domande è "Nuovo cambio".
+ * Un tocco e vedi chi può prenderti il turno. Nessuna domanda: il motore
+ * prova sia il cambio orario nella stessa giornata sia il cambio OFF su
+ * tutti i giorni in cui sei libero, e mette insieme i risultati.
  */
 function vistaRapida() {
   const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
@@ -2252,7 +2397,7 @@ function vistaRapida() {
   if (!miei.length) {
     return html`
       ${raw(testataRapido())}
-      ${raw(vuoto('Nessun turno da cedere', 'Aggiungi i tuoi turni e torna qui.',
+      ${raw(vuoto('Nessun turno da lasciare', 'Aggiungi i tuoi turni e torna qui.',
     '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}`;
   }
 
@@ -2261,30 +2406,43 @@ function vistaRapida() {
   }
   const cedo = store.shift(rapido.shiftId);
   const risultati = cambioRapido(rapido.shiftId, store.state);
-  const pieni = risultati.filter((m) => m.tipo === 'MATCH');
-  const potenziali = risultati.filter((m) => m.tipo === 'POTENZIALE');
+  const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
+  const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
 
-  const scelta = miei.map((s) => html`
+  const sceltaTurno = miei.map((s) => html`
     <button class="pill ${s.id === rapido.shiftId ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}">
       ${formatDay(s.data)}
       <em>${shiftLabel(s)}</em>
     </button>`).join('');
 
+  const gruppo = (titolo, sottotitolo, lista) => (lista.length ? html`
+    <h2 class="titolo-gruppo">${titolo}</h2>
+    <p class="testo-tenue">${sottotitolo}</p>
+    ${raw(lista.map((m) => cardMatch(m, { mioCedo: cedo })).join(''))}` : '');
+
   return html`
     ${raw(testataRapido())}
     <p class="occhiello">Quale turno vuoi lasciare?</p>
-    <div class="pillole">${raw(scelta)}</div>
+    <div class="pillole">${raw(sceltaTurno)}</div>
 
-    <h2 class="titolo-gruppo">Chi può prenderti ${formatDay(cedo.data)} · ${shiftLabel(cedo)}</h2>
-    ${raw(pieni.map((m) => cardMatch(m, { mioCedo: cedo })).join(''))}
-    ${raw(potenziali.length ? `<h3>Forse interessati</h3>${potenziali.map((m) => cardMatch(m, { mioCedo: cedo })).join('')}` : '')}
+    ${raw(gruppo(
+    `🕐 Cambio orario (${orario.length})`,
+    `Restano ${formatDay(cedo.data)}, cambiate solo l'orario.`,
+    orario,
+  ))}
+    ${raw(gruppo(
+    `📅 Cambio OFF (${off.length})`,
+    'Ti liberano la giornata, tu lavori in un giorno in cui sei a casa.',
+    off,
+  ))}
+
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
     `Per ${formatDay(cedo.data)} non risulta nessun collega con una richiesta compatibile o una disponibilità dichiarata. Pubblicare la richiesta la mette comunque in bacheca.`,
     '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
   ))}
     ${raw(risultati.length ? `
-      <p class="testo-tenue">Nessuno di questi va bene? Con <strong>Nuovo cambio</strong> scegli tu il giorno e l'orario che cerchi.</p>
+      <p class="testo-tenue">Nessuno di questi va bene? Con <strong>Nuovo cambio</strong> scegli tu le condizioni.</p>
       <button class="btn secondario largo" data-act="vai" data-to="#/nuovo">Nuovo cambio</button>` : '')}`;
 }
 
@@ -2296,7 +2454,41 @@ function testataRapido() {
     </header>`;
 }
 
-// -------------------------------------------------- COSTRUZIONE RICHIESTA
+// --------------------------------------------------------- NUOVO CAMBIO
+
+function scelta() {
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Nuovo cambio</h1>
+    </header>
+    <p class="occhiello">Che tipo di cambio ti serve?</p>
+
+    <button class="tile scelta blu" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.ORARIO}">
+      <span class="tile-icona">🕐</span>
+      <span>
+        <strong>Cambio orario</strong>
+        <em>Stesso giorno, orario diverso. "Lascio mercoledì 12:00–21:00, cerco mercoledì un turno che finisca prima."</em>
+      </span>
+    </button>
+
+    <button class="tile scelta verde" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.OFF}">
+      <span class="tile-icona">📅</span>
+      <span>
+        <strong>Cambio OFF</strong>
+        <em>Vuoi libero un giorno e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
+      </span>
+    </button>
+
+    <p class="testo-tenue nota-regola">
+      In entrambi i casi la richiesta ha due lati: quello che lasci e quello che prendi.
+      È la regola che tiene in piedi tutto il resto.
+    </p>
+    <p class="testo-tenue">
+      Se ti basta sapere chi può prenderti un turno, il <strong>Cambio rapido</strong> te lo dice senza domande.
+    </p>
+    <button class="btn secondario largo" data-act="vai" data-to="#/rapido">⚡ Cambio rapido</button>`;
+}
 
 function nuovo() {
   if (draft.step === 1) return scelta();
@@ -2308,6 +2500,7 @@ function nuovo() {
 function passoCedo() {
   const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
     .filter((s) => s.tipo === 'WORK');
+  const off = draft.tipo === TIPO_CAMBIO.OFF;
 
   const righe = miei.map((s) => html`
     <button class="riga-turno ${s.id === draft.cedoShiftId ? 'scelto' : ''}" data-act="scegli-cedo" data-id="${s.id}">
@@ -2317,100 +2510,129 @@ function passoCedo() {
     </button>`).join('');
 
   return html`
-    ${raw(barra('Quale turno cedi?', 1))}
+    ${raw(barra(off ? 'Quale giorno vuoi libero?' : 'Quale turno vuoi cambiare?', 1))}
+    <p class="testo-tenue">${off
+    ? 'Scegli il turno del giorno che ti serve libero. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
+    : 'Scegli il turno di cui vuoi cambiare l\'orario. Resti nello stesso giorno.'}</p>
     ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
     : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}
-    <label class="switch">
-      <input type="checkbox" data-act="flessibile" ${raw(draft.flessibile ? 'checked' : '')}>
-      <span>Sono disponibile a cedere anche altri turni</span>
-    </label>
+    ${raw(off ? `
+      <label class="switch">
+        <input type="checkbox" data-act="flessibile" ${draft.flessibile ? 'checked' : ''}>
+        <span>Sono disponibile a lasciare anche altri turni</span>
+      </label>` : '')}
     <div class="barra-azioni">
-      <button class="btn primario largo" data-act="step" data-step="3" ${raw(draft.cedoShiftId ? '' : 'disabled')}>Continua</button>
+      <button class="btn secondario" data-act="step" data-step="1">Indietro</button>
+      <button class="btn primario" data-act="step" data-step="3" ${raw(draft.cedoShiftId ? '' : 'disabled')}>Continua</button>
     </div>`;
 }
 
 function passoCerco() {
-  const cedo = store.shift(draft.cedoShiftId);
-  const wk = appleWeekKey(cedo.data);
-  const giorni = Array.from({ length: 7 }, (_, i) => addDays(wk, i))
-    .filter((d) => d !== cedo.data);
+  return draft.tipo === TIPO_CAMBIO.OFF ? passoCercoOff() : passoCercoOrario();
+}
 
-  const pillole = giorni.map((d) => {
-    const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === d);
-    const occupato = mio?.tipo === 'WORK' && draft.cerco.mode !== WANT_MODE.OFF;
-    const bloccata = d < todayISO() || occupato;
-    const titolo = occupato ? `Quel giorno lavori già (${shiftLabel(mio)})` : '';
-    return html`
-      <button class="pill ${draft.cerco.data === d ? 'attivo' : ''}" data-act="scegli-data" data-data="${d}"
-              title="${titolo}" ${raw(bloccata ? 'disabled' : '')}>
-        ${formatDay(d)}
-        <em>${mio ? shiftLabel(mio) : 'niente'}</em>
-      </button>`;
-  }).join('');
+/** Cambio orario: si resta nel giorno, si sceglie solo l'orario. */
+function passoCercoOrario() {
+  const cedo = store.shift(draft.cedoShiftId);
+  draft.cerco.giorni = [cedo.data];
 
   const modi = [
-    [WANT_MODE.SPECIFIC, 'Orario preciso'],
-    [WANT_MODE.RANGE, 'Fascia oraria'],
-    [WANT_MODE.ANY, 'Qualsiasi turno'],
-    [WANT_MODE.OFF, 'OFF'],
+    [WANT_MODE.RANGE, 'Una fascia'],
+    [WANT_MODE.SPECIFIC, 'Un orario preciso'],
   ].map(([k, label]) => html`
     <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
 
-  let campi = '';
-  if (draft.cerco.mode === WANT_MODE.SPECIFIC) {
-    campi = campiOrarioPreciso();
-  } else if (draft.cerco.mode === WANT_MODE.RANGE) {
-    campi = html`
+  const campi = draft.cerco.mode === WANT_MODE.SPECIFIC
+    ? campiOrarioPreciso(cedo.data)
+    : html`
       <div class="campi-orario">
         <label>Che finisca entro <input type="time" data-campo="entroLe" value="${draft.cerco.entroLe}"></label>
         <label>Che inizi dopo <input type="time" data-campo="dalleOre" value="${draft.cerco.dalleOre}"></label>
-      </div>`;
-  }
+      </div>
+      <p class="testo-tenue">Basta uno dei due. È il modo in cui scrivete già in chat: "un turno che finisca prima delle 19".</p>`;
 
-  const escludi = draft.cerco.mode === WANT_MODE.OFF ? '' : html`
+  return html`
+    ${raw(barra('Che orario cerchi?', 2))}
+    <div class="card riepilogo">
+      <p><strong>${formatDay(cedo.data, true)}</strong> · lasci ${shiftLabel(cedo)}</p>
+    </div>
+    <div class="chips">${raw(modi)}</div>
+    ${raw(campi)}
     <label class="switch">
       <input type="checkbox" data-act="evita-chiusura" ${raw(draft.cerco.evitaChiusura ? 'checked' : '')}>
       <span>Non voglio un turno di chiusura</span>
-    </label>`;
-
-  return html`
-    ${raw(barra('Cosa cerchi in cambio?', 2))}
-    <p class="testo-tenue avviso-box">
-      Solo i giorni della stessa settimana Apple di ${formatDay(cedo.data)} (sabato → venerdì):
-      gli scambi fra settimane diverse non sono ammessi.
-    </p>
-    <div class="pillole">${raw(pillole)}</div>
-    <p class="testo-tenue">Sotto ogni giorno c'è quello che hai tu: i giorni in cui lavori già sono spenti, prenderesti due turni.</p>
-    <h3>Quanto sei rigido?</h3>
-    <div class="chips">${raw(modi)}</div>
-    ${raw(campi)}
-    ${raw(escludi)}
+    </label>
     <label class="campo">
       <span>Messaggio (facoltativo)</span>
-      <textarea data-campo="note" rows="2" placeholder="Es. anche 12–20 mi andrebbe bene">${draft.cerco.note}</textarea>
+      <textarea data-campo="note" rows="2" placeholder="Es. ho la macchina dal meccanico">${draft.cerco.note}</textarea>
     </label>
     <div class="barra-azioni">
       <button class="btn secondario" data-act="step" data-step="2">Indietro</button>
-      <button class="btn primario" data-act="step" data-step="4" ${raw(draft.cerco.data ? '' : 'disabled')}>Continua</button>
+      <button class="btn primario" data-act="step" data-step="4">Continua</button>
+    </div>`;
+}
+
+/** Cambio OFF: si scelgono i giorni in cui si è disposti a lavorare. */
+function passoCercoOff() {
+  const cedo = store.shift(draft.cedoShiftId);
+  const liberi = giorniLiberi(store.state.currentUserId, cedo.data, store.state.shifts);
+
+  const pillole = liberi.map((g) => html`
+    <button class="pill ${draft.cerco.giorni.includes(g) ? 'attivo' : ''}" data-act="giorno-off" data-data="${g}">
+      ${formatDay(g)}
+      <em>${draft.cerco.giorni.includes(g) ? 'scelto' : 'sei a casa'}</em>
+    </button>`).join('');
+
+  const modi = [
+    [WANT_MODE.ANY, 'Qualsiasi turno'],
+    [WANT_MODE.RANGE, 'Una fascia'],
+  ].map(([k, label]) => html`
+    <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
+
+  return html`
+    ${raw(barra('Quando lavori in cambio?', 2))}
+    <div class="card riepilogo">
+      <p>Vuoi libero <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
+    </div>
+    ${raw(liberi.length ? `
+      <p class="testo-tenue">Scegli in quali dei tuoi giorni liberi sei disposto a lavorare. Più ne indichi, più è probabile trovare qualcuno.</p>
+      <div class="pillole">${pillole}</div>`
+    : vuoto('Nessun giorno libero', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
+
+    ${raw(draft.cerco.giorni.length ? `
+      <h3>Il turno che prenderesti</h3>
+      <div class="chips">${modi}</div>
+      ${draft.cerco.mode === WANT_MODE.RANGE ? `
+        <div class="campi-orario">
+          <label>Che finisca entro <input type="time" data-campo="entroLe" value="${draft.cerco.entroLe}"></label>
+          <label>Che inizi dopo <input type="time" data-campo="dalleOre" value="${draft.cerco.dalleOre}"></label>
+        </div>` : ''}
+      <label class="switch">
+        <input type="checkbox" data-act="evita-chiusura" ${draft.cerco.evitaChiusura ? 'checked' : ''}>
+        <span>Non voglio un turno di chiusura</span>
+      </label>` : '')}
+
+    <label class="campo">
+      <span>Messaggio (facoltativo)</span>
+      <textarea data-campo="note" rows="2" placeholder="Es. matrimonio, non posso proprio">${draft.cerco.note}</textarea>
+    </label>
+    <div class="barra-azioni">
+      <button class="btn secondario" data-act="step" data-step="2">Indietro</button>
+      <button class="btn primario" data-act="step" data-step="4" ${raw(draft.cerco.giorni.length ? '' : 'disabled')}>Continua</button>
     </div>`;
 }
 
 /**
- * Il CERCO con orario preciso non si digita: si sceglie fra i turni che quel
- * giorno esistono davvero in store, mostrati senza nome. Digitare gli orari
- * a mano è la trappola per chi ha un contratto diverso: un Part Time che
- * copia "11:00–20:00" dal turno di un Full Time sta chiedendo ore che non
- * farebbe mai. Qui sceglie il turno e l'app calcola le sue ore.
+ * L'orario preciso non si digita: si sceglie fra i turni che quel giorno
+ * esistono davvero in store. Digitare a mano è la trappola per chi ha un
+ * contratto diverso: un Part Time che copia "11:00–20:00" dal turno di un
+ * Full Time sta chiedendo ore che non farebbe mai.
  */
-function campiOrarioPreciso() {
+function campiOrarioPreciso(giorno) {
   const me = store.me;
-  if (!draft.cerco.data) {
-    return html`<p class="testo-tenue">Scegli prima il giorno.</p>`;
-  }
-
   const visti = new Set();
   const turni = store.state.shifts
-    .filter((s) => s.data === draft.cerco.data && s.tipo === 'WORK' && s.userId !== me.id)
+    .filter((s) => s.data === giorno && s.tipo === 'WORK' && s.userId !== me.id)
     .filter((s) => {
       const chiave = `${s.start}-${s.end}`;
       if (visti.has(chiave)) return false;
@@ -2424,7 +2646,7 @@ function campiOrarioPreciso() {
     const scelto = draft.cerco.start === t.start && draft.cerco.end === t.end;
     return html`
       <button class="riga-turno ${scelto ? 'scelto' : ''}" data-act="scegli-orario"
-              data-start="${t.start}" data-end="${t.end}" data-originale="${shiftLabel(s)}">
+              data-start="${t.start}" data-end="${t.end}">
         <span class="giorno-nome">${shiftLabel(s)}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
         <span class="turno-valore">${t.trasformato ? `tu faresti ${t.start}–${t.end}` : 'stesso orario per te'}</span>
         <span class="chevron">${scelto ? '✓' : '›'}</span>
@@ -2433,7 +2655,7 @@ function campiOrarioPreciso() {
 
   return html`
     ${raw(turni.length ? `
-      <p class="testo-tenue">Turni che ci sono quel giorno in store. Scegli quello che ti interessa: l'orario a destra è quello che faresti tu, con il tuo contratto.</p>
+      <p class="testo-tenue">Gli altri turni di quel giorno. L'orario a destra è quello che faresti tu, con il tuo contratto.</p>
       <div class="lista-turni">${righe}</div>` : '')}
     <label class="switch">
       <input type="checkbox" data-act="orario-manuale" ${raw(draft.orarioManuale ? 'checked' : '')}>
@@ -2448,7 +2670,12 @@ function campiOrarioPreciso() {
 }
 
 function passoRiepilogo() {
-  const finto = { userId: store.state.currentUserId, cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile }, cerco: draft.cerco };
+  const finto = {
+    userId: store.state.currentUserId,
+    tipo: draft.tipo,
+    cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile },
+    cerco: draft.cerco,
+  };
   const credito = store.creditoPriorita();
   const errori = validateRequest(finto, store.shiftsById(), store.state.shifts);
 
@@ -2591,14 +2818,24 @@ function dettaglio(params) {
     ${raw(azioneAutore)}`;
 }
 
-/**
- * I turni che posso davvero offrire su una richiesta. Il confronto va fatto
- * sul turno come lo riceverebbe chi ha pubblicato, non come ce l'ho io.
- */
+/** Perché non posso rispondere: il motore lo sa, tanto vale dirlo. */
+function motivoNonOfferibile(request) {
+  const byId = store.shiftsById();
+  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true });
+  const motivi = miei
+    .map((s) => turnoOfferibile(request, s, store.state.shifts, byId))
+    .filter((v) => !v.ok)
+    .map((v) => v.motivo);
+  return motivi.length
+    ? [...new Set(motivi)][0]
+    : 'Aggiorna i tuoi turni se il calendario non è allineato.';
+}
+
+/** I turni che posso davvero offrire su una richiesta. */
 function turniOfferibili(request) {
-  const destinatario = store.user(request.userId);
+  const byId = store.shiftsById();
   return store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
-    .filter((s) => satisfies(request.cerco, turnoAdattato(s, destinatario)).score > 0);
+    .filter((s) => turnoOfferibile(request, s, store.state.shifts, byId).ok);
 }
 
 /** Contenuto della sheet "proponi scambio". */
@@ -2610,8 +2847,8 @@ function formProposta(request, shiftSuggerito) {
   if (!opzioni.length) {
     return html`
       <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
-      <p class="avviso">⚠️ Il ${formatDay(request.cerco.data)} non hai niente che corrisponda a quello che ${nomeUtente(store.user(request.userId))} sta cercando.</p>
-      <p class="testo-tenue">Aggiorna i tuoi turni se il calendario non è allineato, oppure lascia perdere questo scambio.</p>`;
+      <p class="avviso">⚠️ Non hai niente da offrire su questo cambio.</p>
+      <p class="testo-tenue">${motivoNonOfferibile(request)}</p>`;
   }
 
   return html`
@@ -2641,6 +2878,7 @@ function formProposta(request, shiftSuggerito) {
 
 function pubblica() {
   const { errori, richiesta } = store.creaRichiesta({
+    tipo: draft.tipo,
     cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile },
     cerco: draft.cerco,
     usaPriorita: draft.usaPriorita,
@@ -2649,11 +2887,14 @@ function pubblica() {
     draft.errori = errori;
     return null;
   }
+  // La bozza ha finito il suo lavoro: se si torna qui si riparte da capo,
+  // non dal riepilogo di una richiesta già pubblicata.
+  resetDraft();
   toast('Richiesta pubblicata');
   return richiesta;
 }
 
-return { draft, resetDraft, scelta, rapido, vistaRapida, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica };
+return { draft, resetDraft, rapido, vistaRapida, scelta, nuovo, match, dettaglio, turniOfferibili, formProposta, pubblica };
 })();
 
 // ---- src/ui/app.js
@@ -2728,8 +2969,8 @@ const AZIONI = {
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
 
-  intent: (_, el) => {
-    F.resetDraft(el.dataset.intent);
+  'tipo-cambio': (_, el) => {
+    F.resetDraft(el.dataset.tipo);
     vai('#/nuovo');
   },
 
@@ -2755,9 +2996,11 @@ const AZIONI = {
     const me = store.me;
     const { errori, richiesta } = store.creaRichiesta({
       cedo: { shiftId: F.rapido.shiftId, flessibile: false },
+      tipo: el.dataset.cambio,
       cerco: {
-        data: el.dataset.data,
-        mode: 'ANY',
+        giorni: [el.dataset.data],
+        mode: el.dataset.cambio === 'ORARIO' ? 'RANGE' : 'ANY',
+        entroLe: '', dalleOre: '',
         evitaChiusura: Boolean(me.preferenze?.evitaChiusure),
         note: '',
       },
@@ -2770,12 +3013,17 @@ const AZIONI = {
   },
 
   'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },
-  'scegli-data': (_, el) => { F.draft.cerco.data = el.dataset.data; render(); },
+  // Nel cambio OFF i giorni offerti sono più d'uno: si aggiungono e si tolgono.
+  'giorno-off': (_, el) => {
+    const g = el.dataset.data;
+    const giorni = F.draft.cerco.giorni;
+    F.draft.cerco.giorni = giorni.includes(g) ? giorni.filter((x) => x !== g) : [...giorni, g].sort();
+    render();
+  },
   modo: (_, el) => { F.draft.cerco.mode = el.dataset.modo; render(); },
   'scegli-orario': (_, el) => {
     F.draft.cerco.start = el.dataset.start;
     F.draft.cerco.end = el.dataset.end;
-    F.draft.cerco.daTurno = el.dataset.originale;
     render();
   },
   'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },

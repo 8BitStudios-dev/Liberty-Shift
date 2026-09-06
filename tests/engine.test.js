@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 
 import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
 import {
-  satisfies, validateRequest, findMatches, disponibileIl, cambioRapido,
+  satisfies, validateRequest, findMatches, disponibileIl, cambioRapido, turnoOfferibile,
 } from '../src/core/engine.js';
-import { WANT_MODE, RULES } from '../src/core/rules.js';
+import { WANT_MODE, RULES, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
@@ -32,34 +32,31 @@ const shift = (data, start, end) => ({ id: 'x', userId: 'u', data, tipo: 'WORK',
 const off = (data) => ({ id: 'x', userId: 'u', data, tipo: 'OFF', start: null, end: null });
 
 test('CERCO specifico: orario identico vale 100', () => {
-  const r = satisfies({ data: '2026-09-18', mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00' },
+  const r = satisfies({ mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00' },
     shift('2026-09-18', '14:00', '20:00'));
   assert.equal(r.score, 100);
 });
 
 test('CERCO specifico: mezz\'ora di scarto resta un match parziale', () => {
-  const r = satisfies({ data: '2026-09-18', mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00' },
+  const r = satisfies({ mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00' },
     shift('2026-09-18', '14:30', '20:00'));
   assert.ok(r.score > 0 && r.score < 100);
 });
 
 test('CERCO a fascia: dentro il limite 100, oltre la tolleranza 0', () => {
-  const cerco = { data: '2026-09-18', mode: WANT_MODE.RANGE, entroLe: '20:00' };
+  const cerco = { mode: WANT_MODE.RANGE, entroLe: '20:00' };
   assert.equal(satisfies(cerco, shift('2026-09-18', '11:00', '19:00')).score, 100);
   assert.equal(satisfies(cerco, shift('2026-09-18', '13:00', '22:00')).score, 0);
 });
 
 test('evitaChiusura esclude il turno di chiusura', () => {
-  const cerco = { data: '2026-09-18', mode: WANT_MODE.ANY, evitaChiusura: true };
+  const cerco = { mode: WANT_MODE.ANY, evitaChiusura: true };
   assert.equal(satisfies(cerco, shift('2026-09-18', '12:00', '20:30')).score, 0);
   assert.equal(satisfies(cerco, shift('2026-09-18', '12:00', '19:00')).score, 100);
 });
 
-test('OFF e turno lavorato non si confondono', () => {
-  const cercoOff = { data: '2026-09-18', mode: WANT_MODE.OFF };
-  assert.equal(satisfies(cercoOff, off('2026-09-18')).score, 100);
-  assert.equal(satisfies(cercoOff, shift('2026-09-18', '09:00', '18:00')).score, 0);
-  assert.equal(satisfies({ data: '2026-09-18', mode: WANT_MODE.ANY }, off('2026-09-18')).score, 0);
+test('un giorno di OFF non è un turno che si possa ricevere', () => {
+  assert.equal(satisfies({ mode: WANT_MODE.ANY }, off('2026-09-18')).score, 0);
 });
 
 test('isClosing usa la soglia del regolamento', () => {
@@ -69,30 +66,54 @@ test('isClosing usa la soglia del regolamento', () => {
 
 // --- validazione -------------------------------------------------------
 
-test('una richiesta a cavallo di due settimane Apple viene rifiutata', () => {
-  const s = shift('2026-09-18', '11:00', '20:00');
-  const errori = validateRequest(
-    { cedo: { shiftId: 'x' }, cerco: { data: '2026-09-19', mode: WANT_MODE.ANY } },
-    { x: s },
-  );
+const richiestaOrario = (data, cerco) => ({
+  userId: 'u', tipo: TIPO_CAMBIO.ORARIO, cedo: { shiftId: 'x' }, cerco: { giorni: [data], ...cerco },
+});
+const richiestaOff = (giorni, cerco = {}) => ({
+  userId: 'u', tipo: TIPO_CAMBIO.OFF, cedo: { shiftId: 'x' }, cerco: { giorni, mode: WANT_MODE.ANY, ...cerco },
+});
+
+test('un cambio OFF a cavallo di due settimane Apple viene rifiutato', () => {
+  const s = shift('2026-09-18', '11:00', '20:00'); // venerdì
+  const errori = validateRequest(richiestaOff(['2026-09-19']), { x: s });
   assert.ok(errori.some((e) => e.includes('Settimane Apple diverse')));
 });
 
-test('CEDO e CERCO nello stesso giorno non hanno senso', () => {
-  const s = shift('2026-09-18', '11:00', '20:00');
+test('un cambio orario nello stesso giorno è la cosa normale, non un errore', () => {
+  const s = shift('2026-09-18', '16:00', '21:00');
   const errori = validateRequest(
-    { cedo: { shiftId: 'x' }, cerco: { data: '2026-09-18', mode: WANT_MODE.ANY } },
+    richiestaOrario('2026-09-18', { mode: WANT_MODE.RANGE, entroLe: '18:00' }),
     { x: s },
   );
-  assert.ok(errori.length > 0);
+  assert.deepEqual(errori, []);
 });
 
-test('una richiesta valida non produce errori', () => {
-  const s = shift('2026-09-12', '11:00', '20:00');
-  assert.deepEqual(
-    validateRequest({ cedo: { shiftId: 'x' }, cerco: { data: '2026-09-13', mode: WANT_MODE.ANY } }, { x: s }),
-    [],
+test('un cambio orario non può spostarsi su un altro giorno', () => {
+  const s = shift('2026-09-18', '16:00', '21:00');
+  const errori = validateRequest(
+    richiestaOrario('2026-09-17', { mode: WANT_MODE.RANGE, entroLe: '18:00' }),
+    { x: s },
   );
+  assert.ok(errori.some((e) => e.includes('resta nello stesso giorno')));
+});
+
+test('in un cambio orario "qualsiasi turno" non vuol dire niente', () => {
+  const s = shift('2026-09-18', '16:00', '21:00');
+  const errori = validateRequest(richiestaOrario('2026-09-18', { mode: WANT_MODE.ANY }), { x: s });
+  assert.ok(errori.some((e) => e.includes('qualsiasi turno')));
+});
+
+test('nel cambio OFF si possono offrire solo i giorni in cui si è liberi', () => {
+  const mio = { id: 'x', userId: 'u', data: '2026-09-18', tipo: 'WORK', start: '11:00', end: '20:00' };
+  const occupato = { id: 'y', userId: 'u', data: '2026-09-16', tipo: 'WORK', start: '09:00', end: '18:00' };
+  const errori = validateRequest(richiestaOff(['2026-09-16']), { x: mio }, [mio, occupato]);
+  assert.ok(errori.some((e) => e.includes('lavori già')));
+});
+
+test('un cambio OFF valido non produce errori', () => {
+  const mio = { id: 'x', userId: 'u', data: '2026-09-18', tipo: 'WORK', start: '11:00', end: '20:00' };
+  const libero = { id: 'y', userId: 'u', data: '2026-09-16', tipo: 'OFF', start: null, end: null };
+  assert.deepEqual(validateRequest(richiestaOff(['2026-09-16']), { x: mio }, [mio, libero]), []);
 });
 
 // --- matching sul dataset di esempio -----------------------------------
@@ -224,13 +245,13 @@ test('chiude chi resta oltre l\'orario di chiusura del negozio', () => {
 });
 
 test('una notte non passa per un turno che finisce presto', () => {
-  const cerco = { data: '2026-09-17', mode: WANT_MODE.RANGE, entroLe: '20:00' };
+  const cerco = { mode: WANT_MODE.RANGE, entroLe: '20:00' };
   // 06:30 letto ingenuamente sarebbe "entro le 20:00": non deve succedere.
   assert.equal(satisfies(cerco, shift('2026-09-17', '22:00', '06:30')).score, 0);
 });
 
 test('la tolleranza di 90 minuti vale sullo scarto maggiore, non sulla somma', () => {
-  const cerco = { data: '2026-09-18', mode: WANT_MODE.SPECIFIC, start: '10:00', end: '19:00' };
+  const cerco = { mode: WANT_MODE.SPECIFIC, start: '10:00', end: '19:00' };
   assert.equal(satisfies(cerco, shift('2026-09-18', '11:30', '20:30')).score, 60); // 90 minuti
   assert.equal(satisfies(cerco, shift('2026-09-18', '11:45', '20:45')).score, 0);  // 105 minuti
   assert.equal(RULES.nearMissMinutes, 90);
@@ -238,39 +259,11 @@ test('la tolleranza di 90 minuti vale sullo scarto maggiore, non sulla somma', (
 
 // --- doppio impegno ----------------------------------------------------
 
-test('non si può cercare un turno in un giorno in cui si lavora già', () => {
-  const mio = { id: 'a', userId: 'u1', data: '2026-09-12', tipo: 'WORK', start: '11:00', end: '20:00' };
-  const altro = { id: 'b', userId: 'u1', data: '2026-09-13', tipo: 'WORK', start: '09:00', end: '18:00' };
-  const errori = validateRequest(
-    { userId: 'u1', cedo: { shiftId: 'a' }, cerco: { data: '2026-09-13', mode: WANT_MODE.ANY } },
-    { a: mio, b: altro },
-    [mio, altro],
-  );
-  assert.ok(errori.some((e) => e.includes('hai già un turno')));
-});
-
-test('cercare un giorno in cui si è OFF resta valido', () => {
-  const mio = { id: 'a', userId: 'u1', data: '2026-09-12', tipo: 'WORK', start: '11:00', end: '20:00' };
-  const libero = { id: 'b', userId: 'u1', data: '2026-09-13', tipo: 'OFF', start: null, end: null };
-  assert.deepEqual(
-    validateRequest(
-      { userId: 'u1', cedo: { shiftId: 'a' }, cerco: { data: '2026-09-13', mode: WANT_MODE.ANY } },
-      { a: mio, b: libero },
-      [mio, libero],
-    ),
-    [],
-  );
-});
-
-test('Marco cede la notte visual e trova comunque una disponibilità', () => {
+test('una notte visual resta riconoscibile fra i turni di esempio', () => {
   const s = seed();
-  const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
-  const notte = s.shifts.find((x) => x.id === richiesta.cedo.shiftId);
-  assert.ok(isNotturno(notte));
-  const match = findMatches(richiesta, s);
-  assert.ok(match.length > 0);
-  // Chi la prende è Part Time: 8.5 ore di notte fanno scattare l'avviso.
-  assert.ok(match.some((m) => m.avvisi.length > 0));
+  const notti = s.shifts.filter(isNotturno);
+  assert.ok(notti.length > 0, 'il dataset deve contenere almeno una notte');
+  assert.equal(etichettaFascia(notti[0]), 'notte');
 });
 
 // --- durata del turno per persona e monte ore --------------------------
@@ -330,28 +323,87 @@ test('le richieste di esempio non nascono già scadute, qualunque giorno sia ogg
   }
 });
 
-test('il Cambio rapido trova chi può prendere un turno senza fare domande', () => {
+test('il Cambio rapido trova match senza fare domande, di entrambi i tipi', () => {
   const s = seed();
-  const turno = s.shifts.find((x) => x.userId === 'u_lorenzo' && x.tipo === 'WORK'
-    && appleWeekKey(x.data) === appleWeekKey(s.requests[0].cerco.data));
+  const rif = s.requests.find((r) => r.tipo === TIPO_CAMBIO.ORARIO);
+  const turno = s.shifts.find((x) => x.id === rif.cedo.shiftId);
   const risultati = cambioRapido(turno.id, s);
   assert.ok(risultati.length > 0);
-  // Ogni risultato dice su quale giorno si incastra e perché.
   for (const m of risultati) {
-    assert.ok(m.data && m.data !== turno.data);
     assert.ok(m.reasons.length > 0);
-    assert.notEqual(m.userId, 'u_lorenzo');
+    assert.notEqual(m.userId, turno.userId);
+    if (m.cambio === TIPO_CAMBIO.ORARIO) assert.equal(m.data, turno.data);
+    else assert.notEqual(m.data, turno.data);
   }
 });
 
-test('il Cambio rapido non propone giorni in cui lavori già', () => {
+test('nel cambio OFF il rapido non propone giorni in cui lavori già', () => {
   const s = seed();
-  const lorenzo = 'u_lorenzo';
-  const turno = s.shifts.find((x) => x.userId === lorenzo && x.tipo === 'WORK');
+  const utente = 'u_lorenzo';
+  const turno = s.shifts.find((x) => x.userId === utente && x.tipo === 'WORK');
   const occupati = new Set(s.shifts
-    .filter((x) => x.userId === lorenzo && x.tipo === 'WORK')
+    .filter((x) => x.userId === utente && x.tipo === 'WORK')
     .map((x) => x.data));
-  for (const m of cambioRapido(turno.id, s)) {
+  for (const m of cambioRapido(turno.id, s).filter((x) => x.cambio === TIPO_CAMBIO.OFF)) {
     assert.ok(!occupati.has(m.data), `proposto ${m.data}, ma quel giorno lavora`);
   }
+});
+
+// --- i due tipi di cambio ----------------------------------------------
+
+test('cambio orario: entrambi lavorano quel giorno e si scambiano gli orari', () => {
+  const s = seed();
+  const r = s.requests.find((x) => x.id === 'rq_lorenzo_1');
+  assert.equal(r.tipo, TIPO_CAMBIO.ORARIO);
+  const cedo = s.shifts.find((x) => x.id === r.cedo.shiftId);
+  const match = findMatches(r, s);
+  assert.ok(match.length > 0);
+  for (const m of match) {
+    const suo = s.shifts.find((x) => x.id === m.shiftOffertoId);
+    assert.equal(suo.data, cedo.data, 'il cambio orario resta nella giornata');
+    assert.equal(suo.tipo, 'WORK', 'la controparte lavora quel giorno, non è a casa');
+  }
+});
+
+test('cambio OFF: la controparte è libera nel giorno che vuoi lasciare', () => {
+  const s = seed();
+  const r = s.requests.find((x) => x.id === 'rq_luca_1');
+  assert.equal(r.tipo, TIPO_CAMBIO.OFF);
+  const cedo = s.shifts.find((x) => x.id === r.cedo.shiftId);
+  const match = findMatches(r, s);
+  assert.ok(match.length > 0);
+  for (const m of match) {
+    const suoQuelGiorno = s.shifts.find((x) => x.userId === m.userId && x.data === cedo.data);
+    assert.ok(!suoQuelGiorno || suoQuelGiorno.tipo === 'OFF',
+      'chi prende la tua giornata dev\'essere libero');
+    const suo = s.shifts.find((x) => x.id === m.shiftOffertoId);
+    assert.equal(suo.tipo, 'WORK');
+    assert.ok(r.cerco.giorni.includes(suo.data));
+  }
+});
+
+test('due cambi OFF speculari sono un match pieno', () => {
+  const s = seed();
+  const luca = findMatches(s.requests.find((x) => x.id === 'rq_luca_1'), s)
+    .find((m) => m.userId === 'u_sara');
+  assert.ok(luca, 'Sara deve comparire fra i match di Luca');
+  assert.equal(luca.origine, 'RICHIESTA');
+  assert.equal(luca.tipo, 'MATCH');
+  assert.ok(luca.reasons.some((x) => /l'esatto contrario/.test(x)));
+});
+
+test('un turno si può offrire solo nel giorno giusto', () => {
+  const s = seed();
+  const byId = Object.fromEntries(s.shifts.map((x) => [x.id, x]));
+  const r = s.requests.find((x) => x.id === 'rq_lorenzo_1');
+  const cedo = byId[r.cedo.shiftId];
+
+  const stessoGiorno = s.shifts.find((x) => x.userId === 'u_martina' && x.data === cedo.data);
+  assert.equal(turnoOfferibile(r, stessoGiorno, s.shifts, byId).ok, true);
+
+  const altroGiorno = s.shifts.find((x) => x.userId === 'u_martina'
+    && x.tipo === 'WORK' && x.data !== cedo.data);
+  const esito = turnoOfferibile(r, altroGiorno, s.shifts, byId);
+  assert.equal(esito.ok, false);
+  assert.match(esito.motivo, /quel giorno/);
 });

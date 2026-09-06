@@ -3,63 +3,41 @@
 
 import { html, raw, toast } from './dom.js';
 import { store } from '../core/store.js';
-import { findMatches, validateRequest, satisfies, cambioRapido } from '../core/engine.js';
-import { RULES, WANT_MODE, STATUS } from '../core/rules.js';
+import {
+  findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
+} from '../core/engine.js';
+import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } from '../core/model.js';
 import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
 import { cardMatch, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali } from './components.js';
 
 export const draft = {
-  intent: null,
+  tipo: null,
   step: 1,
   cedoShiftId: null,
   flessibile: false,
-  cerco: { data: null, mode: WANT_MODE.ANY, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' },
+  cerco: {
+    giorni: [], mode: WANT_MODE.RANGE, start: '', end: '',
+    entroLe: '', dalleOre: '', evitaChiusura: false, note: '',
+  },
   usaPriorita: false,
   orarioManuale: false,
   errori: [],
 };
 
-export function resetDraft(intent = null) {
-  draft.intent = intent;
-  draft.step = intent ? 2 : 1;
+export function resetDraft(tipo = null) {
+  draft.tipo = tipo;
+  draft.step = tipo ? 2 : 1;
   draft.cedoShiftId = null;
   draft.flessibile = false;
-  draft.cerco = { data: null, mode: intent === 'CEDERE' ? WANT_MODE.ANY : WANT_MODE.SPECIFIC, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '' };
+  draft.cerco = {
+    giorni: [],
+    mode: tipo === TIPO_CAMBIO.OFF ? WANT_MODE.ANY : WANT_MODE.RANGE,
+    start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura: false, note: '',
+  };
   draft.usaPriorita = false;
   draft.orarioManuale = false;
   draft.errori = [];
-}
-
-// --------------------------------------------------------- NUOVO CAMBIO
-
-export function scelta() {
-  return html`
-    <header class="testata">
-      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
-      <h1>Nuovo cambio</h1>
-    </header>
-    <p class="occhiello">Cosa vuoi fare?</p>
-    <button class="tile scelta rosso" data-act="intent" data-intent="CEDERE">
-      <span class="tile-icona">🔴</span>
-      <span><strong>Cedere un turno</strong><em>Ho un turno che non riesco a fare e cerco chi lo prende</em></span>
-    </button>
-    <button class="tile scelta verde" data-act="intent" data-intent="CERCARE">
-      <span class="tile-icona">🟢</span>
-      <span><strong>Cercare un turno</strong><em>Voglio un giorno preciso e offro uno dei miei in cambio</em></span>
-    </button>
-    <button class="tile scelta blu" data-act="intent" data-intent="SCAMBIO">
-      <span class="tile-icona">🔄</span>
-      <span><strong>Scambio specifico</strong><em>So già quale combinazione voglio</em></span>
-    </button>
-    <p class="testo-tenue nota-regola">
-      In ogni caso la richiesta avrà sempre due lati: quello che cedi e quello che cerchi.
-      È la regola che tiene in piedi tutto il resto.
-    </p>
-    <p class="testo-tenue">
-      Se ti basta sapere chi può prenderti un turno, il <strong>Cambio rapido</strong> te lo dice senza domande.
-    </p>
-    <button class="btn secondario largo" data-act="vai" data-to="#/rapido">⚡ Cambio rapido</button>`;
 }
 
 // ------------------------------------------------------- CAMBIO RAPIDO
@@ -67,9 +45,9 @@ export function scelta() {
 export const rapido = { shiftId: null };
 
 /**
- * Un tap e vedi chi può prendere il tuo turno. Nessuna domanda: il motore
- * prova tutti i giorni liberi della tua settimana e mette insieme i
- * risultati. Il percorso con le domande è "Nuovo cambio".
+ * Un tocco e vedi chi può prenderti il turno. Nessuna domanda: il motore
+ * prova sia il cambio orario nella stessa giornata sia il cambio OFF su
+ * tutti i giorni in cui sei libero, e mette insieme i risultati.
  */
 export function vistaRapida() {
   const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
@@ -78,7 +56,7 @@ export function vistaRapida() {
   if (!miei.length) {
     return html`
       ${raw(testataRapido())}
-      ${raw(vuoto('Nessun turno da cedere', 'Aggiungi i tuoi turni e torna qui.',
+      ${raw(vuoto('Nessun turno da lasciare', 'Aggiungi i tuoi turni e torna qui.',
     '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}`;
   }
 
@@ -87,30 +65,43 @@ export function vistaRapida() {
   }
   const cedo = store.shift(rapido.shiftId);
   const risultati = cambioRapido(rapido.shiftId, store.state);
-  const pieni = risultati.filter((m) => m.tipo === 'MATCH');
-  const potenziali = risultati.filter((m) => m.tipo === 'POTENZIALE');
+  const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
+  const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
 
-  const scelta = miei.map((s) => html`
+  const sceltaTurno = miei.map((s) => html`
     <button class="pill ${s.id === rapido.shiftId ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}">
       ${formatDay(s.data)}
       <em>${shiftLabel(s)}</em>
     </button>`).join('');
 
+  const gruppo = (titolo, sottotitolo, lista) => (lista.length ? html`
+    <h2 class="titolo-gruppo">${titolo}</h2>
+    <p class="testo-tenue">${sottotitolo}</p>
+    ${raw(lista.map((m) => cardMatch(m, { mioCedo: cedo })).join(''))}` : '');
+
   return html`
     ${raw(testataRapido())}
     <p class="occhiello">Quale turno vuoi lasciare?</p>
-    <div class="pillole">${raw(scelta)}</div>
+    <div class="pillole">${raw(sceltaTurno)}</div>
 
-    <h2 class="titolo-gruppo">Chi può prenderti ${formatDay(cedo.data)} · ${shiftLabel(cedo)}</h2>
-    ${raw(pieni.map((m) => cardMatch(m, { mioCedo: cedo })).join(''))}
-    ${raw(potenziali.length ? `<h3>Forse interessati</h3>${potenziali.map((m) => cardMatch(m, { mioCedo: cedo })).join('')}` : '')}
+    ${raw(gruppo(
+    `🕐 Cambio orario (${orario.length})`,
+    `Restano ${formatDay(cedo.data)}, cambiate solo l'orario.`,
+    orario,
+  ))}
+    ${raw(gruppo(
+    `📅 Cambio OFF (${off.length})`,
+    'Ti liberano la giornata, tu lavori in un giorno in cui sei a casa.',
+    off,
+  ))}
+
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
     `Per ${formatDay(cedo.data)} non risulta nessun collega con una richiesta compatibile o una disponibilità dichiarata. Pubblicare la richiesta la mette comunque in bacheca.`,
     '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
   ))}
     ${raw(risultati.length ? `
-      <p class="testo-tenue">Nessuno di questi va bene? Con <strong>Nuovo cambio</strong> scegli tu il giorno e l'orario che cerchi.</p>
+      <p class="testo-tenue">Nessuno di questi va bene? Con <strong>Nuovo cambio</strong> scegli tu le condizioni.</p>
       <button class="btn secondario largo" data-act="vai" data-to="#/nuovo">Nuovo cambio</button>` : '')}`;
 }
 
@@ -122,7 +113,41 @@ function testataRapido() {
     </header>`;
 }
 
-// -------------------------------------------------- COSTRUZIONE RICHIESTA
+// --------------------------------------------------------- NUOVO CAMBIO
+
+export function scelta() {
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Nuovo cambio</h1>
+    </header>
+    <p class="occhiello">Che tipo di cambio ti serve?</p>
+
+    <button class="tile scelta blu" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.ORARIO}">
+      <span class="tile-icona">🕐</span>
+      <span>
+        <strong>Cambio orario</strong>
+        <em>Stesso giorno, orario diverso. "Lascio mercoledì 12:00–21:00, cerco mercoledì un turno che finisca prima."</em>
+      </span>
+    </button>
+
+    <button class="tile scelta verde" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.OFF}">
+      <span class="tile-icona">📅</span>
+      <span>
+        <strong>Cambio OFF</strong>
+        <em>Vuoi libero un giorno e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
+      </span>
+    </button>
+
+    <p class="testo-tenue nota-regola">
+      In entrambi i casi la richiesta ha due lati: quello che lasci e quello che prendi.
+      È la regola che tiene in piedi tutto il resto.
+    </p>
+    <p class="testo-tenue">
+      Se ti basta sapere chi può prenderti un turno, il <strong>Cambio rapido</strong> te lo dice senza domande.
+    </p>
+    <button class="btn secondario largo" data-act="vai" data-to="#/rapido">⚡ Cambio rapido</button>`;
+}
 
 export function nuovo() {
   if (draft.step === 1) return scelta();
@@ -134,6 +159,7 @@ export function nuovo() {
 function passoCedo() {
   const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
     .filter((s) => s.tipo === 'WORK');
+  const off = draft.tipo === TIPO_CAMBIO.OFF;
 
   const righe = miei.map((s) => html`
     <button class="riga-turno ${s.id === draft.cedoShiftId ? 'scelto' : ''}" data-act="scegli-cedo" data-id="${s.id}">
@@ -143,100 +169,129 @@ function passoCedo() {
     </button>`).join('');
 
   return html`
-    ${raw(barra('Quale turno cedi?', 1))}
+    ${raw(barra(off ? 'Quale giorno vuoi libero?' : 'Quale turno vuoi cambiare?', 1))}
+    <p class="testo-tenue">${off
+    ? 'Scegli il turno del giorno che ti serve libero. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
+    : 'Scegli il turno di cui vuoi cambiare l\'orario. Resti nello stesso giorno.'}</p>
     ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
     : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/turni">Vai ai turni</button>'))}
-    <label class="switch">
-      <input type="checkbox" data-act="flessibile" ${raw(draft.flessibile ? 'checked' : '')}>
-      <span>Sono disponibile a cedere anche altri turni</span>
-    </label>
+    ${raw(off ? `
+      <label class="switch">
+        <input type="checkbox" data-act="flessibile" ${draft.flessibile ? 'checked' : ''}>
+        <span>Sono disponibile a lasciare anche altri turni</span>
+      </label>` : '')}
     <div class="barra-azioni">
-      <button class="btn primario largo" data-act="step" data-step="3" ${raw(draft.cedoShiftId ? '' : 'disabled')}>Continua</button>
+      <button class="btn secondario" data-act="step" data-step="1">Indietro</button>
+      <button class="btn primario" data-act="step" data-step="3" ${raw(draft.cedoShiftId ? '' : 'disabled')}>Continua</button>
     </div>`;
 }
 
 function passoCerco() {
-  const cedo = store.shift(draft.cedoShiftId);
-  const wk = appleWeekKey(cedo.data);
-  const giorni = Array.from({ length: 7 }, (_, i) => addDays(wk, i))
-    .filter((d) => d !== cedo.data);
+  return draft.tipo === TIPO_CAMBIO.OFF ? passoCercoOff() : passoCercoOrario();
+}
 
-  const pillole = giorni.map((d) => {
-    const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === d);
-    const occupato = mio?.tipo === 'WORK' && draft.cerco.mode !== WANT_MODE.OFF;
-    const bloccata = d < todayISO() || occupato;
-    const titolo = occupato ? `Quel giorno lavori già (${shiftLabel(mio)})` : '';
-    return html`
-      <button class="pill ${draft.cerco.data === d ? 'attivo' : ''}" data-act="scegli-data" data-data="${d}"
-              title="${titolo}" ${raw(bloccata ? 'disabled' : '')}>
-        ${formatDay(d)}
-        <em>${mio ? shiftLabel(mio) : 'niente'}</em>
-      </button>`;
-  }).join('');
+/** Cambio orario: si resta nel giorno, si sceglie solo l'orario. */
+function passoCercoOrario() {
+  const cedo = store.shift(draft.cedoShiftId);
+  draft.cerco.giorni = [cedo.data];
 
   const modi = [
-    [WANT_MODE.SPECIFIC, 'Orario preciso'],
-    [WANT_MODE.RANGE, 'Fascia oraria'],
-    [WANT_MODE.ANY, 'Qualsiasi turno'],
-    [WANT_MODE.OFF, 'OFF'],
+    [WANT_MODE.RANGE, 'Una fascia'],
+    [WANT_MODE.SPECIFIC, 'Un orario preciso'],
   ].map(([k, label]) => html`
     <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
 
-  let campi = '';
-  if (draft.cerco.mode === WANT_MODE.SPECIFIC) {
-    campi = campiOrarioPreciso();
-  } else if (draft.cerco.mode === WANT_MODE.RANGE) {
-    campi = html`
+  const campi = draft.cerco.mode === WANT_MODE.SPECIFIC
+    ? campiOrarioPreciso(cedo.data)
+    : html`
       <div class="campi-orario">
         <label>Che finisca entro <input type="time" data-campo="entroLe" value="${draft.cerco.entroLe}"></label>
         <label>Che inizi dopo <input type="time" data-campo="dalleOre" value="${draft.cerco.dalleOre}"></label>
-      </div>`;
-  }
+      </div>
+      <p class="testo-tenue">Basta uno dei due. È il modo in cui scrivete già in chat: "un turno che finisca prima delle 19".</p>`;
 
-  const escludi = draft.cerco.mode === WANT_MODE.OFF ? '' : html`
+  return html`
+    ${raw(barra('Che orario cerchi?', 2))}
+    <div class="card riepilogo">
+      <p><strong>${formatDay(cedo.data, true)}</strong> · lasci ${shiftLabel(cedo)}</p>
+    </div>
+    <div class="chips">${raw(modi)}</div>
+    ${raw(campi)}
     <label class="switch">
       <input type="checkbox" data-act="evita-chiusura" ${raw(draft.cerco.evitaChiusura ? 'checked' : '')}>
       <span>Non voglio un turno di chiusura</span>
-    </label>`;
-
-  return html`
-    ${raw(barra('Cosa cerchi in cambio?', 2))}
-    <p class="testo-tenue avviso-box">
-      Solo i giorni della stessa settimana Apple di ${formatDay(cedo.data)} (sabato → venerdì):
-      gli scambi fra settimane diverse non sono ammessi.
-    </p>
-    <div class="pillole">${raw(pillole)}</div>
-    <p class="testo-tenue">Sotto ogni giorno c'è quello che hai tu: i giorni in cui lavori già sono spenti, prenderesti due turni.</p>
-    <h3>Quanto sei rigido?</h3>
-    <div class="chips">${raw(modi)}</div>
-    ${raw(campi)}
-    ${raw(escludi)}
+    </label>
     <label class="campo">
       <span>Messaggio (facoltativo)</span>
-      <textarea data-campo="note" rows="2" placeholder="Es. anche 12–20 mi andrebbe bene">${draft.cerco.note}</textarea>
+      <textarea data-campo="note" rows="2" placeholder="Es. ho la macchina dal meccanico">${draft.cerco.note}</textarea>
     </label>
     <div class="barra-azioni">
       <button class="btn secondario" data-act="step" data-step="2">Indietro</button>
-      <button class="btn primario" data-act="step" data-step="4" ${raw(draft.cerco.data ? '' : 'disabled')}>Continua</button>
+      <button class="btn primario" data-act="step" data-step="4">Continua</button>
+    </div>`;
+}
+
+/** Cambio OFF: si scelgono i giorni in cui si è disposti a lavorare. */
+function passoCercoOff() {
+  const cedo = store.shift(draft.cedoShiftId);
+  const liberi = giorniLiberi(store.state.currentUserId, cedo.data, store.state.shifts);
+
+  const pillole = liberi.map((g) => html`
+    <button class="pill ${draft.cerco.giorni.includes(g) ? 'attivo' : ''}" data-act="giorno-off" data-data="${g}">
+      ${formatDay(g)}
+      <em>${draft.cerco.giorni.includes(g) ? 'scelto' : 'sei a casa'}</em>
+    </button>`).join('');
+
+  const modi = [
+    [WANT_MODE.ANY, 'Qualsiasi turno'],
+    [WANT_MODE.RANGE, 'Una fascia'],
+  ].map(([k, label]) => html`
+    <button class="chip ${draft.cerco.mode === k ? 'attivo' : ''}" data-act="modo" data-modo="${k}">${label}</button>`).join('');
+
+  return html`
+    ${raw(barra('Quando lavori in cambio?', 2))}
+    <div class="card riepilogo">
+      <p>Vuoi libero <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
+    </div>
+    ${raw(liberi.length ? `
+      <p class="testo-tenue">Scegli in quali dei tuoi giorni liberi sei disposto a lavorare. Più ne indichi, più è probabile trovare qualcuno.</p>
+      <div class="pillole">${pillole}</div>`
+    : vuoto('Nessun giorno libero', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
+
+    ${raw(draft.cerco.giorni.length ? `
+      <h3>Il turno che prenderesti</h3>
+      <div class="chips">${modi}</div>
+      ${draft.cerco.mode === WANT_MODE.RANGE ? `
+        <div class="campi-orario">
+          <label>Che finisca entro <input type="time" data-campo="entroLe" value="${draft.cerco.entroLe}"></label>
+          <label>Che inizi dopo <input type="time" data-campo="dalleOre" value="${draft.cerco.dalleOre}"></label>
+        </div>` : ''}
+      <label class="switch">
+        <input type="checkbox" data-act="evita-chiusura" ${draft.cerco.evitaChiusura ? 'checked' : ''}>
+        <span>Non voglio un turno di chiusura</span>
+      </label>` : '')}
+
+    <label class="campo">
+      <span>Messaggio (facoltativo)</span>
+      <textarea data-campo="note" rows="2" placeholder="Es. matrimonio, non posso proprio">${draft.cerco.note}</textarea>
+    </label>
+    <div class="barra-azioni">
+      <button class="btn secondario" data-act="step" data-step="2">Indietro</button>
+      <button class="btn primario" data-act="step" data-step="4" ${raw(draft.cerco.giorni.length ? '' : 'disabled')}>Continua</button>
     </div>`;
 }
 
 /**
- * Il CERCO con orario preciso non si digita: si sceglie fra i turni che quel
- * giorno esistono davvero in store, mostrati senza nome. Digitare gli orari
- * a mano è la trappola per chi ha un contratto diverso: un Part Time che
- * copia "11:00–20:00" dal turno di un Full Time sta chiedendo ore che non
- * farebbe mai. Qui sceglie il turno e l'app calcola le sue ore.
+ * L'orario preciso non si digita: si sceglie fra i turni che quel giorno
+ * esistono davvero in store. Digitare a mano è la trappola per chi ha un
+ * contratto diverso: un Part Time che copia "11:00–20:00" dal turno di un
+ * Full Time sta chiedendo ore che non farebbe mai.
  */
-function campiOrarioPreciso() {
+function campiOrarioPreciso(giorno) {
   const me = store.me;
-  if (!draft.cerco.data) {
-    return html`<p class="testo-tenue">Scegli prima il giorno.</p>`;
-  }
-
   const visti = new Set();
   const turni = store.state.shifts
-    .filter((s) => s.data === draft.cerco.data && s.tipo === 'WORK' && s.userId !== me.id)
+    .filter((s) => s.data === giorno && s.tipo === 'WORK' && s.userId !== me.id)
     .filter((s) => {
       const chiave = `${s.start}-${s.end}`;
       if (visti.has(chiave)) return false;
@@ -250,7 +305,7 @@ function campiOrarioPreciso() {
     const scelto = draft.cerco.start === t.start && draft.cerco.end === t.end;
     return html`
       <button class="riga-turno ${scelto ? 'scelto' : ''}" data-act="scegli-orario"
-              data-start="${t.start}" data-end="${t.end}" data-originale="${shiftLabel(s)}">
+              data-start="${t.start}" data-end="${t.end}">
         <span class="giorno-nome">${shiftLabel(s)}${raw(etichettaFascia(s) ? ` <span class="tag">${etichettaFascia(s)}</span>` : '')}</span>
         <span class="turno-valore">${t.trasformato ? `tu faresti ${t.start}–${t.end}` : 'stesso orario per te'}</span>
         <span class="chevron">${scelto ? '✓' : '›'}</span>
@@ -259,7 +314,7 @@ function campiOrarioPreciso() {
 
   return html`
     ${raw(turni.length ? `
-      <p class="testo-tenue">Turni che ci sono quel giorno in store. Scegli quello che ti interessa: l'orario a destra è quello che faresti tu, con il tuo contratto.</p>
+      <p class="testo-tenue">Gli altri turni di quel giorno. L'orario a destra è quello che faresti tu, con il tuo contratto.</p>
       <div class="lista-turni">${righe}</div>` : '')}
     <label class="switch">
       <input type="checkbox" data-act="orario-manuale" ${raw(draft.orarioManuale ? 'checked' : '')}>
@@ -274,7 +329,12 @@ function campiOrarioPreciso() {
 }
 
 function passoRiepilogo() {
-  const finto = { userId: store.state.currentUserId, cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile }, cerco: draft.cerco };
+  const finto = {
+    userId: store.state.currentUserId,
+    tipo: draft.tipo,
+    cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile },
+    cerco: draft.cerco,
+  };
   const credito = store.creditoPriorita();
   const errori = validateRequest(finto, store.shiftsById(), store.state.shifts);
 
@@ -417,14 +477,24 @@ export function dettaglio(params) {
     ${raw(azioneAutore)}`;
 }
 
-/**
- * I turni che posso davvero offrire su una richiesta. Il confronto va fatto
- * sul turno come lo riceverebbe chi ha pubblicato, non come ce l'ho io.
- */
+/** Perché non posso rispondere: il motore lo sa, tanto vale dirlo. */
+function motivoNonOfferibile(request) {
+  const byId = store.shiftsById();
+  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true });
+  const motivi = miei
+    .map((s) => turnoOfferibile(request, s, store.state.shifts, byId))
+    .filter((v) => !v.ok)
+    .map((v) => v.motivo);
+  return motivi.length
+    ? [...new Set(motivi)][0]
+    : 'Aggiorna i tuoi turni se il calendario non è allineato.';
+}
+
+/** I turni che posso davvero offrire su una richiesta. */
 export function turniOfferibili(request) {
-  const destinatario = store.user(request.userId);
+  const byId = store.shiftsById();
   return store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
-    .filter((s) => satisfies(request.cerco, turnoAdattato(s, destinatario)).score > 0);
+    .filter((s) => turnoOfferibile(request, s, store.state.shifts, byId).ok);
 }
 
 /** Contenuto della sheet "proponi scambio". */
@@ -436,8 +506,8 @@ export function formProposta(request, shiftSuggerito) {
   if (!opzioni.length) {
     return html`
       <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
-      <p class="avviso">⚠️ Il ${formatDay(request.cerco.data)} non hai niente che corrisponda a quello che ${nomeUtente(store.user(request.userId))} sta cercando.</p>
-      <p class="testo-tenue">Aggiorna i tuoi turni se il calendario non è allineato, oppure lascia perdere questo scambio.</p>`;
+      <p class="avviso">⚠️ Non hai niente da offrire su questo cambio.</p>
+      <p class="testo-tenue">${motivoNonOfferibile(request)}</p>`;
   }
 
   return html`
@@ -467,6 +537,7 @@ export function formProposta(request, shiftSuggerito) {
 
 export function pubblica() {
   const { errori, richiesta } = store.creaRichiesta({
+    tipo: draft.tipo,
     cedo: { shiftId: draft.cedoShiftId, flessibile: draft.flessibile },
     cerco: draft.cerco,
     usaPriorita: draft.usaPriorita,
@@ -475,6 +546,9 @@ export function pubblica() {
     draft.errori = errori;
     return null;
   }
+  // La bozza ha finito il suo lavoro: se si torna qui si riparte da capo,
+  // non dal riepilogo di una richiesta già pubblicata.
+  resetDraft();
   toast('Richiesta pubblicata');
   return richiesta;
 }

@@ -2,7 +2,7 @@
 // così la demo non invecchia. Riproducono gli esempi del capitolo 11.
 
 import { appleWeekKey, addDays, todayISO } from './time.js';
-import { STATUS, WANT_MODE } from './rules.js';
+import { STATUS, WANT_MODE, TIPO_CAMBIO } from './rules.js';
 
 const W = (turni) => turni; // [sab, dom, lun, mar, mer, gio, ven]
 const o = 'OFF';
@@ -91,36 +91,70 @@ export function seed() {
   const iso = (h) => new Date(ora.getTime() - h * 3600 * 1000).toISOString();
 
   const requests = [
-    // Cap. 11: Lorenzo e Martina si incastrano. Martina è Part Time e chiede
-    // le ore che farebbe davvero sul turno di Lorenzo, 11:00-20:00 adattato.
+    // Ricalcano i messaggi veri del gruppo WhatsApp.
+
+    // "Cedo mercoledì 12:00-21:00, cerco mercoledì un turno che finisce prima"
     {
-      id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 0)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 1), mode: WANT_MODE.ANY, evitaChiusura: true, note: '' },
+      id: 'rq_lorenzo_1', userId: 'u_lorenzo', createdAt: iso(5), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.ORARIO,
+      cedo: { shiftId: turno('u_lorenzo', addDays(wRef, 5)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 5)], mode: WANT_MODE.RANGE, entroLe: '19:00',
+        evitaChiusura: false, note: 'Ho la macchina dal meccanico.',
+      },
     },
+    // L'altra metà dello stesso cambio orario: chi vuole finire tardi.
     {
-      id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_martina', addDays(wRef, 1)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 0), mode: WANT_MODE.SPECIFIC, start: '14:00', end: '20:00', evitaChiusura: false, note: '' },
+      id: 'rq_martina_1', userId: 'u_martina', createdAt: iso(4), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.ORARIO,
+      cedo: { shiftId: turno('u_martina', addDays(wRef, 5)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 5)], mode: WANT_MODE.RANGE, dalleOre: '11:00',
+        evitaChiusura: false, note: '',
+      },
     },
-    // Luca cerca un OFF: nessuna richiesta corrispondente, solo disponibilità.
+    // "CERCO 08/09 OFF, CEDO 10-11/09 OFF": voglio libero il venerdì e in
+    // cambio lavoro uno dei giorni in cui sono a casa.
     {
-      id: 'rq_luca_1', userId: 'u_luca', createdAt: iso(20), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_luca', addDays(wRef, 6)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 5), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.' },
+      id: 'rq_luca_1', userId: 'u_luca', createdAt: iso(20), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_luca', addDays(wRef, 6)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 2), addDays(wRef, 4)], mode: WANT_MODE.ANY,
+        evitaChiusura: false, note: 'Ho una visita, mi salvereste la settimana.',
+      },
     },
-    // Giulia usa una fascia oraria.
+    // Cambio OFF con una preferenza di orario sul giorno di ritorno.
     {
-      id: 'rq_giulia_1', userId: 'u_giulia', createdAt: iso(30), status: STATUS.APERTA, prioritaFinoA: null,
-      cedo: { shiftId: turno('u_giulia', addDays(wRef, 4)).id, altriShiftIds: [], flessibile: false },
-      cerco: { data: addDays(wRef, 3), mode: WANT_MODE.RANGE, entroLe: '15:00', evitaChiusura: true, note: '' },
+      id: 'rq_giulia_1', userId: 'u_giulia', createdAt: iso(30), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_giulia', addDays(wRef, 4)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 1), addDays(wRef, 3)], mode: WANT_MODE.RANGE,
+        entroLe: '17:00', evitaChiusura: true, note: '',
+      },
     },
-    // Marco cede la notte visual e ha speso la sua priorità del mese.
+    // L'altra metà di un cambio OFF: Sara vuole liberare il lunedì e lavorare
+    // il venerdì, cioè esattamente il contrario di Luca.
+    {
+      id: 'rq_sara_1', userId: 'u_sara', createdAt: iso(8), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_sara', addDays(wRef, 2)).id, flessibile: false },
+      cerco: {
+        giorni: [addDays(wRef, 6)], mode: WANT_MODE.ANY,
+        evitaChiusura: false, note: '',
+      },
+    },
+    // Cambio OFF con la priorità del mese: quello che non si può rimandare.
     {
       id: 'rq_marco_1', userId: 'u_marco', createdAt: iso(2), status: STATUS.APERTA,
       prioritaFinoA: new Date(ora.getTime() + 46 * 3600 * 1000).toISOString(),
-      cedo: { shiftId: turno('u_marco', addDays(wRef, 5)).id, altriShiftIds: [], flessibile: true },
-      cerco: { data: addDays(wRef, 6), mode: WANT_MODE.OFF, evitaChiusura: false, note: 'Matrimonio, non posso proprio.' },
+      tipo: TIPO_CAMBIO.OFF,
+      cedo: { shiftId: turno('u_marco', addDays(wRef, 0)).id, flessibile: true },
+      cerco: {
+        giorni: [addDays(wRef, 2), addDays(wRef, 4), addDays(wRef, 6)], mode: WANT_MODE.ANY,
+        evitaChiusura: false, note: 'Matrimonio, non posso proprio.',
+      },
     },
   ];
 

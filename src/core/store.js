@@ -3,8 +3,8 @@
 // chiamate a un backend non tocca né il motore né la UI.
 
 import { RULES, STATUS } from './rules.js';
-import { newId, isExpired, hasPriority, isOpen, turnoAdattato } from './model.js';
-import { validateRequest, nextStatus, satisfies } from './engine.js';
+import { newId, isExpired, hasPriority, isOpen } from './model.js';
+import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
 import { monthKey, todayISO } from './time.js';
 import { seed } from './seed.js';
 
@@ -105,9 +105,9 @@ export const store = {
     return null;
   },
 
-  creaRichiesta({ cedo, cerco, usaPriorita }) {
+  creaRichiesta({ tipo, cedo, cerco, usaPriorita }) {
     const errori = validateRequest(
-      { cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
+      { tipo, cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
     );
     if (errori.length) return { errori };
     if (usaPriorita && this.creditoPriorita() < 1) {
@@ -121,7 +121,8 @@ export const store = {
       createdAt: new Date().toISOString(),
       status: STATUS.APERTA,
       prioritaFinoA: null,
-      cedo: { shiftId: cedo.shiftId, altriShiftIds: cedo.altriShiftIds || [], flessibile: Boolean(cedo.flessibile) },
+      tipo,
+      cedo: { shiftId: cedo.shiftId, flessibile: Boolean(cedo.flessibile) },
       cerco: { ...cerco },
     };
 
@@ -158,13 +159,12 @@ export const store = {
     if (this.state.proposals.some((p) => p.requestId === requestId && p.daUserId === me && p.status !== 'RIFIUTATA')) {
       return { errori: ['Hai già una proposta aperta su questa richiesta.'] };
     }
-    // Il turno offerto deve davvero soddisfare il CERCO: la regola vale qui,
-    // non solo nel modulo, così nessuna scorciatoia della UI la aggira.
+    // Il turno offerto deve reggere davvero: la regola vale qui, non solo nel
+    // modulo, così nessuna scorciatoia della UI la aggira.
     const offerto = this.shift(shiftOffertoId);
     if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido.'] };
-    if (satisfies(r.cerco, turnoAdattato(offerto, this.user(r.userId))).score === 0) {
-      return { errori: ['Quel turno non corrisponde a quello che la persona sta cercando.'] };
-    }
+    const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById());
+    if (!verifica.ok) return { errori: [verifica.motivo] };
 
     const proposta = {
       id: newId('pr'),

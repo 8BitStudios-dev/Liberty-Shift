@@ -7,7 +7,8 @@ import { minutes, todayISO, appleWeekKey } from './time.js';
 /**
  * User
  * {
- *   id, nome, cognomeIniziale, ruolo, contratto: 'FT'|'PT', admin: bool,
+ *   id, nome, cognomeIniziale, ruolo, contratto: 'FT'|'PT',
+ *   durataTurno: 5|6|9, oreSettimanali: 20|25|30|40, admin: bool,
  *   preferenze: { preferisceMattina, evitaChiusure, disponibileWeekend },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
  *   prioritaUsata: { '<YYYY-MM>': true }
@@ -19,8 +20,13 @@ import { minutes, todayISO, appleWeekKey } from './time.js';
  * Request
  * {
  *   id, userId, createdAt, status, prioritaFinoA: iso-datetime | null,
- *   cedo: { shiftId, altriShiftIds: [], flessibile: bool },
- *   cerco: { data, mode, start, end, entroLe, dalleOre, evitaChiusura, note }
+ *   tipo: 'ORARIO' | 'OFF',
+ *   cedo: { shiftId, flessibile: bool },      // il turno che lascio
+ *   cerco: {
+ *     giorni: ['YYYY-MM-DD'],   // ORARIO: solo il giorno del turno ceduto
+ *                               // OFF: i giorni in cui sono disposto a lavorare
+ *     mode, start, end, entroLe, dalleOre, evitaChiusura, note
+ *   }
  * }
  *
  * Proposal
@@ -104,8 +110,6 @@ export function wantLabel(cerco) {
       if (cerco.dalleOre) parti.push(`che inizi dopo le ${cerco.dalleOre}`);
       return `qualsiasi turno ${parti.join(' e ')}`.trim();
     }
-    case WANT_MODE.OFF:
-      return 'OFF';
     default:
       return cerco.evitaChiusura ? 'qualsiasi turno non di chiusura' : 'qualsiasi turno';
   }
@@ -238,11 +242,13 @@ function arrotonda(n) {
   return Number(n.toFixed(1)).toString().replace('.', ',');
 }
 
-/** La richiesta è scaduta quando è passata la data del turno ceduto (cap. 24). */
+/** La richiesta è scaduta quando i giorni che tocca sono passati (cap. 24). */
 export function isExpired(request, shiftsById, oggi = todayISO()) {
   const cedo = shiftsById[request.cedo.shiftId];
   if (!cedo) return true;
-  return cedo.data < oggi || request.cerco.data < oggi;
+  if (cedo.data < oggi) return true;
+  const giorni = request.cerco?.giorni || [];
+  return giorni.length > 0 && giorni.every((g) => g < oggi);
 }
 
 export function hasPriority(request, now = new Date()) {

@@ -17,6 +17,8 @@ aver costruito il prototipo. Le domande sono in ordine di quanto bloccano.
 | Durata dei turni | FT 9h, PT 5 o 6h, impostata per persona | R9 |
 | Monte ore | 20, 25, 30, 40; avviso quando lo scambio le sposta | R17 |
 | CERCO con orario preciso | si sceglie fra i turni reali del giorno | `04-flussi-ux.md` |
+| Tipi di cambio | orario (una giornata) e OFF (due giornate), separati | R2 |
+| Cambio nello stesso giorno | è il caso più frequente, non un errore | R2 |
 
 Sulla chiusura la scelta è stata: un 11:00–20:00 esce col negozio e **non** è
 una chiusura, un 12:00–21:00 sì. Se nello store "chiusura" vuol dire invece
@@ -47,11 +49,6 @@ succede se la richiesta si chiude dopo due ore invece che dopo 48.
 Nel prototipo l'admin è solo un campo. Va definito cosa può fare davvero:
 rimuovere una richiesta, chiuderne una d'ufficio, vedere le statistiche.
 Il confine è chiaro: mai accettare al posto di qualcuno.
-
-### 4. Cambio di orario nello stesso giorno
-Oggi CEDO e CERCO devono cadere in giorni diversi. Ma "lavoro sabato 11:00–20:00
-e vorrei il turno di sabato 08:00–17:00 di un collega" è una richiesta
-plausibile e frequente. Vale la pena permetterla?
 
 ## Rinviabili
 

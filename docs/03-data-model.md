@@ -56,13 +56,21 @@ scavalca la mezzanotte, e `isNotturno()` lo riconosce. Stessa logica per
 | Campo | Tipo | Note |
 |---|---|---|
 | `id`, `userId`, `createdAt` | | |
+| `tipo` | `'ORARIO' \| 'OFF'` | decide regole, validazione e algoritmo di match |
 | `status` | vedi R10 | ricalcolato, non scritto a mano |
 | `prioritaFinoA` | ISO datetime o null | la priorità è scaduta quando la data è passata |
-| `cedo` | `{ shiftId, altriShiftIds[], flessibile }` | |
-| `cerco` | `{ data, mode, start, end, entroLe, dalleOre, evitaChiusura, note }` | |
+| `cedo` | `{ shiftId, flessibile }` | il turno che lasci, sempre un turno vero |
+| `cerco` | `{ giorni[], mode, start, end, entroLe, dalleOre, evitaChiusura, note }` | |
 
-`altriShiftIds` è predisposto per il caso "cedo più turni" ma il motore oggi non
-lo usa.
+`cerco.giorni` è il campo che tiene insieme i due tipi:
+
+- **cambio orario**: contiene solo il giorno del turno ceduto. Il lato che conta
+  è l'orario;
+- **cambio OFF**: contiene i giorni in cui sei disposto a lavorare, che sono
+  giorni in cui adesso sei a casa. Più ne indichi, più match trovi.
+
+Un array in entrambi i casi evita un campo che a volte è una data e a volte una
+lista, che è il genere di cosa che poi si paga.
 
 ## Proposal
 
