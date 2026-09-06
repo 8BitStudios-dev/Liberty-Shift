@@ -38,16 +38,14 @@ export const RULES = {
     canBeAddedLater: false,
   },
 
-  // Contratti. La durata del turno è una proprietà della persona, non del
-  // contratto: un Part Time può essere da 5 o da 6 ore. Il contratto serve
-  // solo come etichetta; i numeri stanno sull'utente.
+  // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
+  // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
+  // è il monte ore settimanale, che sta sull'utente.
   contracts: {
     FT: { label: 'Full Time' },
     PT: { label: 'Part Time' },
   },
-  durateTurnoAmmesse: [5, 6, 9],
   monteOreAmmessi: [20, 25, 30, 40],
-  durataTurnoDefault: { FT: 9, PT: 6 },
 
   adattamentoPenalty: 5,
 };

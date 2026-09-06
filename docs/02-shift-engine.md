@@ -87,15 +87,17 @@ Il punteggio della seconda è **tagliato a 75**, quindi non può mai presentarsi
 come match pieno. È la traduzione numerica del principio "una disponibilità non
 è una richiesta". Chi non ha fatto né l'una né l'altra cosa non compare mai.
 
-## Adattamento al contratto
+## Adattamento del turno
 Prima di calcolare il punteggio, ogni turno viene trasformato in quello che la
-persona lavorerebbe davvero con il proprio contratto (R9): accorciato o
-allungato alla sua durata standard, tenendo fermo l'inizio se il turno apre e
-la fine in tutti gli altri casi.
+persona lavorerebbe davvero (R9): con le **ore del turno che sta lasciando**,
+tenendo fermo l'inizio se quello ricevuto apre e la fine in tutti gli altri
+casi. `trasformaTurno(riceve, cede)` prende i due turni, non le persone: la
+durata di riferimento è un dato concreto, non una proprietà dichiarata.
 
-Questo cambia i risultati in meglio. Un Part Time che cerca un turno che finisca
-entro le 15:00 trova un 09:00–18:00 di un Full Time, perché per lui diventa
-09:00–15:00: il confronto ingenuo sull'orario originale l'avrebbe scartato.
+Questo cambia i risultati in meglio. Chi lascia un turno da 5 ore e cerca
+qualcosa che finisca entro le 15:00 trova un 09:00–18:00, perché per lui
+diventa 09:00–14:00: il confronto ingenuo sull'orario originale l'avrebbe
+scartato.
 
 L'adattamento costa 5 punti e viene spiegato fra le ragioni del match. Restano
 segnalati senza essere risolti: le notti e gli adattamenti che uscirebbero dalla

@@ -10,7 +10,7 @@ import { WANT_MODE, RULES, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
-  durataTurnoDi, impattoMonteOre, shiftLabel, isExpired,
+  impattoMonteOre, shiftLabel, isExpired,
 } from '../src/core/model.js';
 
 // --- settimana Apple ---------------------------------------------------
@@ -161,58 +161,65 @@ test('la disponibilità è settimana per settimana', () => {
   assert.ok(!disponibileIl(lorenzo, addDays(w0, 21))); // settimana non dichiarata
 });
 
-// --- trasformazione FT/PT ----------------------------------------------
+// --- adattamento del turno ---------------------------------------------
 
-const FT = { contratto: 'FT' };
-const PT = { contratto: 'PT' };
+// Chi riceve un turno fa le ore del turno che sta lasciando.
+const lascia5 = shift('2026-09-18', '15:00', '20:00');
+const lascia9 = shift('2026-09-18', '11:00', '20:00');
 
-test('un turno di apertura ceduto a un Part Time tiene fermo l\'inizio', () => {
-  const t = trasformaTurno(shift('2026-09-18', '09:00', '18:00'), PT);
+test('un turno di apertura ricevuto tiene fermo l\'inizio', () => {
+  const t = trasformaTurno(shift('2026-09-18', '09:00', '18:00'), lascia5);
   assert.equal(t.trasformato, true);
   assert.equal(t.ancora, 'inizio');
   assert.equal(t.start, '09:00');
-  assert.equal(t.end, '15:00'); // 6 ore da contratto PT
+  assert.equal(t.end, '14:00'); // cinque ore, quelle che lascia
 });
 
-test('un turno di chiusura ceduto a un Part Time tiene ferma la fine', () => {
-  const t = trasformaTurno(shift('2026-09-18', '11:00', '20:00'), PT);
+test('un turno di chiusura ricevuto tiene ferma la fine', () => {
+  const t = trasformaTurno(shift('2026-09-18', '12:00', '21:00'), lascia5);
   assert.equal(t.ancora, 'fine');
-  assert.equal(t.start, '14:00');
-  assert.equal(t.end, '20:00'); // esce quando esce il Full Time
+  assert.equal(t.start, '16:00');
+  assert.equal(t.end, '21:00'); // esce quando esce chi glielo passa
 });
 
-test('un turno corto ceduto a un Full Time viene allungato, non accorciato', () => {
-  const t = trasformaTurno(shift('2026-09-18', '11:00', '17:00'), FT);
+test('la durata non è del contratto ma del turno che si lascia', () => {
+  const ricevuto = shift('2026-09-18', '12:00', '21:00');
+  // Stessa persona, due giorni diversi: due risultati diversi, ed è giusto.
+  assert.equal(trasformaTurno(ricevuto, shift('2026-09-18', '15:00', '20:00')).start, '16:00');
+  assert.equal(trasformaTurno(ricevuto, shift('2026-09-18', '14:00', '21:00')).start, '14:00');
+});
+
+test('un turno corto ricevuto da chi ne lascia uno lungo viene allungato', () => {
+  const t = trasformaTurno(shift('2026-09-18', '11:00', '17:00'), lascia9);
   assert.equal(t.trasformato, true);
   assert.equal(t.start, '08:00');
-  assert.equal(t.end, '17:00'); // 9 ore da contratto FT
+  assert.equal(t.end, '17:00'); // nove ore
 });
 
-test('fra contratti uguali il turno non si tocca', () => {
-  const t = trasformaTurno(shift('2026-09-18', '11:00', '20:00'), FT);
+test('a parità di ore il turno non si tocca', () => {
+  const t = trasformaTurno(shift('2026-09-18', '11:00', '20:00'), lascia9);
   assert.equal(t.trasformato, false);
   assert.equal(t.start, '11:00');
   assert.equal(t.end, '20:00');
 });
 
 test('una notte non viene accorciata d\'ufficio, viene segnalata', () => {
-  const t = trasformaTurno(shift('2026-09-17', '22:00', '06:30'), PT);
+  const t = trasformaTurno(shift('2026-09-17', '22:00', '06:30'), lascia5);
   assert.equal(t.trasformato, false);
   assert.match(t.avviso, /notte/i);
 });
 
 test('un adattamento che sborda dalla fascia dello store viene segnalato', () => {
-  // 12:00-18:00 preso da un FT: ancora la fine, inizio alle 09:00, ci sta.
-  assert.equal(trasformaTurno(shift('2026-09-18', '12:00', '18:00'), FT).avviso, undefined);
-  // 11:00-14:00 preso da un FT: inizio alle 05:00, fuori fascia.
-  assert.match(trasformaTurno(shift('2026-09-18', '11:00', '14:00'), FT).avviso, /fuori dalla fascia/);
+  assert.equal(trasformaTurno(shift('2026-09-18', '12:00', '18:00'), lascia9).avviso, undefined);
+  // 11:00-14:00 allungato a nove ore comincerebbe alle 05:00.
+  assert.match(trasformaTurno(shift('2026-09-18', '11:00', '14:00'), lascia9).avviso, /fuori dalla fascia/);
 });
 
-test('il match spiega la trasformazione invece di limitarsi a segnalarla', () => {
+test('il match spiega l\'adattamento invece di limitarsi a segnalarlo', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
   const martina = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
-  assert.ok(martina.reasons.some((r) => /Part Time.*diventa/.test(r)));
+  assert.ok(martina.reasons.some((r) => /lascia .*h, quindi .* diventa/.test(r)));
   assert.equal(martina.adattato.trasformato, true);
 });
 
@@ -269,21 +276,6 @@ test('una notte visual resta riconoscibile fra i turni di esempio', () => {
 
 // --- durata del turno per persona e monte ore --------------------------
 
-test('la durata del turno è della persona, non del contratto', () => {
-  const pt5 = { contratto: 'PT', durataTurno: 5 };
-  const pt6 = { contratto: 'PT', durataTurno: 6 };
-  assert.equal(durataTurnoDi(pt5), 5);
-  assert.equal(durataTurnoDi(pt6), 6);
-  // Lo stesso turno di chiusura diventa due cose diverse.
-  assert.equal(trasformaTurno(shift('2026-09-18', '11:00', '20:00'), pt5).start, '15:00');
-  assert.equal(trasformaTurno(shift('2026-09-18', '11:00', '20:00'), pt6).start, '14:00');
-});
-
-test('senza durata dichiarata si ricade sul valore del contratto', () => {
-  assert.equal(durataTurnoDi({ contratto: 'FT' }), RULES.durataTurnoDefault.FT);
-  assert.equal(durataTurnoDi({ contratto: 'PT' }), RULES.durataTurnoDefault.PT);
-});
-
 test('uno scambio fra due turni interi non tocca il monte ore', () => {
   const s = seed();
   const lorenzo = s.users.find((u) => u.id === 'u_lorenzo');
@@ -304,16 +296,6 @@ test('scambiare un turno con un OFF sposta il monte ore e viene detto', () => {
   assert.equal(impatto.cambia, true);
   assert.ok(impatto.dopo < impatto.prima);
   assert.match(impatto.avviso, /settimana passa da/);
-});
-
-test('i dati di esempio sono coerenti: ogni turno dura quanto il contratto di chi lo fa', () => {
-  const s = seed();
-  for (const u of s.users) {
-    const suoi = s.shifts.filter((x) => x.userId === u.id && x.tipo === 'WORK' && !isNotturno(x));
-    for (const t of suoi) {
-      assert.equal(durataOre(t), durataTurnoDi(u), `${u.nome} ha ${shiftLabel(t)} ma fa turni da ${durataTurnoDi(u)}h`);
-    }
-  }
 });
 
 test('le richieste di esempio non nascono già scadute, qualunque giorno sia oggi', () => {

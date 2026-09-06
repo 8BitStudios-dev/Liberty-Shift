@@ -8,7 +8,7 @@ import {
 } from './time.js';
 import {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
-  fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre,
+  fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
 } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -164,10 +164,10 @@ function verificheIncrociate(coppie, shifts) {
   const avvisi = [];
   let penalita = 0;
   for (const [chi, cede, riceve] of coppie) {
-    const t = trasformaTurno(riceve, chi);
+    const t = trasformaTurno(riceve, cede);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
-      reasons.push(`${chi.nome} è ${contrattoDi(chi)}: ${t.originale} diventa ${t.start}–${t.end}`);
+      reasons.push(`${chi.nome} lascia ${durataOre(cede)}h, quindi ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
     }
     if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
     if (cede) {
@@ -207,7 +207,9 @@ function matchOrario(request, ctx) {
     if (!suo || suo.tipo !== 'WORK') continue;
     if (suo.start === mioCedo.start && suo.end === mioCedo.end) continue; // stesso turno
 
-    const perMe = satisfies(request.cerco, turnoAdattato(suo, autore));
+    // Quello che riceverei non è il turno com'è, ma con le ore del turno che
+    // sto lasciando: chi cambia non cambia il proprio monte ore.
+    const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo));
     if (perMe.score === 0) continue;
 
     // Ha chiesto lui stesso un cambio orario quel giorno?
@@ -218,7 +220,7 @@ function matchOrario(request, ctx) {
     let origine;
     const reasons = [];
     if (suaRichiesta) {
-      const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, u));
+      const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo));
       if (perLui.score === 0) continue;
       score = Math.round((perMe.score + perLui.score) / 2);
       origine = 'RICHIESTA';
@@ -226,7 +228,7 @@ function matchOrario(request, ctx) {
       reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
     } else {
       if (!disponibileIl(u, giorno)) continue;
-      if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
+      if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, suo))) continue;
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
       origine = 'DISPONIBILITA';
       reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e si è dichiarato disponibile a scambiare`);
@@ -246,7 +248,7 @@ function matchOrario(request, ctx) {
       requestId: suaRichiesta?.id || null,
       shiftOffertoId: suo.id,
       data: giorno,
-      adattato: trasformaTurno(suo, autore),
+      adattato: trasformaTurno(suo, mioCedo),
       prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
       reasons: [...reasons, ...v.reasons],
       avvisi: v.avvisi,
@@ -281,7 +283,7 @@ function matchOff(request, ctx) {
       const suo = idx.get(u.id, giorno);
       if (!suo || suo.tipo !== 'WORK') continue;
 
-      const perMe = satisfies(request.cerco, turnoAdattato(suo, autore));
+      const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo));
       if (perMe.score === 0) continue;
 
       const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
@@ -293,14 +295,14 @@ function matchOff(request, ctx) {
       let origine;
       const reasons = [];
       if (suaRichiesta) {
-        const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, u));
+        const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo));
         if (perLui.score === 0) continue;
         score = Math.round((perMe.score + perLui.score) / 2);
         origine = 'RICHIESTA';
         reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
         if (!disponibileIl(u, mioCedo.data)) continue;
-        if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
+        if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, suo))) continue;
         score = Math.min(perMe.score, RULES.availabilityScoreCap);
         origine = 'DISPONIBILITA';
         reasons.push(`è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`);
@@ -325,7 +327,7 @@ function matchOff(request, ctx) {
         requestId: suaRichiesta?.id || null,
         shiftOffertoId: suo.id,
         data: giorno,
-        adattato: trasformaTurno(suo, autore),
+        adattato: trasformaTurno(suo, mioCedo),
         prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
         reasons: [...reasons, ...v.reasons],
         avvisi: v.avvisi,

@@ -53,22 +53,37 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
     </div>`;
 }
 
-export function cardRichiesta(request, { azione = 'Vedi cambio' } = {}) {
+/** Una riga sola: il minimo per capire se ti riguarda. Il resto è nel dettaglio. */
+export function sintesiRichiesta(request) {
+  const cedo = store.shift(request.cedo.shiftId);
+  const giorni = request.cerco.giorni || [];
+  if (request.tipo === TIPO_CAMBIO.OFF) {
+    return `vuole libero ${formatDay(cedo?.data)} · lavora ${giorni.map((g) => formatDay(g)).join(' o ')}`;
+  }
+  return `${formatDay(cedo?.data)} · ${shiftLabel(cedo)} → ${wantLabel(request.cerco)}`;
+}
+
+/**
+ * La riga della bacheca. Sta in due righe di testo: nome e una sintesi.
+ * Tutto il resto — orari, note, stato, proposte — vive nel dettaglio, che si
+ * apre toccandola.
+ */
+export function cardRichiesta(request) {
   const autore = store.user(request.userId);
   const prio = hasPriority(request);
+  const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   return html`
-    <article class="card richiesta ${prio ? 'prioritaria' : ''}" data-act="apri-richiesta" data-id="${request.id}">
-      <header class="card-head">
-        <span class="avatar">${iniziali(autore)}</span>
-        <div>
-          <strong>${prio ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
-          <div class="meta">${autore?.ruolo} · ${autore?.contratto} ${raw(badgeStato(request.status))}</div>
-        </div>
-      </header>
-      ${raw(coppiaCedoCerco(request, { compatto: true }))}
-      ${raw(request.cerco.note ? `<p class="nota-utente">“${request.cerco.note}”</p>` : '')}
-      <footer class="card-foot"><span class="link">${azione} →</span></footer>
-    </article>`;
+    <button class="riga-richiesta ${prio ? 'prioritaria' : ''}" data-act="apri-richiesta" data-id="${request.id}">
+      <span class="avatar piccolo">${iniziali(autore)}</span>
+      <span class="riga-testo">
+        <span class="riga-titolo">
+          ${prio ? '⭐ ' : ''}${nomeUtente(autore)}
+          <span class="tipo-pill">${meta.icona} ${meta.breve}</span>
+        </span>
+        <span class="riga-sintesi">${sintesiRichiesta(request)}</span>
+      </span>
+      <span class="chevron">›</span>
+    </button>`;
 }
 
 export function cardMatch(match, opzioni = {}) {
@@ -81,7 +96,7 @@ export function cardMatch(match, opzioni = {}) {
         <span class="avatar">${iniziali(u)}</span>
         <div>
           <strong>${nomeUtente(u)}</strong>
-          <div class="meta">${u?.ruolo} · ${u?.contratto}</div>
+          <div class="meta">${u?.contratto}</div>
         </div>
         <span class="score">${match.score}%</span>
       </header>
@@ -151,11 +166,10 @@ export function cardOpportunita({ richiesta, match }) {
   const u = store.user(richiesta.userId);
   const verde = match.tipo === 'MATCH';
   const mioTurno = store.shift(match.shiftOffertoId);
-  const me = store.me;
   // Le due cose che contano: che turno farei io, e che turno farebbe l'altra
-  // persona. Entrambi già adattati al contratto di chi li riceve.
+  // persona. Ciascuno con le ore del turno che sta lasciando.
   const suoCedo = store.shift(richiesta.cedo.shiftId);
-  const perMeT = trasformaTurno(suoCedo, me);
+  const perMeT = trasformaTurno(suoCedo, mioTurno);
   const perMe = { data: suoCedo?.data, orario: perMeT.trasformato ? `${perMeT.start}–${perMeT.end}` : shiftLabel(suoCedo) };
   const perLei = match.adattato?.trasformato
     ? `${match.adattato.start}–${match.adattato.end}`
@@ -166,7 +180,7 @@ export function cardOpportunita({ richiesta, match }) {
         <span class="avatar">${iniziali(u)}</span>
         <div>
           <strong>${hasPriority(richiesta) ? '⭐ ' : ''}${nomeUtente(u)}</strong>
-          <div class="meta">${u?.ruolo} · ${u?.contratto}</div>
+          <div class="meta">${u?.contratto}</div>
         </div>
         <span class="score">${match.score}%</span>
       </header>

@@ -288,10 +288,10 @@ function passoCercoOff() {
  * Full Time sta chiedendo ore che non farebbe mai.
  */
 function campiOrarioPreciso(giorno) {
-  const me = store.me;
+  const mioCedo = store.shift(draft.cedoShiftId);
   const visti = new Set();
   const turni = store.state.shifts
-    .filter((s) => s.data === giorno && s.tipo === 'WORK' && s.userId !== me.id)
+    .filter((s) => s.data === giorno && s.tipo === 'WORK' && s.userId !== store.state.currentUserId)
     .filter((s) => {
       const chiave = `${s.start}-${s.end}`;
       if (visti.has(chiave)) return false;
@@ -301,7 +301,7 @@ function campiOrarioPreciso(giorno) {
     .sort((a, b) => a.start.localeCompare(b.start));
 
   const righe = turni.map((s) => {
-    const t = trasformaTurno(s, me);
+    const t = trasformaTurno(s, mioCedo);
     const scelto = draft.cerco.start === t.start && draft.cerco.end === t.end;
     return html`
       <button class="riga-turno ${scelto ? 'scelto' : ''}" data-act="scegli-orario"
@@ -466,7 +466,7 @@ export function dettaglio(params) {
         <span class="avatar">${iniziali(autore)}</span>
         <div>
           <strong>${hasPriority(r) ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
-          <div class="meta">${autore.ruolo} · ${RULES.contracts[autore.contratto].label}</div>
+          <div class="meta">${RULES.contracts[autore.contratto].label}</div>
         </div>
       </header>
       ${raw(coppiaCedoCerco(r))}
@@ -502,6 +502,7 @@ export function formProposta(request, shiftSuggerito) {
   // Si può offrire solo qualcosa che soddisfa davvero il CERCO: se cercano
   // un OFF, un turno lavorato non serve a niente.
   const opzioni = turniOfferibili(request);
+  const suoCedo = store.shift(request.cedo.shiftId);
 
   if (!opzioni.length) {
     return html`
@@ -517,7 +518,7 @@ export function formProposta(request, shiftSuggerito) {
       <span>Il turno che offri</span>
       <select class="select" data-campo="shift">
         ${opzioni.map((s) => {
-    const t = trasformaTurno(s, store.user(request.userId));
+    const t = trasformaTurno(s, suoCedo);
     const etichetta = t.trasformato
       ? `${formatDay(s.data)} · ${shiftLabel(s)} → farebbe ${t.start}–${t.end}`
       : `${formatDay(s.data)} · ${shiftLabel(s)}`;
@@ -525,7 +526,7 @@ export function formProposta(request, shiftSuggerito) {
   })}
       </select>
     </label>
-    ${raw(opzioni.some((s) => trasformaTurno(s, store.user(request.userId)).trasformato)
+    ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo).trasformato)
     ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe davvero.</p>`
     : '')}
     <label class="campo">

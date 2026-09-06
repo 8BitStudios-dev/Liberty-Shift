@@ -91,6 +91,12 @@ p { margin: 8px 0; }
 .hero .saluto { color: var(--testo-tenue); margin: 0; font-size: 15px; }
 .hero h1 { font-size: 32px; }
 .hero .sottotitolo { color: var(--testo-tenue); font-size: 14px; margin: 2px 0 0; }
+.hero-riga { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.priorita-chip {
+  appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
+  border: 1px solid var(--oro); color: var(--oro); background: none;
+  border-radius: 999px; padding: 5px 12px; margin-top: 8px; flex: 0 0 auto;
+}
 .hero.compatta { text-align: center; padding-top: 24px; }
 
 .testata { display: flex; align-items: center; gap: 10px; padding: 14px 0 12px; }
@@ -139,7 +145,22 @@ p { margin: 8px 0; }
   margin-bottom: 12px;
   box-shadow: var(--ombra);
 }
-.card.richiesta { cursor: pointer; }
+/* La richiesta in bacheca: due righe, il resto nel dettaglio. */
+.riga-richiesta {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  appearance: none; font: inherit; color: inherit; cursor: pointer;
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+}
+.riga-richiesta.prioritaria { border-color: var(--oro); }
+.riga-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.riga-titolo { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.riga-sintesi { font-size: 13px; color: var(--testo-tenue); }
+.tipo-pill {
+  font-size: 11px; font-weight: 600; color: var(--testo-tenue);
+  background: var(--superficie-2); border-radius: 6px; padding: 1px 6px;
+}
+.avatar.piccolo { width: 30px; height: 30px; font-size: 12px; }
 .card.prioritaria { border-color: var(--oro); box-shadow: 0 0 0 1px var(--oro) inset, var(--ombra); }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .card-head > div { flex: 1; min-width: 0; }
@@ -211,7 +232,6 @@ p { margin: 8px 0; }
 .tile-icona { font-size: 24px; }
 .tile.cambio-rapido { background: linear-gradient(135deg, var(--accento) 0%, #6b46ff 100%); color: #fff; border: 0; }
 .tile.cambio-rapido em, .tile.cambio-rapido .chevron { color: rgba(255, 255, 255, .8); }
-.tile.priorita { border-color: var(--oro); }
 .tile.scelta { padding: 18px; }
 .tile.scelta.rosso { border-left: 4px solid var(--rosso); }
 .tile.scelta.verde { border-left: 4px solid var(--verde); }
@@ -440,16 +460,14 @@ const RULES = {
     canBeAddedLater: false,
   },
 
-  // Contratti. La durata del turno è una proprietà della persona, non del
-  // contratto: un Part Time può essere da 5 o da 6 ore. Il contratto serve
-  // solo come etichetta; i numeri stanno sull'utente.
+  // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
+  // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
+  // è il monte ore settimanale, che sta sull'utente.
   contracts: {
     FT: { label: 'Full Time' },
     PT: { label: 'Part Time' },
   },
-  durateTurnoAmmesse: [5, 6, 9],
   monteOreAmmessi: [20, 25, 30, 40],
-  durataTurnoDefault: { FT: 9, PT: 6 },
 
   adattamentoPenalty: 5,
 };
@@ -592,8 +610,8 @@ const { minutes, todayISO, appleWeekKey } = M_time;
 /**
  * User
  * {
- *   id, nome, cognomeIniziale, ruolo, contratto: 'FT'|'PT',
- *   durataTurno: 5|6|9, oreSettimanali: 20|25|30|40, admin: bool,
+ *   id, nome, cognomeIniziale, contratto: 'FT'|'PT',
+ *   oreSettimanali: 20|25|30|40, admin: bool,
  *   preferenze: { preferisceMattina, evitaChiusure, disponibileWeekend },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
  *   prioritaUsata: { '<YYYY-MM>': true }
@@ -704,65 +722,58 @@ function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
 }
 
-/** Durata standard del turno di una persona: 9 per un FT, 5 o 6 per un PT. */
-function durataTurnoDi(user) {
-  return user?.durataTurno ?? RULES.durataTurnoDefault[user?.contratto] ?? 9;
-}
-
-function etichettaContratto(user) {
-  return `${contractOf(user).label} · turni da ${durataTurnoDi(user)}h · ${user?.oreSettimanali ?? '—'}h a settimana`;
-}
-
 function hhmm(min) {
   const m = ((min % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 }
 
 /**
- * Adatta un turno al contratto di chi lo riceve (cap. 19).
+ * Adatta un turno a chi lo riceve (cap. 19).
  *
- * Uno scambio FT/PT è permesso, ma ciascuno resta sul proprio contratto: il
- * turno viene accorciato o allungato alla durata standard di chi lo prende,
- * tenendo fermo un estremo.
+ * Uno scambio fra contratti diversi è permesso, ma nessuno cambia il proprio
+ * monte ore: chi prende il turno di un altro **fa le ore del turno che sta
+ * lasciando**, ancorate a un estremo di quello che riceve.
  *
- *   - turno che comincia entro l'apertura -> si tiene fermo l'INIZIO
+ *   - il turno ricevuto comincia entro l'apertura -> si tiene fermo l'INIZIO
  *     (entri quando entra chi ti passa il turno)
  *   - qualsiasi altro turno -> si tiene ferma la FINE
  *     (esci quando esce chi ti passa il turno)
  *
- * Esempi con FT 9h e PT 6h:
- *   09:00–18:00 ceduto a un PT -> 09:00–15:00   (apertura, ancora l'inizio)
- *   11:00–20:00 ceduto a un PT -> 14:00–20:00   (chiusura, ancora la fine)
- *   11:00–17:00 ceduto a un FT -> 08:00–17:00   (allungato all'indietro)
+ * Esempi, con chi riceve che lascia un turno da 5 ore:
+ *   riceve 09:00–18:00 (apertura) -> 09:00–14:00
+ *   riceve 12:00–21:00 (chiusura) -> 16:00–21:00
  *
- * Restituisce sempre il turno che la persona lavorerebbe davvero.
+ * Non esiste una "durata standard" per persona: gli stessi Part Time hanno
+ * giorni da 5 ore e giorni da 7. La durata di riferimento è sempre quella
+ * concreta del turno che si lascia.
  */
-function trasformaTurno(shift, ricevente) {
-  if (!shift || shift.tipo === 'OFF' || !ricevente) {
-    return { start: shift?.start, end: shift?.end, trasformato: false };
+function trasformaTurno(riceve, cede) {
+  if (!riceve || riceve.tipo === 'OFF') {
+    return { start: riceve?.start, end: riceve?.end, trasformato: false };
   }
 
-  const durataTarget = durataTurnoDi(ricevente);
-  const durataAttuale = durataOre(shift);
+  const durataAttuale = durataOre(riceve);
   const base = {
-    start: shift.start, end: shift.end, durata: durataAttuale, trasformato: false,
+    start: riceve.start, end: riceve.end, durata: durataAttuale, trasformato: false,
   };
-  if (Math.abs(durataAttuale - durataTarget) < 0.01) return base;
+
+  const durataTarget = durataOre(cede);
+  if (!durataTarget || Math.abs(durataAttuale - durataTarget) < 0.01) return base;
 
   // Le notti sono casi particolari: si segnalano, non si accorciano d'ufficio.
-  if (isNotturno(shift)) {
+  if (isNotturno(riceve) || isNotturno(cede)) {
     return { ...base, avviso: 'Turno di notte: la durata va concordata a parte.' };
   }
 
-  const ancoraInizio = minutes(shift.start) <= minutes(RULES.store.apre);
+  const ancoraInizio = minutes(riceve.start) <= minutes(RULES.store.apre);
   const durataMin = durataTarget * 60;
   let inizio;
   let fine;
   if (ancoraInizio) {
-    inizio = minutes(shift.start);
+    inizio = minutes(riceve.start);
     fine = inizio + durataMin;
   } else {
-    fine = minutes(shift.end);
+    fine = minutes(riceve.end);
     inizio = fine - durataMin;
   }
 
@@ -772,7 +783,7 @@ function trasformaTurno(shift, ricevente) {
     durata: durataTarget,
     trasformato: true,
     ancora: ancoraInizio ? 'inizio' : 'fine',
-    originale: `${shift.start}–${shift.end}`,
+    originale: `${riceve.start}–${riceve.end}`,
   };
 
   // L'adattamento non deve sbordare dalla fascia in cui si può stare in store.
@@ -783,10 +794,10 @@ function trasformaTurno(shift, ricevente) {
 }
 
 /** Il turno adattato, nella forma di uno Shift, per darlo in pasto al motore. */
-function turnoAdattato(shift, ricevente) {
-  const t = trasformaTurno(shift, ricevente);
-  if (!t.trasformato) return shift;
-  return { ...shift, start: t.start, end: t.end };
+function turnoAdattato(riceve, cede) {
+  const t = trasformaTurno(riceve, cede);
+  if (!t.trasformato) return riceve;
+  return { ...riceve, start: t.start, end: t.end };
 }
 
 /** Ore lavorate da una persona in una settimana Apple. */
@@ -806,7 +817,7 @@ function oreSettimana(userId, weekKey, shifts) {
 function impattoMonteOre(user, cedo, ricevuto, shifts) {
   const weekKey = appleWeekKey(cedo.data);
   const prima = oreSettimana(user.id, weekKey, shifts);
-  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, user));
+  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, cedo));
   const contratto = user.oreSettimanali;
   const cambia = Math.abs(dopo - prima) > 0.01;
   if (!cambia || !contratto) return { cambia: false, prima, dopo };
@@ -846,7 +857,7 @@ function isOpen(request) {
     || request.status === STATUS.IN_ATTESA;
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, durataTurnoDi, etichettaContratto, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen };
+return { newId, isNotturno, fineMinuti, durataOre, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, contractOf, trasformaTurno, turnoAdattato, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen };
 })();
 
 // ---- src/core/engine.js
@@ -861,7 +872,7 @@ const {
 } = M_time;
 const {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
-  fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre,
+  fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
 } = M_model;
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -1017,10 +1028,10 @@ function verificheIncrociate(coppie, shifts) {
   const avvisi = [];
   let penalita = 0;
   for (const [chi, cede, riceve] of coppie) {
-    const t = trasformaTurno(riceve, chi);
+    const t = trasformaTurno(riceve, cede);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
-      reasons.push(`${chi.nome} è ${contrattoDi(chi)}: ${t.originale} diventa ${t.start}–${t.end}`);
+      reasons.push(`${chi.nome} lascia ${durataOre(cede)}h, quindi ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
     }
     if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
     if (cede) {
@@ -1060,7 +1071,9 @@ function matchOrario(request, ctx) {
     if (!suo || suo.tipo !== 'WORK') continue;
     if (suo.start === mioCedo.start && suo.end === mioCedo.end) continue; // stesso turno
 
-    const perMe = satisfies(request.cerco, turnoAdattato(suo, autore));
+    // Quello che riceverei non è il turno com'è, ma con le ore del turno che
+    // sto lasciando: chi cambia non cambia il proprio monte ore.
+    const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo));
     if (perMe.score === 0) continue;
 
     // Ha chiesto lui stesso un cambio orario quel giorno?
@@ -1071,7 +1084,7 @@ function matchOrario(request, ctx) {
     let origine;
     const reasons = [];
     if (suaRichiesta) {
-      const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, u));
+      const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo));
       if (perLui.score === 0) continue;
       score = Math.round((perMe.score + perLui.score) / 2);
       origine = 'RICHIESTA';
@@ -1079,7 +1092,7 @@ function matchOrario(request, ctx) {
       reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
     } else {
       if (!disponibileIl(u, giorno)) continue;
-      if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
+      if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, suo))) continue;
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
       origine = 'DISPONIBILITA';
       reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e si è dichiarato disponibile a scambiare`);
@@ -1099,7 +1112,7 @@ function matchOrario(request, ctx) {
       requestId: suaRichiesta?.id || null,
       shiftOffertoId: suo.id,
       data: giorno,
-      adattato: trasformaTurno(suo, autore),
+      adattato: trasformaTurno(suo, mioCedo),
       prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
       reasons: [...reasons, ...v.reasons],
       avvisi: v.avvisi,
@@ -1134,7 +1147,7 @@ function matchOff(request, ctx) {
       const suo = idx.get(u.id, giorno);
       if (!suo || suo.tipo !== 'WORK') continue;
 
-      const perMe = satisfies(request.cerco, turnoAdattato(suo, autore));
+      const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo));
       if (perMe.score === 0) continue;
 
       const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
@@ -1146,14 +1159,14 @@ function matchOff(request, ctx) {
       let origine;
       const reasons = [];
       if (suaRichiesta) {
-        const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, u));
+        const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo));
         if (perLui.score === 0) continue;
         score = Math.round((perMe.score + perLui.score) / 2);
         origine = 'RICHIESTA';
         reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
         if (!disponibileIl(u, mioCedo.data)) continue;
-        if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, u))) continue;
+        if (u.preferenze?.evitaChiusure && isClosing(turnoAdattato(mioCedo, suo))) continue;
         score = Math.min(perMe.score, RULES.availabilityScoreCap);
         origine = 'DISPONIBILITA';
         reasons.push(`è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`);
@@ -1178,7 +1191,7 @@ function matchOff(request, ctx) {
         requestId: suaRichiesta?.id || null,
         shiftOffertoId: suo.id,
         data: giorno,
-        adattato: trasformaTurno(suo, autore),
+        adattato: trasformaTurno(suo, mioCedo),
         prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
         reasons: [...reasons, ...v.reasons],
         avvisi: v.avvisi,
@@ -1349,38 +1362,38 @@ const o = 'OFF';
 
 const PERSONE = [
   {
-    id: 'u_lorenzo', durataTurno: 9, oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', ruolo: 'Expert', contratto: 'FT', admin: true,
+    id: 'u_lorenzo', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
     preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
     disponibilita: [true, false, true, true, false, true, false],
     settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
   },
   {
-    id: 'u_martina', durataTurno: 6, oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', ruolo: 'Specialist', contratto: 'PT', admin: false,
+    id: 'u_martina', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
     preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
     disponibilita: [true, true, true, true, false, true, true],
     settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:00', '15:00'], ['15:00', '21:00']]),
   },
   {
-    id: 'u_luca', durataTurno: 9, oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', ruolo: 'Expert', contratto: 'FT', admin: false,
+    id: 'u_luca', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
     preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: false },
     disponibilita: [false, true, true, false, true, true, true],
     settimana: W([['12:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
   },
   {
-    id: 'u_giulia', durataTurno: 5, oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', ruolo: 'Specialist', contratto: 'PT', admin: false,
+    id: 'u_giulia', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
     preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: false },
     disponibilita: [true, false, true, true, true, false, true],
     settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:00', '14:00'], ['10:00', '15:00'], o]),
   },
   {
     // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
-    id: 'u_marco', durataTurno: 9, oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', ruolo: 'Genius', contratto: 'FT', admin: false,
+    id: 'u_marco', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
     preferenze: { preferisceMattina: false, evitaChiusure: false, disponibileWeekend: true },
     disponibilita: [true, true, false, true, true, true, true],
     settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], o, ['22:00', '06:30'], o]),
   },
   {
-    id: 'u_sara', durataTurno: 6, oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', ruolo: 'Specialist', contratto: 'PT', admin: false,
+    id: 'u_sara', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
     preferenze: { preferisceMattina: true, evitaChiusure: true, disponibileWeekend: true },
     disponibilita: [true, true, true, true, true, true, true],
     settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
@@ -1406,9 +1419,7 @@ function seed() {
       id: p.id,
       nome: p.nome,
       cognomeIniziale: p.cognomeIniziale,
-      ruolo: p.ruolo,
       contratto: p.contratto,
-      durataTurno: p.durataTurno,
       oreSettimanali: p.oreSettimanali,
       admin: p.admin,
       preferenze: p.preferenze,
@@ -1952,22 +1963,37 @@ function coppiaCedoCerco(request, { compatto = false } = {}) {
     </div>`;
 }
 
-function cardRichiesta(request, { azione = 'Vedi cambio' } = {}) {
+/** Una riga sola: il minimo per capire se ti riguarda. Il resto è nel dettaglio. */
+function sintesiRichiesta(request) {
+  const cedo = store.shift(request.cedo.shiftId);
+  const giorni = request.cerco.giorni || [];
+  if (request.tipo === TIPO_CAMBIO.OFF) {
+    return `vuole libero ${formatDay(cedo?.data)} · lavora ${giorni.map((g) => formatDay(g)).join(' o ')}`;
+  }
+  return `${formatDay(cedo?.data)} · ${shiftLabel(cedo)} → ${wantLabel(request.cerco)}`;
+}
+
+/**
+ * La riga della bacheca. Sta in due righe di testo: nome e una sintesi.
+ * Tutto il resto — orari, note, stato, proposte — vive nel dettaglio, che si
+ * apre toccandola.
+ */
+function cardRichiesta(request) {
   const autore = store.user(request.userId);
   const prio = hasPriority(request);
+  const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   return html`
-    <article class="card richiesta ${prio ? 'prioritaria' : ''}" data-act="apri-richiesta" data-id="${request.id}">
-      <header class="card-head">
-        <span class="avatar">${iniziali(autore)}</span>
-        <div>
-          <strong>${prio ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
-          <div class="meta">${autore?.ruolo} · ${autore?.contratto} ${raw(badgeStato(request.status))}</div>
-        </div>
-      </header>
-      ${raw(coppiaCedoCerco(request, { compatto: true }))}
-      ${raw(request.cerco.note ? `<p class="nota-utente">“${request.cerco.note}”</p>` : '')}
-      <footer class="card-foot"><span class="link">${azione} →</span></footer>
-    </article>`;
+    <button class="riga-richiesta ${prio ? 'prioritaria' : ''}" data-act="apri-richiesta" data-id="${request.id}">
+      <span class="avatar piccolo">${iniziali(autore)}</span>
+      <span class="riga-testo">
+        <span class="riga-titolo">
+          ${prio ? '⭐ ' : ''}${nomeUtente(autore)}
+          <span class="tipo-pill">${meta.icona} ${meta.breve}</span>
+        </span>
+        <span class="riga-sintesi">${sintesiRichiesta(request)}</span>
+      </span>
+      <span class="chevron">›</span>
+    </button>`;
 }
 
 function cardMatch(match, opzioni = {}) {
@@ -1980,7 +2006,7 @@ function cardMatch(match, opzioni = {}) {
         <span class="avatar">${iniziali(u)}</span>
         <div>
           <strong>${nomeUtente(u)}</strong>
-          <div class="meta">${u?.ruolo} · ${u?.contratto}</div>
+          <div class="meta">${u?.contratto}</div>
         </div>
         <span class="score">${match.score}%</span>
       </header>
@@ -2050,11 +2076,10 @@ function cardOpportunita({ richiesta, match }) {
   const u = store.user(richiesta.userId);
   const verde = match.tipo === 'MATCH';
   const mioTurno = store.shift(match.shiftOffertoId);
-  const me = store.me;
   // Le due cose che contano: che turno farei io, e che turno farebbe l'altra
-  // persona. Entrambi già adattati al contratto di chi li riceve.
+  // persona. Ciascuno con le ore del turno che sta lasciando.
   const suoCedo = store.shift(richiesta.cedo.shiftId);
-  const perMeT = trasformaTurno(suoCedo, me);
+  const perMeT = trasformaTurno(suoCedo, mioTurno);
   const perMe = { data: suoCedo?.data, orario: perMeT.trasformato ? `${perMeT.start}–${perMeT.end}` : shiftLabel(suoCedo) };
   const perLei = match.adattato?.trasformato
     ? `${match.adattato.start}–${match.adattato.end}`
@@ -2065,7 +2090,7 @@ function cardOpportunita({ richiesta, match }) {
         <span class="avatar">${iniziali(u)}</span>
         <div>
           <strong>${hasPriority(richiesta) ? '⭐ ' : ''}${nomeUtente(u)}</strong>
-          <div class="meta">${u?.ruolo} · ${u?.contratto}</div>
+          <div class="meta">${u?.contratto}</div>
         </div>
         <span class="score">${match.score}%</span>
       </header>
@@ -2084,7 +2109,7 @@ function cardOpportunita({ richiesta, match }) {
     </article>`;
 }
 
-return { nomeUtente, iniziali, badgeStato, coppiaCedoCerco, cardRichiesta, cardMatch, vuoto, cardOpportunita };
+return { nomeUtente, iniziali, badgeStato, coppiaCedoCerco, sintesiRichiesta, cardRichiesta, cardMatch, vuoto, cardOpportunita };
 })();
 
 // ---- src/ui/views.js
@@ -2094,7 +2119,7 @@ const { store } = M_store;
 const {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
 } = M_components;
-const { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } = M_model;
+const { hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana } = M_model;
 const {
   slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
 } = M_engine;
@@ -2146,9 +2171,19 @@ function home() {
 
   return html`
     <header class="hero">
-      <p class="saluto">${saluto}</p>
-      <h1>${me.nome}</h1>
-      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label}</p>
+      <div class="hero-riga">
+        <div>
+          <p class="saluto">${saluto}</p>
+          <h1>${me.nome}</h1>
+        </div>
+        ${raw(credito > 0 ? `
+          <button class="priorita-chip" data-act="spiega-priorita">
+            ⭐ ${credito}
+          </button>` : '')}
+      </div>
+      ${raw(credito > 0
+    ? `<p class="sottotitolo">Hai ancora una priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</p>`
+    : `<p class="sottotitolo">${RULES.contracts[me.contratto].label}</p>`)}
     </header>
 
     <section class="sezione">
@@ -2170,17 +2205,6 @@ function home() {
         <span>
           <strong>Nuovo cambio</strong>
           <em>Scegli tu il giorno e l'orario che cerchi</em>
-        </span>
-        <span class="chevron">›</span>
-      </button>
-    </section>
-
-    <section class="sezione">
-      <button class="tile priorita" data-act="spiega-priorita">
-        <span class="tile-icona">⭐</span>
-        <span>
-          <strong>La tua priorità</strong>
-          <em>${credito} priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -2326,7 +2350,7 @@ function profilo() {
     <header class="hero compatta">
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
-      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label} · turni da ${durataTurnoDi(me)}h${me.admin ? ' · Admin' : ''}</p>
+      <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
     </header>
 
     <section class="sezione">
@@ -2351,14 +2375,6 @@ function profilo() {
     <section class="sezione">
       <h2>Contratto · ${RULES.contracts[me.contratto].label}</h2>
       <label class="campo">
-        <span>Durata standard del tuo turno</span>
-        <select class="select" data-act="durata-turno">
-          ${RULES.durateTurnoAmmesse.map((h) => raw(
-    `<option value="${h}" ${h === durataTurnoDi(me) ? 'selected' : ''}>${h} ore</option>`,
-  ))}
-        </select>
-      </label>
-      <label class="campo">
         <span>Monte ore settimanale</span>
         <select class="select" data-act="monte-ore">
           ${RULES.monteOreAmmessi.map((h) => raw(
@@ -2367,9 +2383,9 @@ function profilo() {
         </select>
       </label>
       <p class="testo-tenue">
-        Puoi scambiare con chiunque, anche con l'altro contratto: il turno si adatta al tuo.
-        Se chi te lo cede apre, entri quando entra lui; se chiude, esci quando esce lui.
-        La durata resta la tua.
+        Puoi scambiare con chiunque, anche con l'altro contratto: chi prende un turno
+        fa le ore di quello che sta lasciando. Se chi te lo cede apre, entri quando
+        entra lui; se chiude, esci quando esce lui.
       </p>
       <p class="testo-tenue">
         Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore,
@@ -2768,10 +2784,10 @@ function passoCercoOff() {
  * Full Time sta chiedendo ore che non farebbe mai.
  */
 function campiOrarioPreciso(giorno) {
-  const me = store.me;
+  const mioCedo = store.shift(draft.cedoShiftId);
   const visti = new Set();
   const turni = store.state.shifts
-    .filter((s) => s.data === giorno && s.tipo === 'WORK' && s.userId !== me.id)
+    .filter((s) => s.data === giorno && s.tipo === 'WORK' && s.userId !== store.state.currentUserId)
     .filter((s) => {
       const chiave = `${s.start}-${s.end}`;
       if (visti.has(chiave)) return false;
@@ -2781,7 +2797,7 @@ function campiOrarioPreciso(giorno) {
     .sort((a, b) => a.start.localeCompare(b.start));
 
   const righe = turni.map((s) => {
-    const t = trasformaTurno(s, me);
+    const t = trasformaTurno(s, mioCedo);
     const scelto = draft.cerco.start === t.start && draft.cerco.end === t.end;
     return html`
       <button class="riga-turno ${scelto ? 'scelto' : ''}" data-act="scegli-orario"
@@ -2946,7 +2962,7 @@ function dettaglio(params) {
         <span class="avatar">${iniziali(autore)}</span>
         <div>
           <strong>${hasPriority(r) ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
-          <div class="meta">${autore.ruolo} · ${RULES.contracts[autore.contratto].label}</div>
+          <div class="meta">${RULES.contracts[autore.contratto].label}</div>
         </div>
       </header>
       ${raw(coppiaCedoCerco(r))}
@@ -2982,6 +2998,7 @@ function formProposta(request, shiftSuggerito) {
   // Si può offrire solo qualcosa che soddisfa davvero il CERCO: se cercano
   // un OFF, un turno lavorato non serve a niente.
   const opzioni = turniOfferibili(request);
+  const suoCedo = store.shift(request.cedo.shiftId);
 
   if (!opzioni.length) {
     return html`
@@ -2997,7 +3014,7 @@ function formProposta(request, shiftSuggerito) {
       <span>Il turno che offri</span>
       <select class="select" data-campo="shift">
         ${opzioni.map((s) => {
-    const t = trasformaTurno(s, store.user(request.userId));
+    const t = trasformaTurno(s, suoCedo);
     const etichetta = t.trasformato
       ? `${formatDay(s.data)} · ${shiftLabel(s)} → farebbe ${t.start}–${t.end}`
       : `${formatDay(s.data)} · ${shiftLabel(s)}`;
@@ -3005,7 +3022,7 @@ function formProposta(request, shiftSuggerito) {
   })}
       </select>
     </label>
-    ${raw(opzioni.some((s) => trasformaTurno(s, store.user(request.userId)).trasformato)
+    ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo).trasformato)
     ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe davvero.</p>`
     : '')}
     <label class="campo">
@@ -3230,7 +3247,6 @@ const AZIONI = {
   },
 
   pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); },
-  'durata-turno': (e) => { store.impostaContratto({ durataTurno: Number(e.target.value) }); render(); },
   'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
 
   reset: () => {

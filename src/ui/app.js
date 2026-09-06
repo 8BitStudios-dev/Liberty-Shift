@@ -190,7 +190,6 @@ const AZIONI = {
   },
 
   pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); },
-  'durata-turno': (e) => { store.impostaContratto({ durataTurno: Number(e.target.value) }); render(); },
   'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
 
   reset: () => {

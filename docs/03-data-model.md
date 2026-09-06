@@ -18,9 +18,7 @@ User ──< Shift
 |---|---|---|
 | `id` | string | |
 | `nome`, `cognomeIniziale` | string | nella UI non compare mai il cognome intero |
-| `ruolo` | string | Expert, Specialist, Genius… |
 | `contratto` | `'FT' \| 'PT'` | etichetta |
-| `durataTurno` | 5, 6 o 9 | durata standard del suo turno, guida l'adattamento |
 | `oreSettimanali` | 20, 25, 30 o 40 | monte ore, guida l'avviso su R17 |
 | `admin` | bool | |
 | `preferenze` | `{ preferisceMattina, evitaChiusure, disponibileWeekend }` | pesano sul punteggio |
@@ -30,9 +28,12 @@ User ──< Shift
 `weekKey` è la data ISO del sabato: la disponibilità è per settimana, come
 chiesto, non una preferenza permanente.
 
-`durataTurno` sta sull'utente e non sul contratto perché due Part Time possono
-avere turni di lunghezza diversa: è la persona a determinare come si adatta un
-turno che riceve, non l'etichetta del suo contratto.
+Non c'è nessun campo per la durata del turno: non esiste una durata standard,
+nemmeno per persona. Quando serve — l'adattamento di R9 — si usa la durata
+concreta del turno che si sta lasciando, che è già nei dati.
+
+Nemmeno il ruolo (Expert, Specialist, Genius) è memorizzato: non entrava in
+nessuna regola e non aiutava a decidere niente.
 
 ## Shift
 

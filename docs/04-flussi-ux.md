@@ -85,8 +85,14 @@ per l'accordo. Dopo l'accordo la schermata dice una cosa sola: vai a farlo
 nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 
 ## Dettagli che portano peso
-- Il blocco CEDO/CERCO è sempre identico ovunque compaia. È l'unità visiva che
-  rende una richiesta leggibile in un secondo.
+- In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
+  ("vuole libero Sab 12 · lavora Lun 14 o Mer 16"). Orari, note, stato e
+  proposte stanno nel dettaglio, che si apre toccandola. Prima ogni richiesta
+  occupava mezzo schermo e scorrerne dieci era faticoso.
+- Nel dettaglio il blocco della richiesta è sempre identico ovunque compaia. È
+  l'unità visiva che rende uno scambio leggibile in un secondo.
+- La priorità in Home è un segno piccolo in alto a destra, non un riquadro: è
+  un'informazione che serve una volta al mese.
 - Il calendario parte dal **sabato**, non dal lunedì: così ogni riga è una
   settimana Apple intera e il vincolo "non si scambia fra settimane diverse" si
   legge a colpo d'occhio, senza spiegazioni. Dentro ogni casella c'è il tuo

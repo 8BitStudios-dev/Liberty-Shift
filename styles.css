@@ -87,6 +87,12 @@ p { margin: 8px 0; }
 .hero .saluto { color: var(--testo-tenue); margin: 0; font-size: 15px; }
 .hero h1 { font-size: 32px; }
 .hero .sottotitolo { color: var(--testo-tenue); font-size: 14px; margin: 2px 0 0; }
+.hero-riga { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.priorita-chip {
+  appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
+  border: 1px solid var(--oro); color: var(--oro); background: none;
+  border-radius: 999px; padding: 5px 12px; margin-top: 8px; flex: 0 0 auto;
+}
 .hero.compatta { text-align: center; padding-top: 24px; }
 
 .testata { display: flex; align-items: center; gap: 10px; padding: 14px 0 12px; }
@@ -135,7 +141,22 @@ p { margin: 8px 0; }
   margin-bottom: 12px;
   box-shadow: var(--ombra);
 }
-.card.richiesta { cursor: pointer; }
+/* La richiesta in bacheca: due righe, il resto nel dettaglio. */
+.riga-richiesta {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  appearance: none; font: inherit; color: inherit; cursor: pointer;
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: 12px; padding: 10px 12px; margin-bottom: 8px;
+}
+.riga-richiesta.prioritaria { border-color: var(--oro); }
+.riga-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.riga-titolo { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+.riga-sintesi { font-size: 13px; color: var(--testo-tenue); }
+.tipo-pill {
+  font-size: 11px; font-weight: 600; color: var(--testo-tenue);
+  background: var(--superficie-2); border-radius: 6px; padding: 1px 6px;
+}
+.avatar.piccolo { width: 30px; height: 30px; font-size: 12px; }
 .card.prioritaria { border-color: var(--oro); box-shadow: 0 0 0 1px var(--oro) inset, var(--ombra); }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .card-head > div { flex: 1; min-width: 0; }
@@ -207,7 +228,6 @@ p { margin: 8px 0; }
 .tile-icona { font-size: 24px; }
 .tile.cambio-rapido { background: linear-gradient(135deg, var(--accento) 0%, #6b46ff 100%); color: #fff; border: 0; }
 .tile.cambio-rapido em, .tile.cambio-rapido .chevron { color: rgba(255, 255, 255, .8); }
-.tile.priorita { border-color: var(--oro); }
 .tile.scelta { padding: 18px; }
 .tile.scelta.rosso { border-left: 4px solid var(--rosso); }
 .tile.scelta.verde { border-left: 4px solid var(--verde); }

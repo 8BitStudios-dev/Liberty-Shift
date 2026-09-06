@@ -3,7 +3,7 @@ import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
 } from './components.js';
-import { hasPriority, shiftLabel, isOpen, etichettaFascia, durataTurnoDi, oreSettimana } from '../core/model.js';
+import { hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana } from '../core/model.js';
 import {
   slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
 } from '../core/engine.js';
@@ -55,9 +55,19 @@ export function home() {
 
   return html`
     <header class="hero">
-      <p class="saluto">${saluto}</p>
-      <h1>${me.nome}</h1>
-      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label}</p>
+      <div class="hero-riga">
+        <div>
+          <p class="saluto">${saluto}</p>
+          <h1>${me.nome}</h1>
+        </div>
+        ${raw(credito > 0 ? `
+          <button class="priorita-chip" data-act="spiega-priorita">
+            ⭐ ${credito}
+          </button>` : '')}
+      </div>
+      ${raw(credito > 0
+    ? `<p class="sottotitolo">Hai ancora una priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</p>`
+    : `<p class="sottotitolo">${RULES.contracts[me.contratto].label}</p>`)}
     </header>
 
     <section class="sezione">
@@ -79,17 +89,6 @@ export function home() {
         <span>
           <strong>Nuovo cambio</strong>
           <em>Scegli tu il giorno e l'orario che cerchi</em>
-        </span>
-        <span class="chevron">›</span>
-      </button>
-    </section>
-
-    <section class="sezione">
-      <button class="tile priorita" data-act="spiega-priorita">
-        <span class="tile-icona">⭐</span>
-        <span>
-          <strong>La tua priorità</strong>
-          <em>${credito} priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -235,7 +234,7 @@ export function profilo() {
     <header class="hero compatta">
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
-      <p class="sottotitolo">${me.ruolo} · ${RULES.contracts[me.contratto].label} · turni da ${durataTurnoDi(me)}h${me.admin ? ' · Admin' : ''}</p>
+      <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
     </header>
 
     <section class="sezione">
@@ -260,14 +259,6 @@ export function profilo() {
     <section class="sezione">
       <h2>Contratto · ${RULES.contracts[me.contratto].label}</h2>
       <label class="campo">
-        <span>Durata standard del tuo turno</span>
-        <select class="select" data-act="durata-turno">
-          ${RULES.durateTurnoAmmesse.map((h) => raw(
-    `<option value="${h}" ${h === durataTurnoDi(me) ? 'selected' : ''}>${h} ore</option>`,
-  ))}
-        </select>
-      </label>
-      <label class="campo">
         <span>Monte ore settimanale</span>
         <select class="select" data-act="monte-ore">
           ${RULES.monteOreAmmessi.map((h) => raw(
@@ -276,9 +267,9 @@ export function profilo() {
         </select>
       </label>
       <p class="testo-tenue">
-        Puoi scambiare con chiunque, anche con l'altro contratto: il turno si adatta al tuo.
-        Se chi te lo cede apre, entri quando entra lui; se chiude, esci quando esce lui.
-        La durata resta la tua.
+        Puoi scambiare con chiunque, anche con l'altro contratto: chi prende un turno
+        fa le ore di quello che sta lasciando. Se chi te lo cede apre, entri quando
+        entra lui; se chiude, esci quando esce lui.
       </p>
       <p class="testo-tenue">
         Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore,

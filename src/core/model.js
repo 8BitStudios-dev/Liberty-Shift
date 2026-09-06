@@ -7,8 +7,8 @@ import { minutes, todayISO, appleWeekKey } from './time.js';
 /**
  * User
  * {
- *   id, nome, cognomeIniziale, ruolo, contratto: 'FT'|'PT',
- *   durataTurno: 5|6|9, oreSettimanali: 20|25|30|40, admin: bool,
+ *   id, nome, cognomeIniziale, contratto: 'FT'|'PT',
+ *   oreSettimanali: 20|25|30|40, admin: bool,
  *   preferenze: { preferisceMattina, evitaChiusure, disponibileWeekend },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
  *   prioritaUsata: { '<YYYY-MM>': true }
@@ -119,65 +119,58 @@ export function contractOf(user) {
   return RULES.contracts[user.contratto] || RULES.contracts.FT;
 }
 
-/** Durata standard del turno di una persona: 9 per un FT, 5 o 6 per un PT. */
-export function durataTurnoDi(user) {
-  return user?.durataTurno ?? RULES.durataTurnoDefault[user?.contratto] ?? 9;
-}
-
-export function etichettaContratto(user) {
-  return `${contractOf(user).label} · turni da ${durataTurnoDi(user)}h · ${user?.oreSettimanali ?? '—'}h a settimana`;
-}
-
 function hhmm(min) {
   const m = ((min % 1440) + 1440) % 1440;
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 }
 
 /**
- * Adatta un turno al contratto di chi lo riceve (cap. 19).
+ * Adatta un turno a chi lo riceve (cap. 19).
  *
- * Uno scambio FT/PT è permesso, ma ciascuno resta sul proprio contratto: il
- * turno viene accorciato o allungato alla durata standard di chi lo prende,
- * tenendo fermo un estremo.
+ * Uno scambio fra contratti diversi è permesso, ma nessuno cambia il proprio
+ * monte ore: chi prende il turno di un altro **fa le ore del turno che sta
+ * lasciando**, ancorate a un estremo di quello che riceve.
  *
- *   - turno che comincia entro l'apertura -> si tiene fermo l'INIZIO
+ *   - il turno ricevuto comincia entro l'apertura -> si tiene fermo l'INIZIO
  *     (entri quando entra chi ti passa il turno)
  *   - qualsiasi altro turno -> si tiene ferma la FINE
  *     (esci quando esce chi ti passa il turno)
  *
- * Esempi con FT 9h e PT 6h:
- *   09:00–18:00 ceduto a un PT -> 09:00–15:00   (apertura, ancora l'inizio)
- *   11:00–20:00 ceduto a un PT -> 14:00–20:00   (chiusura, ancora la fine)
- *   11:00–17:00 ceduto a un FT -> 08:00–17:00   (allungato all'indietro)
+ * Esempi, con chi riceve che lascia un turno da 5 ore:
+ *   riceve 09:00–18:00 (apertura) -> 09:00–14:00
+ *   riceve 12:00–21:00 (chiusura) -> 16:00–21:00
  *
- * Restituisce sempre il turno che la persona lavorerebbe davvero.
+ * Non esiste una "durata standard" per persona: gli stessi Part Time hanno
+ * giorni da 5 ore e giorni da 7. La durata di riferimento è sempre quella
+ * concreta del turno che si lascia.
  */
-export function trasformaTurno(shift, ricevente) {
-  if (!shift || shift.tipo === 'OFF' || !ricevente) {
-    return { start: shift?.start, end: shift?.end, trasformato: false };
+export function trasformaTurno(riceve, cede) {
+  if (!riceve || riceve.tipo === 'OFF') {
+    return { start: riceve?.start, end: riceve?.end, trasformato: false };
   }
 
-  const durataTarget = durataTurnoDi(ricevente);
-  const durataAttuale = durataOre(shift);
+  const durataAttuale = durataOre(riceve);
   const base = {
-    start: shift.start, end: shift.end, durata: durataAttuale, trasformato: false,
+    start: riceve.start, end: riceve.end, durata: durataAttuale, trasformato: false,
   };
-  if (Math.abs(durataAttuale - durataTarget) < 0.01) return base;
+
+  const durataTarget = durataOre(cede);
+  if (!durataTarget || Math.abs(durataAttuale - durataTarget) < 0.01) return base;
 
   // Le notti sono casi particolari: si segnalano, non si accorciano d'ufficio.
-  if (isNotturno(shift)) {
+  if (isNotturno(riceve) || isNotturno(cede)) {
     return { ...base, avviso: 'Turno di notte: la durata va concordata a parte.' };
   }
 
-  const ancoraInizio = minutes(shift.start) <= minutes(RULES.store.apre);
+  const ancoraInizio = minutes(riceve.start) <= minutes(RULES.store.apre);
   const durataMin = durataTarget * 60;
   let inizio;
   let fine;
   if (ancoraInizio) {
-    inizio = minutes(shift.start);
+    inizio = minutes(riceve.start);
     fine = inizio + durataMin;
   } else {
-    fine = minutes(shift.end);
+    fine = minutes(riceve.end);
     inizio = fine - durataMin;
   }
 
@@ -187,7 +180,7 @@ export function trasformaTurno(shift, ricevente) {
     durata: durataTarget,
     trasformato: true,
     ancora: ancoraInizio ? 'inizio' : 'fine',
-    originale: `${shift.start}–${shift.end}`,
+    originale: `${riceve.start}–${riceve.end}`,
   };
 
   // L'adattamento non deve sbordare dalla fascia in cui si può stare in store.
@@ -198,10 +191,10 @@ export function trasformaTurno(shift, ricevente) {
 }
 
 /** Il turno adattato, nella forma di uno Shift, per darlo in pasto al motore. */
-export function turnoAdattato(shift, ricevente) {
-  const t = trasformaTurno(shift, ricevente);
-  if (!t.trasformato) return shift;
-  return { ...shift, start: t.start, end: t.end };
+export function turnoAdattato(riceve, cede) {
+  const t = trasformaTurno(riceve, cede);
+  if (!t.trasformato) return riceve;
+  return { ...riceve, start: t.start, end: t.end };
 }
 
 /** Ore lavorate da una persona in una settimana Apple. */
@@ -221,7 +214,7 @@ export function oreSettimana(userId, weekKey, shifts) {
 export function impattoMonteOre(user, cedo, ricevuto, shifts) {
   const weekKey = appleWeekKey(cedo.data);
   const prima = oreSettimana(user.id, weekKey, shifts);
-  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, user));
+  const dopo = prima - durataOre(cedo) + durataOre(turnoAdattato(ricevuto, cedo));
   const contratto = user.oreSettimanali;
   const cambia = Math.abs(dopo - prima) > 0.01;
   if (!cambia || !contratto) return { cambia: false, prima, dopo };
