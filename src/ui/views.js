@@ -340,6 +340,7 @@ export function profilo() {
   ))}
       </select>
       <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
+      <button class="btn pericolo largo" data-act="esci">Esci</button>
     </section>`;
 }
 

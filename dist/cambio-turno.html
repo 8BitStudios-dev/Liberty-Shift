@@ -323,6 +323,13 @@ p { margin: 8px 0; }
 .riquadro > *:last-child { margin-bottom: 14px; }
 .riquadro .switch:last-of-type { border-bottom: 0; }
 .switch .aiuto { display: block; font-style: normal; font-size: 12px; color: var(--testo-tenue); }
+.accesso { max-width: 320px; margin: 12vh auto 0; text-align: center; }
+.accesso-logo { font-size: 44px; margin-bottom: 10px; }
+.accesso h1 { margin-bottom: 6px; }
+.accesso .campo { margin-top: 20px; }
+.accesso .non-puoi { text-align: center; }
+.accesso-nota { margin-top: 18px; }
+
 .tabella-dati {
   width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
   background: var(--superficie); border: 1px solid var(--bordo); border-radius: 12px;
@@ -388,7 +395,7 @@ p { margin: 8px 0; }
 
 .campo { display: block; margin: 14px 0; }
 .campo > span { display: block; font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
-input[type="time"], input.testo, textarea, .select {
+input[type="time"], input.testo, input[type="password"], textarea, .select {
   width: 100%; font: inherit; color: inherit;
   background: var(--superficie); border: 1px solid var(--bordo);
   border-radius: 11px; padding: 11px 12px;
@@ -599,6 +606,19 @@ const RULES = {
     PT: { label: 'Part Time' },
   },
   monteOreAmmessi: [20, 25, 30, 40],
+
+  /**
+   * Accesso all'app. `impronta` non è la password: è il suo hash, generato
+   * con `node scripts/password.js "..."`. La password si dice a voce.
+   *
+   * Serve a tenere fuori chi capita sul link, non a proteggere i dati: il
+   * controllo avviene nel browser. La protezione vera arriverà dal server.
+   */
+  accesso: {
+    attivo: true,
+    // Password di partenza: "cambio turno". Da cambiare prima di darla in giro.
+    impronta: 'fftexy-1uzmmw6',
+  },
 
   adattamentoPenalty: 5,
 
@@ -1803,6 +1823,77 @@ function eventoInTurno(e) {
 }
 
 return { leggiIstante, parseICS };
+})();
+
+// ---- src/core/accesso.js
+const M_accesso = (() => {
+// Accesso con password condivisa.
+//
+// Che cosa fa davvero, detto subito: tiene fuori chi capita sul link per caso.
+// Non è cifratura e non protegge i dati sul dispositivo, perché il controllo
+// avviene nel browser e chiunque abbia il file può leggerne il codice. È una
+// porta chiusa, non una cassaforte, ed è tutto quello che si può fare finché
+// non c'è un server a decidere chi entra.
+//
+// Quando il backend ci sarà, questa password diventerà quella con cui si
+// ottengono le credenziali vere: il punto di ingresso resta lo stesso, cambia
+// chi risponde.
+//
+// La password non sta qui: c'è solo la sua impronta. Per cambiarla:
+//   node scripts/password.js "nuova password"
+// e si incolla il risultato in RULES.accesso.impronta.
+
+const { RULES } = M_rules;
+
+const CHIAVE = 'cambio-turno:accesso';
+
+/**
+ * Impronta di una stringa.
+ *
+ * È un hash semplice (FNV-1a a 64 bit, in due metà da 32), non SHA-256: serve
+ * a non scrivere la password in chiaro nel sorgente, non a resistere a un
+ * attacco. Un hash forte richiederebbe `crypto.subtle`, che non esiste sui
+ * file aperti in locale, e avrebbe reso l'app inutilizzabile fuori da https
+ * per una sicurezza che comunque non c'è.
+ */
+function impronta(testo) {
+  const s = (testo || '').trim().toLowerCase();
+  let a = 0x811c9dc5;
+  let b = 0x01000193;
+  for (let i = 0; i < s.length; i += 1) {
+    const c = s.charCodeAt(i);
+    a = Math.imul(a ^ c, 0x01000193) >>> 0;
+    b = Math.imul(b + c + i, 0x85ebca6b) >>> 0;
+  }
+  return `${a.toString(36)}-${b.toString(36)}`;
+}
+
+/** La password è quella giusta? */
+function passwordCorretta(testo) {
+  return Boolean(testo) && impronta(testo) === RULES.accesso.impronta;
+}
+
+/** Chi è già entrato non deve rifarlo a ogni apertura. */
+function sbloccato() {
+  if (!RULES.accesso.attivo) return true;
+  try {
+    return localStorage.getItem(CHIAVE) === RULES.accesso.impronta;
+  } catch {
+    return false;
+  }
+}
+
+function sblocca(testo) {
+  if (!passwordCorretta(testo)) return false;
+  try { localStorage.setItem(CHIAVE, RULES.accesso.impronta); } catch { /* privata */ }
+  return true;
+}
+
+function blocca() {
+  try { localStorage.removeItem(CHIAVE); } catch { /* privata */ }
+}
+
+return { impronta, passwordCorretta, sbloccato, sblocca, blocca };
 })();
 
 // ---- src/core/seed.js
@@ -3159,6 +3250,7 @@ function profilo() {
   ))}
       </select>
       <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
+      <button class="btn pericolo largo" data-act="esci">Esci</button>
     </section>`;
 }
 
@@ -4142,218 +4234,131 @@ return { draft, resetDraft, rapido, vistaRapida, scelta, nuovo, match, dettaglio
 
 // ---- src/ui/legale.js
 const M_legale = (() => {
-// Note legali e limiti d'uso.
+// Note d'uso.
 //
-// Ogni affermazione qui dentro è ancorata a un punto preciso della Business
-// Conduct Policy di Apple (edizione febbraio 2026), citato dov'è rilevante.
-// Non è un parere legale — non sono un avvocato e questa app non è stata
-// esaminata da nessun ufficio Apple: è una dichiarazione onesta di cosa
-// l'app fa, cosa non fa, e quali sono i confini che chi la usa deve conoscere.
+// Sono scritte come le note di un servizio vero: dicono cos'è l'app, cosa fa
+// dei dati e di chi è la responsabilità. Non commentano regolamenti e non
+// spiegano cosa sia permesso: quelle valutazioni stanno in docs/, che è il
+// posto per ragionarci, non una schermata che si legge una volta.
 
 const { html, raw } = M_dom;
 
 /** La versione del testo: cambiarla ripropone l'accettazione a tutti. */
-const VERSIONE_NOTE = '2026-09-2';
+const VERSIONE_NOTE = '2026-09-3';
 
-/**
- * Il testo integrale, usato sia nella schermata del profilo sia nel
- * riquadro che compare alla prima apertura.
- */
 function noteLegali({ compatte = false } = {}) {
   const esteso = (contenuto) => (compatte ? '' : contenuto);
 
   return html`
     <div class="legale">
       <p class="occhiello">
-        Strumento personale per organizzare fra colleghi i cambi turno. Non è
-        un'app Apple, non è approvata da Apple e non sostituisce nessuno
-        strumento aziendale.
+        Strumento personale e non ufficiale per organizzare i cambi turno fra
+        colleghi.
       </p>
 
-      <h3>1. Che cosa è, e cosa non è</h3>
-      <ul class="elenco piccolo">
-        <li>È un <strong>blocco per appunti condiviso</strong>: aiuta a capire chi
-          può scambiare un turno con chi. Nient'altro.</li>
-        <li><strong>Non effettua nessun cambio.</strong> Un accordo raggiunto qui non
-          ha alcun valore finché non viene inserito nel sistema ufficiale dei
-          turni e approvato secondo le procedure del negozio. L'app lo ripete
-          alla fine di ogni accordo.</li>
-        <li>Non è collegata a nessun sistema Apple, non vi accede e non vi
-          scrive.</li>
-        <li>Non sostituisce il confronto con il proprio manager, dove le
-          procedure lo richiedono.</li>
-      </ul>
-
-      <h3>2. Dove stanno i dati</h3>
+      <h3>1. Cos'è</h3>
       <p>
-        Non è tutto uguale, e la differenza vale la pena saperla: quello che è
-        <strong>tuo e basta</strong> resta sul tuo dispositivo, quello che
-        <strong>pubblichi perché lo vedano i colleghi</strong> passa da un server.
-        Non potrebbe essere altrimenti: una bacheca che nessuno può leggere non
-        è una bacheca.
+        Una bacheca: serve a trovare chi può scambiare un turno con chi. Non è
+        un'app aziendale, non è approvata da nessuno, non è collegata ad alcun
+        sistema di lavoro.
+      </p>
+
+      <h3>2. Cosa non fa</h3>
+      <p>
+        <strong>Non effettua i cambi.</strong> Un accordo preso qui non vale
+        finché non viene inserito nel sistema ufficiale dei turni e approvato
+        secondo le procedure del negozio.
+      </p>
+      ${raw(esteso(`
+        <p class="testo-tenue">
+          Le percentuali e i suggerimenti sono indicazioni. L'app non conosce
+          permessi, recuperi, straordinari né le esigenze del negozio.
+        </p>`))}
+
+      <h3>3. Dove stanno i dati</h3>
+      <p>
+        Quello che è tuo resta sul tuo dispositivo. Quello che pubblichi passa
+        da un server, perché i colleghi devono poterlo leggere.
       </p>
 
       <table class="tabella-dati">
         <tr>
-          <th>Resta su questo dispositivo</th>
-          <th>Va sul server</th>
+          <th>Sul dispositivo</th>
+          <th>Sul server</th>
         </tr>
         <tr>
           <td>
-            i tuoi turni e i tuoi OFF<br>
-            le preferenze (mattine, chiusure…)<br>
-            il tuo profilo<br>
-            il calendario che importi
+            turni e OFF<br>
+            preferenze<br>
+            profilo<br>
+            calendario importato
           </td>
           <td>
-            le richieste che pubblichi<br>
-            i giorni per cui ti dichiari disponibile<br>
-            le proposte, le accettazioni, i rifiuti<br>
-            il tuo nome e l'iniziale del cognome
+            richieste pubblicate<br>
+            disponibilità dichiarate<br>
+            proposte e risposte<br>
+            nome e iniziale del cognome
           </td>
         </tr>
       </table>
 
       <ul class="elenco piccolo">
-        <li>Il server è <strong>Supabase</strong>, con accesso protetto: si legge e
-          si scrive solo da autenticati, e ognuno può modificare soltanto le
-          proprie richieste.</li>
-        <li>Pubblicare una richiesta è un atto volontario: finché non tocchi
-          "pubblica", quel turno non esce da qui. Lo stesso vale per la
-          disponibilità dichiarata su un giorno.</li>
-        <li>Una richiesta cancellata sparisce dalla bacheca; il diritto di
-          chiedere che i propri dati siano rimossi resta comunque di chi li ha
-          messi.</li>
-        ${raw(esteso(`<li>Non inserire dati di clienti, informazioni commerciali,
-          numeri di vendita o qualsiasi altra informazione riservata di Apple.
-          I turni non lo sono (vedi il punto 4); molte altre cose sì.</li>`))}
+        <li>Il server è Supabase, ad accesso protetto: si legge e si scrive solo
+          da autenticati, e ognuno modifica soltanto le proprie richieste.</li>
+        <li>Niente esce di qui senza che tu lo pubblichi.</li>
+        <li>Le richieste cancellate spariscono dalla bacheca.</li>
+        <li>Si entra con la password del gruppo: tiene fuori chi arriva sul link
+          per caso, non sostituisce un vero accesso protetto.</li>
+        ${raw(esteso(`<li>Non inserire dati di clienti, numeri di vendita o altre
+          informazioni di lavoro riservate.</li>`))}
       </ul>
 
       ${raw(esteso(`
         <p class="testo-tenue">
-          <strong>Stato attuale.</strong> In questa versione di prova il server non
-          è ancora collegato: tutto, comprese le richieste, sta nel browser. Le
-          persone che vedi sono inventate. Questa sezione descrive come funziona
-          l'app quando il server c'è, ed è scritta ora perché è ora che si
-          decide come trattare i dati, non dopo.
+          In questa versione di prova il server non è collegato: tutto sta nel
+          browser e le persone sono inventate.
         </p>`))}
 
-      <h3>3. Dati di altre persone</h3>
+      <h3>4. Dati degli altri</h3>
       <p>
-        Sul server finiscono anche nome, turni e disponibilità dei colleghi che
-        usano l'app. Sono <strong>dati personali</strong>, e questo comporta delle
-        conseguenze che è meglio conoscere prima:
+        Sul server ci sono anche nome, turni e disponibilità dei colleghi. Sono
+        dati personali e valgono quattro regole:
       </p>
       <ul class="elenco piccolo">
-        <li>ci si iscrive volontariamente, e chi non vuole esserci non ci sta;</li>
-        <li>i dati servono solo a organizzare i cambi, e a nient'altro: niente
-          statistiche su chi cambia più spesso, niente esportazioni, niente
-          usi che chi si è iscritto non si aspetta;</li>
+        <li>si entra volontariamente;</li>
+        <li>i dati servono a organizzare i cambi e a nient'altro;</li>
         <li>chi vuole andarsene se ne va, e i suoi dati vengono cancellati;</li>
-        <li>i turni non sono informazioni riservate di Apple (punto 4), ma
-          restano informazioni sulle persone: vanno trattati con la stessa
-          discrezione con cui si tratterebbe il numero di telefono di un
-          collega.</li>
-      </ul>
-      ${raw(esteso(`
-        <p class="testo-tenue">
-          Se l'app venisse usata da più persone, chi la mette a disposizione ne
-          diventa responsabile anche verso di loro. È una delle ragioni per cui
-          il passaggio dalla prova personale all'uso condiviso non è un dettaglio
-          tecnico: vedi il punto 5.
-        </p>`))}
-
-      <h3>4. Perché i turni si possono trattare</h3>
-      <p>
-        La Business Conduct Policy, alla sezione <em>Diritti del personale
-        dipendente</em>, dice che «è consentito comunicare o divulgare
-        liberamente i salari, <strong>gli orari</strong>, le condizioni di
-        assunzione e le condizioni di lavoro in Apple».
-      </p>
-      ${raw(esteso(`
-        <p class="testo-tenue">
-          I turni sono orari di lavoro. Non rientrano nella definizione di
-          «informazioni riservate di Apple», che la policy riferisce a prodotti,
-          servizi, forniture, vendite, prezzi, operazioni, fonti dei materiali,
-          dati finanziari e piani di marketing.
-        </p>`))}
-
-      <h3>5. Il limite che conta: la condivisione</h3>
-      <p>
-        La stessa policy, alla sezione <em>Creazione di app</em>, dice che
-        «è possibile creare app solo per scopi personali o didattici» e che
-        «non si può partecipare al Developer Program né condividere, vendere o
-        distribuire app, adesivi o altri contenuti […] a meno che non sia
-        necessario per fini commerciali di Apple».
-      </p>
-      <p><strong>Conseguenza pratica, e va presa sul serio:</strong></p>
-      <ul class="elenco piccolo">
-        <li>Usarla da soli, sul proprio dispositivo, rientra in «scopi
-          personali».</li>
-        <li><strong>Distribuirla ai colleghi è un'altra cosa</strong>, e la policy
-          chiede di verificarlo prima. Il canale è Business Conduct, che la
-          policy indica esplicitamente per i dubbi su cosa è ammesso.</li>
-        <li>Finché quella verifica non c'è, questa resta una prova personale.</li>
+        <li>quello che si legge qui non si usa altrove.</li>
       </ul>
 
-      <h3>6. Come è stata fatta</h3>
-      <ul class="elenco piccolo">
-        <li>Sviluppata <strong>fuori dall'orario di lavoro e senza risorse
-          Apple</strong>: la policy vieta di usare «le ore di lavoro o le risorse
-          di Apple» per attività esterne.</li>
-        <li>Nessun marchio, logo, nome di prodotto o elemento grafico Apple.
-          Nessun riferimento che possa far pensare a un prodotto ufficiale.</li>
-        <li>Nessuna informazione riservata di Apple è stata usata per
-          costruirla.</li>
-      </ul>
-
-      <h3>7. Responsabilità di chi la usa</h3>
+      <h3>5. Responsabilità</h3>
       <ul class="elenco piccolo">
         <li>Ognuno resta responsabile della propria presenza in turno secondo il
-          sistema ufficiale, non secondo quello che si legge qui.</li>
-        <li>Le percentuali e i suggerimenti sono <strong>indicazioni</strong>: l'app
-          non conosce permessi, recuperi, straordinari, esigenze del negozio né
-          l'ultima parola del management.</li>
-        <li>Un cambio va comunque fatto e approvato dove va fatto.</li>
+          sistema ufficiale.</li>
+        <li>Un cambio va comunque richiesto e approvato dove si deve.</li>
+        <li>Chi mette l'app a disposizione risponde dei dati che ospita.</li>
       </ul>
 
-      <h3>8. Quello che questo testo non è</h3>
+      <h3>6. Modifiche</h3>
       <p class="testo-tenue">
-        Non è un parere legale e non è un'autorizzazione. È una ricostruzione
-        onesta e verificabile di cosa dice la policy, con le citazioni per
-        controllarla. In caso di dubbi la policy stessa indica cosa fare:
-        parlarne con il proprio manager, con il People Business Partner o con
-        Business Conduct.
-      </p>
-
-      <p class="testo-tenue">
-        Riferimento: Apple, <em>Business Conduct — Il nostro modo di operare</em>,
-        febbraio 2026. Sezioni citate: Diritti del personale dipendente;
-        Tutela delle risorse e delle informazioni riservate di Apple;
-        Conflitti d'interessi e attività esterne; Creazione di app.
+        Queste note possono cambiare. Quando succede vengono riproposte, e serve
+        una nuova presa visione per continuare.
       </p>
     </div>`;
 }
 
-/** Il riquadro della prima apertura: corto, con il link al testo intero. */
+/** Il riquadro della prima apertura: corto, con il rimando al testo intero. */
 function accettazioneNote() {
   return html`
     <div class="legale-intro">
-      <p>
-        Prima di cominciare, tre cose che vale la pena sapere.
-      </p>
       <ul class="elenco">
-        <li><strong>Non è un'app Apple</strong> e non è approvata da Apple.</li>
-        <li><strong>Non fa nessun cambio turno.</strong> Serve a mettersi
-          d'accordo; il cambio va poi inserito nel sistema ufficiale.</li>
-        <li><strong>I tuoi turni restano su questo dispositivo</strong>; quello che
-          pubblichi in bacheca passa da un server protetto, perché i colleghi
-          devono poterlo leggere.</li>
+        <li>Strumento <strong>non ufficiale</strong>, fatto fra colleghi.</li>
+        <li><strong>Non fa i cambi</strong>: servono comunque le procedure del
+          negozio.</li>
+        <li>I tuoi turni restano sul telefono. <strong>Esce solo quello che
+          pubblichi.</strong></li>
       </ul>
-      <p class="testo-tenue">
-        Il testo completo, con le citazioni della Business Conduct Policy su cui
-        si basa, sta nelle Note legali del Profilo.
-      </p>
+      <p class="testo-tenue">Il testo completo è nelle Note del Profilo.</p>
     </div>`;
 }
 
@@ -4365,59 +4370,43 @@ const M_guida = (() => {
 // La guida: una scheda per sezione, che compare la prima volta che ci si
 // entra e poi si riapre dal punto interrogativo nella testata.
 //
-// Il criterio di scrittura è uno solo: spiegare la regola con un esempio
-// concreto invece che con una definizione. "Chi prende un turno fa le ore di
-// quello che lascia" non si capisce; "Marco lascia 9 ore e prende il turno
-// 12:00–21:00 di Giulia, quindi lo farà 12:00–21:00" sì.
+// Regola di scrittura: una riga per concetto, e un esempio dove la regola da
+// sola non basta. Un esempio con un orario preciso vale tre righe di
+// spiegazione, e si legge in metà tempo.
 
 const { html, raw } = M_dom;
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-const VERSIONE_GUIDA = '1';
+const VERSIONE_GUIDA = '2';
 
 const GUIDE = {
   home: {
     titolo: 'La Home',
     icona: '🏠',
     corpo: () => html`
-      <p>Da qui parte tutto. Tre strade, in ordine di quanta fatica ti risparmiano.</p>
+      <p>Tre strade, in ordine di quanto lavoro ti risparmiano.</p>
 
       <h3>⚡ Cambio rapido</h3>
       <p>
-        Non fa domande. Scegli un tuo turno e l'app ti dice subito chi potrebbe
-        prenderlo, provando da sola tutte le strade possibili: lo scambio di
-        orario nella stessa giornata e lo scambio di giornata intera, su tutti i
-        giorni in cui sei libero.
+        Scegli un tuo turno e vedi subito chi può prenderlo. Nessuna domanda:
+        l'app prova sia lo scambio di orario sia quello di giornata.
       </p>
       <p class="esempio">
-        <strong>Esempio.</strong> Giovedì lavori 12:00–21:00 e vorresti staccare
-        prima. Apri Cambio rapido, tocchi giovedì, e vedi che Martina quel giorno
-        fa 09:00–15:00 e cerca proprio un turno che inizi più tardi. Uno scambio
-        che va bene a entrambi, trovato senza scrivere niente.
+        Giovedì fai 12:00–21:00 e vuoi staccare prima. Tocchi giovedì e vedi
+        Martina, che quel giorno fa 09:00–15:00 e cerca un turno più tardi.
       </p>
 
       <h3>🤝 Aiuta un collega</h3>
-      <p>
-        Il contrario: non chi può aiutare te, ma di chi puoi risolvere il
-        problema tu. Compaiono solo le richieste che i tuoi turni risolvono
-        davvero, con la percentuale di quanto sei una buona risposta.
-      </p>
+      <p>Il contrario: le richieste che <em>tu</em> puoi risolvere, con la percentuale.</p>
 
       <h3>＋ Nuovo cambio</h3>
-      <p>
-        Quando vuoi decidere tu le condizioni. Ti chiede prima di tutto che tipo
-        di cambio ti serve, perché le domande successive cambiano.
-      </p>
+      <p>Quando vuoi decidere tu le condizioni.</p>
 
       <h3>I tuoi cambi</h3>
-      <p>
-        In cima trovi le tue richieste aperte e le proposte in corso. Il pallino
-        rosso vuol dire che qualcuno aspetta una risposta da te.
-      </p>
+      <p>In cima: richieste aperte e proposte. Pallino rosso = aspettano te.</p>
       <p class="testo-tenue">
-        In alto a destra, la ⭐ dice se hai ancora la priorità del mese: una
-        richiesta prioritaria sta in cima alla bacheca per 48 ore. Una al mese,
-        e dà visibilità, non precedenza.
+        La ⭐ in alto è la priorità del mese: mette una richiesta in cima alla
+        bacheca per 48 ore. Dà visibilità, non precedenza.
       </p>`,
   },
 
@@ -4425,48 +4414,37 @@ const GUIDE = {
     titolo: 'Il Calendario',
     icona: '📅',
     corpo: () => html`
+      <p>Il mese di tutti: dove c'è movimento e su quali giorni.</p>
+
+      <h3>Parte dal sabato</h3>
       <p>
-        Il mese di tutti: dove si vede a colpo d'occhio su quali giorni c'è
-        movimento.
+        La settimana va da sabato a venerdì, e uno scambio di giornate deve
+        restare dentro la stessa settimana. Così ogni riga <em>è</em> una
+        settimana: due giorni scambiabili stanno sempre sulla stessa riga.
       </p>
 
-      <h3>Perché parte dal sabato</h3>
-      <p>
-        La settimana Apple va da <strong>sabato a venerdì</strong>, e uno scambio di
-        giornate deve restare dentro la stessa settimana. Facendo partire la
-        griglia dal sabato, ogni riga <em>è</em> una settimana: due giorni
-        scambiabili sono sempre sulla stessa riga, e la regola non ha bisogno di
-        essere spiegata.
-      </p>
-
-      <h3>Le barre colorate</h3>
+      <h3>Le barre sotto i giorni</h3>
       <ul class="elenco piccolo">
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
-          <strong>rossa</strong>: qualcuno vuole liberarsi quel giorno.</li>
+          rossa: qualcuno vuole liberarsi;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
-          <strong>verde</strong>: qualcuno mette qualcosa a disposizione, un turno o
-          una giornata.</li>
-        <li><strong>Bordo oro</strong>: c'è una richiesta con la priorità.</li>
+          verde: qualcuno offre un turno o una giornata;</li>
+        <li>bordo oro: c'è una priorità.</li>
       </ul>
-      <p>Dentro ogni casella c'è anche il tuo turno di quel giorno.</p>
 
-      <h3>Toccando un giorno</h3>
+      <h3>Aprendo un giorno</h3>
       <p>
-        Si apre quel giorno, diviso in due: <strong>Cercano</strong> e
-        <strong>Offrono</strong>. Ogni richiesta è scritta dal punto di vista del
-        giorno che stai guardando, non in generale.
+        Due blocchi, <strong>Cercano</strong> e <strong>Offrono</strong>. Ogni
+        richiesta è scritta dal punto di vista di quel giorno.
       </p>
       <p class="esempio">
-        <strong>Esempio.</strong> Marco vuole libero sabato 12 e in cambio offre
-        lunedì 14 o mercoledì 16. Aprendo il <strong>12</strong> leggi «vuole libero
-        questo giorno»; aprendo il <strong>16</strong> leggi «offre di lavorare
-        questo giorno, in cambio vuole libero sabato 12». Stessa richiesta, due
-        cose diverse a seconda di dove ti trovi.
+        Marco vuole libero sabato 12 e offre lunedì 14 o mercoledì 16. Sul 12
+        leggi «vuole libero questo giorno», sul 16 «offre di lavorare questo
+        giorno». Stessa richiesta, due facce.
       </p>
       <p class="testo-tenue">
-        Se sotto una richiesta compare in rosso <em>al momento non puoi
-        cambiare</em>, vuol dire che con i turni che hai non c'è modo di
-        rispondere. Aprendola ti dice esattamente perché.
+        «Al momento non puoi cambiare» in rosso vuol dire che con i tuoi turni
+        non c'è modo di rispondere. Aprendo la richiesta scopri perché.
       </p>`,
   },
 
@@ -4474,36 +4452,28 @@ const GUIDE = {
     titolo: 'La Bacheca',
     icona: '📋',
     corpo: () => html`
-      <p>
-        Tutte le richieste aperte, dalla più recente. Quelle con la priorità
-        stanno in cima.
-      </p>
+      <p>Tutte le richieste aperte. Le prioritarie in cima, poi le più recenti.</p>
 
-      <h3>I due tipi, e perché sono diversi</h3>
+      <h3>🕐 Cambio orario</h3>
       <p>
-        <strong>🕐 Orario</strong> — resti nel tuo giorno e cambi solo la fascia con
-        un collega che quel giorno lavora. Nessuno dei due deve essere libero:
-        anzi, servono entrambi in turno. È il caso più frequente.
+        Stesso giorno, orario diverso. Servono due persone <em>entrambe</em> in
+        turno: nessuno deve essere libero. È il caso più frequente.
+      </p>
+      <p class="esempio">«Lascio mercoledì 12:00–21:00, cerco un turno che finisca prima.»</p>
+
+      <h3>📅 Cambio OFF</h3>
+      <p>
+        Due giornate che si scambiano davvero: vuoi libero un giorno in cui
+        lavori e ne offri uno in cui sei a casa.
       </p>
       <p class="esempio">
-        «Lascio mercoledì 12:00–21:00, cerco mercoledì un turno che finisca
-        prima.»
-      </p>
-      <p>
-        <strong>📅 OFF</strong> — vuoi libera una giornata in cui lavori, e in
-        cambio ne offri una in cui adesso sei a casa. Sono due giornate che si
-        scambiano davvero: dopo, ciascuno ha il turno che aveva l'altro.
-      </p>
-      <p class="esempio">
-        «Cerco OFF sabato 12, offro lunedì 14 o mercoledì 16.» Chi risponde deve
-        essere <strong>libero sabato 12</strong> e <strong>lavorare</strong> lunedì o
-        mercoledì. Non è una copertura a senso unico.
+        «Cerco OFF sabato 12, offro lunedì 14.» Chi risponde deve essere
+        <strong>libero sabato</strong> e <strong>lavorare lunedì</strong>. Dopo,
+        ciascuno ha il turno dell'altro.
       </p>
 
-      <h3>Le due righe</h3>
-      <p>
-        Ogni richiesta occupa due righe: chi è, di che tipo, e la sintesi.
-        Toccandola si aprono orari, note, stato e proposte.
+      <p class="testo-tenue">
+        Ogni richiesta è due righe. Toccandola si aprono orari, note e proposte.
       </p>`,
   },
 
@@ -4511,66 +4481,44 @@ const GUIDE = {
     titolo: 'Il Profilo',
     icona: '👤',
     corpo: () => html`
-      <p>Le tue cose: i turni, quello che ti va bene, e cosa aspetta una risposta.</p>
-
       <h3>Le tue due settimane</h3>
       <p>
-        La griglia sabato → venerdì per due settimane. Ogni casella mostra il tuo
-        turno e, se c'è, la <strong>percentuale del miglior cambio che potresti
-        risolvere</strong> quel giorno. Toccando un giorno puoi inserire o
-        correggere il turno, dichiararti disponibile a scambiare, e vedere chi
-        puoi aiutare.
+        Sabato → venerdì, per due settimane. In ogni casella il tuo turno e, se
+        c'è, la percentuale del miglior cambio che potresti risolvere.
       </p>
       <p class="testo-tenue">
-        L'interruttore «disponibile a scambiare questo giorno» è quello che ti fa
-        comparire fra i match potenziali di chi cerca, anche se tu non hai
-        pubblicato niente. Senza un segnale — una richiesta o una disponibilità —
-        non compari mai: nessuno viene proposto a sua insaputa.
+        L'interruttore «disponibile a scambiare» ti fa comparire fra i match di
+        chi cerca, anche senza pubblicare niente. Senza un segnale non compari
+        mai: nessuno viene proposto a sua insaputa.
       </p>
 
       <h3>I tuoi turni</h3>
       <p>
-        Si importano da un calendario in formato .ics — le istruzioni per
-        trovarlo stanno dentro la finestra dell'import — oppure si inseriscono a
-        mano, giorno per giorno.
-      </p>
-      <p class="testo-tenue">
-        Il tuo calendario resta sul tuo dispositivo. Esce di qui solo quello che
-        pubblichi: una richiesta, o la disponibilità su un giorno. Il dettaglio
-        sta nelle Note legali.
+        Da un calendario .ics, oppure a mano giorno per giorno. Il calendario
+        resta sul tuo dispositivo.
       </p>
 
       <h3>Preferenze</h3>
-      <p>Due gruppi che si comportano in modo <strong>molto</strong> diverso.</p>
       <ul class="elenco piccolo">
-        <li><strong>Turni da evitare</strong>: filtro netto. Quei turni non ti
-          vengono proposti affatto, nemmeno con un punteggio basso.</li>
-        <li><strong>Turni preferiti</strong>: sposta il punteggio di pochi punti.
-          Non esclude niente.</li>
+        <li><strong>Da evitare</strong>: quei turni spariscono dai risultati.</li>
+        <li><strong>Preferiti</strong>: salgono di qualche punto, nient'altro.</li>
       </ul>
-      <p class="esempio">
-        <strong>Esempio.</strong> Se attivi «evito le chiusure», un turno che finisce
-        alle 20:30 sparisce dai tuoi risultati. Se invece attivi «preferisco le
-        chiusure», quei turni salgono un po' in classifica, ma tutti gli altri
-        restano lì.
-      </p>
 
-      <h3>Contratto e ore</h3>
+      <h3>Contratto</h3>
       <p>
-        Puoi scambiare con chiunque, anche con l'altro contratto, ma nessuno
-        cambia il proprio monte ore: <strong>chi prende il turno di un altro fa le
-        ore del turno che sta lasciando</strong>.
+        Puoi scambiare con chiunque, anche con l'altro contratto. Le tue ore non
+        cambiano mai: <strong>chi prende un turno fa le ore di quello che
+        lascia</strong>.
       </p>
       <p class="esempio">
-        <strong>Esempio.</strong> Giulia è Part Time e quel giorno farebbe 5 ore.
-        Prende il turno 12:00–21:00 di un Full Time: siccome quel turno chiude,
-        Giulia esce quando sarebbe uscito lui e fa <strong>16:00–21:00</strong>. Se
-        invece il turno fosse stato 09:00–18:00, che apre, Giulia sarebbe entrata
-        con lui e avrebbe fatto <strong>09:00–14:00</strong>.
+        Giulia quel giorno farebbe 5 ore e prende un 12:00–21:00. Il turno
+        chiude, quindi esce all'ora di chiusura: farà <strong>16:00–21:00</strong>.
+        Se il turno fosse stato 09:00–18:00, che apre, sarebbe entrata alle 9:
+        <strong>09:00–14:00</strong>.
       </p>
       <p class="testo-tenue">
-        Le ore del contratto sono al netto della pausa pranzo: cinque turni da
-        nove ore di presenza fanno quaranta ore pagate.
+        Le ore del contratto sono al netto della pausa: cinque turni da nove ore
+        fanno quaranta ore.
       </p>`,
   },
 };
@@ -4639,10 +4587,10 @@ function validaProfilo() {
   const errori = [];
   if (!b.nome.trim()) errori.push('Manca il nome.');
   if (!b.cognome.trim()) errori.push('Manca il cognome.');
-  if (!b.genere) errori.push('Scegli una delle tre opzioni, anche "preferisco non dirlo".');
+  if (!b.genere) errori.push('Scegli una delle tre opzioni.');
   if (!b.contratto) errori.push('Scegli il tipo di contratto.');
   if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
-  if (!b.accettate) errori.push('Per usare l\'app bisogna prendere visione delle note.');
+  if (!b.accettate) errori.push('Serve la presa visione delle note.');
   return errori;
 }
 
@@ -4675,10 +4623,8 @@ function passoChiSei() {
   return html`
     <h2 class="titolo-gruppo">Chi sei</h2>
     <p class="testo-tenue">
-      Accanto alle tue richieste i colleghi vedono il nome e l'iniziale del
-      cognome — «${b.nome || 'Lorenzo'} ${(b.cognome || 'Bandini').slice(0, 1).toUpperCase()}.» —
-      perché in un negozio tanto basta. Il cognome per intero resta sul tuo
-      dispositivo.
+      I colleghi vedranno «${b.nome || 'Lorenzo'} ${(b.cognome || 'Bandini').slice(0, 1).toUpperCase()}.».
+      Il cognome intero resta sul tuo dispositivo.
     </p>
 
     <label class="campo">
@@ -4701,9 +4647,8 @@ function passoChiSei() {
                   data-act="profilo-genere" data-valore="${g.key}">${g.label}</button>`).join(''))}
       </div>
       <p class="testo-tenue">
-        Serve solo a scrivere bene le frasi dell'app: "si è dichiarata
-        disponibile" invece di "dichiarato". Scegliendo di non dirlo, l'app usa
-        forme che vanno bene per chiunque.
+        Serve alle concordanze: «si è dichiarata disponibile» invece di
+        «dichiarato». Se preferisci non dirlo, l'app usa forme neutre.
       </p>
     </div>
 
@@ -4734,14 +4679,12 @@ function passoContratto() {
     </div>
 
     <p class="testo-tenue">
-      Le ore del contratto sono quelle <strong>pagate</strong>, al netto della
-      pausa pranzo: cinque turni da nove ore di presenza fanno quaranta ore.
-      L'app tiene conto della differenza da sola.
+      Ore <strong>pagate</strong>, al netto della pausa: cinque turni da nove ore
+      fanno quaranta ore, e l'app ci pensa da sola.
     </p>
     <p class="testo-tenue">
-      Il contratto non limita con chi puoi scambiare: puoi farlo con chiunque,
-      anche con l'altro tipo. Quello che non cambia mai sono le tue ore, perché
-      chi prende un turno fa le ore di quello che sta lasciando.
+      Il contratto non limita con chi puoi scambiare. Le tue ore non cambiano
+      comunque: chi prende un turno fa le ore di quello che lascia.
     </p>
 
     <button class="btn primario largo" data-act="profilo-avanti">
@@ -4756,16 +4699,13 @@ function passoNote() {
     ${raw(accettazioneNote())}
 
     <details class="riquadro">
-      <summary><span>Note legali complete</span><span class="conteggio">testo integrale</span></summary>
+      <summary><span>Note complete</span><span class="conteggio">testo integrale</span></summary>
       ${raw(noteLegali({ compatte: false }))}
     </details>
 
     <label class="switch">
       <input type="checkbox" data-act="profilo-accetta" ${raw(b.accettate ? 'checked' : '')}>
-      <span>
-        Ho preso visione delle note
-        <em class="aiuto">Le trovi sempre nel Profilo, in fondo.</em>
-      </span>
+      <span>Ho preso visione delle note</span>
     </label>
 
     <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate ? '' : 'disabled')}>
@@ -4790,6 +4730,7 @@ const { parseICS } = M_ics;
 const P = M_profilo_setup;
 const { GUIDE, schedaGuida, VERSIONE_GUIDA } = M_guida;
 const { noteLegali, VERSIONE_NOTE } = M_legale;
+const { sbloccato, sblocca, blocca } = M_accesso;
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -4854,8 +4795,34 @@ function apriGuida(chiave, { automatica = false } = {}) {
   });
 }
 
+/** La porta: finché non si entra, non c'è nient'altro da vedere. */
+function schermataAccesso(errore = false) {
+  return html`
+    <div class="accesso">
+      <div class="accesso-logo">🔄</div>
+      <h1>Cambio Turno</h1>
+      <p class="testo-tenue">Inserisci la password del gruppo.</p>
+      <label class="campo">
+        <input type="password" class="testo" data-campo="password"
+               placeholder="Password" autocomplete="current-password" autofocus>
+      </label>
+      ${raw(errore ? '<p class="non-puoi">Password sbagliata.</p>' : '')}
+      <button class="btn primario largo" data-act="entra">Entra</button>
+      <p class="testo-tenue accesso-nota">
+        Se non ce l'hai, chiedila a chi ti ha passato il link.
+      </p>
+    </div>`;
+}
+
 function render() {
   const { percorso, params } = parseHash();
+
+  if (!sbloccato()) {
+    app.innerHTML = schermataAccesso();
+    tabbar.hidden = true;
+    setTimeout(() => app.querySelector('[data-campo="password"]')?.focus(), 40);
+    return;
+  }
 
   // Finché il profilo non c'è, non si va da nessuna parte: l'app senza sapere
   // chi sei mostrerebbe i turni di una persona inventata.
@@ -4934,6 +4901,18 @@ const AZIONI = {
   giorno: (_, el) => {
     const data = el.dataset.data;
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
+  },
+
+  entra: () => {
+    const campo = app.querySelector('[data-campo="password"]');
+    if (sblocca(campo?.value)) return render();
+    app.innerHTML = schermataAccesso(true);
+    app.querySelector('[data-campo="password"]')?.focus();
+  },
+  esci: () => {
+    if (!confirm('Uscire? Per rientrare serve di nuovo la password.')) return;
+    blocca();
+    render();
   },
 
   // --- creazione e modifica del profilo ---
@@ -5338,6 +5317,11 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
   if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
+});
+
+// Invio nel campo password: entrare senza toccare il pulsante.
+on(document.body, 'keydown', '[data-campo="password"]', (e) => {
+  if (e.key === 'Enter') AZIONI.entra();
 });
 
 window.addEventListener('hashchange', render);

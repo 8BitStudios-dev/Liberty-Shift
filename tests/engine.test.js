@@ -8,6 +8,7 @@ import {
 } from '../src/core/engine.js';
 import { WANT_MODE, RULES, PREFERENZE, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from '../src/core/seed.js';
+import { impronta, passwordCorretta } from '../src/core/accesso.js';
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
   impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno, applicaPreferenze, fasceDi,
@@ -589,4 +590,19 @@ test('senza genere dichiarato si usa una forma neutra, non il maschile', () => {
   assert.equal(concorda({ genere: 'X' }, forme), 'neutro');
   assert.equal(concorda({}, forme), 'neutro');
   assert.equal(concorda(undefined, forme), 'neutro');
+});
+
+// --- accesso -----------------------------------------------------------
+
+test('l\'impronta è stabile e non contiene la password', () => {
+  assert.equal(impronta('cambio turno'), impronta('  Cambio Turno  '));
+  assert.notEqual(impronta('cambio turno'), impronta('cambio turni'));
+  assert.doesNotMatch(impronta('cambio turno'), /cambio|turno/i);
+});
+
+test('la password giusta apre, le altre no', () => {
+  assert.ok(passwordCorretta('cambio turno'));
+  assert.ok(!passwordCorretta('cambio turni'));
+  assert.ok(!passwordCorretta(''));
+  assert.ok(!passwordCorretta(undefined));
 });

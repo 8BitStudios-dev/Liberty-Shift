@@ -10,6 +10,7 @@ import { parseICS } from '../core/ics.js';
 import * as P from './profilo-setup.js';
 import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
+import { sbloccato, sblocca, blocca } from '../core/accesso.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -74,8 +75,34 @@ function apriGuida(chiave, { automatica = false } = {}) {
   });
 }
 
+/** La porta: finché non si entra, non c'è nient'altro da vedere. */
+function schermataAccesso(errore = false) {
+  return html`
+    <div class="accesso">
+      <div class="accesso-logo">🔄</div>
+      <h1>Cambio Turno</h1>
+      <p class="testo-tenue">Inserisci la password del gruppo.</p>
+      <label class="campo">
+        <input type="password" class="testo" data-campo="password"
+               placeholder="Password" autocomplete="current-password" autofocus>
+      </label>
+      ${raw(errore ? '<p class="non-puoi">Password sbagliata.</p>' : '')}
+      <button class="btn primario largo" data-act="entra">Entra</button>
+      <p class="testo-tenue accesso-nota">
+        Se non ce l'hai, chiedila a chi ti ha passato il link.
+      </p>
+    </div>`;
+}
+
 function render() {
   const { percorso, params } = parseHash();
+
+  if (!sbloccato()) {
+    app.innerHTML = schermataAccesso();
+    tabbar.hidden = true;
+    setTimeout(() => app.querySelector('[data-campo="password"]')?.focus(), 40);
+    return;
+  }
 
   // Finché il profilo non c'è, non si va da nessuna parte: l'app senza sapere
   // chi sei mostrerebbe i turni di una persona inventata.
@@ -154,6 +181,18 @@ const AZIONI = {
   giorno: (_, el) => {
     const data = el.dataset.data;
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
+  },
+
+  entra: () => {
+    const campo = app.querySelector('[data-campo="password"]');
+    if (sblocca(campo?.value)) return render();
+    app.innerHTML = schermataAccesso(true);
+    app.querySelector('[data-campo="password"]')?.focus();
+  },
+  esci: () => {
+    if (!confirm('Uscire? Per rientrare serve di nuovo la password.')) return;
+    blocca();
+    render();
   },
 
   // --- creazione e modifica del profilo ---
@@ -558,6 +597,11 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
   if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
+});
+
+// Invio nel campo password: entrare senza toccare il pulsante.
+on(document.body, 'keydown', '[data-campo="password"]', (e) => {
+  if (e.key === 'Enter') AZIONI.entra();
 });
 
 window.addEventListener('hashchange', render);

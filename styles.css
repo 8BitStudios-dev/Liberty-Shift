@@ -319,6 +319,13 @@ p { margin: 8px 0; }
 .riquadro > *:last-child { margin-bottom: 14px; }
 .riquadro .switch:last-of-type { border-bottom: 0; }
 .switch .aiuto { display: block; font-style: normal; font-size: 12px; color: var(--testo-tenue); }
+.accesso { max-width: 320px; margin: 12vh auto 0; text-align: center; }
+.accesso-logo { font-size: 44px; margin-bottom: 10px; }
+.accesso h1 { margin-bottom: 6px; }
+.accesso .campo { margin-top: 20px; }
+.accesso .non-puoi { text-align: center; }
+.accesso-nota { margin-top: 18px; }
+
 .tabella-dati {
   width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px;
   background: var(--superficie); border: 1px solid var(--bordo); border-radius: 12px;
@@ -384,7 +391,7 @@ p { margin: 8px 0; }
 
 .campo { display: block; margin: 14px 0; }
 .campo > span { display: block; font-size: 13px; color: var(--testo-tenue); margin-bottom: 6px; }
-input[type="time"], input.testo, textarea, .select {
+input[type="time"], input.testo, input[type="password"], textarea, .select {
   width: 100%; font: inherit; color: inherit;
   background: var(--superficie); border: 1px solid var(--bordo);
   border-radius: 11px; padding: 11px 12px;

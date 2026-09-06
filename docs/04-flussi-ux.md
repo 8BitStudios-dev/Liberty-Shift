@@ -216,6 +216,20 @@ nessuno. La stessa frase viene letta da chi ha pubblicato la richiesta e da chi
 può risolverla, e un "sei Part Time" giusto da un lato è falso dall'altro. Si
 usano i nomi propri, e c'è un test che rifiuta le frasi di parte.
 
+## L'accesso
+Una password sola, uguale per tutti, chiesta prima di ogni altra cosa. Chi la
+inserisce resta dentro finché non tocca "Esci" dal Profilo.
+
+Va detto cosa protegge: **tiene fuori chi capita sul link, non i dati.** Il
+controllo avviene nel browser e chiunque abbia il file può leggerne il codice.
+Nel sorgente non c'è la password ma la sua impronta (`RULES.accesso.impronta`),
+generata con `node scripts/password.js "..."`; la password si dice a voce.
+
+L'hash è volutamente semplice e non SHA-256: `crypto.subtle` non esiste sui file
+aperti in locale, e avrebbe reso l'app inutilizzabile fuori da https per una
+sicurezza che comunque non c'è. La protezione vera arriverà dal server, e questa
+schermata diventerà il punto in cui si ottengono le credenziali.
+
 ## La prima apertura
 Tre passi, e non si salta nessuno: **chi sei** (nome, iniziale del cognome,
 come preferisci essere chiamato), **il contratto** (tipo e monte ore), **le
@@ -230,18 +244,21 @@ già accettate.
 
 ## La guida
 Ogni sezione ha una scheda che si apre **da sola la prima volta** che ci si
-entra, e si riapre dal **?** nella testata. Non spiega dove sono i pulsanti:
-spiega le regole, e ognuna con un esempio concreto, perché "chi prende un turno
-fa le ore di quello che lascia" non si capisce finché non diventa "Giulia
-prende un 12:00–21:00 e, siccome chiude, esce con lui: farà 16:00–21:00".
+entra, e si riapre dal **?** nella testata. Non spiega dove sono i pulsanti,
+spiega le regole: una riga per concetto, e un esempio dove la regola da sola non
+basta. "Chi prende un turno fa le ore di quello che lascia" non si capisce
+finché non diventa "Giulia prende un 12:00–21:00 e, siccome chiude, esce con
+lui: farà 16:00–21:00".
 
 Quali schede sono già state viste sta in `localStorage`, non nello stato: è una
 cosa di questo browser, non un dato dell'app.
 
-## Note legali
-Nel Profilo, e per intero dentro l'ultimo passo della prima apertura. Ogni
-affermazione è ancorata a un punto citato della Business Conduct Policy, così
-chi legge può verificarla invece di fidarsi.
+## Note d'uso
+Nel Profilo, e per intero dentro l'ultimo passo della prima apertura. Sono
+scritte come le note di un servizio vero: cos'è, cosa non fa, dove stanno i
+dati, di chi è la responsabilità. Non commentano regolamenti e non spiegano
+cosa sia permesso — quelle valutazioni stanno in `docs/05-decisioni-aperte.md`,
+che è il posto per ragionarci, non una schermata che si legge una volta.
 
 ## Modalità demo
 Dal Profilo si cambia persona. Serve a vedere lo stesso scambio dai due lati

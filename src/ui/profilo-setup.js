@@ -50,10 +50,10 @@ export function validaProfilo() {
   const errori = [];
   if (!b.nome.trim()) errori.push('Manca il nome.');
   if (!b.cognome.trim()) errori.push('Manca il cognome.');
-  if (!b.genere) errori.push('Scegli una delle tre opzioni, anche "preferisco non dirlo".');
+  if (!b.genere) errori.push('Scegli una delle tre opzioni.');
   if (!b.contratto) errori.push('Scegli il tipo di contratto.');
   if (!b.oreSettimanali) errori.push('Scegli il monte ore settimanale.');
-  if (!b.accettate) errori.push('Per usare l\'app bisogna prendere visione delle note.');
+  if (!b.accettate) errori.push('Serve la presa visione delle note.');
   return errori;
 }
 
@@ -86,10 +86,8 @@ function passoChiSei() {
   return html`
     <h2 class="titolo-gruppo">Chi sei</h2>
     <p class="testo-tenue">
-      Accanto alle tue richieste i colleghi vedono il nome e l'iniziale del
-      cognome — «${b.nome || 'Lorenzo'} ${(b.cognome || 'Bandini').slice(0, 1).toUpperCase()}.» —
-      perché in un negozio tanto basta. Il cognome per intero resta sul tuo
-      dispositivo.
+      I colleghi vedranno «${b.nome || 'Lorenzo'} ${(b.cognome || 'Bandini').slice(0, 1).toUpperCase()}.».
+      Il cognome intero resta sul tuo dispositivo.
     </p>
 
     <label class="campo">
@@ -112,9 +110,8 @@ function passoChiSei() {
                   data-act="profilo-genere" data-valore="${g.key}">${g.label}</button>`).join(''))}
       </div>
       <p class="testo-tenue">
-        Serve solo a scrivere bene le frasi dell'app: "si è dichiarata
-        disponibile" invece di "dichiarato". Scegliendo di non dirlo, l'app usa
-        forme che vanno bene per chiunque.
+        Serve alle concordanze: «si è dichiarata disponibile» invece di
+        «dichiarato». Se preferisci non dirlo, l'app usa forme neutre.
       </p>
     </div>
 
@@ -145,14 +142,12 @@ function passoContratto() {
     </div>
 
     <p class="testo-tenue">
-      Le ore del contratto sono quelle <strong>pagate</strong>, al netto della
-      pausa pranzo: cinque turni da nove ore di presenza fanno quaranta ore.
-      L'app tiene conto della differenza da sola.
+      Ore <strong>pagate</strong>, al netto della pausa: cinque turni da nove ore
+      fanno quaranta ore, e l'app ci pensa da sola.
     </p>
     <p class="testo-tenue">
-      Il contratto non limita con chi puoi scambiare: puoi farlo con chiunque,
-      anche con l'altro tipo. Quello che non cambia mai sono le tue ore, perché
-      chi prende un turno fa le ore di quello che sta lasciando.
+      Il contratto non limita con chi puoi scambiare. Le tue ore non cambiano
+      comunque: chi prende un turno fa le ore di quello che lascia.
     </p>
 
     <button class="btn primario largo" data-act="profilo-avanti">
@@ -167,16 +162,13 @@ function passoNote() {
     ${raw(accettazioneNote())}
 
     <details class="riquadro">
-      <summary><span>Note legali complete</span><span class="conteggio">testo integrale</span></summary>
+      <summary><span>Note complete</span><span class="conteggio">testo integrale</span></summary>
       ${raw(noteLegali({ compatte: false }))}
     </details>
 
     <label class="switch">
       <input type="checkbox" data-act="profilo-accetta" ${raw(b.accettate ? 'checked' : '')}>
-      <span>
-        Ho preso visione delle note
-        <em class="aiuto">Le trovi sempre nel Profilo, in fondo.</em>
-      </span>
+      <span>Ho preso visione delle note</span>
     </label>
 
     <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate ? '' : 'disabled')}>
