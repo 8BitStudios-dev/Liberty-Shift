@@ -81,7 +81,7 @@ function apriGuida(chiave, { automatica = false } = {}) {
 function schermataAccesso(errore = false) {
   return html`
     <div class="accesso">
-      <div class="accesso-logo">🔄</div>
+      <div class="accesso-logo" role="img" aria-label="Liberty Shift"></div>
       <h1>Liberty Shift</h1>
       <p class="motto">Change shifts. Keep your plans.</p>
       <p class="testo-tenue">Inserisci la tua password.</p>
