@@ -1,0 +1,55 @@
+# Pubblica l'app su GitHub Pages a ogni push su main.
+#
+# Sul sito va solo l'app: niente documentazione, niente test, niente
+# screenshot. Il repository serve a lavorarci, il sito a usarla.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un deploy per volta, e se ne arriva uno nuovo mentre il precedente è in coda
+# vince il nuovo: pubblicare una versione superata non serve a nessuno.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  pubblica:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Una versione rotta non deve arrivare sul telefono di nessuno.
+      - name: Test
+        run: npm test
+
+      - name: Prepara il sito
+        run: |
+          mkdir -p site
+          cp index.html styles.css sw.js site/
+          cp -r src public site/
+          node scripts/build-single.js
+          cp dist/cambio-turno.html site/
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
