@@ -117,6 +117,102 @@ create table if not exists public.ringraziamenti (
   unique (proposta_id, da_user_id)
 );
 
+-- ======================================================= codice del negozio
+--
+-- Il cancello all'ingresso. Le registrazioni restano aperte — nessun account
+-- da creare a mano per otto persone — ma per entrare davvero serve il codice
+-- del negozio, che i colleghi sanno e un estraneo no.
+--
+-- Il codice **non sta nell'app**: nell'app finirebbe in chiaro, e chi apre il
+-- sorgente della pagina lo leggerebbe in dieci secondi. Qui c'e' la sua
+-- impronta bcrypt, in una tabella con RLS accesa e nessuna policy: dalle API
+-- non e' leggibile da nessuno, nemmeno da chi e' autenticato. A confrontarlo
+-- e' la funzione qui sotto, che gira dentro il database.
+--
+-- Il codice si imposta (e si cambia) da SQL Editor, con:
+--
+--   insert into public.configurazione (chiave, valore)
+--   values ('codice_negozio', extensions.crypt('R667', extensions.gen_salt('bf')))
+--   on conflict (chiave) do update set valore = excluded.valore;
+
+create extension if not exists pgcrypto with schema extensions;
+
+create table if not exists public.configurazione (
+  chiave text primary key,
+  valore text not null
+);
+alter table public.configurazione enable row level security;
+-- Nessuna policy, ed e' voluto: nessuna chiave dell'app puo' leggere qui.
+
+/**
+ * Iscrive chi conosce il codice del negozio.
+ *
+ * `security definer`: gira coi permessi di chi l'ha creata, quindi puo'
+ * leggere `configurazione` e scrivere in `profili` anche se il chiamante non
+ * potrebbe. E' il solo modo per entrare: la policy di inserimento su `profili`
+ * non esiste piu'.
+ *
+ * Il codice arriva in chiaro dal client e viene confrontato con l'impronta:
+ * chi sbaglia riceve un errore e basta, senza sapere quanto ci e' andato
+ * vicino.
+ */
+create or replace function public.iscrivi(
+  codice            text,
+  nome              text,
+  cognome_iniziale  text,
+  contratto         text,
+  ore_settimanali   smallint,
+  genere            text default 'X'
+) returns public.profili
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  atteso text;
+  nuovo  public.profili;
+begin
+  if auth.uid() is null then
+    raise exception 'Serve prima un accesso.' using errcode = '28000';
+  end if;
+
+  select valore into atteso from public.configurazione where chiave = 'codice_negozio';
+  if atteso is null then
+    raise exception 'Il codice del negozio non e'' ancora stato impostato.' using errcode = '28000';
+  end if;
+  if extensions.crypt(coalesce(codice, ''), atteso) <> atteso then
+    raise exception 'Codice del negozio sbagliato.' using errcode = '28000';
+  end if;
+
+  insert into public.profili (id, nome, cognome_iniziale, contratto, ore_settimanali, genere)
+  values (auth.uid(), nome, upper(left(cognome_iniziale, 1)), contratto, ore_settimanali, coalesce(genere, 'X'))
+  on conflict (id) do update
+    set nome = excluded.nome,
+        cognome_iniziale = excluded.cognome_iniziale,
+        contratto = excluded.contratto,
+        ore_settimanali = excluded.ore_settimanali,
+        genere = excluded.genere
+  returning * into nuovo;
+
+  return nuovo;
+end $$;
+
+revoke all on function public.iscrivi(text, text, text, text, smallint, text) from public;
+grant execute on function public.iscrivi(text, text, text, text, smallint, text) to authenticated;
+
+/**
+ * Sei uno del negozio?
+ *
+ * Un account senza profilo e' un account che non ha mai saputo il codice: le
+ * policy lo lasciano entrare in casa e non gli fanno vedere niente. Sta in una
+ * funzione `security definer` perche' una policy su `profili` che interroga
+ * `profili` andrebbe in ricorsione infinita.
+ */
+create or replace function public.e_membro() returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.profili where id = auth.uid());
+$$;
+
+revoke all on function public.e_membro() from public;
+grant execute on function public.e_membro() to authenticated;
+
 -- ============================================================== sicurezza
 --
 -- Row Level Security su tutte le tabelle. Senza, la chiave pubblica dell'app
@@ -124,7 +220,8 @@ create table if not exists public.ringraziamenti (
 -- progetti Supabase vengono svuotati, e non è un caso raro.
 --
 -- Le regole in italiano, prima del codice:
---   · si legge solo da autenticati, mai da anonimi;
+--   · si legge solo da iscritti al negozio, mai da anonimi e nemmeno da un
+--     account che si e' registrato senza conoscere il codice;
 --   · i profili sono leggibili da tutti gli iscritti (servono i nomi);
 --   · le richieste e le disponibilità sono una bacheca: le legge chiunque sia
 --     entrato, le modifica solo chi le ha scritte;
@@ -140,11 +237,12 @@ alter table public.ringraziamenti enable row level security;
 -- profili -----------------------------------------------------------------
 drop policy if exists "profili leggibili dagli iscritti" on public.profili;
 create policy "profili leggibili dagli iscritti"
-  on public.profili for select to authenticated using (true);
+  on public.profili for select to authenticated using (public.e_membro());
 
+-- Non c'e' nessuna policy di inserimento su profili, ed e' il punto di tutto
+-- l'impianto: l'unica strada per esistere qui dentro e' la funzione iscrivi(),
+-- che chiede il codice del negozio.
 drop policy if exists "ognuno crea il proprio profilo" on public.profili;
-create policy "ognuno crea il proprio profilo"
-  on public.profili for insert to authenticated with check (id = auth.uid());
 
 drop policy if exists "ognuno modifica il proprio profilo" on public.profili;
 create policy "ognuno modifica il proprio profilo"
@@ -154,7 +252,7 @@ create policy "ognuno modifica il proprio profilo"
 -- richieste ---------------------------------------------------------------
 drop policy if exists "la bacheca la leggono gli iscritti" on public.richieste;
 create policy "la bacheca la leggono gli iscritti"
-  on public.richieste for select to authenticated using (true);
+  on public.richieste for select to authenticated using (public.e_membro());
 
 drop policy if exists "si pubblica solo a proprio nome" on public.richieste;
 create policy "si pubblica solo a proprio nome"
@@ -202,7 +300,7 @@ create policy "si ritira solo la propria proposta"
 -- disponibilità -----------------------------------------------------------
 drop policy if exists "le disponibilita' le leggono gli iscritti" on public.disponibilita;
 create policy "le disponibilita' le leggono gli iscritti"
-  on public.disponibilita for select to authenticated using (true);
+  on public.disponibilita for select to authenticated using (public.e_membro());
 
 drop policy if exists "ognuno dichiara la propria disponibilita'" on public.disponibilita;
 create policy "ognuno dichiara la propria disponibilita'"

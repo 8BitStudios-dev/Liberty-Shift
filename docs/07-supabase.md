@@ -63,14 +63,59 @@ Le regole, in italiano:
    from pg_tables where schemaname = 'public';
    ```
    Devono essere tutte `true`. Una tabella a `false` è una tabella aperta.
-4. **Authentication ▸ Providers**: lascia acceso solo *Email*, spegni
-   *Confirm email* (nessuno riceverà mai una mail) e le registrazioni
-   pubbliche. Gli account li crei tu.
-5. **Le due chiavi**, in *Project Settings ▸ API*:
+4. **Imposta il codice del negozio**, sempre da SQL Editor:
+   ```sql
+   insert into public.configurazione (chiave, valore)
+   values ('codice_negozio', extensions.crypt('R667', extensions.gen_salt('bf')))
+   on conflict (chiave) do update set valore = excluded.valore;
+   ```
+5. **Authentication ▸ Sign In / Providers ▸ Email**: lascia acceso solo
+   *Email* e spegni *Confirm email* — nessuno riceverà mai una mail, e con la
+   conferma accesa ogni registrazione prova a mandarne una e va in blocco per
+   limite di invio. Le registrazioni restano **aperte**: a filtrare è il
+   codice del negozio.
+6. **Le due chiavi**, in *Project Settings ▸ API*:
    - `anon` è pubblica per costruzione: finisce nel codice dell'app, e da sola
      non apre niente perché le policy la fermano;
    - `service_role` scavalca ogni policy. **Non deve mai finire nel browser,
      né in questo repository.** Vive nella dashboard e basta.
+
+## Il codice del negozio
+
+Le registrazioni restano **aperte**, e a fare da cancello c'è il codice del
+negozio: chi lo sa entra, chi non lo sa no. Otto account da creare a mano
+sarebbero mezz'ora di lavoro e una password da consegnare a ognuno; così ogni
+collega si registra da solo la prima volta e basta.
+
+La regola che rende la cosa seria: **il codice non sta nell'app.** Se stesse
+lì, chi apre il sorgente della pagina lo leggerebbe in dieci secondi. Sul
+server c'è la sua impronta bcrypt, nella tabella `configurazione`, che ha RLS
+accesa e nessuna policy: dalle API non la legge nessuno, nemmeno chi è
+autenticato.
+
+A verificarlo è `iscrivi()`, una funzione `security definer` che gira dentro
+il database: riceve il codice, lo confronta con l'impronta e solo allora scrive
+la riga in `profili`. Non esiste nessuna policy di inserimento su `profili`,
+quindi quella funzione è l'unica porta.
+
+Il codice si imposta da SQL Editor, e cambiarlo è la stessa riga:
+
+```sql
+insert into public.configurazione (chiave, valore)
+values ('codice_negozio', extensions.crypt('R667', extensions.gen_salt('bf')))
+on conflict (chiave) do update set valore = excluded.valore;
+```
+
+**Cosa protegge e cosa no.** Chiunque abbia il link può creare un account
+Supabase: quello resta aperto. Ma senza codice non ottiene un profilo, e senza
+profilo non vede niente — `e_membro()` è nelle policy di lettura, e le chiavi
+esterne verso `profili` gli impediscono anche solo di scrivere una riga. Resta
+un account vuoto in una casa vuota.
+
+Non protegge invece da un collega che passa il codice a qualcun altro: è un
+segreto condiviso da otto persone, quindi vale come la serratura di una porta,
+non come una cassaforte. Se un giorno gira troppo, si cambia con la riga qui
+sopra e si ridà quello nuovo.
 
 ## Gli account
 

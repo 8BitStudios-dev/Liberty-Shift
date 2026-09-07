@@ -210,3 +210,32 @@ export const salvaSuChiave = (tabella, riga) => chiama(`/rest/v1/${tabella}`, {
 export const elimina = (tabella, opzioni) => chiama(`/rest/v1/${tabella}${query(opzioni)}`, {
   method: 'DELETE',
 });
+
+/**
+ * Chiama una funzione del database.
+ *
+ * Serve per le cose che il client non può fare da solo perché richiedono un
+ * segreto: l'iscrizione, che verifica il codice del negozio dentro il
+ * database invece che nel browser, dove sarebbe leggibile da chiunque.
+ */
+export const funzione = (nome, argomenti = {}) => chiama(`/rest/v1/rpc/${nome}`, {
+  method: 'POST',
+  body: JSON.stringify(argomenti),
+});
+
+/** Iscrive chi conosce il codice del negozio, e restituisce il suo profilo. */
+export async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSettimanali, genere }) {
+  const r = await funzione('iscrivi', {
+    codice,
+    nome,
+    cognome_iniziale: cognomeIniziale,
+    contratto,
+    ore_settimanali: oreSettimanali,
+    genere: genere || 'X',
+  });
+  // L'errore del database arriva come frase inglese con dentro il messaggio
+  // che abbiamo scritto noi: quello che conta è che la persona legga il
+  // motivo vero, non "PGRST202".
+  if (r.errore && /codice/i.test(r.errore)) return { dati: null, errore: 'Codice del negozio sbagliato.' };
+  return r;
+}
