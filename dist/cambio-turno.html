@@ -4457,7 +4457,7 @@ const M_guida = (() => {
 const { html, raw } = M_dom;
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-const VERSIONE_GUIDA = '2';
+const VERSIONE_GUIDA = '3';
 
 const GUIDE = {
   home: {
@@ -4477,7 +4477,11 @@ const GUIDE = {
       </p>
 
       <h3>🤝 Aiuta un collega</h3>
-      <p>Il contrario: le richieste che <em>tu</em> puoi risolvere, con la percentuale.</p>
+      <p>
+        Il contrario: le richieste che <em>tu</em> puoi risolvere. La percentuale
+        dice quanto lo scambio torna a entrambi — il tuo turno rispetto a quello
+        che cercano, e il loro rispetto a quello che cerchi tu.
+      </p>
 
       <h3>＋ Nuovo cambio</h3>
       <p>Quando vuoi decidere tu le condizioni.</p>
@@ -4564,7 +4568,7 @@ const GUIDE = {
       <h3>Le tue due settimane</h3>
       <p>
         Sabato → venerdì, per due settimane. In ogni casella il tuo turno e, se
-        c'è, la percentuale del miglior cambio che potresti risolvere.
+        c'è, quanto torna il miglior scambio che potresti risolvere quel giorno.
       </p>
       <p class="testo-tenue">
         L'interruttore «disponibile a scambiare» ti fa comparire fra i match di
