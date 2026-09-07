@@ -1,4 +1,6 @@
-# Cambio Turno
+# Liberty Shift
+
+**Change shifts. Keep your plans.**
 
 PWA per organizzare i cambi turno fra colleghi di store. Una richiesta di
 cambio smette di essere un messaggio che si perde nella chat e diventa un
@@ -14,14 +16,18 @@ Online, senza installare niente:
 (su iPhone: Safari → Condividi → Aggiungi alla schermata Home).
 
 C'è anche la versione a file unico, comoda da mandare in chat:
-[cambio-turno.html](https://c4gv4kf4d7-dev.github.io/Cambi-Turno/cambio-turno.html).
+[liberty-shift.html](https://c4gv4kf4d7-dev.github.io/Cambi-Turno/liberty-shift.html).
+
+Se il repository viene rinominato in `liberty-shift`, l'indirizzo diventa
+`https://c4gv4kf4d7-dev.github.io/liberty-shift/`: i percorsi interni sono
+tutti relativi, quindi non si rompe niente.
 
 In locale:
 
 ```bash
 npm run dev     # http://localhost:5173
 npm test        # 74 test su motore, import e service worker
-npm run build   # dist/cambio-turno.html, tutta l'app in un file solo
+npm run build   # dist/liberty-shift.html, tutta l'app in un file solo
 ```
 
 Nessuna dipendenza, nessun build step: moduli ES aperti direttamente dal

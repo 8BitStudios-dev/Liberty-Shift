@@ -26,4 +26,4 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404, { 'content-type': 'text/plain' }).end('Non trovato');
   }
-}).listen(PORTA, () => console.log(`Cambio Turno su http://localhost:${PORTA}`));
+}).listen(PORTA, () => console.log(`Liberty Shift su http://localhost:${PORTA}`));

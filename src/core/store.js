@@ -9,6 +9,9 @@ import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessio
 import { monthKey, todayISO } from './time.js';
 import { seed } from './seed.js';
 
+// La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
+// Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
+// turni e le richieste già inseriti su un telefono sparirebbero.
 const CHIAVE = 'cambio-turno:v1';
 
 export const store = {

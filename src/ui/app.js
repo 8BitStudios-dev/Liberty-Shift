@@ -82,7 +82,8 @@ function schermataAccesso(errore = false) {
   return html`
     <div class="accesso">
       <div class="accesso-logo">🔄</div>
-      <h1>Cambio Turno</h1>
+      <h1>Liberty Shift</h1>
+      <p class="motto">Change shifts. Keep your plans.</p>
       <p class="testo-tenue">Inserisci la tua password.</p>
       <label class="campo">
         <input type="password" class="testo" data-campo="password"
