@@ -30,6 +30,31 @@ export const RULES = {
     CHIUSURA: { label: 'chiusura', fineDopo: '20:15' },
   },
 
+  /**
+   * Come si chiamano gli OFF nel calendario aziendale.
+   *
+   * Il calendario dei turni non scrive "riposo": scrive i codici del gestionale.
+   * Letto un calendario vero di un mese, i giorni non lavorati compaiono così:
+   *
+   *   SO ADO                         il riposo programmato, il più frequente
+   *   ITA Time Away F 08.00 hrs      ferie
+   *   ITA Public Holiday Off …       festivo non lavorato
+   *   ITA PH Not Wrkd 08.00 hrs      lo stesso, scritto in un altro modo
+   *
+   * Senza questi, l'import buttava via 36 giornate su 71 dicendo "non sembra
+   * un OFF", e il calendario risultava mezzo vuoto. Aggiungere un codice nuovo
+   * è una riga qui: è l'unico posto che decide.
+   */
+  calendario: {
+    codiciOff: [
+      /\b(off|riposo|libero|ferie|permesso|festivo)\b/i,
+      /\bSO\b|\bADO\b/i,          // scheduled off, additional day off
+      /time\s*away/i,              // ferie e permessi
+      /\bPH\b|public\s*holiday/i, // festivi, lavorati o no
+      /not\s*wrkd|not\s*worked/i,
+    ],
+  },
+
   // Tolleranza per i quasi-match sugli orari (minuti).
   nearMissMinutes: 90,
 

@@ -5,6 +5,8 @@
 // separato da come il testo arriva — incollato a mano oggi, scaricato da un
 // server domani — perché quella è l'unica parte che cambierà.
 
+import { RULES } from './rules.js';
+
 const RIGHE_UNITE = /\r?\n[ \t]/g;
 
 /** Le righe piegate dell'ICS vanno riunite prima di qualsiasi altra cosa. */
@@ -61,7 +63,14 @@ export function leggiIstante(valore, parametri = {}) {
   return { data: `${a}-${me}-${g}`, ora: `${h}:${mi}`, giornataIntera: false };
 }
 
-const PAROLE_OFF = /\b(off|riposo|libero|ferie|permesso|festivo)\b/i;
+/**
+ * È un giorno non lavorato?
+ *
+ * I codici veri del calendario aziendale stanno in `RULES.calendario`, non
+ * qui: quando ne compare uno nuovo si aggiunge là, in un posto solo, senza
+ * rimettere le mani nel lettore.
+ */
+const eOff = (titolo) => RULES.calendario.codiciOff.some((re) => re.test(titolo || ''));
 
 /**
  * Estrae i turni da un testo ICS.
@@ -98,18 +107,25 @@ export function parseICS(testo) {
     if (c.nome === 'STATUS') corrente.stato = c.valore.toUpperCase();
   }
 
-  // Un giorno con più eventi non ha senso per un turno: tengo il primo e
-  // segnalo gli altri, invece di sovrascrivere in silenzio.
-  const visti = new Set();
-  const unici = [];
+  // Un giorno con più eventi capita davvero: il calendario segna il riposo
+  // programmato e poi ci mette sopra un turno, oppure un festivo e il turno di
+  // chi quel festivo lo lavora. Fra i due vince **il turno lavorato**: se ci
+  // sono delle ore, quel giorno si lavora, comunque lo chiami il gestionale.
+  const perGiorno = new Map();
   for (const t of turni) {
-    if (visti.has(t.data)) {
-      ignorati.push({ titolo: t.titolo, motivo: `c'è già un turno il ${t.data}` });
-      continue;
-    }
-    visti.add(t.data);
-    unici.push(t);
+    const gia = perGiorno.get(t.data);
+    if (!gia) { perGiorno.set(t.data, t); continue; }
+    const vince = gia.tipo === 'WORK' ? gia : t;
+    const perde = vince === gia ? t : gia;
+    perGiorno.set(t.data, vince);
+    ignorati.push({
+      titolo: perde.titolo,
+      motivo: perde.tipo === 'OFF' && vince.tipo === 'WORK'
+        ? `il ${perde.data} c'è un turno lavorato, che vale di più`
+        : `c'è già un turno il ${perde.data}`,
+    });
   }
+  const unici = [...perGiorno.values()];
 
   return {
     turni: unici.sort((a, b) => a.data.localeCompare(b.data)),
@@ -125,12 +141,12 @@ function eventoInTurno(e) {
   // Un evento di giornata intera è un OFF solo se lo dice il titolo: gli altri
   // (compleanni, promemoria, festività del calendario) non sono turni.
   if (e.inizio.giornataIntera) {
-    return PAROLE_OFF.test(e.titolo || '')
+    return eOff(e.titolo)
       ? { turno: { data: e.inizio.data, tipo: 'OFF', start: null, end: null, titolo: e.titolo } }
       : { motivo: 'giornata intera che non sembra un OFF' };
   }
 
-  if (PAROLE_OFF.test(e.titolo || '')) {
+  if (eOff(e.titolo)) {
     return { turno: { data: e.inizio.data, tipo: 'OFF', start: null, end: null, titolo: e.titolo } };
   }
   if (!e.fine?.ora) return { motivo: 'senza orario di fine' };

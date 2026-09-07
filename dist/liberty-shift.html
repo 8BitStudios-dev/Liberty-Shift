@@ -607,6 +607,31 @@ const RULES = {
     CHIUSURA: { label: 'chiusura', fineDopo: '20:15' },
   },
 
+  /**
+   * Come si chiamano gli OFF nel calendario aziendale.
+   *
+   * Il calendario dei turni non scrive "riposo": scrive i codici del gestionale.
+   * Letto un calendario vero di un mese, i giorni non lavorati compaiono così:
+   *
+   *   SO ADO                         il riposo programmato, il più frequente
+   *   ITA Time Away F 08.00 hrs      ferie
+   *   ITA Public Holiday Off …       festivo non lavorato
+   *   ITA PH Not Wrkd 08.00 hrs      lo stesso, scritto in un altro modo
+   *
+   * Senza questi, l'import buttava via 36 giornate su 71 dicendo "non sembra
+   * un OFF", e il calendario risultava mezzo vuoto. Aggiungere un codice nuovo
+   * è una riga qui: è l'unico posto che decide.
+   */
+  calendario: {
+    codiciOff: [
+      /\b(off|riposo|libero|ferie|permesso|festivo)\b/i,
+      /\bSO\b|\bADO\b/i,          // scheduled off, additional day off
+      /time\s*away/i,              // ferie e permessi
+      /\bPH\b|public\s*holiday/i, // festivi, lavorati o no
+      /not\s*wrkd|not\s*worked/i,
+    ],
+  },
+
   // Tolleranza per i quasi-match sugli orari (minuti).
   nearMissMinutes: 90,
 
@@ -1724,6 +1749,8 @@ const M_ics = (() => {
 // separato da come il testo arriva — incollato a mano oggi, scaricato da un
 // server domani — perché quella è l'unica parte che cambierà.
 
+const { RULES } = M_rules;
+
 const RIGHE_UNITE = /\r?\n[ \t]/g;
 
 /** Le righe piegate dell'ICS vanno riunite prima di qualsiasi altra cosa. */
@@ -1780,7 +1807,14 @@ function leggiIstante(valore, parametri = {}) {
   return { data: `${a}-${me}-${g}`, ora: `${h}:${mi}`, giornataIntera: false };
 }
 
-const PAROLE_OFF = /\b(off|riposo|libero|ferie|permesso|festivo)\b/i;
+/**
+ * È un giorno non lavorato?
+ *
+ * I codici veri del calendario aziendale stanno in `RULES.calendario`, non
+ * qui: quando ne compare uno nuovo si aggiunge là, in un posto solo, senza
+ * rimettere le mani nel lettore.
+ */
+const eOff = (titolo) => RULES.calendario.codiciOff.some((re) => re.test(titolo || ''));
 
 /**
  * Estrae i turni da un testo ICS.
@@ -1817,18 +1851,25 @@ function parseICS(testo) {
     if (c.nome === 'STATUS') corrente.stato = c.valore.toUpperCase();
   }
 
-  // Un giorno con più eventi non ha senso per un turno: tengo il primo e
-  // segnalo gli altri, invece di sovrascrivere in silenzio.
-  const visti = new Set();
-  const unici = [];
+  // Un giorno con più eventi capita davvero: il calendario segna il riposo
+  // programmato e poi ci mette sopra un turno, oppure un festivo e il turno di
+  // chi quel festivo lo lavora. Fra i due vince **il turno lavorato**: se ci
+  // sono delle ore, quel giorno si lavora, comunque lo chiami il gestionale.
+  const perGiorno = new Map();
   for (const t of turni) {
-    if (visti.has(t.data)) {
-      ignorati.push({ titolo: t.titolo, motivo: `c'è già un turno il ${t.data}` });
-      continue;
-    }
-    visti.add(t.data);
-    unici.push(t);
+    const gia = perGiorno.get(t.data);
+    if (!gia) { perGiorno.set(t.data, t); continue; }
+    const vince = gia.tipo === 'WORK' ? gia : t;
+    const perde = vince === gia ? t : gia;
+    perGiorno.set(t.data, vince);
+    ignorati.push({
+      titolo: perde.titolo,
+      motivo: perde.tipo === 'OFF' && vince.tipo === 'WORK'
+        ? `il ${perde.data} c'è un turno lavorato, che vale di più`
+        : `c'è già un turno il ${perde.data}`,
+    });
   }
+  const unici = [...perGiorno.values()];
 
   return {
     turni: unici.sort((a, b) => a.data.localeCompare(b.data)),
@@ -1844,12 +1885,12 @@ function eventoInTurno(e) {
   // Un evento di giornata intera è un OFF solo se lo dice il titolo: gli altri
   // (compleanni, promemoria, festività del calendario) non sono turni.
   if (e.inizio.giornataIntera) {
-    return PAROLE_OFF.test(e.titolo || '')
+    return eOff(e.titolo)
       ? { turno: { data: e.inizio.data, tipo: 'OFF', start: null, end: null, titolo: e.titolo } }
       : { motivo: 'giornata intera che non sembra un OFF' };
   }
 
-  if (PAROLE_OFF.test(e.titolo || '')) {
+  if (eOff(e.titolo)) {
     return { turno: { data: e.inizio.data, tipo: 'OFF', start: null, end: null, titolo: e.titolo } };
   }
   if (!e.fine?.ora) return { motivo: 'senza orario di fine' };
@@ -3854,7 +3895,7 @@ function sezioneTurni() {
       <span class="tile-icona">📥</span>
       <span>
         <strong>Importa da calendario</strong>
-        <em>Un file .ics del calendario turni: l'app legge orari e OFF</em>
+        <em>Dal calendario dei turni sottoscritto: l'app legge orari, riposi e ferie</em>
       </span>
       <span class="chevron">›</span>
     </button>
@@ -5892,23 +5933,33 @@ const AZIONI = {
       <p class="testo-tenue">
         Incolla qui il contenuto del calendario dei turni in formato ICS.
       </p>
-      <details class="riquadro">
-        <summary><span>Dove trovo il file .ics</span><span class="conteggio">istruzioni</span></summary>
+      <details class="riquadro" open>
+        <summary><span>Come si copia il calendario dei turni</span><span class="conteggio">iPhone</span></summary>
+        <p class="testo-tenue">
+          Il calendario dei turni è <strong>sottoscritto</strong>: da iPhone non
+          si può esportare come file, ma si può leggere dal suo indirizzo. Si fa
+          una volta sola, poi il comando resta lì e si rilancia quando serve.
+        </p>
         <ol class="elenco piccolo">
-          <li><strong>Da iPhone</strong>, calendario sottoscritto: apri Calendario, tieni
-            premuto sul calendario dei turni e scegli <em>Condividi</em> o
-            <em>Esporta</em>. Se compare solo l'indirizzo, copialo: è un link che
-            finisce in <code>.ics</code>.</li>
-          <li><strong>Da Mac</strong>: Calendario, seleziona il calendario dei turni,
-            poi <em>Archivio ▸ Esporta ▸ Esporta</em>.</li>
-          <li><strong>Da Google Calendar</strong>: Impostazioni ▸ il calendario dei turni
-            ▸ <em>Esporta calendario</em>, oppure copia l'indirizzo segreto in
-            formato iCal.</li>
-          <li>Apri il file con un editor di testo e incolla tutto qui sotto.</li>
+          <li><strong>Trova l'indirizzo</strong>: Impostazioni ▸ App ▸ Calendario
+            ▸ Account ▸ il calendario dei turni. È un indirizzo che comincia per
+            <code>https://</code> o <code>webcal://</code>. Tienilo da parte:
+            chi ce l'ha legge i tuoi turni.</li>
+          <li>Apri l'app <strong>Comandi</strong> (quella che su iPhone si chiama
+            Shortcuts) e crea un comando nuovo.</li>
+          <li>Aggiungi <em>Ottieni contenuto di URL</em> e incolla lì
+            l'indirizzo.</li>
+          <li>Aggiungi <em>Copia negli appunti</em>, sotto.</li>
+          <li>Lancia il comando, torna qui e incolla nel riquadro sotto.</li>
         </ol>
         <p class="testo-tenue">
-          L'import sostituisce solo i giorni che il calendario nomina: non cancella
-          mai un giorno di cui il file non parla.
+          <strong>Da Mac</strong> è più corto: Calendario ▸ tasto destro sul
+          calendario dei turni ▸ Ottieni informazioni per vedere l'indirizzo,
+          oppure aprilo nel browser e incolla il testo che compare.
+        </p>
+        <p class="testo-tenue">
+          L'import sostituisce solo i giorni che il calendario nomina: non
+          cancella mai un giorno di cui il file non parla.
         </p>
       </details>
       <label class="campo">

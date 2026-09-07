@@ -460,7 +460,7 @@ function sezioneTurni() {
       <span class="tile-icona">📥</span>
       <span>
         <strong>Importa da calendario</strong>
-        <em>Un file .ics del calendario turni: l'app legge orari e OFF</em>
+        <em>Dal calendario dei turni sottoscritto: l'app legge orari, riposi e ferie</em>
       </span>
       <span class="chevron">›</span>
     </button>

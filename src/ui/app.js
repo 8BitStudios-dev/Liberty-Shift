@@ -501,23 +501,33 @@ const AZIONI = {
       <p class="testo-tenue">
         Incolla qui il contenuto del calendario dei turni in formato ICS.
       </p>
-      <details class="riquadro">
-        <summary><span>Dove trovo il file .ics</span><span class="conteggio">istruzioni</span></summary>
+      <details class="riquadro" open>
+        <summary><span>Come si copia il calendario dei turni</span><span class="conteggio">iPhone</span></summary>
+        <p class="testo-tenue">
+          Il calendario dei turni è <strong>sottoscritto</strong>: da iPhone non
+          si può esportare come file, ma si può leggere dal suo indirizzo. Si fa
+          una volta sola, poi il comando resta lì e si rilancia quando serve.
+        </p>
         <ol class="elenco piccolo">
-          <li><strong>Da iPhone</strong>, calendario sottoscritto: apri Calendario, tieni
-            premuto sul calendario dei turni e scegli <em>Condividi</em> o
-            <em>Esporta</em>. Se compare solo l'indirizzo, copialo: è un link che
-            finisce in <code>.ics</code>.</li>
-          <li><strong>Da Mac</strong>: Calendario, seleziona il calendario dei turni,
-            poi <em>Archivio ▸ Esporta ▸ Esporta</em>.</li>
-          <li><strong>Da Google Calendar</strong>: Impostazioni ▸ il calendario dei turni
-            ▸ <em>Esporta calendario</em>, oppure copia l'indirizzo segreto in
-            formato iCal.</li>
-          <li>Apri il file con un editor di testo e incolla tutto qui sotto.</li>
+          <li><strong>Trova l'indirizzo</strong>: Impostazioni ▸ App ▸ Calendario
+            ▸ Account ▸ il calendario dei turni. È un indirizzo che comincia per
+            <code>https://</code> o <code>webcal://</code>. Tienilo da parte:
+            chi ce l'ha legge i tuoi turni.</li>
+          <li>Apri l'app <strong>Comandi</strong> (quella che su iPhone si chiama
+            Shortcuts) e crea un comando nuovo.</li>
+          <li>Aggiungi <em>Ottieni contenuto di URL</em> e incolla lì
+            l'indirizzo.</li>
+          <li>Aggiungi <em>Copia negli appunti</em>, sotto.</li>
+          <li>Lancia il comando, torna qui e incolla nel riquadro sotto.</li>
         </ol>
         <p class="testo-tenue">
-          L'import sostituisce solo i giorni che il calendario nomina: non cancella
-          mai un giorno di cui il file non parla.
+          <strong>Da Mac</strong> è più corto: Calendario ▸ tasto destro sul
+          calendario dei turni ▸ Ottieni informazioni per vedere l'indirizzo,
+          oppure aprilo nel browser e incolla il testo che compare.
+        </p>
+        <p class="testo-tenue">
+          L'import sostituisce solo i giorni che il calendario nomina: non
+          cancella mai un giorno di cui il file non parla.
         </p>
       </details>
       <label class="campo">

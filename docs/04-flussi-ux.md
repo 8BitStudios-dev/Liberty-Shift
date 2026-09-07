@@ -156,12 +156,35 @@ La voce "Inserisci i tuoi turni" non sta più in fondo al calendario, dove era u
 invito a uscire dalla schermata appena aperta. I turni si gestiscono nel
 Profilo, in una sezione con due strade in ordine di comodità:
 
-1. **Importa da calendario**. Le istruzioni su dove trovare il file .ics —
-   iPhone, Mac, Google Calendar — stanno **dentro** la finestra dell'import, in
-   un riquadro che si apre: è lì che servono, nel momento in cui uno le cerca,
-   non nel profilo dove occupavano spazio a chi passava per altro.
+1. **Importa da calendario**. Le istruzioni stanno **dentro** la finestra
+   dell'import: è lì che servono, nel momento in cui uno le cerca, non nel
+   profilo dove occupavano spazio a chi passava per altro.
+
+   Quelle della prima versione erano sbagliate. Parlavano di esportare un file
+   `.ics`, e il calendario dei turni non è un file: è una **sottoscrizione**, un
+   indirizzo che il telefono interroga. Da iPhone un calendario sottoscritto non
+   si esporta, quindi il percorso vero è un altro — l'app **Comandi**, con
+   *Ottieni contenuto di URL* e *Copia negli appunti*, e poi si incolla qui.
+   Si costruisce una volta e si rilancia quando serve.
+
+   L'indirizzo non si può leggere direttamente dall'app: il server di Apple non
+   manda le intestazioni CORS, quindi il browser rifiuta la chiamata. Servirebbe
+   un pezzo di server che scarichi al posto nostro, ed è la stessa cosa che
+   `05-decisioni-aperte.md` tiene in sospeso — con l'aggravante che a quel punto
+   il calendario intero passerebbe da un server, non solo i turni pubblicati.
 2. **Inserisci manualmente i turni**, che apre il giorno di oggi nel calendario
    delle due settimane, cioè lo stesso posto dove si correggono.
+
+### I codici del gestionale
+Il calendario aziendale non scrive "riposo": scrive `SO ADO`, `ITA Time Away F
+08.00 hrs`, `ITA PH Not Wrkd`. La prima versione del lettore cercava parole
+italiane e buttava via 36 giornate su 71, lasciando il calendario mezzo vuoto e
+la persona a chiedersi cosa avesse sbagliato. I codici veri stanno in
+`RULES.calendario.codiciOff`: aggiungerne uno è una riga sola.
+
+Quando in un giorno c'è sia un riposo programmato sia un turno — capita, il
+gestionale li sovrappone — **vince il turno lavorato**: se ci sono delle ore,
+quel giorno si lavora, comunque lo chiami il codice.
 
 ## Le preferenze, in due riquadri che si aprono
 Nove interruttori in fila nasconderebbero la sola cosa che conta saperne: quello
