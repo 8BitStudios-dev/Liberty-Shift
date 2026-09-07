@@ -9,7 +9,7 @@ L'app sta su **GitHub Pages**, all'indirizzo
 
 1. esegue `npm test` — una versione con i test rossi non viene pubblicata;
 2. costruisce la cartella `site/` con `index.html`, `styles.css`, `sw.js`,
-   `src/` e `public/`, più il file unico `cambio-turno.html`;
+   `src/` e `public/`, più il file unico `liberty-shift.html`;
 3. la consegna a Pages.
 
 Sul sito finisce solo l'app. Documentazione, test, screenshot e script restano
@@ -64,7 +64,7 @@ vecchia, la seconda è aggiornata. È il compromesso che tiene l'app istantanea 
 funzionante offline senza inchiodarla per sempre a una versione.
 
 Se una correzione deve arrivare subito, si alza `CACHE` in `sw.js`
-(`cambio-turno-v2` → `v3`): la cache vecchia viene buttata all'attivazione.
+(`liberty-shift-v1` → `v2`): la cache vecchia viene buttata all'attivazione.
 
 ## Alternative valutate
 

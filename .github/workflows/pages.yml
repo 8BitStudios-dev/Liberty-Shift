@@ -44,7 +44,7 @@ jobs:
           cp index.html styles.css sw.js site/
           cp -r src public site/
           node scripts/build-single.js
-          cp dist/cambio-turno.html site/
+          cp dist/liberty-shift.html site/
 
       # enablement: accende Pages da sola la prima volta, invece di far
       # fallire il deploy con "Get Pages site failed" finché qualcuno non

@@ -153,7 +153,7 @@ Le tre strade che l'admin ha, in ordine di comodità:
 
 **Il punto che condiziona lo schema**: Supabase Auth vuole un identificativo per
 ogni utente, e l'app non chiede l'email. Si genera internamente, nella forma
-`nome.cognome.<id>@cambio-turno.local`, e non compare mai nell'interfaccia: è
+`nome.cognome.<id>@liberty-shift.local`, e non compare mai nell'interfaccia: è
 solo la riga da cui l'admin parte per trovare la persona. È la soluzione
 standard per i login senza email, e resta valida se un giorno si decide di
 chiedere l'email vera: basta aggiornare quel campo.

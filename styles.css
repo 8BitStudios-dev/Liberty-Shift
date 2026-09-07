@@ -1,4 +1,4 @@
-/* Cambio Turno — foglio di stile unico, mobile first, iPhone in mente. */
+/* Liberty Shift — foglio di stile unico, mobile first, iPhone in mente. */
 
 :root {
   color-scheme: light dark;
@@ -337,6 +337,11 @@ p { margin: 8px 0; }
 .accesso-logo { font-size: 44px; margin-bottom: 10px; }
 .accesso h1 { margin-bottom: 6px; }
 .accesso .campo { margin-top: 20px; }
+/* Il motto: sta sotto il nome, non accanto, e non deve gridare. */
+.motto {
+  margin: 4px 0 0; font-size: 14px; font-style: italic;
+  color: var(--testo-tenue); letter-spacing: .01em;
+}
 .accesso .non-puoi { text-align: center; }
 .accesso-nota { margin-top: 18px; }
 

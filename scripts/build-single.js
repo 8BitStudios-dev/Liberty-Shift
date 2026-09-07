@@ -2,7 +2,7 @@
 // Serve per condividere il prototipo con un link; per sviluppare si usa
 // `npm run dev`, che carica i moduli veri.
 //
-//   node scripts/build-single.js  ->  dist/cambio-turno.html
+//   node scripts/build-single.js  ->  dist/liberty-shift.html
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
@@ -96,9 +96,9 @@ async function costruisci() {
   }
 
   const css = await readFile(join(RADICE, 'styles.css'), 'utf8');
-  const html = `<title>Cambio Turno</title>
+  const html = `<title>Liberty Shift</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cambio Turno">
+<meta name="apple-mobile-web-app-title" content="Liberty Shift">
 <style>
 ${css}
 </style>
@@ -126,8 +126,8 @@ ${pezzi.join('\n\n')}
   }
 
   await mkdir(join(RADICE, 'dist'), { recursive: true });
-  await writeFile(join(RADICE, 'dist', 'cambio-turno.html'), html);
-  console.log(`dist/cambio-turno.html — ${(html.length / 1024).toFixed(0)} KB, ${MODULI.length} moduli`);
+  await writeFile(join(RADICE, 'dist', 'liberty-shift.html'), html);
+  console.log(`dist/liberty-shift.html — ${(html.length / 1024).toFixed(0)} KB, ${MODULI.length} moduli`);
 }
 
 costruisci();

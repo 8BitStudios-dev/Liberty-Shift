@@ -1,8 +1,8 @@
-<title>Cambio Turno</title>
+<title>Liberty Shift</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Cambio Turno">
+<meta name="apple-mobile-web-app-title" content="Liberty Shift">
 <style>
-/* Cambio Turno — foglio di stile unico, mobile first, iPhone in mente. */
+/* Liberty Shift — foglio di stile unico, mobile first, iPhone in mente. */
 
 :root {
   color-scheme: light dark;
@@ -341,6 +341,11 @@ p { margin: 8px 0; }
 .accesso-logo { font-size: 44px; margin-bottom: 10px; }
 .accesso h1 { margin-bottom: 6px; }
 .accesso .campo { margin-top: 20px; }
+/* Il motto: sta sotto il nome, non accanto, e non deve gridare. */
+.motto {
+  margin: 4px 0 0; font-size: 14px; font-style: italic;
+  color: var(--testo-tenue); letter-spacing: .01em;
+}
 .accesso .non-puoi { text-align: center; }
 .accesso-nota { margin-top: 18px; }
 
@@ -2189,6 +2194,9 @@ const { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, session
 const { monthKey, todayISO } = M_time;
 const { seed } = M_seed;
 
+// La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
+// Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
+// turni e le richieste già inseriti su un telefono sparirebbero.
 const CHIAVE = 'cambio-turno:v1';
 
 const store = {
@@ -4987,7 +4995,8 @@ function schermataAccesso(errore = false) {
   return html`
     <div class="accesso">
       <div class="accesso-logo">🔄</div>
-      <h1>Cambio Turno</h1>
+      <h1>Liberty Shift</h1>
+      <p class="motto">Change shifts. Keep your plans.</p>
       <p class="testo-tenue">Inserisci la tua password.</p>
       <label class="campo">
         <input type="password" class="testo" data-campo="password"
