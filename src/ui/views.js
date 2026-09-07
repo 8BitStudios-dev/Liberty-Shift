@@ -63,6 +63,10 @@ export function home() {
 
   return html`
     <header class="hero">
+      <div class="marchio-riga">
+        <span class="marchio" role="img" aria-label="Liberty Shift"></span>
+        <span class="marchio-nome">Liberty Shift</span>
+      </div>
       <div class="hero-riga">
         <div>
           <p class="saluto">${saluto}</p>
