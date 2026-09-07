@@ -29,7 +29,7 @@ test('le coordinate del server ci sono, ma senza sessione non si è collegati', 
 test('l\'identificativo interno è stabile e senza accenti', () => {
   assert.equal(
     identificativoInterno('Niccolò', "D'Amico", 'a1b2c3'),
-    'niccolo.d-amico.a1b2c3@liberty-shift.local',
+    'niccolo.d-amico.a1b2c3@liberty-shift.internal',
   );
 });
 

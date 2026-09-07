@@ -2014,15 +2014,19 @@ const CHIAVE_SESSIONE = 'liberty-shift:sessione-server';
  * Supabase Auth vuole un'email e l'app non la chiede: se ne genera una che non
  * esiste e non compare mai nell'interfaccia. Serve a chi gestisce il progetto
  * per trovare la riga giusta quando qualcuno chiede di reimpostare la
- * password. Il dominio .local non è instradabile: nessuno può mandarci una
- * mail nemmeno per sbaglio.
+ * password.
+ *
+ * Il dominio è `.internal`, l'estensione riservata proprio agli usi interni:
+ * non è instradabile, quindi lì non può arrivare posta nemmeno per sbaglio.
+ * Il `.local` scelto all'inizio è stato abbandonato per forza — Supabase lo
+ * rifiuta con `email_address_invalid`, e non c'è modo di aggirarlo.
  */
 function identificativoInterno(nome, cognome, seme = '') {
   const pulisci = (s) => (s || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // via gli accenti
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const coda = seme || Math.random().toString(36).slice(2, 8);
-  return `${pulisci(nome)}.${pulisci(cognome)}.${coda}@liberty-shift.local`;
+  return `${pulisci(nome)}.${pulisci(cognome)}.${coda}@liberty-shift.internal`;
 }
 
 // ------------------------------------------------------------- sessione

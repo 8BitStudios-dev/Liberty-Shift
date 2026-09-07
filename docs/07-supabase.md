@@ -120,25 +120,43 @@ sopra e si ridà quello nuovo.
 ## Gli account
 
 L'app non chiede l'email, ma Supabase Auth vuole un identificativo. Si genera
-internamente nella forma `nome.cognome.<id>@liberty-shift.local` e non compare
-mai nell'interfaccia: è la riga da cui parti per trovare una persona quando ti
-chiede di reimpostare la password.
+internamente nella forma `nome.cognome.<id>@liberty-shift.internal` e non
+compare mai nell'interfaccia: è la riga da cui parti per trovare una persona
+quando ti chiede di reimpostare la password.
+
+Il dominio è `.internal`, riservato proprio agli usi interni e non
+instradabile: lì non arriva posta nemmeno per sbaglio. Il `.local` scelto
+all'inizio è stato abbandonato per forza, non per gusto — Supabase lo rifiuta
+con `email_address_invalid`.
 
 Password dimenticata: *Authentication ▸ Users ▸* la persona *▸ Reset password*.
 È un potere sugli account altrui, e le note d'uso dicono già il limite — si usa
 su richiesta dell'interessato e per nient'altro.
 
+## Il collaudo, fatto contro il server vero
+
+Provato il 7 settembre 2026, non simulato:
+
+| Prova | Esito |
+|---|---|
+| registrazione con identificativo `.internal` | sessione ottenuta |
+| `iscrivi()` con codice sbagliato | 403, «Codice del negozio sbagliato.» |
+| `iscrivi()` con il codice giusto | profilo creato |
+| iscritto legge i profili e pubblica una richiesta | 200 e 201 |
+| **estraneo registrato senza codice** | profili `[]`, bacheca `[]`, scrittura 403 |
+
+L'ultima riga è quella che conta: un account creato senza codice esiste, entra,
+e non vede né tocca niente.
+
 ## Cosa manca per collegarlo
 
-Lo schema c'è, il client no. Servono tre cose, in quest'ordine:
+Lo schema c'è, il client c'è (`src/core/supabase.js`), l'app ancora no:
 
-1. il client Supabase caricato nell'app (una `<script>` da CDN, o incorporato
-   nel file unico);
-2. `salva()` e `carica()` in `src/core/store.js` che parlano col server invece
-   che con `localStorage`, **per le sole cose pubblicate**: turni e preferenze
-   restano dove sono;
-3. l'accesso che passa da Supabase Auth invece che dall'impronta locale. Per
-   chi usa l'app non cambia niente: password, e si entra.
+1. la prima apertura chiede il codice del negozio, crea l'account e il profilo;
+2. `store.js` legge e scrive sul server **le sole cose pubblicate**: turni e
+   preferenze restano dove sono;
+3. l'accesso passa da Supabase Auth invece che dall'impronta locale. Per chi usa
+   l'app non cambia niente: password, e si entra.
 
 E prima di aprirlo ai colleghi, la domanda del capitolo 27, che con un server
 condiviso diventa più netta, non meno: vedi
