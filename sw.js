@@ -17,6 +17,8 @@ const ASSET = [
   './src/core/model.js',
   './src/core/engine.js',
   './src/core/ics.js',
+  './src/core/config.js',
+  './src/core/supabase.js',
   './src/core/accesso.js',
   './src/core/seed.js',
   './src/core/store.js',

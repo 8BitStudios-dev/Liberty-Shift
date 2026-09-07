@@ -18,6 +18,8 @@ const MODULI = [
   'src/core/engine.js',
   'src/core/ics.js',
   'src/core/accesso.js',
+  'src/core/config.js',
+  'src/core/supabase.js',
   'src/core/seed.js',
   'src/core/store.js',
   'src/ui/dom.js',
