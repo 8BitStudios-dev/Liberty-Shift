@@ -233,10 +233,10 @@ aperti in locale, e avrebbe reso l'app inutilizzabile fuori da https per una
 sicurezza che comunque, girando tutta nel browser, non c'è. Con il server la
 password resterà la stessa per chi la usa, ma a verificarla sarà Supabase.
 
-**Se la password si dimentica non si recupera.** L'unica strada è "Ricomincia da
-capo" nella schermata di accesso, che cancella i dati di quel dispositivo. È
-scritto sia lì sia nel passo in cui la si sceglie, perché una sorpresa del
-genere non si scopre dopo.
+**Password dimenticata**: la reimposta chi gestisce l'app, su richiesta della
+persona. Finché il server non c'è, però, l'unica strada resta "Ricomincia da
+capo" nella schermata di accesso, che cancella i dati di quel dispositivo — e la
+schermata lo dice, invece di promettere un aiuto che oggi nessuno può dare.
 
 **Cambio password**, dal Profilo in fondo: serve quella attuale. Chi trovasse il
 telefono già sbloccato non deve poter chiudere fuori il proprietario cambiandola.

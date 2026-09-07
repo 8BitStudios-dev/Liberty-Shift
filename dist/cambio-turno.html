@@ -4319,7 +4319,7 @@ const M_legale = (() => {
 const { html, raw } = M_dom;
 
 /** La versione del testo: cambiarla ripropone l'accettazione a tutti. */
-const VERSIONE_NOTE = '2026-09-3';
+const VERSIONE_NOTE = '2026-09-4';
 
 function noteLegali({ compatte = false } = {}) {
   const esteso = (contenuto) => (compatte ? '' : contenuto);
@@ -4406,6 +4406,11 @@ function noteLegali({ compatte = false } = {}) {
         <li>chi vuole andarsene se ne va, e i suoi dati vengono cancellati;</li>
         <li>quello che si legge qui non si usa altrove.</li>
       </ul>
+      <p class="testo-tenue">
+        Chi gestisce il server può reimpostare la password di chi l'ha
+        dimenticata. È un potere sugli account altrui, quindi si usa su
+        richiesta della persona interessata e per nient'altro.
+      </p>
 
       <h3>5. Responsabilità</h3>
       <ul class="elenco piccolo">
@@ -4831,8 +4836,8 @@ function passoPassword() {
 
     <p class="testo-tenue">
       Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
-      permette di riconoscerla. Se la dimentichi non si recupera, e l'unica
-      strada è ricominciare da capo.
+      permette di riconoscerla. Se la dimentichi, chi gestisce l'app può
+      reimpostarla.
     </p>
 
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
@@ -4956,8 +4961,9 @@ function schermataAccesso(errore = false) {
       ${raw(errore ? '<p class="non-puoi">Password sbagliata.</p>' : '')}
       <button class="btn primario largo" data-act="entra">Entra</button>
       <p class="testo-tenue accesso-nota">
-        Se l'hai dimenticata non si recupera: si riparte da capo, e i dati di
-        questo dispositivo vanno persi.
+        Password dimenticata? Chiedi a chi gestisce l'app di reimpostarla.
+        Finché il server non è collegato l'unica strada è ricominciare da capo,
+        e i turni di questo dispositivo vanno persi.
       </p>
       <button class="link-btn" data-act="ricomincia">Ricomincia da capo</button>
     </div>`;

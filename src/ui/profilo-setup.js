@@ -209,8 +209,8 @@ function passoPassword() {
 
     <p class="testo-tenue">
       Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
-      permette di riconoscerla. Se la dimentichi non si recupera, e l'unica
-      strada è ricominciare da capo.
+      permette di riconoscerla. Se la dimentichi, chi gestisce l'app può
+      reimpostarla.
     </p>
 
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;

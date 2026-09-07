@@ -8,7 +8,7 @@
 import { html, raw } from './dom.js';
 
 /** La versione del testo: cambiarla ripropone l'accettazione a tutti. */
-export const VERSIONE_NOTE = '2026-09-3';
+export const VERSIONE_NOTE = '2026-09-4';
 
 export function noteLegali({ compatte = false } = {}) {
   const esteso = (contenuto) => (compatte ? '' : contenuto);
@@ -95,6 +95,11 @@ export function noteLegali({ compatte = false } = {}) {
         <li>chi vuole andarsene se ne va, e i suoi dati vengono cancellati;</li>
         <li>quello che si legge qui non si usa altrove.</li>
       </ul>
+      <p class="testo-tenue">
+        Chi gestisce il server può reimpostare la password di chi l'ha
+        dimenticata. È un potere sugli account altrui, quindi si usa su
+        richiesta della persona interessata e per nient'altro.
+      </p>
 
       <h3>5. Responsabilità</h3>
       <ul class="elenco piccolo">

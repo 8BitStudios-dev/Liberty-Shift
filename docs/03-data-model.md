@@ -131,3 +131,36 @@ non lo sa affatto.
 chi tiene il progetto Supabase, e le regole di riga (chi legge cosa, chi
 modifica cosa). E prima ancora la domanda del capitolo 27, che con un server
 condiviso diventa più netta, non meno.
+
+
+## Accesso e recupero password
+
+Oggi la password è locale: se ne salva l'impronta con un sale, nel profilo. Non
+c'è recupero, perché non c'è nessuno che possa verificare l'identità di chi
+chiede.
+
+Con Supabase la struttura è decisa: **si usa Supabase Auth, e chi gestisce il
+progetto reimposta la password su richiesta della persona.** Nessun recupero
+automatico via email, perché l'email non viene chiesta.
+
+Le tre strade che l'admin ha, in ordine di comodità:
+
+| Strada | Cosa serve |
+|---|---|
+| Dashboard Supabase → Authentication → Users → *Reset password* | accesso al progetto |
+| `auth.admin.updateUserById(id, { password })` | chiave `service_role`, **mai** nel browser |
+| `auth.admin.generateLink({ type: 'recovery' })` | idem, e serve un modo per far arrivare il link |
+
+**Il punto che condiziona lo schema**: Supabase Auth vuole un identificativo per
+ogni utente, e l'app non chiede l'email. Si genera internamente, nella forma
+`nome.cognome.<id>@cambio-turno.local`, e non compare mai nell'interfaccia: è
+solo la riga da cui l'admin parte per trovare la persona. È la soluzione
+standard per i login senza email, e resta valida se un giorno si decide di
+chiedere l'email vera: basta aggiornare quel campo.
+
+**Conseguenza da non lasciare implicita**: esiste una persona che può cambiare
+la password degli altri. È scritto nelle note d'uso, con il limite che ne
+consegue — si fa su richiesta dell'interessato e per nient'altro.
+
+La chiave `service_role` non deve mai finire nel client. Il reset passa dalla
+dashboard, oppure da una funzione lato server che verifica chi la sta chiamando.

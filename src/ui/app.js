@@ -91,8 +91,9 @@ function schermataAccesso(errore = false) {
       ${raw(errore ? '<p class="non-puoi">Password sbagliata.</p>' : '')}
       <button class="btn primario largo" data-act="entra">Entra</button>
       <p class="testo-tenue accesso-nota">
-        Se l'hai dimenticata non si recupera: si riparte da capo, e i dati di
-        questo dispositivo vanno persi.
+        Password dimenticata? Chiedi a chi gestisce l'app di reimpostarla.
+        Finché il server non è collegato l'unica strada è ricominciare da capo,
+        e i turni di questo dispositivo vanno persi.
       </p>
       <button class="link-btn" data-act="ricomincia">Ricomincia da capo</button>
     </div>`;
