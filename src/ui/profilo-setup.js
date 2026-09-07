@@ -83,6 +83,7 @@ export function schermataProfilo() {
         : passoNote();
 
   return html`
+    ${raw(b.modifica ? '' : insegna(passo))}
     <header class="testata">
       ${raw(b.modifica || b.passo > 1
     ? '<button class="icon-btn" data-act="profilo-indietro">‹</button>'
@@ -95,6 +96,29 @@ export function schermataProfilo() {
     ? `<div class="errori">${b.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>`
     : '')}
     ${raw(contenuto)}`;
+}
+
+/**
+ * Il marchio durante la creazione del profilo.
+ *
+ * Al primo passo è un'insegna vera, col nome e il motto: è la prima cosa che
+ * si vede aprendo l'app, e dice dove sei finito. Dai passi successivi si
+ * riduce a una firma, perché a quel punto serve lo spazio per le domande.
+ */
+function insegna(passo) {
+  if (passo > 1) {
+    return html`
+      <div class="marchio-riga">
+        <span class="marchio" role="img" aria-label="Liberty Shift"></span>
+        <span class="marchio-nome">Liberty Shift</span>
+      </div>`;
+  }
+  return html`
+    <div class="insegna">
+      <div class="accesso-logo" role="img" aria-label="Liberty Shift"></div>
+      <h1>Liberty Shift</h1>
+      <p class="motto">Change shifts. Keep your plans.</p>
+    </div>`;
 }
 
 function passoChiSei() {

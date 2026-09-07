@@ -345,6 +345,11 @@ p { margin: 8px 0; }
    piccolo, e lascia il primo piano al nome di chi apre l'app. */
 .marchio-riga { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
 .marchio { width: 22px; height: 22px; flex: 0 0 auto; }
+/* L'insegna della prima apertura: il marchio in grande, una volta sola. */
+.insegna { text-align: center; padding: 22px 0 4px; }
+.insegna h1 { font-size: 28px; }
+.insegna .motto { margin-bottom: 6px; }
+
 .marchio-nome {
   font-size: 12px; font-weight: 700; letter-spacing: .07em;
   text-transform: uppercase; color: var(--testo-tenue);
