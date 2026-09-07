@@ -20,12 +20,12 @@ utile per ripubblicare senza aver cambiato niente.
 
 ## Accensione, una volta sola
 
-1. **Settings ▸ General ▸ Change visibility ▸ Public.** Pages sul piano
-   gratuito non funziona su un repository privato. Con GitHub Pro il
-   repository può tornare privato e il sito continua a funzionare — ma resta
-   comunque un sito pubblico: la parte privata è il codice, non l'indirizzo.
-2. **Settings ▸ Pages ▸ Build and deployment ▸ Source: GitHub Actions.**
-3. Un push su `main`, oppure "Run workflow" dalla scheda Actions.
+1. **Settings ▸ Pages ▸ Build and deployment ▸ Source: GitHub Actions.**
+2. Un push su `main`, oppure "Run workflow" dalla scheda Actions.
+
+Il repository resta **privato**: Pages su repository privati funziona con
+GitHub Pro. Privato è il codice, non l'indirizzo — il sito è raggiungibile da
+chiunque lo conosca, e su questo il piano non cambia niente.
 
 Il primo deploy impiega un paio di minuti; dopo, ogni push è questione di
 secondi.
