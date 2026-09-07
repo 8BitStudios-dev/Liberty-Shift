@@ -10,14 +10,17 @@ mettersi d'accordo. Il cambio vero si fa poi nell'app ufficiale.
 ## Provarla
 
 Online, senza installare niente:
-**[claude.ai/code/artifact/41acc583-fb0c-4e24-a264-be58a1f9b08f](https://claude.ai/code/artifact/41acc583-fb0c-4e24-a264-be58a1f9b08f)**
+**[c4gv4kf4d7-dev.github.io/Cambi-Turno](https://c4gv4kf4d7-dev.github.io/Cambi-Turno/)**
 (su iPhone: Safari → Condividi → Aggiungi alla schermata Home).
+
+C'è anche la versione a file unico, comoda da mandare in chat:
+[cambio-turno.html](https://c4gv4kf4d7-dev.github.io/Cambi-Turno/cambio-turno.html).
 
 In locale:
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 56 test su motore e import
+npm test        # 74 test su motore, import e service worker
 npm run build   # dist/cambio-turno.html, tutta l'app in un file solo
 ```
 
@@ -99,3 +102,4 @@ esplicitamente il diritto di parlare dei propri orari. Il ragionamento completo
 | [`docs/03-data-model.md`](docs/03-data-model.md) | utenti, turni, richieste, proposte |
 | [`docs/04-flussi-ux.md`](docs/04-flussi-ux.md) | schermate e flussi |
 | [`docs/05-decisioni-aperte.md`](docs/05-decisioni-aperte.md) | cosa serve decidere, in ordine di urgenza |
+| [`docs/06-pubblicazione.md`](docs/06-pubblicazione.md) | come il sito arriva online, e cosa comporta |
