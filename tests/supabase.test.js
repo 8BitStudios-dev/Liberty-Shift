@@ -19,8 +19,10 @@ globalThis.localStorage = {
 const { identificativoInterno, query, collegato } = await import('../src/core/supabase.js');
 const { serverConfigurato } = await import('../src/core/config.js');
 
-test('senza coordinate il server non è configurato e non si è collegati', () => {
-  assert.equal(serverConfigurato(), false);
+test('le coordinate del server ci sono, ma senza sessione non si è collegati', () => {
+  // La chiave anon nel codice non basta a niente: quello che apre le porte è
+  // la sessione di una persona, e qui non c'è.
+  assert.equal(serverConfigurato(), true);
   assert.equal(collegato(), false);
 });
 

@@ -9,8 +9,8 @@
 // tutto nel browser, persone inventate. Riempirli è l'interruttore.
 
 export const SERVER = {
-  url: '',
-  chiaveAnon: '',
+  url: 'https://daerebtkibgmtyvznfvu.supabase.co',
+  chiaveAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZXJlYnRraWJnbXR5dnpuZnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE4NzAsImV4cCI6MjEwNDM1Nzg3MH0.icOOSXRX6k3jYmyj66NQg_EMDs5cvvY5etzEvJ7xQfY',
 };
 
 /** Il server c'è solo quando ha entrambe le coordinate. */
