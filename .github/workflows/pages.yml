@@ -32,7 +32,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       # Una versione rotta non deve arrivare sul telefono di nessuno.
       - name: Test
@@ -46,7 +46,12 @@ jobs:
           node scripts/build-single.js
           cp dist/cambio-turno.html site/
 
+      # enablement: accende Pages da sola la prima volta, invece di far
+      # fallire il deploy con "Get Pages site failed" finché qualcuno non
+      # apre le impostazioni.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site

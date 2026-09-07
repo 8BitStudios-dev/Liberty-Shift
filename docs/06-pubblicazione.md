@@ -18,10 +18,12 @@ nel repository: servono a lavorarci, non a usarla.
 Il deploy si può anche lanciare a mano dalla scheda Actions ("Run workflow"),
 utile per ripubblicare senza aver cambiato niente.
 
-## Accensione, una volta sola
+## Accensione
 
-1. **Settings ▸ Pages ▸ Build and deployment ▸ Source: GitHub Actions.**
-2. Un push su `main`, oppure "Run workflow" dalla scheda Actions.
+Niente da fare a mano: `configure-pages` ha `enablement: true`, quindi accende
+Pages da sé la prima volta e imposta come sorgente GitHub Actions. Senza,
+il primo deploy falliva con *Get Pages site failed* finché qualcuno non apriva
+Settings ▸ Pages.
 
 Il repository resta **privato**: Pages su repository privati funziona con
 GitHub Pro. Privato è il codice, non l'indirizzo — il sito è raggiungibile da
