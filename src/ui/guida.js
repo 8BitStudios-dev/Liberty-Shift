@@ -8,7 +8,7 @@
 import { html, raw } from './dom.js';
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-export const VERSIONE_GUIDA = '3';
+export const VERSIONE_GUIDA = '4';
 
 export const GUIDE = {
   home: {
@@ -30,8 +30,8 @@ export const GUIDE = {
       <h3>🤝 Aiuta un collega</h3>
       <p>
         Il contrario: le richieste che <em>tu</em> puoi risolvere. La percentuale
-        dice quanto lo scambio torna a entrambi — il tuo turno rispetto a quello
-        che cercano, e il loro rispetto a quello che cerchi tu.
+        dice quanto lo scambio funziona per entrambi — il tuo turno rispetto a
+        quello che cercano, e il loro rispetto a quello che cerchi tu.
       </p>
 
       <h3>＋ Nuovo cambio</h3>
@@ -119,7 +119,8 @@ export const GUIDE = {
       <h3>Le tue due settimane</h3>
       <p>
         Sabato → venerdì, per due settimane. In ogni casella il tuo turno e, se
-        c'è, quanto torna il miglior scambio che potresti risolvere quel giorno.
+        c'è, quanto funziona il miglior scambio che potresti risolvere quel
+        giorno.
       </p>
       <p class="testo-tenue">
         L'interruttore «disponibile a scambiare» ti fa comparire fra i match di
