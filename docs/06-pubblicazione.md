@@ -18,12 +18,20 @@ nel repository: servono a lavorarci, non a usarla.
 Il deploy si può anche lanciare a mano dalla scheda Actions ("Run workflow"),
 utile per ripubblicare senza aver cambiato niente.
 
-## Accensione
+## Accensione, una volta sola
 
-Niente da fare a mano: `configure-pages` ha `enablement: true`, quindi accende
-Pages da sé la prima volta e imposta come sorgente GitHub Actions. Senza,
-il primo deploy falliva con *Get Pages site failed* finché qualcuno non apriva
-Settings ▸ Pages.
+**Settings ▸ Pages ▸ Build and deployment ▸ Source: GitHub Actions.**
+
+È l'unico passaggio che il workflow non può fare da sé. Provato: `enablement:
+true` su `configure-pages` chiede a GitHub di creare il sito, e GitHub risponde
+*Resource not accessible by integration* — accendere Pages è un'operazione da
+amministratore, e il token di un workflow amministratore non è, per
+costruzione. L'opzione resta nel file perché una volta acceso il sito non fa
+niente, e se qualcuno spegnesse Pages il messaggio d'errore direbbe subito
+dov'è il problema.
+
+Fatto quel clic, ogni push su `main` pubblica da solo; si può anche lanciare
+"Run workflow" dalla scheda Actions.
 
 Il repository resta **privato**: Pages su repository privati funziona con
 GitHub Pro. Privato è il codice, non l'indirizzo — il sito è raggiungibile da
