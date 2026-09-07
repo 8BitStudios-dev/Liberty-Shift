@@ -1,7 +1,7 @@
 # Pubblicazione
 
 L'app sta su **GitHub Pages**, all'indirizzo
-`https://c4gv4kf4d7-dev.github.io/Cambi-Turno/`.
+`https://c4gv4kf4d7-dev.github.io/Liberty-Shift/`.
 
 ## Come ci arriva
 
@@ -18,27 +18,24 @@ nel repository: servono a lavorarci, non a usarla.
 Il deploy si può anche lanciare a mano dalla scheda Actions ("Run workflow"),
 utile per ripubblicare senza aver cambiato niente.
 
-## Accensione, una volta sola
+## Accensione, fatta
 
-**Settings ▸ Pages ▸ Build and deployment ▸ Source: GitHub Actions.**
+Il sito è acceso dal 7 settembre 2026. L'unico passaggio manuale è stato
+**Settings ▸ Pages ▸ Build and deployment ▸ Source: GitHub Actions**, e serve
+solo la prima volta: `enablement: true` su `configure-pages` non basta, GitHub
+risponde *Resource not accessible by integration* perché creare il sito è
+un'operazione da amministratore e il token di un workflow non lo è. L'opzione
+resta nel file perché a sito acceso non fa niente, e se qualcuno spegnesse
+Pages darebbe subito un errore che dice dov'è il problema.
 
-È l'unico passaggio che il workflow non può fare da sé. Provato: `enablement:
-true` su `configure-pages` chiede a GitHub di creare il sito, e GitHub risponde
-*Resource not accessible by integration* — accendere Pages è un'operazione da
-amministratore, e il token di un workflow amministratore non è, per
-costruzione. L'opzione resta nel file perché una volta acceso il sito non fa
-niente, e se qualcuno spegnesse Pages il messaggio d'errore direbbe subito
-dov'è il problema.
+Da lì in poi ogni push su `main` pubblica da solo; si può anche lanciare "Run
+workflow" dalla scheda Actions.
 
-Fatto quel clic, ogni push su `main` pubblica da solo; si può anche lanciare
-"Run workflow" dalla scheda Actions.
-
-Il repository resta **privato**: Pages su repository privati funziona con
+Il repository resta **privato**: Pages su repository privati è compreso in
 GitHub Pro. Privato è il codice, non l'indirizzo — il sito è raggiungibile da
 chiunque lo conosca, e su questo il piano non cambia niente.
 
-Il primo deploy impiega un paio di minuti; dopo, ogni push è questione di
-secondi.
+Un deploy dura una ventina di secondi, test compresi.
 
 ## Cosa vuol dire "pubblico"
 

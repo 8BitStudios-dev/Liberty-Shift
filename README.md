@@ -12,15 +12,11 @@ mettersi d'accordo. Il cambio vero si fa poi nell'app ufficiale.
 ## Provarla
 
 Online, senza installare niente:
-**[c4gv4kf4d7-dev.github.io/Cambi-Turno](https://c4gv4kf4d7-dev.github.io/Cambi-Turno/)**
+**[c4gv4kf4d7-dev.github.io/Liberty-Shift](https://c4gv4kf4d7-dev.github.io/Liberty-Shift/)**
 (su iPhone: Safari → Condividi → Aggiungi alla schermata Home).
 
 C'è anche la versione a file unico, comoda da mandare in chat:
-[liberty-shift.html](https://c4gv4kf4d7-dev.github.io/Cambi-Turno/liberty-shift.html).
-
-Se il repository viene rinominato in `liberty-shift`, l'indirizzo diventa
-`https://c4gv4kf4d7-dev.github.io/liberty-shift/`: i percorsi interni sono
-tutti relativi, quindi non si rompe niente.
+[liberty-shift.html](https://c4gv4kf4d7-dev.github.io/Liberty-Shift/liberty-shift.html).
 
 In locale:
 
