@@ -274,13 +274,9 @@ const AZIONI = {
   'profilo-avanti': () => {
     const b = P.bozzaProfilo;
     // Si controlla un passo per volta: un errore sul contratto mentre stai
-    // scrivendo il nome è solo rumore.
-    const perPasso = {
-      1: /nome|cognome|opzioni/,
-      2: /contratto|monte ore/,
-      3: /password/i,
-      4: /codice/i,
-    }[b.passo];
+    // scrivendo il nome è solo rumore. Quale sia il passo lo sa il modulo che
+    // li mette in fila, non questa riga.
+    const perPasso = P.erroriDelPasso(b.passo);
     const mancanti = perPasso ? P.validaProfilo().filter((e) => perPasso.test(e)) : [];
     if (mancanti.length) { b.errori = mancanti; return render(); }
     b.errori = [];
@@ -306,7 +302,7 @@ const AZIONI = {
       // Un codice sbagliato si corregge dove lo si è scritto: lasciare
       // l'errore sull'ultima schermata costringerebbe a tornare indietro a
       // mano, cercando quale passo fosse.
-      if (/codice/i.test(esito.errore)) b.passo = 4;
+      if (/codice/i.test(esito.errore)) b.passo = P.passoDelCodice();
       return render();
     }
 

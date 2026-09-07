@@ -28,8 +28,37 @@ export const bozzaProfilo = {
   errori: [],
 };
 
-/** Col server collegato c'è un passo in più: il codice del negozio. */
-const passiCreazione = () => (serverConfigurato() ? 5 : 4);
+/**
+ * I passi, nell'ordine in cui si presentano.
+ *
+ * Il codice del negozio viene per primo, prima ancora del nome: è la domanda
+ * che decide se ha senso fare le altre. Chiederlo alla fine significava far
+ * compilare tutto a qualcuno che poi non entra.
+ *
+ * L'elenco sta in un posto solo perché l'ordine lo usano in tre: la
+ * schermata, la barra di avanzamento e la validazione passo per passo.
+ */
+export function passi() {
+  const b = bozzaProfilo;
+  if (b.modifica) return [passoChiSei, passoContratto];
+  return serverConfigurato()
+    ? [passoCodice, passoChiSei, passoContratto, passoPassword, passoNote]
+    : [passoChiSei, passoContratto, passoPassword, passoNote];
+}
+
+/** Quali errori riguardano il passo che si sta compilando. */
+export function erroriDelPasso(numero) {
+  const nome = passi()[numero - 1]?.name;
+  return {
+    passoCodice: /codice/i,
+    passoChiSei: /nome|cognome|opzioni/i,
+    passoContratto: /contratto|monte ore/i,
+    passoPassword: /password/i,
+  }[nome] || null;
+}
+
+/** Il numero del passo che chiede il codice, per tornarci se è sbagliato. */
+export const passoDelCodice = () => passi().findIndex((f) => f.name === 'passoCodice') + 1;
 
 export function apriProfilo({ modifica = false } = {}) {
   const me = store.me;
@@ -83,14 +112,10 @@ export function validaProfilo() {
 
 export function schermataProfilo() {
   const b = bozzaProfilo;
-  const totale = b.modifica ? 2 : passiCreazione();
+  const elenco = passi();
+  const totale = elenco.length;
   const passo = Math.min(b.passo, totale);
-
-  const contenuto = passo === 1 ? passoChiSei()
-    : passo === 2 ? passoContratto()
-      : passo === 3 ? passoPassword()
-        : passo === 4 && serverConfigurato() && !b.modifica ? passoCodice()
-          : passoNote();
+  const contenuto = elenco[passo - 1]();
 
   return html`
     ${raw(b.modifica ? '' : insegna(passo))}
@@ -251,31 +276,21 @@ function passoPassword() {
 }
 
 /**
- * Il codice del negozio.
+ * Il codice del negozio: il titolo, il campo, e basta.
  *
- * È l'unica domanda a cui non si può rispondere da soli: o te l'hanno detto,
- * o non entri. La schermata lo dice apertamente invece di far sembrare un
- * errore proprio il non saperlo.
+ * È la prima schermata dell'app, e chi ha il codice lo digita e va avanti.
+ * Le spiegazioni che c'erano prima le leggeva solo chi il codice non ce
+ * l'ha, e a quella persona non servivano comunque.
  */
 function passoCodice() {
   const b = bozzaProfilo;
   return html`
     <h2 class="titolo-gruppo">Il codice del negozio</h2>
-    <p class="testo-tenue">
-      Serve una volta sola, alla prima apertura. Se non ce l'hai, chiedilo a un
-      collega che usa già l'app: è lo stesso per tutti.
-    </p>
 
     <label class="campo">
-      <span>Codice</span>
       <input type="text" class="testo" data-campo="codice" value="${b.codice}"
-             placeholder="Es. R123" autocapitalize="characters" autocomplete="off">
+             autocapitalize="characters" autocomplete="off" autofocus>
     </label>
-
-    <p class="testo-tenue">
-      Tiene fuori chi trova il link per caso. Non viene salvato sul telefono:
-      serve solo adesso, per iscriverti.
-    </p>
 
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
