@@ -131,9 +131,10 @@ function render() {
     match: F.match,
     richiesta: F.dettaglio,
     setup: P.schermataProfilo,
+    impostazioni: V.impostazioni,
     legale: () => html`
       <header class="testata">
-        <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+        <button class="icon-btn" data-act="vai" data-to="#/impostazioni">‹</button>
         <h1>Note legali</h1>
       </header>
       ${raw(noteLegali())}`,

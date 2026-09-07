@@ -255,6 +255,13 @@ il contratto.
 Dal Profilo si riapre lo stesso modulo con "Modifica profilo": due passi, senza
 la password (che ha una voce sua) e senza le note già accettate.
 
+## Impostazioni
+Modifica profilo, cambio password e note d'uso stanno dietro una riga sola in
+fondo al Profilo, con l'ingranaggio e senza riquadro. Sono cose che si toccano
+tre volte in tutto, e da riquadri grandi quanto quelli dei turni rubavano
+attenzione a quello che invece si guarda ogni giorno. Il ritorno dalle note
+riporta lì, non al Profilo.
+
 ## La guida
 Ogni sezione ha una scheda che si apre **da sola la prima volta** che ci si
 entra, e si riapre dal **?** nella testata. Non spiega dove sono i pulsanti,

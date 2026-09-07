@@ -307,8 +307,45 @@ export function profilo() {
       <p>${credito} di ${RULES.priority.creditsPerMonth} disponibile per ${monthKey(todayISO())}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
     </section>
 
+    <button class="riga-impostazioni" data-act="vai" data-to="#/impostazioni">
+      <span class="ingranaggio">⚙︎</span>
+      <span>Impostazioni</span>
+      <span class="chevron">›</span>
+    </button>
+
     <section class="sezione">
-      <h2>Il tuo profilo</h2>
+      <h2>Demo</h2>
+      <p class="testo-tenue">
+        In questa versione di prova il server non è ancora collegato: tutto sta
+        nel browser e le persone sono inventate. Cambia persona per vedere lo
+        stesso scambio dall'altro lato.
+      </p>
+      <select data-act="cambia-utente" class="select">
+        ${store.state.users.map((u) => raw(
+    `<option value="${u.id}" ${u.id === me.id ? 'selected' : ''}>${u.nome} ${u.cognomeIniziale}. — ${u.contratto}</option>`,
+  ))}
+      </select>
+      <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
+      <button class="btn pericolo largo" data-act="esci">Esci</button>
+    </section>`;
+}
+
+/**
+ * Impostazioni.
+ *
+ * Nel Profilo queste tre voci occupavano tre riquadri grandi quanto quelli
+ * dei turni, che è lo spazio di cose che si usano ogni giorno. Qui dentro
+ * restano raggiungibili senza pesare su quello che si guarda davvero.
+ */
+export function impostazioni() {
+  const me = store.me;
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>Impostazioni</h1>
+    </header>
+
+    <section class="sezione">
       <button class="tile" data-act="modifica-profilo">
         <span class="tile-icona">✏️</span>
         <span>
@@ -333,22 +370,6 @@ export function profilo() {
         </span>
         <span class="chevron">›</span>
       </button>
-    </section>
-
-    <section class="sezione">
-      <h2>Demo</h2>
-      <p class="testo-tenue">
-        In questa versione di prova il server non è ancora collegato: tutto sta
-        nel browser e le persone sono inventate. Cambia persona per vedere lo
-        stesso scambio dall'altro lato.
-      </p>
-      <select data-act="cambia-utente" class="select">
-        ${store.state.users.map((u) => raw(
-    `<option value="${u.id}" ${u.id === me.id ? 'selected' : ''}>${u.nome} ${u.cognomeIniziale}. — ${u.contratto}</option>`,
-  ))}
-      </select>
-      <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
-      <button class="btn pericolo largo" data-act="esci">Esci</button>
     </section>`;
 }
 

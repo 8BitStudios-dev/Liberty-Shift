@@ -248,6 +248,20 @@ p { margin: 8px 0; }
 .tile.scelta.verde { border-left: 4px solid var(--verde); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
 
+/* La riga delle impostazioni: senza riquadro né ombra, perché non deve
+   competere con i turni, ma con l'ingranaggio e il chevron per restare
+   riconoscibile come una cosa che si apre. */
+.riga-impostazioni {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  margin: 4px 0 18px; padding: 14px 4px;
+  border: 0; border-top: 1px solid var(--bordo); border-bottom: 1px solid var(--bordo);
+  background: none; color: var(--testo-tenue); font: inherit; font-size: 15px;
+  text-align: left; cursor: pointer;
+}
+.riga-impostazioni > span:nth-child(2) { flex: 1; }
+.riga-impostazioni .ingranaggio { font-size: 17px; }
+.riga-impostazioni:active { color: var(--testo); }
+
 /* --------------------------------------------------------- calendario */
 
 .griglia-intestazione, .griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
@@ -3284,8 +3298,45 @@ function profilo() {
       <p>${credito} di ${RULES.priority.creditsPerMonth} disponibile per ${monthKey(todayISO())}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
     </section>
 
+    <button class="riga-impostazioni" data-act="vai" data-to="#/impostazioni">
+      <span class="ingranaggio">⚙︎</span>
+      <span>Impostazioni</span>
+      <span class="chevron">›</span>
+    </button>
+
     <section class="sezione">
-      <h2>Il tuo profilo</h2>
+      <h2>Demo</h2>
+      <p class="testo-tenue">
+        In questa versione di prova il server non è ancora collegato: tutto sta
+        nel browser e le persone sono inventate. Cambia persona per vedere lo
+        stesso scambio dall'altro lato.
+      </p>
+      <select data-act="cambia-utente" class="select">
+        ${store.state.users.map((u) => raw(
+    `<option value="${u.id}" ${u.id === me.id ? 'selected' : ''}>${u.nome} ${u.cognomeIniziale}. — ${u.contratto}</option>`,
+  ))}
+      </select>
+      <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
+      <button class="btn pericolo largo" data-act="esci">Esci</button>
+    </section>`;
+}
+
+/**
+ * Impostazioni.
+ *
+ * Nel Profilo queste tre voci occupavano tre riquadri grandi quanto quelli
+ * dei turni, che è lo spazio di cose che si usano ogni giorno. Qui dentro
+ * restano raggiungibili senza pesare su quello che si guarda davvero.
+ */
+function impostazioni() {
+  const me = store.me;
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>Impostazioni</h1>
+    </header>
+
+    <section class="sezione">
       <button class="tile" data-act="modifica-profilo">
         <span class="tile-icona">✏️</span>
         <span>
@@ -3310,22 +3361,6 @@ function profilo() {
         </span>
         <span class="chevron">›</span>
       </button>
-    </section>
-
-    <section class="sezione">
-      <h2>Demo</h2>
-      <p class="testo-tenue">
-        In questa versione di prova il server non è ancora collegato: tutto sta
-        nel browser e le persone sono inventate. Cambia persona per vedere lo
-        stesso scambio dall'altro lato.
-      </p>
-      <select data-act="cambia-utente" class="select">
-        ${store.state.users.map((u) => raw(
-    `<option value="${u.id}" ${u.id === me.id ? 'selected' : ''}>${u.nome} ${u.cognomeIniziale}. — ${u.contratto}</option>`,
-  ))}
-      </select>
-      <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
-      <button class="btn pericolo largo" data-act="esci">Esci</button>
     </section>`;
 }
 
@@ -3572,7 +3607,7 @@ function dettaglioGiornoProfilo(data) {
     </div>`;
 }
 
-return { home, calendario, dettaglioGiorno, bacheca, profilo, listaRingraziamenti, dueSettimane, dettaglioGiornoProfilo };
+return { home, calendario, dettaglioGiorno, bacheca, profilo, impostazioni, listaRingraziamenti, dueSettimane, dettaglioGiornoProfilo };
 })();
 
 // ---- src/ui/flows.js
@@ -5001,9 +5036,10 @@ function render() {
     match: F.match,
     richiesta: F.dettaglio,
     setup: P.schermataProfilo,
+    impostazioni: V.impostazioni,
     legale: () => html`
       <header class="testata">
-        <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+        <button class="icon-btn" data-act="vai" data-to="#/impostazioni">‹</button>
         <h1>Note legali</h1>
       </header>
       ${raw(noteLegali())}`,

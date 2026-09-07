@@ -244,6 +244,20 @@ p { margin: 8px 0; }
 .tile.scelta.verde { border-left: 4px solid var(--verde); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
 
+/* La riga delle impostazioni: senza riquadro né ombra, perché non deve
+   competere con i turni, ma con l'ingranaggio e il chevron per restare
+   riconoscibile come una cosa che si apre. */
+.riga-impostazioni {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  margin: 4px 0 18px; padding: 14px 4px;
+  border: 0; border-top: 1px solid var(--bordo); border-bottom: 1px solid var(--bordo);
+  background: none; color: var(--testo-tenue); font: inherit; font-size: 15px;
+  text-align: left; cursor: pointer;
+}
+.riga-impostazioni > span:nth-child(2) { flex: 1; }
+.riga-impostazioni .ingranaggio { font-size: 17px; }
+.riga-impostazioni:active { color: var(--testo); }
+
 /* --------------------------------------------------------- calendario */
 
 .griglia-intestazione, .griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
