@@ -105,3 +105,4 @@ esplicitamente il diritto di parlare dei propri orari. Il ragionamento completo
 | [`docs/04-flussi-ux.md`](docs/04-flussi-ux.md) | schermate e flussi |
 | [`docs/05-decisioni-aperte.md`](docs/05-decisioni-aperte.md) | cosa serve decidere, in ordine di urgenza |
 | [`docs/06-pubblicazione.md`](docs/06-pubblicazione.md) | come il sito arriva online, e cosa comporta |
+| [`docs/07-supabase.md`](docs/07-supabase.md) | lo schema del server e perché è fatto così |
