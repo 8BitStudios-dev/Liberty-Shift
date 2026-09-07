@@ -8,6 +8,10 @@ import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
 import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
 import { monthKey, todayISO } from './time.js';
 import { seed } from './seed.js';
+import { serverConfigurato } from './config.js';
+import {
+  accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
+} from './supabase.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
@@ -379,13 +383,50 @@ export const store = {
   entrato() {
     return sessioneAperta(this.credenziali);
   },
-  entra(password) {
-    if (!verificaPassword(password, this.credenziali)) return false;
+  /**
+   * Entrare, col server o senza.
+   *
+   * L'impronta locale resta la prima verifica, e non è una ridondanza: è
+   * quello che fa funzionare l'app in magazzino senza campo. Se la password è
+   * giusta si entra comunque, e la sessione col server si prende quando la
+   * rete torna. Una password sbagliata invece non passa da nessuna delle due
+   * parti.
+   */
+  async entra(password) {
+    const localeOk = verificaPassword(password, this.credenziali);
+
+    if (!serverConfigurato()) {
+      if (!localeOk) return { errore: 'Password sbagliata.' };
+      apriSessione(this.credenziali);
+      return { ok: true };
+    }
+
+    const identificativo = this.state.profilo?.identificativo;
+    if (!identificativo) {
+      // Profilo creato prima che il server esistesse: si entra in locale, e
+      // sarà l'iscrizione a collegarlo quando la persona la rifarà.
+      if (!localeOk) return { errore: 'Password sbagliata.' };
+      apriSessione(this.credenziali);
+      return { ok: true, soloLocale: true };
+    }
+
+    const r = await accedi(identificativo, password);
+    if (r.errore) {
+      // La rete che manca non è una password sbagliata: distinguerle è la
+      // differenza fra "riprova più tardi" e "hai sbagliato a scrivere".
+      const rete = /irraggiungibile|Server ha un problema/i.test(r.errore);
+      if (rete && localeOk) {
+        apriSessione(this.credenziali);
+        return { ok: true, offline: true };
+      }
+      return { errore: rete ? r.errore : 'Password sbagliata.' };
+    }
     apriSessione(this.credenziali);
-    return true;
+    return { ok: true };
   },
   esci() {
     chiudiSessione();
+    esciDalServer();
   },
   /**
    * Cambio password. Serve quella attuale: se qualcuno trova il telefono
@@ -400,6 +441,56 @@ export const store = {
     // buttare fuori chi l'ha appena cambiata.
     apriSessione(this.state.profilo.credenziali);
     this.commit();
+    return { ok: true };
+  },
+
+  /**
+   * Completa il profilo, e col server collegato iscrive anche al negozio.
+   *
+   * L'ordine conta: prima l'account, poi l'iscrizione col codice, e solo se
+   * entrambe riescono si scrive qualcosa in locale. Al contrario, un codice
+   * sbagliato lascerebbe sul telefono un profilo che il server non conosce.
+   */
+  async iscriviECompleta({ nome, cognome, genere, contratto, oreSettimanali, password, codice, versioneNote }) {
+    if (serverConfigurato()) {
+      const cog = (cognome || '').trim();
+      // Un secondo tentativo dopo un codice sbagliato riusa l'account appena
+      // creato: registrarsi di nuovo lascerebbe in giro un account per ogni
+      // errore di battitura.
+      const giaRegistrato = Boolean(this.state.profilo?.identificativo) && collegato();
+      const identificativo = giaRegistrato
+        ? this.state.profilo.identificativo
+        : identificativoInterno(nome, cognome);
+
+      if (!giaRegistrato) {
+        const acc = await registra(identificativo, password);
+        if (acc.errore) return { errore: acc.errore };
+        // Segnato subito: da qui in poi l'account esiste, e il dispositivo
+        // deve saperlo anche se l'iscrizione fallisce un attimo dopo.
+        this.state.profilo = { ...(this.state.profilo || {}), identificativo };
+        this.commit();
+      }
+
+      const isc = await iscrivi({
+        codice,
+        nome: (nome || '').trim(),
+        cognomeIniziale: cog.slice(0, 1).toUpperCase(),
+        contratto,
+        oreSettimanali: Number(oreSettimanali),
+        genere: genere || 'X',
+      });
+      if (isc.errore) return { errore: isc.errore };
+
+      this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote });
+      // L'identificativo lo conserva il dispositivo: la persona non lo sa e
+      // non deve saperlo, ma senza non si potrebbe più rientrare.
+      this.state.profilo.identificativo = identificativo;
+      this.state.profilo.idServer = idUtenteServer();
+      this.commit();
+      return { ok: true };
+    }
+
+    this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote });
     return { ok: true };
   },
 
@@ -424,6 +515,10 @@ export const store = {
       noteAccettateIl: new Date().toISOString(),
       versioneNote: versioneNote || this.state.profilo?.versioneNote || null,
       credenziali,
+      // Sopravvivono a una modifica del profilo: sono l'aggancio al server,
+      // e riscriverli da capo vorrebbe dire un secondo account.
+      identificativo: this.state.profilo?.identificativo || null,
+      idServer: this.state.profilo?.idServer || null,
     };
     if (credenziali) apriSessione(credenziali);
     this.commit();

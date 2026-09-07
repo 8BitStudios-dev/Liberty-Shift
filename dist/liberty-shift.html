@@ -2097,6 +2097,11 @@ function sicuroJSON(testo) {
 function traduci(stato, corpo) {
   const grezzo = corpo?.message || corpo?.error_description || corpo?.msg || corpo?.hint || '';
   if (stato === 400 && /invalid login/i.test(grezzo)) return 'Password sbagliata.';
+  // Gli errori sollevati dalle nostre funzioni nel database arrivano col loro
+  // SQLSTATE e un messaggio già scritto in italiano: quella è la spiegazione
+  // giusta, e coprirla con una frase generica manda a cercare un guasto che
+  // non c'è. 28000 e P0001 sono i codici delle nostre `raise`.
+  if (grezzo && /^(28000|P0001)$/.test(String(corpo?.code || ''))) return grezzo;
   if (stato === 401 || stato === 403) {
     // 401 e 403 qui vogliono dire quasi sempre la stessa cosa: la riga esiste
     // ma non è tua. Dirlo così evita la caccia a un guasto che non c'è.
@@ -2488,6 +2493,10 @@ const { validateRequest, nextStatus, turnoOfferibile } = M_engine;
 const { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } = M_accesso;
 const { monthKey, todayISO } = M_time;
 const { seed } = M_seed;
+const { serverConfigurato } = M_config;
+const {
+  accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
+} = M_supabase;
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
@@ -2859,13 +2868,50 @@ const store = {
   entrato() {
     return sessioneAperta(this.credenziali);
   },
-  entra(password) {
-    if (!verificaPassword(password, this.credenziali)) return false;
+  /**
+   * Entrare, col server o senza.
+   *
+   * L'impronta locale resta la prima verifica, e non è una ridondanza: è
+   * quello che fa funzionare l'app in magazzino senza campo. Se la password è
+   * giusta si entra comunque, e la sessione col server si prende quando la
+   * rete torna. Una password sbagliata invece non passa da nessuna delle due
+   * parti.
+   */
+  async entra(password) {
+    const localeOk = verificaPassword(password, this.credenziali);
+
+    if (!serverConfigurato()) {
+      if (!localeOk) return { errore: 'Password sbagliata.' };
+      apriSessione(this.credenziali);
+      return { ok: true };
+    }
+
+    const identificativo = this.state.profilo?.identificativo;
+    if (!identificativo) {
+      // Profilo creato prima che il server esistesse: si entra in locale, e
+      // sarà l'iscrizione a collegarlo quando la persona la rifarà.
+      if (!localeOk) return { errore: 'Password sbagliata.' };
+      apriSessione(this.credenziali);
+      return { ok: true, soloLocale: true };
+    }
+
+    const r = await accedi(identificativo, password);
+    if (r.errore) {
+      // La rete che manca non è una password sbagliata: distinguerle è la
+      // differenza fra "riprova più tardi" e "hai sbagliato a scrivere".
+      const rete = /irraggiungibile|Server ha un problema/i.test(r.errore);
+      if (rete && localeOk) {
+        apriSessione(this.credenziali);
+        return { ok: true, offline: true };
+      }
+      return { errore: rete ? r.errore : 'Password sbagliata.' };
+    }
     apriSessione(this.credenziali);
-    return true;
+    return { ok: true };
   },
   esci() {
     chiudiSessione();
+    esciDalServer();
   },
   /**
    * Cambio password. Serve quella attuale: se qualcuno trova il telefono
@@ -2880,6 +2926,56 @@ const store = {
     // buttare fuori chi l'ha appena cambiata.
     apriSessione(this.state.profilo.credenziali);
     this.commit();
+    return { ok: true };
+  },
+
+  /**
+   * Completa il profilo, e col server collegato iscrive anche al negozio.
+   *
+   * L'ordine conta: prima l'account, poi l'iscrizione col codice, e solo se
+   * entrambe riescono si scrive qualcosa in locale. Al contrario, un codice
+   * sbagliato lascerebbe sul telefono un profilo che il server non conosce.
+   */
+  async iscriviECompleta({ nome, cognome, genere, contratto, oreSettimanali, password, codice, versioneNote }) {
+    if (serverConfigurato()) {
+      const cog = (cognome || '').trim();
+      // Un secondo tentativo dopo un codice sbagliato riusa l'account appena
+      // creato: registrarsi di nuovo lascerebbe in giro un account per ogni
+      // errore di battitura.
+      const giaRegistrato = Boolean(this.state.profilo?.identificativo) && collegato();
+      const identificativo = giaRegistrato
+        ? this.state.profilo.identificativo
+        : identificativoInterno(nome, cognome);
+
+      if (!giaRegistrato) {
+        const acc = await registra(identificativo, password);
+        if (acc.errore) return { errore: acc.errore };
+        // Segnato subito: da qui in poi l'account esiste, e il dispositivo
+        // deve saperlo anche se l'iscrizione fallisce un attimo dopo.
+        this.state.profilo = { ...(this.state.profilo || {}), identificativo };
+        this.commit();
+      }
+
+      const isc = await iscrivi({
+        codice,
+        nome: (nome || '').trim(),
+        cognomeIniziale: cog.slice(0, 1).toUpperCase(),
+        contratto,
+        oreSettimanali: Number(oreSettimanali),
+        genere: genere || 'X',
+      });
+      if (isc.errore) return { errore: isc.errore };
+
+      this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote });
+      // L'identificativo lo conserva il dispositivo: la persona non lo sa e
+      // non deve saperlo, ma senza non si potrebbe più rientrare.
+      this.state.profilo.identificativo = identificativo;
+      this.state.profilo.idServer = idUtenteServer();
+      this.commit();
+      return { ok: true };
+    }
+
+    this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote });
     return { ok: true };
   },
 
@@ -2904,6 +3000,10 @@ const store = {
       noteAccettateIl: new Date().toISOString(),
       versioneNote: versioneNote || this.state.profilo?.versioneNote || null,
       credenziali,
+      // Sopravvivono a una modifica del profilo: sono l'aggancio al server,
+      // e riscriverli da capo vorrebbe dire un secondo account.
+      identificativo: this.state.profilo?.identificativo || null,
+      idServer: this.state.profilo?.idServer || null,
     };
     if (credenziali) apriSessione(credenziali);
     this.commit();
@@ -4980,6 +5080,7 @@ const { RULES } = M_rules;
 const { noteLegali, accettazioneNote, VERSIONE_NOTE } = M_legale;
 const { controllaPassword, REGOLE_PASSWORD } = M_accesso;
 const { oreDelContratto, oreAutomatiche } = M_model;
+const { serverConfigurato } = M_config;
 
 /** La bozza in corso di compilazione. */
 const bozzaProfilo = {
@@ -4991,9 +5092,13 @@ const bozzaProfilo = {
   oreSettimanali: null,
   password: '',
   conferma: '',
+  codice: '',
   accettate: false,
   errori: [],
 };
+
+/** Col server collegato c'è un passo in più: il codice del negozio. */
+const passiCreazione = () => (serverConfigurato() ? 5 : 4);
 
 function apriProfilo({ modifica = false } = {}) {
   const me = store.me;
@@ -5006,6 +5111,7 @@ function apriProfilo({ modifica = false } = {}) {
     oreSettimanali: modifica ? me.oreSettimanali : null,
     password: '',
     conferma: '',
+    codice: '',
     // In modifica le note sono già state accettate: non si richiede due volte.
     accettate: modifica,
     modifica,
@@ -5037,19 +5143,23 @@ function validaProfilo() {
     const problema = controllaPassword(b.password, b.conferma);
     if (problema) errori.push(problema);
   }
+  if (!b.modifica && serverConfigurato() && !b.codice.trim()) {
+    errori.push('Serve il codice del negozio.');
+  }
   if (!b.accettate) errori.push('Serve la presa visione delle note.');
   return errori;
 }
 
 function schermataProfilo() {
   const b = bozzaProfilo;
-  const totale = b.modifica ? 2 : 4;
+  const totale = b.modifica ? 2 : passiCreazione();
   const passo = Math.min(b.passo, totale);
 
   const contenuto = passo === 1 ? passoChiSei()
     : passo === 2 ? passoContratto()
       : passo === 3 ? passoPassword()
-        : passoNote();
+        : passo === 4 && serverConfigurato() && !b.modifica ? passoCodice()
+          : passoNote();
 
   return html`
     ${raw(b.modifica ? '' : insegna(passo))}
@@ -5209,6 +5319,36 @@ function passoPassword() {
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
 
+/**
+ * Il codice del negozio.
+ *
+ * È l'unica domanda a cui non si può rispondere da soli: o te l'hanno detto,
+ * o non entri. La schermata lo dice apertamente invece di far sembrare un
+ * errore proprio il non saperlo.
+ */
+function passoCodice() {
+  const b = bozzaProfilo;
+  return html`
+    <h2 class="titolo-gruppo">Il codice del negozio</h2>
+    <p class="testo-tenue">
+      Serve una volta sola, alla prima apertura. Se non ce l'hai, chiedilo a un
+      collega che usa già l'app: è lo stesso per tutti.
+    </p>
+
+    <label class="campo">
+      <span>Codice</span>
+      <input type="text" class="testo" data-campo="codice" value="${b.codice}"
+             placeholder="Es. R123" autocapitalize="characters" autocomplete="off">
+    </label>
+
+    <p class="testo-tenue">
+      Tiene fuori chi trova il link per caso. Non viene salvato sul telefono:
+      serve solo adesso, per iscriverti.
+    </p>
+
+    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+}
+
 function passoNote() {
   const b = bozzaProfilo;
   return html`
@@ -5224,8 +5364,8 @@ function passoNote() {
       <span>Ho preso visione delle note</span>
     </label>
 
-    <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate ? '' : 'disabled')}>
-      Comincia
+    <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate && !b.inCorso ? '' : 'disabled')}>
+      ${b.inCorso ? 'Un attimo…' : 'Comincia'}
     </button>`;
 }
 
@@ -5314,7 +5454,7 @@ function apriGuida(chiave, { automatica = false } = {}) {
 }
 
 /** La porta: finché non si entra, non c'è nient'altro da vedere. */
-function schermataAccesso(errore = false) {
+function schermataAccesso(errore = '') {
   return html`
     <div class="accesso">
       <div class="accesso-logo" role="img" aria-label="Liberty Shift"></div>
@@ -5325,7 +5465,7 @@ function schermataAccesso(errore = false) {
         <input type="password" class="testo" data-campo="password"
                placeholder="Password" autocomplete="current-password" autofocus>
       </label>
-      ${raw(errore ? '<p class="non-puoi">Password sbagliata.</p>' : '')}
+      ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : errore}</p>` : '')}
       <button class="btn primario largo" data-act="entra">Entra</button>
       <p class="testo-tenue accesso-nota">
         Password dimenticata? Chiedi a chi gestisce l'app di reimpostarla.
@@ -5428,10 +5568,19 @@ const AZIONI = {
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
 
-  entra: () => {
+  entra: async () => {
     const campo = app.querySelector('[data-campo="password"]');
-    if (store.entra(campo?.value)) return render();
-    app.innerHTML = schermataAccesso(true);
+    const password = campo?.value;
+    const bottone = app.querySelector('[data-act="entra"]');
+    if (bottone) { bottone.disabled = true; bottone.textContent = 'Un attimo…'; }
+
+    const esito = await store.entra(password);
+    if (esito.ok) {
+      render();
+      if (esito.offline) toast('Sei entrato senza rete: la bacheca si aggiorna appena torna');
+      return;
+    }
+    app.innerHTML = schermataAccesso(esito.errore);
     app.querySelector('[data-campo="password"]')?.focus();
   },
   esci: () => {
@@ -5506,6 +5655,7 @@ const AZIONI = {
       1: /nome|cognome|opzioni/,
       2: /contratto|monte ore/,
       3: /password/i,
+      4: /codice/i,
     }[b.passo];
     const mancanti = perPasso ? P.validaProfilo().filter((e) => perPasso.test(e)) : [];
     if (mancanti.length) { b.errori = mancanti; return render(); }
@@ -5514,11 +5664,29 @@ const AZIONI = {
     b.passo += 1;
     render();
   },
-  'profilo-salva': () => {
+  'profilo-salva': async () => {
+    const b = P.bozzaProfilo;
     const errori = P.validaProfilo();
-    if (errori.length) { P.bozzaProfilo.errori = errori; return render(); }
-    store.completaProfilo({ ...P.bozzaProfilo, versioneNote: VERSIONE_NOTE });
-    toast(P.bozzaProfilo.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
+    if (errori.length) { b.errori = errori; return render(); }
+
+    // Con il server di mezzo ci va qualche istante, e un pulsante che non
+    // reagisce invita a premerlo tre volte: tre account, non uno.
+    b.inCorso = true;
+    b.errori = [];
+    render();
+
+    const esito = await store.iscriviECompleta({ ...b, versioneNote: VERSIONE_NOTE });
+    b.inCorso = false;
+    if (esito.errore) {
+      b.errori = [esito.errore];
+      // Un codice sbagliato si corregge dove lo si è scritto: lasciare
+      // l'errore sull'ultima schermata costringerebbe a tornare indietro a
+      // mano, cercando quale passo fosse.
+      if (/codice/i.test(esito.errore)) b.passo = 4;
+      return render();
+    }
+
+    toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai('#/home');
   },
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
@@ -5895,6 +6063,7 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
   if (chiave === 'password-nuova') { P.bozzaProfilo.password = el.value; return; }
   if (chiave === 'password-conferma') { P.bozzaProfilo.conferma = el.value; return; }
+  if (chiave === 'codice') { P.bozzaProfilo.codice = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 

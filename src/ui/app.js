@@ -78,7 +78,7 @@ function apriGuida(chiave, { automatica = false } = {}) {
 }
 
 /** La porta: finché non si entra, non c'è nient'altro da vedere. */
-function schermataAccesso(errore = false) {
+function schermataAccesso(errore = '') {
   return html`
     <div class="accesso">
       <div class="accesso-logo" role="img" aria-label="Liberty Shift"></div>
@@ -89,7 +89,7 @@ function schermataAccesso(errore = false) {
         <input type="password" class="testo" data-campo="password"
                placeholder="Password" autocomplete="current-password" autofocus>
       </label>
-      ${raw(errore ? '<p class="non-puoi">Password sbagliata.</p>' : '')}
+      ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : errore}</p>` : '')}
       <button class="btn primario largo" data-act="entra">Entra</button>
       <p class="testo-tenue accesso-nota">
         Password dimenticata? Chiedi a chi gestisce l'app di reimpostarla.
@@ -192,10 +192,19 @@ const AZIONI = {
     sheet(formatDay(data, true), V.dettaglioGiorno(data));
   },
 
-  entra: () => {
+  entra: async () => {
     const campo = app.querySelector('[data-campo="password"]');
-    if (store.entra(campo?.value)) return render();
-    app.innerHTML = schermataAccesso(true);
+    const password = campo?.value;
+    const bottone = app.querySelector('[data-act="entra"]');
+    if (bottone) { bottone.disabled = true; bottone.textContent = 'Un attimo…'; }
+
+    const esito = await store.entra(password);
+    if (esito.ok) {
+      render();
+      if (esito.offline) toast('Sei entrato senza rete: la bacheca si aggiorna appena torna');
+      return;
+    }
+    app.innerHTML = schermataAccesso(esito.errore);
     app.querySelector('[data-campo="password"]')?.focus();
   },
   esci: () => {
@@ -270,6 +279,7 @@ const AZIONI = {
       1: /nome|cognome|opzioni/,
       2: /contratto|monte ore/,
       3: /password/i,
+      4: /codice/i,
     }[b.passo];
     const mancanti = perPasso ? P.validaProfilo().filter((e) => perPasso.test(e)) : [];
     if (mancanti.length) { b.errori = mancanti; return render(); }
@@ -278,11 +288,29 @@ const AZIONI = {
     b.passo += 1;
     render();
   },
-  'profilo-salva': () => {
+  'profilo-salva': async () => {
+    const b = P.bozzaProfilo;
     const errori = P.validaProfilo();
-    if (errori.length) { P.bozzaProfilo.errori = errori; return render(); }
-    store.completaProfilo({ ...P.bozzaProfilo, versioneNote: VERSIONE_NOTE });
-    toast(P.bozzaProfilo.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
+    if (errori.length) { b.errori = errori; return render(); }
+
+    // Con il server di mezzo ci va qualche istante, e un pulsante che non
+    // reagisce invita a premerlo tre volte: tre account, non uno.
+    b.inCorso = true;
+    b.errori = [];
+    render();
+
+    const esito = await store.iscriviECompleta({ ...b, versioneNote: VERSIONE_NOTE });
+    b.inCorso = false;
+    if (esito.errore) {
+      b.errori = [esito.errore];
+      // Un codice sbagliato si corregge dove lo si è scritto: lasciare
+      // l'errore sull'ultima schermata costringerebbe a tornare indietro a
+      // mano, cercando quale passo fosse.
+      if (/codice/i.test(esito.errore)) b.passo = 4;
+      return render();
+    }
+
+    toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai('#/home');
   },
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
@@ -659,6 +687,7 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
   if (chiave === 'password-nuova') { P.bozzaProfilo.password = el.value; return; }
   if (chiave === 'password-conferma') { P.bozzaProfilo.conferma = el.value; return; }
+  if (chiave === 'codice') { P.bozzaProfilo.codice = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 

@@ -11,6 +11,7 @@ import { RULES } from '../core/rules.js';
 import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 import { oreDelContratto, oreAutomatiche } from '../core/model.js';
+import { serverConfigurato } from '../core/config.js';
 
 /** La bozza in corso di compilazione. */
 export const bozzaProfilo = {
@@ -22,9 +23,13 @@ export const bozzaProfilo = {
   oreSettimanali: null,
   password: '',
   conferma: '',
+  codice: '',
   accettate: false,
   errori: [],
 };
+
+/** Col server collegato c'è un passo in più: il codice del negozio. */
+const passiCreazione = () => (serverConfigurato() ? 5 : 4);
 
 export function apriProfilo({ modifica = false } = {}) {
   const me = store.me;
@@ -37,6 +42,7 @@ export function apriProfilo({ modifica = false } = {}) {
     oreSettimanali: modifica ? me.oreSettimanali : null,
     password: '',
     conferma: '',
+    codice: '',
     // In modifica le note sono già state accettate: non si richiede due volte.
     accettate: modifica,
     modifica,
@@ -68,19 +74,23 @@ export function validaProfilo() {
     const problema = controllaPassword(b.password, b.conferma);
     if (problema) errori.push(problema);
   }
+  if (!b.modifica && serverConfigurato() && !b.codice.trim()) {
+    errori.push('Serve il codice del negozio.');
+  }
   if (!b.accettate) errori.push('Serve la presa visione delle note.');
   return errori;
 }
 
 export function schermataProfilo() {
   const b = bozzaProfilo;
-  const totale = b.modifica ? 2 : 4;
+  const totale = b.modifica ? 2 : passiCreazione();
   const passo = Math.min(b.passo, totale);
 
   const contenuto = passo === 1 ? passoChiSei()
     : passo === 2 ? passoContratto()
       : passo === 3 ? passoPassword()
-        : passoNote();
+        : passo === 4 && serverConfigurato() && !b.modifica ? passoCodice()
+          : passoNote();
 
   return html`
     ${raw(b.modifica ? '' : insegna(passo))}
@@ -240,6 +250,36 @@ function passoPassword() {
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
 
+/**
+ * Il codice del negozio.
+ *
+ * È l'unica domanda a cui non si può rispondere da soli: o te l'hanno detto,
+ * o non entri. La schermata lo dice apertamente invece di far sembrare un
+ * errore proprio il non saperlo.
+ */
+function passoCodice() {
+  const b = bozzaProfilo;
+  return html`
+    <h2 class="titolo-gruppo">Il codice del negozio</h2>
+    <p class="testo-tenue">
+      Serve una volta sola, alla prima apertura. Se non ce l'hai, chiedilo a un
+      collega che usa già l'app: è lo stesso per tutti.
+    </p>
+
+    <label class="campo">
+      <span>Codice</span>
+      <input type="text" class="testo" data-campo="codice" value="${b.codice}"
+             placeholder="Es. R123" autocapitalize="characters" autocomplete="off">
+    </label>
+
+    <p class="testo-tenue">
+      Tiene fuori chi trova il link per caso. Non viene salvato sul telefono:
+      serve solo adesso, per iscriverti.
+    </p>
+
+    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+}
+
 function passoNote() {
   const b = bozzaProfilo;
   return html`
@@ -255,7 +295,7 @@ function passoNote() {
       <span>Ho preso visione delle note</span>
     </label>
 
-    <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate ? '' : 'disabled')}>
-      Comincia
+    <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate && !b.inCorso ? '' : 'disabled')}>
+      ${b.inCorso ? 'Un attimo…' : 'Comincia'}
     </button>`;
 }

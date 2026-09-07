@@ -104,6 +104,11 @@ function sicuroJSON(testo) {
 function traduci(stato, corpo) {
   const grezzo = corpo?.message || corpo?.error_description || corpo?.msg || corpo?.hint || '';
   if (stato === 400 && /invalid login/i.test(grezzo)) return 'Password sbagliata.';
+  // Gli errori sollevati dalle nostre funzioni nel database arrivano col loro
+  // SQLSTATE e un messaggio già scritto in italiano: quella è la spiegazione
+  // giusta, e coprirla con una frase generica manda a cercare un guasto che
+  // non c'è. 28000 e P0001 sono i codici delle nostre `raise`.
+  if (grezzo && /^(28000|P0001)$/.test(String(corpo?.code || ''))) return grezzo;
   if (stato === 401 || stato === 403) {
     // 401 e 403 qui vogliono dire quasi sempre la stessa cosa: la riga esiste
     // ma non è tua. Dirlo così evita la caccia a un guasto che non c'è.
