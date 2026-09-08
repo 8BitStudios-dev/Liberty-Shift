@@ -17,7 +17,9 @@ import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
 import { scaricaCalendario } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
-import { campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso } from './components.js';
+import {
+  campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito,
+} from './components.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -360,6 +362,56 @@ const AZIONI = {
     toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai('#/home');
   },
+  /**
+   * L'invito per un collega: link, codice e le due righe da dire.
+   *
+   * Il codice del negozio si scrive qui ogni volta e non viene conservato.
+   * Sul server c'è solo la sua impronta, e tenerne una copia in chiaro sul
+   * telefono di chi invita sarebbe l'unico posto al mondo in cui il codice
+   * sta scritto per esteso.
+   */
+  invita: () => {
+    const w = sheet('✉️ Invita un collega', html`
+      <p class="testo-tenue">
+        Per entrare servono due cose: il link e il codice del negozio. Scrivi
+        il codice qui sotto e il messaggio si compone da solo.
+      </p>
+      <label class="campo">
+        <span>Codice del negozio</span>
+        <input type="text" class="testo" data-campo="codice-invito"
+               placeholder="RXXX" autocapitalize="characters" autocomplete="off">
+      </label>
+      <p class="testo-tenue">
+        Non lo conserviamo: sul server c'è solo la sua impronta, e questo è
+        l'unico posto in cui comparirebbe scritto per intero.
+      </p>
+      <div class="riquadro" data-anteprima-invito></div>`, {
+      azioni: '<button class="btn primario largo" data-act="manda-invito">Manda l\'invito</button>',
+    });
+
+    const campo = w.el.querySelector('[data-campo="codice-invito"]');
+    const box = w.el.querySelector('[data-anteprima-invito]');
+    const aggiorna = () => { box.textContent = messaggioInvito(campo.value.trim()); };
+    campo.addEventListener('input', aggiorna);
+    aggiorna();
+    setTimeout(() => campo.focus(), 40);
+  },
+
+  'manda-invito': async (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const codice = wrap.querySelector('[data-campo="codice-invito"]').value.trim();
+    if (!codice) return toast('Scrivi il codice del negozio');
+    const esito = await condividi(messaggioInvito(codice));
+    if (esito === 'annullato') return;
+    wrap.querySelector('[data-chiudi]').click();
+    toast({
+      condiviso: 'Invito mandato',
+      whatsapp: 'Invito pronto su WhatsApp',
+      copiato: 'Invito copiato: incollalo dove preferisci',
+      niente: 'Non sono riuscito a preparare l\'invito',
+    }[esito]);
+  },
+
   'mostra-demo': (e) => {
     store.mostraDemo(e.target.checked);
     toast(e.target.checked ? 'Persone di esempio rimesse' : 'Persone di esempio nascoste');
@@ -712,11 +764,16 @@ const AZIONI = {
     const attiva = r && !rotazioneVuota(r);
 
     const w = sheet('🔁 Rotazione settimanale', html`
-      ${raw(attiva ? V.riepilogoRotazione() : '')}
+      <p>
+        Se il tuo giro è sempre lo stesso — una settimana A, poi una B, poi una
+        C, e poi di nuovo la A — l'app può riempire i mesi avanti da sola.
+        <strong>Tutte le settimane A hanno gli stessi turni</strong>, tutte le B
+        gli stessi, e così via.
+      </p>
       <p class="testo-tenue">
-        Se le tue settimane si ripetono sempre uguali, dichiara quante sono:
-        l'app prende quelle che partono da questo sabato e le usa per riempire
-        i mesi avanti.
+        Le settimane le hai già inserite: dimmi solo quante sono e l'app prende
+        quelle che partono da questo sabato. La prima diventa la A, la seconda
+        la B, e da lì in poi si ripetono in quest'ordine.
       </p>
       <div class="campo">
         <span>Quante settimane si ripetono</span>
@@ -726,6 +783,14 @@ const AZIONI = {
                     data-act="rotazione-quante" data-n="${n}">${n}</button>`).join(''))}
         </div>
       </div>
+      ${raw(attiva ? `
+        <h3>Come le ho capite</h3>
+        <p class="testo-tenue">
+          Controlla che siano giuste: se sono sfasate di una settimana, l'app
+          riempirebbe i mesi con turni credibili e sbagliati. Nel calendario
+          del Profilo trovi la lettera accanto a ogni settimana.
+        </p>
+        ${V.riepilogoRotazione()}` : '')}
       <p class="testo-tenue">
         Riempie solo i giorni ancora vuoti. Dove un turno c'è già vince quello:
         il calendario dei turni resta la verità, e una previsione che copre un

@@ -506,35 +506,38 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 
 /* Le iniziali dei giorni si scrivono una volta sola in cima invece che in
    ogni cella: su cinque settimane erano trentacinque ripetizioni. */
-.griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
-.griglia-mese.intestazione { margin-bottom: 4px; }
-.dow-fisso { font-size: 10px; color: var(--testo-tenue); text-align: center; }
+.griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.griglia-mese.intestazione { margin-bottom: 3px; }
+.dow-fisso { font-size: 9px; color: var(--testo-tenue); text-align: center; }
 
-.settimana-mese { margin-bottom: 10px; }
+.settimana-mese { margin-bottom: 7px; }
 .riga-settimana { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.riga-settimana h3 { margin: 0 0 4px; font-size: 12px; color: var(--testo-tenue); font-weight: 600; }
+/* Le date della settimana e le ore sono contorno, non contenuto: la griglia
+   deve restare la cosa che si legge per prima. */
+.riga-settimana h3 { margin: 0 0 2px; font-size: 10px; color: var(--testo-tenue); font-weight: 600; }
+.lettera-rot { font-weight: 700; color: var(--accento); }
 
 /* Le ore della settimana contro il contratto: senza spunta quando non
    tornano, così l'occhio va alle settimane da sistemare. */
 .spia-ore {
-  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--testo-tenue);
 }
 .spia-ore.quadra { color: var(--verde); }
 
 .giorno-mese {
-  appearance: none; border: 1px solid var(--bordo); border-radius: 8px;
+  appearance: none; border: 1px solid var(--bordo); border-radius: 7px;
   background: var(--superficie); color: inherit; font: inherit; cursor: pointer;
-  min-height: 50px; padding: 4px 1px;
+  min-height: 40px; padding: 3px 1px;
   display: flex; flex-direction: column; align-items: center; gap: 0;
 }
-.giorno-mese .numero { font-size: 13px; font-weight: 700; line-height: 1.15; }
-.giorno-mese .turno { font-size: 9px; color: var(--testo-tenue); line-height: 1.3; }
+.giorno-mese .numero { font-size: 12px; font-weight: 700; line-height: 1.1; }
+.giorno-mese .turno { font-size: 9px; color: var(--testo-tenue); line-height: 1.25; }
 .giorno-mese .quota {
-  margin-top: auto; font-size: 9px; font-weight: 700;
-  color: #fff; background: var(--accento); border-radius: 999px; padding: 0 4px;
+  margin-top: auto; font-size: 8px; font-weight: 700;
+  color: #fff; background: var(--accento); border-radius: 999px; padding: 0 3px;
 }
-.giorno-mese .quota.vuota { background: none; min-height: 12px; }
+.giorno-mese .quota.vuota { background: none; min-height: 10px; }
 .giorno-mese.oggi { border-color: var(--accento); background: var(--accento-tenue); }
 .giorno-mese.passato { opacity: .45; }
 /* I giorni delle settimane a cavallo del mese: ci sono perché la settimana
@@ -4444,16 +4447,19 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
         Proponi lo scambio
       </button>`;
   }
+  // Con un collega vero il pulsante apre il telefono, non una notifica
+  // dentro l'app: dirlo sull'etichetta evita di scoprirlo toccandolo.
+  const fuori = Boolean(u?.daServer);
   if (miaRichiestaId) {
     return html`
       <button class="btn secondario" data-act="avvisa" data-user="${match.userId}" data-richiesta="${miaRichiestaId}">
-        Avvisa ${u?.nome}
+        ${fuori ? `Scrivi a ${u.nome}` : `Avvisa ${u?.nome}`}
       </button>`;
   }
   return html`
     <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}"
             data-data="${match.data}" data-cambio="${match.cambio}">
-      Pubblica e avvisa ${u?.nome}
+      ${fuori ? `Pubblica e scrivi a ${u.nome}` : `Pubblica e avvisa ${u?.nome}`}
     </button>`;
 }
 
@@ -4473,6 +4479,20 @@ function messaggioAvviso(richiesta, destinatario) {
   return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
     + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `
     + `Se ti va di scambiare, rispondi qui o dall'app: ${indirizzoApp()}`;
+}
+
+/**
+ * L'invito per un collega che l'app non ce l'ha ancora.
+ *
+ * Dice le tre cose che servono a decidere se aprirlo: cos'è, come si entra, e
+ * cosa succede ai propri turni. L'ultima non è cortesia: è la domanda che si
+ * fa chiunque riceva il link di un'app che parla di orari di lavoro.
+ */
+function messaggioInvito(codice) {
+  return `Ciao, ti passo Liberty Shift, l'app che usiamo per i cambi turno fra noi. `
+    + `Apri il link, metti il codice del negozio ${codice || '____'} e crea il tuo profilo: `
+    + `${indirizzoApp()}\n\n`
+    + `I tuoi turni restano sul tuo telefono. In bacheca finisce solo quello che pubblichi tu.`;
 }
 
 /** L'indirizzo di questa copia dell'app, per chi deve ancora aprirla. */
@@ -4531,7 +4551,7 @@ function cardOpportunita({ richiesta, match }) {
     </article>`;
 }
 
-return { nomeUtente, iniziali, campoPortachiavi, chipsOrariTipici, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, messaggioAvviso, indirizzoApp, vuoto, cardOpportunita };
+return { nomeUtente, iniziali, campoPortachiavi, chipsOrariTipici, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, messaggioAvviso, messaggioInvito, indirizzoApp, vuoto, cardOpportunita };
 })();
 
 // ---- src/ui/views.js
@@ -4909,6 +4929,15 @@ function impostazioni() {
         <span class="chevron">›</span>
       </button>
       ${raw(rigaBacheca())}
+      ${raw(store.state.profilo?.idServer ? `
+        <button class="tile" data-act="invita">
+          <span class="tile-icona">✉️</span>
+          <span>
+            <strong>Invita un collega</strong>
+            <em>Il link e le due righe da spiegare, già scritte</em>
+          </span>
+          <span class="chevron">›</span>
+        </button>` : '')}
       ${raw(rigaDemo())}
     </section>`;
 }
@@ -5274,7 +5303,10 @@ function ilTuoMese() {
     return html`
       <div class="settimana-mese">
         <div class="riga-settimana">
-          <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
+          <h3>
+            ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}
+            ${raw(lettera(me, wk))}
+          </h3>
           ${raw(spiaOre(me, wk))}
         </div>
         <div class="griglia-mese">${raw(celle)}</div>
@@ -5284,6 +5316,20 @@ function ilTuoMese() {
   return html`
     <div class="griglia-mese intestazione">${raw(intestazione)}</div>
     ${raw(righe)}`;
+}
+
+/**
+ * Che settimana della rotazione è questa.
+ *
+ * È qui che la rotazione si capisce. Descritta a parole resta un'idea
+ * astratta; vista sul calendario, con le A e le B che tornano ogni tre righe,
+ * si legge da sola e si vede subito se è sfasata di una settimana.
+ */
+function lettera(me, settimana) {
+  const l = me.rotazione && !rotazioneVuota(me.rotazione)
+    ? letteraDi(me.rotazione, settimana)
+    : null;
+  return l ? html`<span class="lettera-rot">${l}</span>` : '';
 }
 
 /**
@@ -6806,7 +6852,9 @@ const { noteLegali, VERSIONE_NOTE } = M_legale;
 const { controllaPassword } = M_accesso;
 const { scaricaCalendario } = M_supabase;
 const { serverConfigurato } = M_config;
-const { campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso } = M_components;
+const {
+  campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito,
+} = M_components;
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -7149,6 +7197,56 @@ const AZIONI = {
     toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai('#/home');
   },
+  /**
+   * L'invito per un collega: link, codice e le due righe da dire.
+   *
+   * Il codice del negozio si scrive qui ogni volta e non viene conservato.
+   * Sul server c'è solo la sua impronta, e tenerne una copia in chiaro sul
+   * telefono di chi invita sarebbe l'unico posto al mondo in cui il codice
+   * sta scritto per esteso.
+   */
+  invita: () => {
+    const w = sheet('✉️ Invita un collega', html`
+      <p class="testo-tenue">
+        Per entrare servono due cose: il link e il codice del negozio. Scrivi
+        il codice qui sotto e il messaggio si compone da solo.
+      </p>
+      <label class="campo">
+        <span>Codice del negozio</span>
+        <input type="text" class="testo" data-campo="codice-invito"
+               placeholder="RXXX" autocapitalize="characters" autocomplete="off">
+      </label>
+      <p class="testo-tenue">
+        Non lo conserviamo: sul server c'è solo la sua impronta, e questo è
+        l'unico posto in cui comparirebbe scritto per intero.
+      </p>
+      <div class="riquadro" data-anteprima-invito></div>`, {
+      azioni: '<button class="btn primario largo" data-act="manda-invito">Manda l\'invito</button>',
+    });
+
+    const campo = w.el.querySelector('[data-campo="codice-invito"]');
+    const box = w.el.querySelector('[data-anteprima-invito]');
+    const aggiorna = () => { box.textContent = messaggioInvito(campo.value.trim()); };
+    campo.addEventListener('input', aggiorna);
+    aggiorna();
+    setTimeout(() => campo.focus(), 40);
+  },
+
+  'manda-invito': async (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const codice = wrap.querySelector('[data-campo="codice-invito"]').value.trim();
+    if (!codice) return toast('Scrivi il codice del negozio');
+    const esito = await condividi(messaggioInvito(codice));
+    if (esito === 'annullato') return;
+    wrap.querySelector('[data-chiudi]').click();
+    toast({
+      condiviso: 'Invito mandato',
+      whatsapp: 'Invito pronto su WhatsApp',
+      copiato: 'Invito copiato: incollalo dove preferisci',
+      niente: 'Non sono riuscito a preparare l\'invito',
+    }[esito]);
+  },
+
   'mostra-demo': (e) => {
     store.mostraDemo(e.target.checked);
     toast(e.target.checked ? 'Persone di esempio rimesse' : 'Persone di esempio nascoste');
@@ -7501,11 +7599,16 @@ const AZIONI = {
     const attiva = r && !rotazioneVuota(r);
 
     const w = sheet('🔁 Rotazione settimanale', html`
-      ${raw(attiva ? V.riepilogoRotazione() : '')}
+      <p>
+        Se il tuo giro è sempre lo stesso — una settimana A, poi una B, poi una
+        C, e poi di nuovo la A — l'app può riempire i mesi avanti da sola.
+        <strong>Tutte le settimane A hanno gli stessi turni</strong>, tutte le B
+        gli stessi, e così via.
+      </p>
       <p class="testo-tenue">
-        Se le tue settimane si ripetono sempre uguali, dichiara quante sono:
-        l'app prende quelle che partono da questo sabato e le usa per riempire
-        i mesi avanti.
+        Le settimane le hai già inserite: dimmi solo quante sono e l'app prende
+        quelle che partono da questo sabato. La prima diventa la A, la seconda
+        la B, e da lì in poi si ripetono in quest'ordine.
       </p>
       <div class="campo">
         <span>Quante settimane si ripetono</span>
@@ -7515,6 +7618,14 @@ const AZIONI = {
                     data-act="rotazione-quante" data-n="${n}">${n}</button>`).join(''))}
         </div>
       </div>
+      ${raw(attiva ? `
+        <h3>Come le ho capite</h3>
+        <p class="testo-tenue">
+          Controlla che siano giuste: se sono sfasate di una settimana, l'app
+          riempirebbe i mesi con turni credibili e sbagliati. Nel calendario
+          del Profilo trovi la lettera accanto a ogni settimana.
+        </p>
+        ${V.riepilogoRotazione()}` : '')}
       <p class="testo-tenue">
         Riempie solo i giorni ancora vuoti. Dove un turno c'è già vince quello:
         il calendario dei turni resta la verità, e una previsione che copre un

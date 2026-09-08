@@ -61,11 +61,17 @@ Dipende da come è nato il match, e i pulsanti lo dicono:
 | Il match viene da | Pulsante | Cosa succede |
 |---|---|---|
 | una richiesta pubblicata | Proponi lo scambio | proposta sulla sua richiesta, vale come tua accettazione |
-| una disponibilità, con la tua richiesta già pubblicata | Avvisa *nome* | gli arriva una notifica, sarà lui a proporre |
-| una disponibilità, dal Cambio rapido | Pubblica e avvisa *nome* | pubblica la richiesta del tipo giusto e lo avvisa |
+| una disponibilità, con la tua richiesta già pubblicata | Scrivi a *nome* | il messaggio esce dall'app, sarà lui a proporre |
+| una disponibilità, dal Cambio rapido | Pubblica e scrivi a *nome* | pubblica la richiesta del tipo giusto e apre il messaggio |
 
 Su una disponibilità non si può "proporre": non esiste una sua richiesta su cui
-farlo. L'unica cosa onesta è avvisarlo.
+farlo. L'unica cosa onesta è scrivergli.
+
+Il pulsante dice **Scrivi** e non **Avvisa** quando dall'altra parte c'è una
+persona vera, perché è quello che succede: si apre il foglio di condivisione
+del telefono. Un avviso dentro l'app resterebbe su questo dispositivo, e con le
+persone inventate della demo — che stanno tutte qui — l'etichetta resta
+"Avvisa", perché lì l'avviso arriva davvero.
 
 ## Bacheca
 Filtri: **Tutti**, **🕐 Orario**, **📅 OFF**, **⭐ Priorità**. Ora che i tipi
@@ -220,8 +226,13 @@ ancora messo dentro un turno.
 
 Il riepilogo mostra le settimane **come sono state capite**, giorno per giorno.
 Non è un vezzo: una rotazione presa dalla settimana sbagliata riempie mesi di
-turni plausibili e falsi, e quello è l'unico momento in cui ci si può
-accorgere.
+turni plausibili e falsi.
+
+Ma il posto dove la rotazione si capisce davvero è **il calendario del mese**,
+dove accanto a ogni settimana compare la sua lettera. Descritta a parole resta
+un'idea astratta; vista con le A e le B che tornano ogni tre righe si legge da
+sola, e uno sfasamento di una settimana si vede a colpo d'occhio invece che fra
+due mesi.
 
 Due regole tengono in piedi la cosa:
 
@@ -235,6 +246,17 @@ Due regole tengono in piedi la cosa:
 La rotazione resta su questo dispositivo e non va sul server: è una previsione
 dei propri turni, cioè esattamente quello che le note d'uso promettono di non
 far uscire dal telefono.
+
+## Invitare un collega
+In Impostazioni, e solo per chi è iscritto al negozio sul server. Compone il
+messaggio con il link e il codice, più la riga che risponde alla domanda che si
+fa chiunque riceva il link di un'app che parla di orari di lavoro: *i tuoi
+turni restano sul tuo telefono, in bacheca finisce solo quello che pubblichi*.
+
+Il codice del negozio **si riscrive ogni volta e non viene conservato**. Sul
+server c'è solo la sua impronta bcrypt, e una copia in chiaro nel telefono di
+chi invita sarebbe l'unico posto al mondo in cui quel codice sta scritto per
+esteso. Costa quattro caratteri a invito, e sono sette inviti in tutto.
 
 ### I codici del gestionale
 Il calendario aziendale non scrive "riposo": scrive `SO ADO`, `ITA Time Away F

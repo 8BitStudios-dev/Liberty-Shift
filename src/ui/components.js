@@ -189,16 +189,19 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
         Proponi lo scambio
       </button>`;
   }
+  // Con un collega vero il pulsante apre il telefono, non una notifica
+  // dentro l'app: dirlo sull'etichetta evita di scoprirlo toccandolo.
+  const fuori = Boolean(u?.daServer);
   if (miaRichiestaId) {
     return html`
       <button class="btn secondario" data-act="avvisa" data-user="${match.userId}" data-richiesta="${miaRichiestaId}">
-        Avvisa ${u?.nome}
+        ${fuori ? `Scrivi a ${u.nome}` : `Avvisa ${u?.nome}`}
       </button>`;
   }
   return html`
     <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}"
             data-data="${match.data}" data-cambio="${match.cambio}">
-      Pubblica e avvisa ${u?.nome}
+      ${fuori ? `Pubblica e scrivi a ${u.nome}` : `Pubblica e avvisa ${u?.nome}`}
     </button>`;
 }
 
@@ -218,6 +221,20 @@ export function messaggioAvviso(richiesta, destinatario) {
   return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
     + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `
     + `Se ti va di scambiare, rispondi qui o dall'app: ${indirizzoApp()}`;
+}
+
+/**
+ * L'invito per un collega che l'app non ce l'ha ancora.
+ *
+ * Dice le tre cose che servono a decidere se aprirlo: cos'è, come si entra, e
+ * cosa succede ai propri turni. L'ultima non è cortesia: è la domanda che si
+ * fa chiunque riceva il link di un'app che parla di orari di lavoro.
+ */
+export function messaggioInvito(codice) {
+  return `Ciao, ti passo Liberty Shift, l'app che usiamo per i cambi turno fra noi. `
+    + `Apri il link, metti il codice del negozio ${codice || '____'} e crea il tuo profilo: `
+    + `${indirizzoApp()}\n\n`
+    + `I tuoi turni restano sul tuo telefono. In bacheca finisce solo quello che pubblichi tu.`;
 }
 
 /** L'indirizzo di questa copia dell'app, per chi deve ancora aprirla. */

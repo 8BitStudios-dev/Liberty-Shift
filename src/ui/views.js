@@ -371,6 +371,15 @@ export function impostazioni() {
         <span class="chevron">›</span>
       </button>
       ${raw(rigaBacheca())}
+      ${raw(store.state.profilo?.idServer ? `
+        <button class="tile" data-act="invita">
+          <span class="tile-icona">✉️</span>
+          <span>
+            <strong>Invita un collega</strong>
+            <em>Il link e le due righe da spiegare, già scritte</em>
+          </span>
+          <span class="chevron">›</span>
+        </button>` : '')}
       ${raw(rigaDemo())}
     </section>`;
 }
@@ -736,7 +745,10 @@ export function ilTuoMese() {
     return html`
       <div class="settimana-mese">
         <div class="riga-settimana">
-          <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
+          <h3>
+            ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}
+            ${raw(lettera(me, wk))}
+          </h3>
           ${raw(spiaOre(me, wk))}
         </div>
         <div class="griglia-mese">${raw(celle)}</div>
@@ -746,6 +758,20 @@ export function ilTuoMese() {
   return html`
     <div class="griglia-mese intestazione">${raw(intestazione)}</div>
     ${raw(righe)}`;
+}
+
+/**
+ * Che settimana della rotazione è questa.
+ *
+ * È qui che la rotazione si capisce. Descritta a parole resta un'idea
+ * astratta; vista sul calendario, con le A e le B che tornano ogni tre righe,
+ * si legge da sola e si vede subito se è sfasata di una settimana.
+ */
+function lettera(me, settimana) {
+  const l = me.rotazione && !rotazioneVuota(me.rotazione)
+    ? letteraDi(me.rotazione, settimana)
+    : null;
+  return l ? html`<span class="lettera-rot">${l}</span>` : '';
 }
 
 /**
