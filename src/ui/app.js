@@ -725,8 +725,8 @@ const AZIONI = {
 
   /** Manda e riscarica la bacheca adesso, senza aspettare la prossima apertura. */
   sincronizza: async (_, el) => {
-    const em = el.querySelector('em');
-    if (em) em.textContent = 'Un attimo…';
+    const testo = el.querySelector('.tile-sync-testo');
+    if (testo) testo.textContent = 'Un attimo…';
     const esito = await store.sincronizza();
     render();
     if (esito.saltato) return toast('Non sei collegato al negozio');
