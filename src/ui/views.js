@@ -283,8 +283,7 @@ export function profilo() {
     </header>
 
     <section class="sezione">
-      ${raw(bottoneInbox())}
-      ${raw(rigaBacheca())}
+      ${raw(rigaInAlto())}
     </section>
 
     <section class="sezione">
@@ -412,33 +411,38 @@ function rigaDemo() {
 }
 
 /**
- * Lo stato del collegamento con i colleghi.
+ * Il tasto di sincronizzazione col server, piccolo apposta.
  *
- * Compare solo a chi è iscritto al negozio sul server: per chi usa l'app da
- * sola non c'è niente da collegare, e una riga che parla di sincronizzazione
- * sarebbe solo una parola in più da capire. Dice il numero di persone e cosa
- * eventualmente è rimasto indietro, perché "qualcosa non ha funzionato" senza
- * dire cosa è la forma peggiore di avviso.
+ * Compare solo a chi è iscritto al negozio sul server. È un'azione, non
+ * un'informazione: il numero di colleghi collegati o le cose in coda
+ * stavano meglio nella riga estesa che aveva prima, ma qui il tasto deve
+ * stare a fianco di "Proposte ricevute" senza rubargli spazio. Quello che
+ * conta davvero — un invio fallito — resta visibile come pallino rosso
+ * sull'icona, non sparisce e basta.
  */
 function rigaBacheca() {
   if (!store.state.profilo?.idServer) return '';
-  const colleghi = store.state.users.filter((u) => u.daServer).length;
   const inCoda = (store.state.coda || []).length;
   const errore = store.state.ultimoErroreServer;
 
-  const stato = inCoda
-    ? `${inCoda} ${inCoda === 1 ? 'cosa da inviare' : 'cose da inviare'}`
-    : `${colleghi} ${colleghi === 1 ? 'collega collegato' : 'colleghi collegati'}`;
-
   return html`
-    <button class="tile" data-act="sincronizza">
-      <span class="tile-icona">${inCoda ? '📤' : '🔄'}</span>
-      <span>
-        <strong>Sincronizza server</strong>
-        <em>${errore ? `⚠️ ${errore}` : stato}</em>
+    <button class="tile-sync" data-act="sincronizza" aria-label="Sincronizza server">
+      <span class="tile-sync-icona">
+        ${inCoda ? '📤' : '🔄'}
+        ${raw(errore ? '<span class="pallino urgente"></span>' : '')}
       </span>
-      <span class="chevron">›</span>
+      <span class="tile-sync-testo">Sincronizza<br>server</span>
     </button>`;
+}
+
+/**
+ * La riga in cima al Profilo: sincronizza (se c'è un server) a sinistra,
+ * proposte ricevute a destra. Senza server la seconda resta larga intera,
+ * perché una colonna vuota al posto del tasto sarebbe solo spazio sprecato.
+ */
+function rigaInAlto() {
+  const sync = rigaBacheca();
+  return sync ? `<div class="riga-doppia">${sync}${bottoneInbox()}</div>` : bottoneInbox();
 }
 
 /**

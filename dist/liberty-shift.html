@@ -246,6 +246,21 @@ p { margin: 8px 0; }
 .tile > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
 .tile em { font-style: normal; color: var(--testo-tenue); font-size: 13px; }
 .tile-icona { font-size: 24px; }
+
+/* Sincronizza (piccolo) a sinistra, proposte ricevute a destra: la seconda
+   perde un quarto della sua larghezza per far posto alla prima. */
+.riga-doppia { display: grid; grid-template-columns: 1fr 3fr; gap: 10px; margin-bottom: 10px; }
+.riga-doppia .tile { margin-bottom: 0; }
+
+.tile-sync {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; width: 100%; padding: 12px 4px; border-radius: var(--raggio);
+  border: 1px solid var(--bordo); background: var(--superficie); box-shadow: var(--ombra);
+  color: inherit; font: inherit; text-align: center; cursor: pointer;
+}
+.tile-sync-icona { position: relative; font-size: 20px; }
+.tile-sync-icona .pallino { position: absolute; top: -2px; right: -6px; }
+.tile-sync-testo { font-size: 11px; line-height: 1.25; color: var(--testo-tenue); }
 /* Il Cambio rapido resta la prima cosa che si vede, ma senza gridare: era un
    rettangolo pieno di colore in cima a una schermata per il resto chiara, e
    attirava l'occhio anche quando si stava cercando altro. */
@@ -607,7 +622,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
   cursor: grab; touch-action: none;
 }
 .sheet-grip::before { content: ''; width: 38px; height: 4px; border-radius: 2px; background: var(--bordo); }
-.sheet-head { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
+.sheet-head { display: flex; align-items: center; gap: 20px; padding-top: 6px; }
 .sheet-head h2 { flex: 1; font-size: 17px; text-transform: none; letter-spacing: 0; color: var(--testo); margin: 0; }
 .sheet-foot { position: sticky; bottom: 0; padding-top: 10px; background: var(--sfondo); }
 
@@ -4445,23 +4460,32 @@ function badgeStato(status) {
   return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
 }
 
-/** Il blocco della richiesta: è l'unità visiva di tutta l'app. */
+/**
+ * Il blocco della richiesta: è l'unità visiva di tutta l'app.
+ *
+ * L'etichetta a sinistra dice cosa cerchi, non solo cosa lasci — nel cambio
+ * OFF "lascio" e "offro" leggevano come la stessa cosa (dare via qualcosa),
+ * e il punto della richiesta (liberare quel giorno) si perdeva. Nel cambio
+ * orario invece "lascio" resta chiaro da solo: quel turno lo lasci per
+ * davvero, non lo stai cercando.
+ */
 function coppiaCedoCerco(request, { compatto = false } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
   const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   const giorni = request.cerco.giorni || [];
+  const off = request.tipo === TIPO_CAMBIO.OFF;
 
-  const lato = request.tipo === TIPO_CAMBIO.ORARIO
+  const lato = off
     ? html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 CERCO</span>
-        <strong>stesso giorno</strong>
+        <span class="etichetta">🟢 OFFRO</span>
+        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`
     : html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 OFFRO</span>
-        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
+        <span class="etichetta">🟢 CERCO</span>
+        <strong>stesso giorno</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`;
 
@@ -4470,7 +4494,7 @@ function coppiaCedoCerco(request, { compatto = false } = {}) {
       <div class="tipo-cambio">${meta.icona} ${meta.label}</div>
       <div class="lati">
         <div class="lato cedo">
-          <span class="etichetta">🔴 LASCIO</span>
+          <span class="etichetta">${off ? '🔴 CERCO' : '🔴 LASCIO'}</span>
           <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
           <span class="orario">${shiftLabel(cedo)}</span>
           ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}
@@ -4983,8 +5007,7 @@ function profilo() {
     </header>
 
     <section class="sezione">
-      ${raw(bottoneInbox())}
-      ${raw(rigaBacheca())}
+      ${raw(rigaInAlto())}
     </section>
 
     <section class="sezione">
@@ -5112,33 +5135,38 @@ function rigaDemo() {
 }
 
 /**
- * Lo stato del collegamento con i colleghi.
+ * Il tasto di sincronizzazione col server, piccolo apposta.
  *
- * Compare solo a chi è iscritto al negozio sul server: per chi usa l'app da
- * sola non c'è niente da collegare, e una riga che parla di sincronizzazione
- * sarebbe solo una parola in più da capire. Dice il numero di persone e cosa
- * eventualmente è rimasto indietro, perché "qualcosa non ha funzionato" senza
- * dire cosa è la forma peggiore di avviso.
+ * Compare solo a chi è iscritto al negozio sul server. È un'azione, non
+ * un'informazione: il numero di colleghi collegati o le cose in coda
+ * stavano meglio nella riga estesa che aveva prima, ma qui il tasto deve
+ * stare a fianco di "Proposte ricevute" senza rubargli spazio. Quello che
+ * conta davvero — un invio fallito — resta visibile come pallino rosso
+ * sull'icona, non sparisce e basta.
  */
 function rigaBacheca() {
   if (!store.state.profilo?.idServer) return '';
-  const colleghi = store.state.users.filter((u) => u.daServer).length;
   const inCoda = (store.state.coda || []).length;
   const errore = store.state.ultimoErroreServer;
 
-  const stato = inCoda
-    ? `${inCoda} ${inCoda === 1 ? 'cosa da inviare' : 'cose da inviare'}`
-    : `${colleghi} ${colleghi === 1 ? 'collega collegato' : 'colleghi collegati'}`;
-
   return html`
-    <button class="tile" data-act="sincronizza">
-      <span class="tile-icona">${inCoda ? '📤' : '🔄'}</span>
-      <span>
-        <strong>Sincronizza server</strong>
-        <em>${errore ? `⚠️ ${errore}` : stato}</em>
+    <button class="tile-sync" data-act="sincronizza" aria-label="Sincronizza server">
+      <span class="tile-sync-icona">
+        ${inCoda ? '📤' : '🔄'}
+        ${raw(errore ? '<span class="pallino urgente"></span>' : '')}
       </span>
-      <span class="chevron">›</span>
+      <span class="tile-sync-testo">Sincronizza<br>server</span>
     </button>`;
+}
+
+/**
+ * La riga in cima al Profilo: sincronizza (se c'è un server) a sinistra,
+ * proposte ricevute a destra. Senza server la seconda resta larga intera,
+ * perché una colonna vuota al posto del tasto sarebbe solo spazio sprecato.
+ */
+function rigaInAlto() {
+  const sync = rigaBacheca();
+  return sync ? `<div class="riga-doppia">${sync}${bottoneInbox()}</div>` : bottoneInbox();
 }
 
 /**
