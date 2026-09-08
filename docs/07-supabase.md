@@ -148,6 +148,28 @@ Provato il 7 settembre 2026, non simulato:
 L'ultima riga è quella che conta: un account creato senza codice esiste, entra,
 e non vede né tocca niente.
 
+## La funzione che scarica il calendario
+
+`supabase/functions/calendario/index.ts`. Esiste per una ragione sola: il
+browser non può leggere l'indirizzo del calendario aziendale, perché il server
+di Apple non manda le intestazioni CORS. Senza questa funzione l'unica strada
+era chiedere a ognuno di costruirsi un comando nell'app Comandi, e la prima
+persona che ci ha provato si è fermata lì.
+
+**Non salva niente**: riceve un indirizzo, scarica, restituisce il testo e
+dimentica tutto. Nessuna tabella viene toccata. L'indirizzo resta sul telefono
+di chi lo ha inserito, perché è la chiave che apre il suo calendario e sul
+server non servirebbe a nessuno.
+
+Accetta solo `https` e solo verso i domini di Apple, iCloud, Google e Outlook.
+Senza quell'elenco la funzione diventerebbe un ponte per raggiungere qualsiasi
+indirizzo passando dal nostro server, compresi quelli interni della rete di
+Supabase, che dall'esterno non si vedono.
+
+Per pubblicarla: **Edge Functions ▸ Deploy a new function ▸ via editor**, nome
+`calendario`, incolla il contenuto del file e pubblica. Serve l'accesso di un
+utente autenticato, quindi un estraneo non può usarla come proxy.
+
 ## Cosa manca per collegarlo
 
 Lo schema c'è, il client c'è (`src/core/supabase.js`), l'app ancora no:

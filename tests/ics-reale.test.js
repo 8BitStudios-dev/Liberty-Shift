@@ -69,8 +69,10 @@ test("incollare l'indirizzo invece del contenuto lo dice chiaramente", () => {
     'webcal://sm-cal.apple.com/cal/0123456789',
     '  https://esempio.it/turni.ics  ',
   ]) {
-    const { errore } = parseICS(indirizzo);
-    assert.match(errore, /indirizzo del calendario, non il suo contenuto/);
-    assert.match(errore, /Comandi/);
+    const esito = parseICS(indirizzo);
+    assert.match(esito.errore, /indirizzo del calendario/);
+    // L'indirizzo torna indietro pulito: è quello che la schermata passa al
+    // server per scaricarlo, senza farlo ridigitare.
+    assert.equal(esito.indirizzo, indirizzo.trim());
   }
 });

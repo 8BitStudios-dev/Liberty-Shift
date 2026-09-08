@@ -525,6 +525,17 @@ export const store = {
     return { ok: true };
   },
 
+  /**
+   * L'indirizzo del calendario dei turni, per non farlo ricercare ogni volta.
+   *
+   * Resta su questo dispositivo e non va sul server: è la chiave che apre il
+   * calendario di una persona, e sul server non serve a niente e a nessuno.
+   */
+  ricordaCalendario(url) {
+    this.state.profilo = { ...(this.state.profilo || {}), calendarioUrl: url };
+    this.commit();
+  },
+
   /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */
   profiloDaCompletare(versioneNote) {
     const p = this.state.profilo;

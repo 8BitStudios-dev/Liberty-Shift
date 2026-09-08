@@ -248,3 +248,20 @@ export async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSet
   if (r.errore && /codice/i.test(r.errore)) return { dati: null, errore: 'Codice del negozio sbagliato.' };
   return r;
 }
+
+/**
+ * Scarica un calendario sottoscritto passando dal server.
+ *
+ * Il browser non può farlo da sé: il server di Apple non manda le intestazioni
+ * CORS e la chiamata viene rifiutata prima di partire. La funzione `calendario`
+ * scarica al posto suo e restituisce il testo, senza salvarlo da nessuna parte.
+ */
+export async function scaricaCalendario(url) {
+  const r = await chiama('/functions/v1/calendario', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
+  if (r.errore) return { dati: null, errore: r.errore };
+  if (!r.dati?.ics) return { dati: null, errore: r.dati?.errore || 'Risposta vuota dal server.' };
+  return { dati: r.dati.ics, errore: null };
+}

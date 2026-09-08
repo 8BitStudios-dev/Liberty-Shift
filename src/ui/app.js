@@ -13,6 +13,8 @@ import * as P from './profilo-setup.js';
 import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
+import { scaricaCalendario } from '../core/supabase.js';
+import { serverConfigurato } from '../core/config.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -499,46 +501,35 @@ const AZIONI = {
   importa: () => {
     const w = sheet('📥 Importa turni', html`
       <p class="testo-tenue">
-        Serve il <strong>contenuto</strong> del calendario, non il suo
-        indirizzo: un testo lungo che comincia con <code>BEGIN:VCALENDAR</code>.
-        Le istruzioni qui sotto dicono come ottenerlo.
+        Incolla l'<strong>indirizzo</strong> del calendario dei turni e tocca
+        Scarica. Funziona anche incollando direttamente il contenuto, se ce
+        l'hai già.
       </p>
-      <details class="riquadro" open>
-        <summary><span>Come si copia il calendario dei turni</span><span class="conteggio">iPhone</span></summary>
-        <p class="testo-tenue">
-          Il calendario dei turni è <strong>sottoscritto</strong>: da iPhone non
-          si può esportare come file, ma si può leggere dal suo indirizzo. Si fa
-          una volta sola, poi il comando resta lì e si rilancia quando serve.
-        </p>
+      <details class="riquadro">
+        <summary><span>Dove trovo l'indirizzo</span><span class="conteggio">iPhone</span></summary>
         <ol class="elenco piccolo">
-          <li><strong>Trova l'indirizzo</strong>: Impostazioni ▸ App ▸ Calendario
-            ▸ Account ▸ il calendario dei turni. È un indirizzo che comincia per
-            <code>https://</code> o <code>webcal://</code>. Tienilo da parte:
-            chi ce l'ha legge i tuoi turni.</li>
-          <li>Apri l'app <strong>Comandi</strong> (quella che su iPhone si chiama
-            Shortcuts) e crea un comando nuovo.</li>
-          <li>Aggiungi <em>Ottieni contenuto di URL</em> e incolla lì
-            l'indirizzo.</li>
-          <li>Aggiungi <em>Copia negli appunti</em>, sotto.</li>
-          <li>Lancia il comando: negli appunti finisce il testo del
-            calendario, non l'indirizzo. Torna qui e incollalo sotto.</li>
+          <li>Impostazioni ▸ App ▸ Calendario ▸ Account.</li>
+          <li>Tocca il calendario dei turni: l'indirizzo comincia per
+            <code>https://</code> o <code>webcal://</code>.</li>
+          <li>Copialo e incollalo qui sotto.</li>
         </ol>
         <p class="testo-tenue">
-          <strong>Da Mac</strong> è più corto: Calendario ▸ tasto destro sul
-          calendario dei turni ▸ Ottieni informazioni per vedere l'indirizzo,
-          oppure aprilo nel browser e incolla il testo che compare.
+          Da Mac: Calendario ▸ tasto destro sul calendario dei turni ▸ Ottieni
+          informazioni.
         </p>
         <p class="testo-tenue">
-          L'import sostituisce solo i giorni che il calendario nomina: non
-          cancella mai un giorno di cui il file non parla.
+          Tieni l'indirizzo da parte: chi ce l'ha legge i tuoi turni. L'app lo
+          conserva su questo dispositivo per non fartelo ricercare ogni volta.
         </p>
       </details>
       <label class="campo">
-        <span>Contenuto del calendario (comincia con BEGIN:VCALENDAR)</span>
-        <textarea data-campo="ics" rows="5" placeholder="BEGIN:VCALENDAR…"></textarea>
+        <span>Indirizzo del calendario, oppure il suo contenuto</span>
+        <textarea data-campo="ics" rows="3"
+                  placeholder="https://…  oppure  BEGIN:VCALENDAR…">${store.state.profilo?.calendarioUrl || ''}</textarea>
       </label>
       <div data-anteprima></div>`, {
-      azioni: '<button class="btn primario largo" data-act="conferma-import" disabled>Importa</button>',
+      azioni: '<button class="btn secondario largo" data-act="scarica-calendario">Scarica</button>'
+        + '<button class="btn primario largo" data-act="conferma-import" disabled>Importa</button>',
     });
 
     const area = w.el.querySelector('[data-campo="ics"]');
@@ -547,12 +538,27 @@ const AZIONI = {
 
     // Anteprima mentre si incolla: si vede cosa è stato capito prima di
     // toccare il proprio calendario.
+    const scarica = w.el.querySelector('[data-act="scarica-calendario"]');
     const aggiorna = () => {
-      const { turni, ignorati, errore } = parseICS(area.value);
+      const { turni, ignorati, errore, indirizzo } = parseICS(area.value);
       w.el._turni = turni;
+      w.el._indirizzo = indirizzo || '';
       bottone.disabled = turni.length === 0;
+      // Il pulsante Scarica ha senso solo davanti a un indirizzo, e solo se
+      // c'è un server che possa scaricarlo. Si nasconde con lo stile e non con
+      // `hidden`: la regola di .btn.largo è display:block e vincerebbe lei.
+      scarica.style.display = indirizzo && serverConfigurato() ? '' : 'none';
       if (!area.value.trim()) { box.innerHTML = ''; return; }
-      if (errore) { box.innerHTML = `<p class="avviso">⚠️ ${errore}</p>`; return; }
+      if (errore) {
+        // Davanti a un indirizzo il consiglio dipende da cosa c'è: col server
+        // basta un tocco, senza server tocca passare dai Comandi.
+        const consiglio = !indirizzo ? ''
+          : serverConfigurato()
+            ? ' Tocca <strong>Scarica</strong> qui sotto.'
+            : ' Serve il testo che restituisce: nell\'app Comandi, «Ottieni contenuto di URL» e «Copia negli appunti».';
+        box.innerHTML = `<p class="avviso">⚠️ ${errore}${consiglio}</p>`;
+        return;
+      }
       box.innerHTML = html`
         <h3>${turni.length} ${turni.length === 1 ? 'turno riconosciuto' : 'turni riconosciuti'}</h3>
         <div class="lista-turni">
@@ -567,6 +573,35 @@ const AZIONI = {
         <p class="testo-tenue">I giorni già presenti verranno sostituiti. Gli altri restano come sono.</p>`;
     };
     area.addEventListener('input', aggiorna);
+    aggiorna();
+  },
+
+  /**
+   * Scarica il calendario dall'indirizzo incollato.
+   *
+   * Passa dal server perché il browser non può: Apple non manda le
+   * intestazioni CORS. L'indirizzo resta su questo dispositivo, così la volta
+   * dopo è già nel campo e aggiornare i turni è un tocco.
+   */
+  'scarica-calendario': async (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const indirizzo = wrap._indirizzo || wrap.querySelector('[data-campo="ics"]').value.trim();
+    if (!indirizzo) return;
+
+    el.disabled = true;
+    el.textContent = 'Scarico…';
+    const { dati, errore } = await scaricaCalendario(indirizzo);
+    el.disabled = false;
+    el.textContent = 'Scarica';
+
+    if (errore) {
+      wrap.querySelector('[data-anteprima]').innerHTML = `<p class="avviso">⚠️ ${errore}</p>`;
+      return;
+    }
+    store.ricordaCalendario(indirizzo);
+    const area = wrap.querySelector('[data-campo="ics"]');
+    area.value = dati;
+    area.dispatchEvent(new Event('input'));
   },
 
   'conferma-import': (_, el) => {

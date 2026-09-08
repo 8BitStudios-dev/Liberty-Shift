@@ -85,9 +85,10 @@ export function parseICS(testo) {
     return {
       turni: [],
       ignorati: [],
-      errore: "Questo è l'indirizzo del calendario, non il suo contenuto. "
-        + "Serve il testo che quell'indirizzo restituisce: nell'app Comandi, "
-        + '«Ottieni contenuto di URL» e poi «Copia negli appunti».',
+      indirizzo: testo.trim(),
+      // Il messaggio si ferma qui: cosa si può fare con quell'indirizzo lo sa
+      // la schermata, che sa se c'è un server capace di scaricarlo.
+      errore: "Questo è l'indirizzo del calendario, non il suo contenuto.",
     };
   }
 
