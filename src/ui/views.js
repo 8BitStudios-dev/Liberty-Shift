@@ -374,9 +374,39 @@ export function impostazioni() {
         </span>
         <span class="chevron">›</span>
       </button>
+      ${raw(rigaBacheca())}
     </section>`;
 }
 
+/**
+ * Lo stato del collegamento con i colleghi.
+ *
+ * Compare solo a chi è iscritto al negozio sul server: per chi usa l'app da
+ * sola non c'è niente da collegare, e una riga che parla di sincronizzazione
+ * sarebbe solo una parola in più da capire. Dice il numero di persone e cosa
+ * eventualmente è rimasto indietro, perché "qualcosa non ha funzionato" senza
+ * dire cosa è la forma peggiore di avviso.
+ */
+function rigaBacheca() {
+  if (!store.state.profilo?.idServer) return '';
+  const colleghi = store.state.users.filter((u) => u.daServer).length;
+  const inCoda = (store.state.coda || []).length;
+  const errore = store.state.ultimoErroreServer;
+
+  const stato = inCoda
+    ? `${inCoda} ${inCoda === 1 ? 'cosa da inviare' : 'cose da inviare'}`
+    : `${colleghi} ${colleghi === 1 ? 'collega collegato' : 'colleghi collegati'}`;
+
+  return html`
+    <button class="tile" data-act="sincronizza">
+      <span class="tile-icona">${inCoda ? '📤' : '🔄'}</span>
+      <span>
+        <strong>Bacheca condivisa</strong>
+        <em>${errore ? `⚠️ ${errore}` : stato}</em>
+      </span>
+      <span class="chevron">›</span>
+    </button>`;
+}
 
 /**
  * Le preferenze, in due riquadri che si aprono.

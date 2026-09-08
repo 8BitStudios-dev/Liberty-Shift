@@ -223,6 +223,7 @@ const AZIONI = {
     const esito = await store.entra(password);
     if (esito.ok) {
       render();
+      sincronizzaSilenziosa();
       if (esito.offline) toast('Sei entrato senza rete: la bacheca si aggiorna appena torna');
       return;
     }
@@ -632,6 +633,17 @@ const AZIONI = {
     area.dispatchEvent(new Event('input'));
   },
 
+  /** Manda e riscarica la bacheca adesso, senza aspettare la prossima apertura. */
+  sincronizza: async (_, el) => {
+    const em = el.querySelector('em');
+    if (em) em.textContent = 'Un attimo…';
+    const esito = await store.sincronizza();
+    render();
+    if (esito.saltato) return toast('Non sei collegato al negozio');
+    if (esito.errore) return toast(esito.errore);
+    toast(esito.inviate ? `${esito.inviate} inviate, bacheca aggiornata` : 'Bacheca aggiornata');
+  },
+
   /** Riscarica subito dall'indirizzo salvato, senza aspettare le sei ore. */
   'aggiorna-calendario': async (_, el) => {
     const em = el.querySelector('em');
@@ -796,6 +808,20 @@ store.subscribe(() => {});
 if (!location.hash) location.hash = '#/home';
 render();
 aggiornamentoSilenzioso();
+sincronizzaSilenziosa();
+
+/**
+ * La bacheca dei colleghi, all'apertura.
+ *
+ * Come per il calendario: dopo il primo disegno e senza rumore. Prima parte
+ * quello che è rimasto in coda dall'ultima volta, poi scende quello che è
+ * cambiato. Se non c'è rete non succede niente e si vede l'ultima bacheca
+ * scaricata, che è meglio di una schermata vuota con scritto "errore".
+ */
+async function sincronizzaSilenziosa() {
+  const esito = await store.sincronizza();
+  if (!esito.saltato && !esito.errore) render();
+}
 
 /**
  * I turni si riprendono da soli, se c'è un indirizzo salvato.

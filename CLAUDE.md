@@ -52,6 +52,9 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 - **Nell'ICS il `DTEND` di una giornata intera è escluso.** Ferie dal 10 al 15
   si scrivono `DTSTART:20260810` / `DTEND:20260816`. Leggere solo l'inizio
   faceva sparire cinque giorni su sei e metteva al lavoro chi era via.
+- **Quello che va sul server passa solo da `src/core/sincronia.js`.** È l'unico
+  posto che conosce i nomi delle colonne. Una scrittura fatta a mano da un'altra
+  parte salta la coda, e senza coda si perde appena manca la rete.
 - **Un array interpolato dentro `html``` viene escapato**: per una lista già
   montata serve `raw(righe.join(''))`.
 - **Il build controlla la sintassi del bundle** prima di scrivere `dist/`: un

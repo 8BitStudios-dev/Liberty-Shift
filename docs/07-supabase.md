@@ -211,14 +211,75 @@ Una terza, più banale: l'editor della dashboard apre una funzione nuova col
 codice di esempio dentro. Se non lo si cancella prima di incollare, la funzione
 risponde `Hello` e sembra rotta l'app.
 
-## Cosa manca per collegarlo
+## La bacheca condivisa
 
-Porta e calendario sono collegati. Resta il pezzo grosso:
+Tutto passa da [`src/core/sincronia.js`](../src/core/sincronia.js), che è
+l'unico posto a conoscere sia i nomi delle colonne sia la forma delle entità
+dell'app. Quando una colonna cambia nome, cambia lì e basta.
+
+**Gli id li genera il telefono.** Una richiesta nasce già con un `uuid`, che è
+lo stesso da questa parte e dall'altra. Farselo restituire dal server avrebbe
+voluto dire riscrivere l'id e tutti i suoi riferimenti al momento della
+risposta, e non poter pubblicare niente senza rete.
+
+**Si scrive prima in locale, poi si manda.** Ogni scrittura entra in una coda
+che parte per conto suo. L'app si usa in magazzino, dove il campo va e viene, e
+una proposta persa perché in quel momento non c'era linea sarebbe il modo più
+veloce per far smettere di fidarsi. L'ordine della coda è sacro: una proposta
+che arrivasse prima della sua richiesta verrebbe rifiutata dalla chiave
+esterna, quindi al primo rifiuto ci si ferma invece di saltare avanti.
+
+**Un solo svuotamento per volta.** Pubblicare fa partire la coda, e un attimo
+dopo può partire anche quella dell'apertura: due giri in parallelo mandavano la
+stessa riga due volte, e la seconda restava incastrata a bloccare tutte quelle
+dietro. Trovato contro il server vero, non a tavolino.
+
+**Una riga che c'è già è arrivata.** Visto che gli id sono nostri, un `409` non
+è un guasto: è il tentativo precedente che era andato a buon fine. Trattarlo da
+errore voleva dire non mandare più niente.
+
+**Il turno torna a essere un turno.** Il motore ragiona su turni con un id, non
+su tre colonne: scendendo, `cedo_data/start/end` ridiventano un turno vero. Se
+è mio e ce l'ho già, si riusa quello invece di crearne un secondo per lo stesso
+giorno, che sfalserebbe le ore della settimana e mostrerebbe due righe nel
+calendario.
+
+**Io resto io.** Sul telefono sono `u_lorenzo` da prima che il server
+esistesse, e i miei turni sono appesi a quell'id. La traduzione fra il mio id
+del server e quello di casa avviene in una funzione sola.
+
+**Le persone inventate restano.** La demo convive con i colleghi veri finché
+serve a mostrare l'app. A distinguerle è il campo `daServer`: a ogni discesa si
+butta e si riscrive solo quello che era sceso, e le persone inventate non
+vengono toccate.
+
+### Cosa il server non può fare, e perché va bene
+Non esiste una tabella dei turni, quindi il server non sa quando lavorano i
+colleghi. Ne discende che l'elenco «chi può aiutarmi» non si può calcolare per
+una persona vera: per loro l'unico segnale è la **disponibilità dichiarata**,
+che infatti viaggia. Al contrario funziona benissimo: «quali richieste posso
+risolvere io» si calcola sui miei turni, che sono qui.
+
+Le notifiche restano locali e non attraversano i dispositivi. A portare
+l'informazione è la posta, che è costruita sulle proposte e quindi sincronizza.
+
+### Il collaudo, contro il server vero
+Due dispositivi, due account, il giro completo:
+
+| Prova | Esito |
+|---|---|
+| Anna pubblica una richiesta | id `uuid`, una sola scrittura |
+| Bruno apre l'app | vede la richiesta, il turno ceduto e il nome |
+| Bruno propone il suo turno | arriva con messaggio e turno offerto |
+| Anna accetta | `ACCORDO` da entrambe le parti |
+| la richiesta cambia stato | `ACCORDO` anche per Bruno |
+| **estraneo registrato senza codice** | profili `[]`, bacheca `[]` |
+
+## Cosa manca per collegarlo
 
 1. ~~la prima apertura chiede il codice del negozio, crea l'account e il
    profilo~~ — fatto;
-2. `store.js` legge e scrive sul server **le sole cose pubblicate**: turni e
-   preferenze restano dove sono;
+2. ~~`store.js` legge e scrive sul server **le sole cose pubblicate**~~ — fatto;
 3. ~~l'accesso passa da Supabase Auth~~ — fatto.
 
 E prima di aprirlo ai colleghi, la domanda del capitolo 27, che con un server

@@ -14,6 +14,10 @@ import {
   scaricaCalendario, cambiaPasswordServer,
 } from './supabase.js';
 import { parseICS } from './ics.js';
+import {
+  sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato,
+  rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
+} from './sincronia.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
@@ -30,8 +34,45 @@ export const store = {
     this.state.ringraziamenti = this.state.ringraziamenti || [];
     this.state.profilo = this.state.profilo
       || { completato: false, noteAccettateIl: null, versioneNote: null, credenziali: null };
+    this.state.coda = this.state.coda || [];
     this.scadenze();
     return this.state;
+  },
+
+  /**
+   * L'id di una cosa che nascerà anche sul server.
+   *
+   * Là le chiavi sono uuid, e generarlo qui invece di farselo restituire
+   * significa non dover riscrivere l'id e tutti i suoi riferimenti quando la
+   * scrittura arriva a destinazione. Vale anche senza rete: la riga parte con
+   * l'id giusto e la coda la manda quando può.
+   */
+  nuovoId(prefisso) {
+    return sulServer(this.state) ? crypto.randomUUID() : newId(prefisso);
+  },
+
+  /**
+   * Manda quello che è in coda, senza far aspettare chi ha toccato il tasto.
+   *
+   * L'app ha già scritto in locale: il giro sul server è una conseguenza, non
+   * una condizione. Se fallisce, la roba resta in coda e riparte al prossimo
+   * giro, che è esattamente quello che serve in un magazzino senza campo.
+   */
+  spingi() {
+    if (!sulServer(this.state)) return;
+    svuotaCoda(this.state).then(({ fatte, errore }) => {
+      this.state.ultimoErroreServer = errore || null;
+      if (fatte || errore) this.commit();
+    });
+  },
+
+  /** Manda quello che c'è da mandare, poi riporta a bordo la bacheca. */
+  async sincronizza() {
+    if (!sulServer(this.state)) return { saltato: true };
+    const esito = await sincronizzaStato(this.state);
+    this.state.ultimoErroreServer = esito.errore || null;
+    if (!esito.saltato) this.commit();
+    return esito;
   },
 
   subscribe(fn) {
@@ -191,7 +232,7 @@ export const store = {
 
     const me = this.me;
     const richiesta = {
-      id: newId('rq'),
+      id: this.nuovoId('rq'),
       userId: me.id,
       createdAt: new Date().toISOString(),
       status: STATUS.APERTA,
@@ -209,9 +250,34 @@ export const store = {
       me.prioritaUsata[mk] = (me.prioritaUsata[mk] || 0) + 1;
     }
 
+    if (sulServer(this.state)) {
+      richiesta.daServer = true;
+      accoda(this.state, 'richiesta.crea',
+        rigaDaRichiesta(this.state, richiesta, this.shift(cedo.shiftId)));
+    }
+
     this.state.requests.push(richiesta);
     this.commit();
+    this.spingi();
     return { richiesta };
+  },
+
+  /**
+   * Lo stato di una richiesta cambia anche per mano dell'altra persona, quindi
+   * va rispecchiato sul server ogni volta che si muove. Sta in un metodo suo
+   * perché lo chiamano in cinque, e cinque copie divergerebbero.
+   */
+  rispecchiaRichiesta(r) {
+    if (!r?.daServer || !sulServer(this.state)) return;
+    accoda(this.state, 'richiesta.aggiorna', {
+      id: r.id,
+      patch: { stato: r.status, chiusa_il: r.chiusaIl || null },
+    });
+  },
+
+  rispecchiaProposta(p, patch) {
+    if (!p?.daServer || !sulServer(this.state)) return;
+    accoda(this.state, 'proposta.aggiorna', { id: p.id, patch });
   },
 
   // Una richiesta pubblicata non si modifica (cap. 23): si cancella e si rifà.
@@ -222,8 +288,13 @@ export const store = {
     r.chiusaIl = new Date().toISOString();
     this.state.proposals
       .filter((p) => p.requestId === id && p.status !== 'RIFIUTATA')
-      .forEach((p) => { p.status = 'RIFIUTATA'; });
+      .forEach((p) => {
+        p.status = 'RIFIUTATA';
+        this.rispecchiaProposta(p, { stato: 'RIFIUTATA' });
+      });
+    this.rispecchiaRichiesta(r);
     this.commit();
+    this.spingi();
   },
 
   proponiScambio({ requestId, shiftOffertoId, messaggio }) {
@@ -242,7 +313,7 @@ export const store = {
     if (!verifica.ok) return { errori: [verifica.motivo] };
 
     const proposta = {
-      id: newId('pr'),
+      id: this.nuovoId('pr'),
       requestId,
       daUserId: me,
       aUserId: r.userId,
@@ -253,10 +324,17 @@ export const store = {
       createdAt: new Date().toISOString(),
       cambioInserito: false,
     };
+    if (sulServer(this.state) && r.daServer) {
+      proposta.daServer = true;
+      accoda(this.state, 'proposta.crea', rigaDaProposta(this.state, proposta, offerto));
+    }
+
     this.state.proposals.push(proposta);
     this.aggiornaStato(r);
+    this.rispecchiaRichiesta(r);
     this.notifica(r.userId, `${this.user(me).nome} ti ha proposto uno scambio.`);
     this.commit();
+    this.spingi();
     return { proposta };
   },
 
@@ -272,12 +350,21 @@ export const store = {
       this.state.proposals
         .filter((x) => x.requestId === p.requestId && x.id !== p.id)
         .forEach((x) => { x.status = 'RIFIUTATA'; });
+      this.state.proposals
+        .filter((x) => x.requestId === p.requestId && x.id !== p.id)
+        .forEach((x) => this.rispecchiaProposta(x, { stato: 'RIFIUTATA' }));
       [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo nell\'app ufficiale.'));
     } else {
       this.notifica(p.daUserId === me ? p.aUserId : p.daUserId, `${this.user(me).nome} ha accettato il cambio.`);
     }
+    this.rispecchiaProposta(p, {
+      stato: p.status,
+      accettata_da: p.accettataDa.map((u) => serverDi(this.state, u)),
+    });
     this.aggiornaStato(r);
+    this.rispecchiaRichiesta(r);
     this.commit();
+    this.spingi();
   },
 
   /**
@@ -295,8 +382,12 @@ export const store = {
     this.notifica(altro, motivo.trim()
       ? `${this.user(me).nome} ha rifiutato: "${motivo.trim()}"`
       : `${this.user(me).nome} ha rifiutato lo scambio.`);
-    this.aggiornaStato(this.request(p.requestId));
+    this.rispecchiaProposta(p, { stato: 'RIFIUTATA', motivo_rifiuto: p.motivoRifiuto });
+    const r = this.request(p.requestId);
+    this.aggiornaStato(r);
+    this.rispecchiaRichiesta(r);
     this.commit();
+    this.spingi();
   },
 
   /**
@@ -311,16 +402,22 @@ export const store = {
     if (this.state.ringraziamenti.some((r) => r.proposalId === proposalId && r.daUserId === me)) {
       return { errori: ['Hai già ringraziato per questo scambio.'] };
     }
-    this.state.ringraziamenti.unshift({
-      id: newId('gr'),
+    const grazie = {
+      id: this.nuovoId('gr'),
       proposalId,
       daUserId: me,
       aUserId: a,
       testo: (testo || '').trim(),
       createdAt: new Date().toISOString(),
-    });
+    };
+    if (sulServer(this.state) && p.daServer) {
+      grazie.daServer = true;
+      accoda(this.state, 'ringraziamento.crea', rigaDaRingraziamento(this.state, grazie));
+    }
+    this.state.ringraziamenti.unshift(grazie);
     this.notifica(a, `${this.user(me).nome} ti ha ringraziato 💛`);
     this.commit();
+    this.spingi();
     return { ok: true };
   },
 
@@ -360,12 +457,15 @@ export const store = {
     const p = this.state.proposals.find((x) => x.id === proposalId);
     if (!p) return;
     p.cambioInserito = true;
+    this.rispecchiaProposta(p, { cambio_inserito: true });
     const r = this.request(p.requestId);
     if (r) {
       r.status = STATUS.CHIUSA;
       r.chiusaIl = new Date().toISOString();
+      this.rispecchiaRichiesta(r);
     }
     this.commit();
+    this.spingi();
   },
 
   aggiornaStato(request) {
@@ -378,7 +478,18 @@ export const store = {
     me.disponibilita = me.disponibilita || {};
     me.disponibilita[weekKey] = me.disponibilita[weekKey] || Array(7).fill(false);
     me.disponibilita[weekKey][slot] = valore;
+    // La disponibilità è dichiarata apposta perché i colleghi la vedano: è
+    // l'unico modo che hanno di sapere chi cercare, visto che i turni degli
+    // altri non escono dai loro telefoni.
+    if (sulServer(this.state)) {
+      accoda(this.state, 'disponibilita.salva', {
+        user_id: serverDi(this.state, me.id),
+        settimana: weekKey,
+        giorni: me.disponibilita[weekKey],
+      });
+    }
     this.commit();
+    this.spingi();
   },
 
   impostaContratto(patch) {

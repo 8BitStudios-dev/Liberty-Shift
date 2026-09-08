@@ -116,8 +116,13 @@ async function chiama(percorso, opzioni = {}, { autenticata = true, riprovato = 
     return { dati: null, errore: 'Sessione scaduta: rientra con la tua password.' };
   }
 
-  if (!risposta.ok) return { dati: null, errore: traduci(risposta.status, corpo) };
-  return { dati: corpo, errore: null };
+  // Lo stato esce insieme all'errore: un 409 su una riga con l'id già nostro
+  // vuol dire "c'era già", che per chi riprova è un successo, non un guasto.
+  // Distinguerlo dal messaggio tradotto sarebbe leggere l'italiano.
+  if (!risposta.ok) {
+    return { dati: null, errore: traduci(risposta.status, corpo), stato: risposta.status };
+  }
+  return { dati: corpo, errore: null, stato: risposta.status };
 }
 
 function sicuroJSON(testo) {
