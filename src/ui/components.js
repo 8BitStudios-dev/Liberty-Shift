@@ -58,23 +58,32 @@ export function badgeStato(status) {
   return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
 }
 
-/** Il blocco della richiesta: è l'unità visiva di tutta l'app. */
+/**
+ * Il blocco della richiesta: è l'unità visiva di tutta l'app.
+ *
+ * L'etichetta a sinistra dice cosa cerchi, non solo cosa lasci — nel cambio
+ * OFF "lascio" e "offro" leggevano come la stessa cosa (dare via qualcosa),
+ * e il punto della richiesta (liberare quel giorno) si perdeva. Nel cambio
+ * orario invece "lascio" resta chiaro da solo: quel turno lo lasci per
+ * davvero, non lo stai cercando.
+ */
 export function coppiaCedoCerco(request, { compatto = false } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
   const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   const giorni = request.cerco.giorni || [];
+  const off = request.tipo === TIPO_CAMBIO.OFF;
 
-  const lato = request.tipo === TIPO_CAMBIO.ORARIO
+  const lato = off
     ? html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 CERCO</span>
-        <strong>stesso giorno</strong>
+        <span class="etichetta">🟢 OFFRO</span>
+        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`
     : html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 OFFRO</span>
-        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
+        <span class="etichetta">🟢 CERCO</span>
+        <strong>stesso giorno</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`;
 
@@ -83,7 +92,7 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
       <div class="tipo-cambio">${meta.icona} ${meta.label}</div>
       <div class="lati">
         <div class="lato cedo">
-          <span class="etichetta">🔴 LASCIO</span>
+          <span class="etichetta">${off ? '🔴 CERCO' : '🔴 LASCIO'}</span>
           <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
           <span class="orario">${shiftLabel(cedo)}</span>
           ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}

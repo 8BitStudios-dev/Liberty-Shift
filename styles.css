@@ -242,6 +242,21 @@ p { margin: 8px 0; }
 .tile > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
 .tile em { font-style: normal; color: var(--testo-tenue); font-size: 13px; }
 .tile-icona { font-size: 24px; }
+
+/* Sincronizza (piccolo) a sinistra, proposte ricevute a destra: la seconda
+   perde un quarto della sua larghezza per far posto alla prima. */
+.riga-doppia { display: grid; grid-template-columns: 1fr 3fr; gap: 10px; margin-bottom: 10px; }
+.riga-doppia .tile { margin-bottom: 0; }
+
+.tile-sync {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; width: 100%; padding: 12px 4px; border-radius: var(--raggio);
+  border: 1px solid var(--bordo); background: var(--superficie); box-shadow: var(--ombra);
+  color: inherit; font: inherit; text-align: center; cursor: pointer;
+}
+.tile-sync-icona { position: relative; font-size: 20px; }
+.tile-sync-icona .pallino { position: absolute; top: -2px; right: -6px; }
+.tile-sync-testo { font-size: 11px; line-height: 1.25; color: var(--testo-tenue); }
 /* Il Cambio rapido resta la prima cosa che si vede, ma senza gridare: era un
    rettangolo pieno di colore in cima a una schermata per il resto chiara, e
    attirava l'occhio anche quando si stava cercando altro. */
@@ -603,7 +618,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
   cursor: grab; touch-action: none;
 }
 .sheet-grip::before { content: ''; width: 38px; height: 4px; border-radius: 2px; background: var(--bordo); }
-.sheet-head { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
+.sheet-head { display: flex; align-items: center; gap: 20px; padding-top: 6px; }
 .sheet-head h2 { flex: 1; font-size: 17px; text-transform: none; letter-spacing: 0; color: var(--testo); margin: 0; }
 .sheet-foot { position: sticky; bottom: 0; padding-top: 10px; background: var(--sfondo); }
 
