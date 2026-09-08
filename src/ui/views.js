@@ -445,16 +445,16 @@ function rigaBacheca() {
  * Le preferenze, in due riquadri che si aprono.
  *
  * Aperte tutte insieme erano sei interruttori in fila, e la differenza che
- * conta — quello che eviti sparisce dai match, quello che preferisci vale
- * qualche punto — si perdeva nell'elenco. Chiusi, il profilo resta leggibile e
- * si vede a colpo d'occhio quante ne hai attive.
+ * conta — quanto pesa quello che eviti, quanto poco quello che preferisci —
+ * si perdeva nell'elenco. Chiusi, il profilo resta leggibile e si vede a
+ * colpo d'occhio quante ne hai attive.
  */
 function sezionePreferenze(me) {
   const gruppi = [
     {
       key: 'evita',
       titolo: 'Turni da evitare',
-      nota: 'Filtro netto: questi turni non ti vengono proposti, nemmeno con un punteggio basso.',
+      nota: `Abbassa il punteggio di ${RULES.evitaPenalty} punti: di solito basta a far sparire il turno, ma non è un divieto — se il resto del match è forte, resta visibile.`,
     },
     {
       key: 'preferisce',

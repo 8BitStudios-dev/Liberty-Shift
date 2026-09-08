@@ -61,11 +61,11 @@ Dipende da come è nato il match, e i pulsanti lo dicono:
 | Il match viene da | Pulsante | Cosa succede |
 |---|---|---|
 | una richiesta pubblicata | Proponi lo scambio | proposta sulla sua richiesta, vale come tua accettazione |
-| una disponibilità, con la tua richiesta già pubblicata | Scrivi a *nome* | il messaggio esce dall'app, sarà lui a proporre |
-| una disponibilità, dal Cambio rapido | Pubblica e scrivi a *nome* | pubblica la richiesta del tipo giusto e apre il messaggio |
+| dal calendario, con la tua richiesta già pubblicata | Scrivi a *nome* | il messaggio esce dall'app, sarà lui a proporre |
+| dal calendario, dal Cambio rapido | Pubblica e scrivi a *nome* | pubblica la richiesta del tipo giusto e apre il messaggio |
 
-Su una disponibilità non si può "proporre": non esiste una sua richiesta su cui
-farlo. L'unica cosa onesta è scrivergli.
+Un match nato dal calendario non si può "proporre": non esiste una sua
+richiesta su cui farlo. L'unica cosa onesta è scrivergli.
 
 Il pulsante dice **Scrivi** e non **Avvisa** quando dall'altra parte c'è una
 persona vera, perché è quello che succede: si apre il foglio di condivisione

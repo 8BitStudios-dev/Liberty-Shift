@@ -387,31 +387,43 @@ export function ruoloNelGiorno(request, giorno, cedo) {
 /**
  * Le preferenze applicate a un turno che una persona riceverebbe.
  *
- * Restituisce { escluso, bonus, reasons }. La differenza fra i due gruppi è
- * tutta qui: quello che si evita esclude il turno, quello che si preferisce
- * vale qualche punto.
+ * Restituisce { bonus, reasons }. Né l'uno né l'altro gruppo escludono più il
+ * turno: quello che si evita abbassa molto il punteggio (`RULES.evitaPenalty`),
+ * quello che si preferisce lo alza di poco (`RULES.preferenzaBonus`).
  *
  * Un turno può stare in due fasce, quindi può incrociare due preferenze. Se
- * anche una sola dice "evito", il turno è escluso: chi ha detto che non vuole
- * le chiusure non cambia idea perché quel turno è anche una mattina. Il bonus
+ * anche una sola dice "evito" conta solo quella, perché chi non vuole le
+ * chiusure non cambia idea perché quel turno è anche una mattina. Il bonus
  * invece si prende una volta sola, altrimenti bastava un turno lungo per
  * scalare la classifica.
+ *
+ * Il testo è sempre in terza persona, mai con l'etichetta del profilo presa
+ * di peso (quella è scritta in prima persona, "Preferisco le mattine"): la
+ * stessa frase la legge sia chi pubblica la richiesta sia chi la risolve.
  */
+// La notte non sta in RULES.fasce (è un caso a parte, vedi fasceDi/isNotturno):
+// serve un'etichetta di riserva per quando una preferenza la riguarda.
+function fasciaLabel(key) {
+  return RULES.fasce[key]?.label ?? 'le notti visual';
+}
+
 export function applicaPreferenze(user, shift) {
   const fasce = fasceDi(shift);
-  if (!fasce.length || !user?.preferenze) return { escluso: false, bonus: 0, reasons: [] };
+  if (!fasce.length || !user?.preferenze) return { bonus: 0, reasons: [] };
 
   const attive = PREFERENZE.filter((p) => user.preferenze[p.key] && fasce.includes(p.fascia));
   const evitata = attive.find((p) => p.gruppo === 'evita');
   if (evitata) {
-    return { escluso: true, bonus: 0, reasons: [`${user.nome}: ${evitata.label.toLowerCase()}`] };
+    return {
+      bonus: -RULES.evitaPenalty,
+      reasons: [`evita ${fasciaLabel(evitata.fascia)}, e ${shiftLabel(shift)} lo è`],
+    };
   }
 
   const preferite = attive.filter((p) => p.gruppo === 'preferisce');
-  if (!preferite.length) return { escluso: false, bonus: 0, reasons: [] };
+  if (!preferite.length) return { bonus: 0, reasons: [] };
   return {
-    escluso: false,
     bonus: RULES.preferenzaBonus,
-    reasons: [`${preferite.map((p) => p.label.toLowerCase()).join(' e ')}, e ${shiftLabel(shift)} lo è`],
+    reasons: [`preferisce ${preferite.map((p) => fasciaLabel(p.fascia)).join(' e ')}, e ${shiftLabel(shift)} lo è`],
   };
 }

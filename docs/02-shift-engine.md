@@ -51,8 +51,9 @@ per ogni collega che ha un turno quel giorno:
         mioPerLui = adatta(mioTurno, lui)
         se non soddisfa quello che cerca lui -> scarta
         score = media dei due            -> MATCH
-    altrimenti, se ha dichiarato disponibilità quel giorno:
+    altrimenti:
         score = suo punteggio, tagliato a 75  -> POTENZIALE
+        se ha anche dichiarato disponibilità quel giorno: +10
 ```
 
 Nessuno dei due deve essere libero: al contrario, serve che entrambi siano in
@@ -71,7 +72,9 @@ per ogni giorno che offro:
       se non soddisfa quello che cerco               -> scarta
       se ha una richiesta OFF speculare (vuole liberare
          quel giorno e ha libero il mio)             -> MATCH
-      altrimenti, se ha dichiarato disponibilità     -> POTENZIALE
+      altrimenti:
+         score = suo punteggio, tagliato a 75         -> POTENZIALE
+         se ha anche dichiarato disponibilità: +10
 ```
 
 La richiesta speculare è il caso pulito: «vuole liberare lunedì e lavorare
@@ -80,12 +83,18 @@ venerdì, l'esatto contrario del tuo».
 ## Le due sorgenti di match
 In entrambi gli algoritmi un match può nascere da due cose diverse:
 
-1. una **richiesta pubblicata** compatibile;
-2. una **disponibilità dichiarata** nel profilo per quella settimana.
+1. una **richiesta pubblicata** compatibile — origine `RICHIESTA`;
+2. semplicemente il turno che il collega ha già in calendario — origine
+   `CALENDARIO`.
 
 Il punteggio della seconda è **tagliato a 75**, quindi non può mai presentarsi
-come match pieno. È la traduzione numerica del principio "una disponibilità non
-è una richiesta". Chi non ha fatto né l'una né l'altra cosa non compare mai.
+come match pieno: è un'occasione trovata dal motore, non un accordo che
+qualcuno ha già proposto. Una disponibilità dichiarata per quel giorno vale un
+bonus (`RULES.disponibilitaBonus`) ma non è più condizione per comparire — lo
+scopo del Cambio Rapido è trovare scambi comodi a cui nessuno aveva pensato,
+non solo confermare chi si era già offerto. Le preferenze da evitare abbassano
+molto il punteggio (`RULES.evitaPenalty`) invece di escludere il turno: un
+match altrimenti forte resta visibile, solo più in basso.
 
 ## Adattamento del turno
 Prima di calcolare il punteggio, ogni turno viene trasformato in quello che la

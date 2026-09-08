@@ -146,22 +146,23 @@ test('Lorenzo e Martina sono il match perfetto del capitolo 11', () => {
   );
 });
 
-test('un match da sola disponibilità resta POTENZIALE e non supera il tetto', () => {
+test('un match nato dal solo calendario resta POTENZIALE e non supera il tetto', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_luca_1');
   const match = findMatches(richiesta, s);
-  assert.ok(match.length > 0, 'deve trovare almeno una disponibilità');
-  for (const m of match.filter((x) => x.origine === 'DISPONIBILITA')) {
+  assert.ok(match.length > 0, 'deve trovare almeno un match dal calendario');
+  for (const m of match.filter((x) => x.origine === 'CALENDARIO')) {
     assert.equal(m.tipo, 'POTENZIALE');
     assert.ok(m.score <= RULES.availabilityScoreCap);
   }
 });
 
-test('chi non ha dato alcun segnale non compare fra i match', () => {
+test('chi quel giorno è OFF non compare fra i match di un cambio orario', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
   const match = findMatches(richiesta, s);
-  // Giulia la domenica è OFF e non è disponibile: non deve comparire.
+  // Giulia la domenica è OFF: un cambio orario richiede che entrambi
+  // lavorino quel giorno, il calendario da solo non basta a farla comparire.
   assert.ok(!match.some((m) => m.userId === 'u_giulia'));
 });
 
@@ -565,24 +566,24 @@ test('le fasce hanno i confini veri dello store, e possono sovrapporsi', () => {
   assert.deepEqual(f('10:00', '19:45'), ['MATTINA', 'POMERIGGIO']);
 });
 
-test('quello che eviti esclude, quello che preferisci vale qualche punto', () => {
+test('quello che eviti abbassa molto il punteggio, quello che preferisci vale qualche punto', () => {
   const mattina = { tipo: 'WORK', start: '09:30', end: '18:30' };
   const chiusura = { tipo: 'WORK', start: '12:00', end: '21:00' };
   const evita = { nome: 'Lorenzo', preferenze: { evitaChiusure: true, preferisceMattine: true } };
 
-  assert.equal(applicaPreferenze(evita, chiusura).escluso, true);
-  assert.equal(applicaPreferenze(evita, mattina).escluso, false);
+  // Non esclude più: è una penalità, negativa ma finita.
+  assert.equal(applicaPreferenze(evita, chiusura).bonus, -RULES.evitaPenalty);
   assert.equal(applicaPreferenze(evita, mattina).bonus, RULES.preferenzaBonus);
   // Un turno fuori da ogni fascia non tocca niente.
   assert.equal(applicaPreferenze(evita, { tipo: 'WORK', start: '11:00', end: '18:00' }).bonus, 0);
 });
 
-test('se una sola fascia è da evitare, il turno è escluso comunque', () => {
+test('se una sola fascia è da evitare, conta solo quella', () => {
   // 10:00–20:30 è insieme mattina e chiusura: la preferenza per le mattine
-  // non annulla il rifiuto delle chiusure.
+  // non annulla la penalità delle chiusure, e non si sommano.
   const doppio = { tipo: 'WORK', start: '10:00', end: '20:30' };
   const u = { nome: 'Lorenzo', preferenze: { preferisceMattine: true, evitaChiusure: true } };
-  assert.equal(applicaPreferenze(u, doppio).escluso, true);
+  assert.equal(applicaPreferenze(u, doppio).bonus, -RULES.evitaPenalty);
 });
 
 test('due fasce preferite valgono un bonus solo', () => {
@@ -591,25 +592,58 @@ test('due fasce preferite valgono un bonus solo', () => {
   assert.equal(applicaPreferenze(u, doppio).bonus, RULES.preferenzaBonus);
 });
 
-test('una preferenza esclude chi ha solo dichiarato una disponibilità', () => {
-  const conEvita = (evita) => {
-    const s = seed();
-    // Marco cede una chiusura: chi le evita non deve comparire fra i match
-    // nati da una semplice disponibilità.
-    const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
-    const cedo = s.shifts.find((x) => x.id === richiesta.cedo.shiftId);
-    cedo.start = '12:00';
-    cedo.end = '21:00';
-    // Martina il sabato è a casa e si è dichiarata disponibile: è lei la
-    // candidata naturale, e lunedì lavora, quindi ha qualcosa da offrire.
-    const martina = s.users.find((u) => u.id === 'u_martina');
-    martina.preferenze = { evitaChiusure: evita };
-    return findMatches(richiesta, s)
-      .some((m) => m.userId === 'u_martina' && m.origine === 'DISPONIBILITA');
-  };
+test('chi non ha dato nessun segnale compare comunque, dal solo calendario', () => {
+  // Prima serviva una richiesta pubblicata o una disponibilità dichiarata:
+  // ora basta un turno vero che soddisfi quello che si cerca. È il punto del
+  // Cambio Rapido: trovare scambi comodi a cui nessuno aveva pensato.
+  const s = seed();
+  const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
+  const martina = s.users.find((u) => u.id === 'u_martina');
+  martina.preferenze = {};
+  martina.disponibilita = {};
+  const m = findMatches(richiesta, s).find((x) => x.userId === 'u_martina');
+  assert.ok(m, 'deve comparire anche senza richiesta né disponibilità dichiarata');
+  assert.equal(m.origine, 'CALENDARIO');
+});
 
-  assert.equal(conEvita(false), true, 'senza la preferenza Luca compare');
-  assert.equal(conEvita(true), false, 'con "evito le chiusure" sparisce');
+test('una disponibilità dichiarata non è più condizione, ma resta un bonus', () => {
+  const s = seed();
+  const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
+  const martina = s.users.find((u) => u.id === 'u_martina');
+  const giorno = s.shifts.find((x) => x.id === richiesta.cedo.shiftId).data;
+
+  martina.preferenze = {};
+  martina.disponibilita = {};
+  const senza = findMatches(richiesta, s).find((x) => x.userId === 'u_martina');
+
+  const s2 = seed();
+  const richiesta2 = s2.requests.find((r) => r.id === 'rq_marco_1');
+  const martina2 = s2.users.find((u) => u.id === 'u_martina');
+  martina2.preferenze = {};
+  martina2.disponibilita = { [appleWeekKey(giorno)]: Array(7).fill(true) };
+  const con = findMatches(richiesta2, s2).find((x) => x.userId === 'u_martina');
+
+  assert.ok(senza && con);
+  // Il bonus si somma, ma resta comunque sotto il tetto dei match "dal
+  // calendario": non basta a farlo passare per un match pieno.
+  assert.equal(con.score, Math.min(RULES.availabilityScoreCap, senza.score + RULES.disponibilitaBonus));
+  assert.ok(con.score > senza.score);
+});
+
+test('una preferenza da evitare abbassa il punteggio ma non fa sparire il match', () => {
+  const s = seed();
+  const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+  const prima = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
+  assert.equal(prima.tipo, 'MATCH');
+
+  const s2 = seed();
+  const richiesta2 = s2.requests.find((r) => r.id === 'rq_lorenzo_1');
+  const martina2 = s2.users.find((u) => u.id === 'u_martina');
+  martina2.preferenze = { evitaChiusure: true };
+  const dopo = findMatches(richiesta2, s2).find((m) => m.userId === 'u_martina');
+
+  assert.ok(dopo, 'con "evito le chiusure" il match non deve sparire');
+  assert.ok(dopo.score < prima.score);
 });
 
 test('due preferenze opposte non restano accese insieme', () => {
