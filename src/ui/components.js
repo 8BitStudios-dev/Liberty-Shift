@@ -149,6 +149,48 @@ export function cardRichiesta(request, giorno = null) {
     </button>`;
 }
 
+/**
+ * Il riassunto in alto: cosa cambia per te, prima di ogni dettaglio.
+ *
+ * Nel cambio OFF il punto non è l'orario, è che una giornata diventa OFF e
+ * l'altra no — dirlo con "faresti X, [nome] prende Y" lasciava capire tutto
+ * il resto tranne quello. Qui il giorno OFF viene prima, perché è la ragione
+ * per cui si guarda questa scheda; il giorno di lavoro viene dopo, con quello
+ * che avevi lì prima tra parentesi, a chiudere il cerchio.
+ *
+ * Del turno che prende l'altra persona non si spiega l'adattamento: quello
+ * la riguarda, non te (vedi `verificheIncrociate`, stessa regola).
+ */
+function riassuntoMatch(match, u, turno, opzioni) {
+  if (match.cambio !== TIPO_CAMBIO.OFF || !opzioni.mioCedo) {
+    return html`
+      <div class="turno-offerto">
+        Faresti <strong>${formatDay(turno?.data)}</strong> ·
+        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+        ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
+      </div>`;
+  }
+
+  const primaDelCambio = store.state.shifts.find(
+    (s) => s.userId === store.state.currentUserId && s.data === turno?.data,
+  );
+  const eri = !primaDelCambio || primaDelCambio.tipo === 'OFF'
+    ? 'eri OFF'
+    : `avevi ${shiftLabel(primaDelCambio)}`;
+
+  return html`
+    <div class="turno-offerto">
+      <strong>${formatDay(opzioni.mioCedo.data)} diventi OFF</strong> — ${u?.nome} prende il tuo turno ·
+      <strong>${shiftLabel(opzioni.mioCedo)}</strong>
+    </div>
+    <div class="turno-ceduto">
+      In cambio lavoreresti <strong>${formatDay(turno?.data)}</strong> ·
+      <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+      ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
+      <span class="testo-tenue">(${eri})</span>
+    </div>`;
+}
+
 export function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);
   const turno = store.shift(match.shiftOffertoId);
@@ -167,14 +209,7 @@ export function cardMatch(match, opzioni = {}) {
         ${verde ? '🟢 Match' : '🟡 Potenziale'}
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
-      <div class="turno-offerto">
-        Faresti <strong>${formatDay(turno?.data)}</strong> ·
-        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
-        ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
-      </div>
-      ${raw(opzioni.mioCedo
-    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · <strong>${esc(match.adattatoControparte?.trasformato ? `${match.adattatoControparte.start}–${match.adattatoControparte.end}` : shiftLabel(opzioni.mioCedo))}</strong>${match.adattatoControparte?.trasformato ? ` <span class="tag">${esc(shiftLabel(opzioni.mioCedo))} adattato al contratto di ${esc(u?.nome)}</span>` : ''}</div>`
-    : '')}
+      ${raw(riassuntoMatch(match, u, turno, opzioni))}
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
       </ul>
@@ -237,7 +272,7 @@ export function messaggioAvviso(richiesta, destinatario) {
   const cedo = store.shift(richiesta.cedo.shiftId);
   const giorni = (richiesta.cerco.giorni || []).map((g) => formatDay(g)).join(', ');
   const cosa = richiesta.tipo === TIPO_CAMBIO.OFF
-    ? `vorrei libero ${formatDay(cedo.data)} e in cambio lavoro uno fra: ${giorni}`
+    ? `vorrei OFF ${formatDay(cedo.data)} e in cambio lavoro uno fra: ${giorni}`
     : `cedo il turno di ${formatDay(cedo.data)} (${shiftLabel(cedo)}) e cerco un altro turno dello stesso giorno`;
   return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
     + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `

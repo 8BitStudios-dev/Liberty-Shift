@@ -363,10 +363,12 @@ La percentuale è la stessa che vedrebbe l'altra persona guardando i suoi match:
 per ogni richiesta aperta e guarda se in quella lista ci sei tu. Le due
 direzioni non possono divergere, e un test lo verifica.
 
-Da qui viene anche una regola di scrittura: le spiegazioni non danno del tu a
-nessuno. La stessa frase viene letta da chi ha pubblicato la richiesta e da chi
-può risolverla, e un "sei Part Time" giusto da un lato è falso dall'altro. Si
-usano i nomi propri, e c'è un test che rifiuta le frasi di parte.
+Da qui viene anche una regola di scrittura: le spiegazioni sanno chi sta
+guardando. La stessa frase la può leggere sia chi ha pubblicato la richiesta
+sia chi può risolverla, quindi il motore riceve `ctx.currentUserId` e parla in
+seconda persona solo della parte che corrisponde — "sei Part Time" se lo sei
+tu, il nome proprio se non lo sei. Un "tu" per una richiesta che chi guarda non
+c'entra per niente resta vietato, e un test lo verifica.
 
 ## L'accesso
 La password è **personale**, scelta da ciascuno alla prima apertura. Chi entra

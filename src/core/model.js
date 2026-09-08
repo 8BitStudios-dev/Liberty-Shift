@@ -369,8 +369,8 @@ export function ruoloNelGiorno(request, giorno, cedo) {
       icona: '📅',
       verbo: 'cerca OFF',
       sintesi: giorni.length
-        ? `vuole libero questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
-        : 'vuole libero questo giorno',
+        ? `vuole OFF questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
+        : 'vuole OFF questo giorno',
     };
   }
   if (giorni.includes(giorno)) {
@@ -380,7 +380,7 @@ export function ruoloNelGiorno(request, giorno, cedo) {
       verbo: 'offre OFF',
       // Solo il giorno che si sta guardando: gli altri che la richiesta offre
       // hanno una casella loro, ed è lì che vanno letti.
-      sintesi: `offre di lavorare questo giorno · in cambio vuole libero ${formatDay(cedo?.data)}`,
+      sintesi: `offre di lavorare questo giorno · in cambio vuole OFF ${formatDay(cedo?.data)}`,
     };
   }
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
@@ -399,9 +399,10 @@ export function ruoloNelGiorno(request, giorno, cedo) {
  * invece si prende una volta sola, altrimenti bastava un turno lungo per
  * scalare la classifica.
  *
- * Il testo è sempre in terza persona, mai con l'etichetta del profilo presa
- * di peso (quella è scritta in prima persona, "Preferisco le mattine"): la
- * stessa frase la legge sia chi pubblica la richiesta sia chi la risolve.
+ * `io` sceglie la persona grammaticale: seconda quando la frase la legge solo
+ * la persona a cui si riferisce (è chi chiama la funzione a saperlo — vedi
+ * `verificheIncrociate`), terza altrimenti. Mai l'etichetta del profilo presa
+ * di peso (quella è scritta in prima persona, "Preferisco le mattine").
  */
 // La notte non sta in RULES.fasce (è un caso a parte, vedi fasceDi/isNotturno):
 // serve un'etichetta di riserva per quando una preferenza la riguarda.
@@ -409,7 +410,7 @@ function fasciaLabel(key) {
   return RULES.fasce[key]?.label ?? 'le notti visual';
 }
 
-export function applicaPreferenze(user, shift) {
+export function applicaPreferenze(user, shift, { io = false } = {}) {
   const fasce = fasceDi(shift);
   if (!fasce.length || !user?.preferenze) return { bonus: 0, reasons: [] };
 
@@ -418,7 +419,7 @@ export function applicaPreferenze(user, shift) {
   if (evitata) {
     return {
       bonus: -RULES.evitaPenalty,
-      reasons: [`evita ${fasciaLabel(evitata.fascia)}, e ${shiftLabel(shift)} lo è`],
+      reasons: [`${io ? 'eviti' : 'evita'} ${fasciaLabel(evitata.fascia)}, e ${shiftLabel(shift)} lo è`],
     };
   }
 
@@ -426,6 +427,6 @@ export function applicaPreferenze(user, shift) {
   if (!preferite.length) return { bonus: 0, reasons: [] };
   return {
     bonus: RULES.preferenzaBonus,
-    reasons: [`preferisce ${preferite.map((p) => fasciaLabel(p.fascia)).join(' e ')}, e ${shiftLabel(shift)} lo è`],
+    reasons: [`${io ? 'preferisci' : 'preferisce'} ${preferite.map((p) => fasciaLabel(p.fascia)).join(' e ')}, e ${shiftLabel(shift)} lo è`],
   };
 }
