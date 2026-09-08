@@ -261,6 +261,10 @@ function matchOrario(request, ctx) {
       shiftOffertoId: suo.id,
       data: giorno,
       adattato: trasformaTurno(suo, mioCedo),
+      // Quello che riceverebbe l'altra parte, non il turno com'è: senza
+      // questo la scheda mostrava a entrambi lo stesso orario grezzo, come
+      // se lo scambio non cambiasse niente.
+      adattatoControparte: trasformaTurno(mioCedo, suo),
       prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
       reasons: [...reasons, ...v.reasons],
       avvisi: v.avvisi,
@@ -344,6 +348,7 @@ function matchOff(request, ctx) {
         shiftOffertoId: suo.id,
         data: giorno,
         adattato: trasformaTurno(suo, mioCedo),
+        adattatoControparte: trasformaTurno(mioCedo, suo),
         prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
         reasons: [...reasons, ...v.reasons],
         avvisi: v.avvisi,

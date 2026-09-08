@@ -462,12 +462,17 @@ const AZIONI = {
   // giorno che il motore ha trovato, poi si avvisa la persona.
   'pubblica-avvisa': (_, el) => {
     const me = store.me;
+    const orario = el.dataset.cambio === 'ORARIO';
     const { errori, richiesta } = store.creaRichiesta({
       cedo: { shiftId: F.rapido.shiftId, flessibile: false },
       tipo: el.dataset.cambio,
       cerco: {
         giorni: [el.dataset.data],
-        mode: el.dataset.cambio === 'ORARIO' ? 'RANGE' : 'ANY',
+        // Un cambio orario non può restare senza orario (R5): si pubblica
+        // l'orario preciso del match, non una fascia vuota.
+        mode: orario ? 'SPECIFIC' : 'ANY',
+        start: orario ? el.dataset.start : '',
+        end: orario ? el.dataset.end : '',
         entroLe: '', dalleOre: '',
         evitaChiusura: Boolean(me.preferenze?.evitaChiusure),
         note: '',
