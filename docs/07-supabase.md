@@ -144,6 +144,8 @@ Provato il 7 settembre 2026, non simulato:
 | `iscrivi()` con il codice giusto | profilo creato |
 | iscritto legge i profili e pubblica una richiesta | 200 e 201 |
 | **estraneo registrato senza codice** | profili `[]`, bacheca `[]`, scrittura 403 |
+| download di un calendario vero dalla funzione | 29 KB, 64 turni letti |
+| download da un dominio fuori elenco | rifiutato, «Indirizzo non ammesso» |
 
 L'ultima riga è quella che conta: un account creato senza codice esiste, entra,
 e non vede né tocca niente.
@@ -172,15 +174,31 @@ gli indirizzi delle funzioni distinguono maiuscole e minuscole, e una `c`
 minuscola risponde `404 NOT_FOUND` senza spiegare perché. Serve l'accesso di un
 utente autenticato, quindi un estraneo non può usarla come proxy.
 
+## Due trappole pagate, perché non si ripetano
+
+**Il nome della funzione distingue le maiuscole.** Pubblicata come
+`Calendario`, l'indirizzo `/functions/v1/calendario` risponde `404 NOT_FOUND`
+senza dire che è questione di una lettera.
+
+**Le funzioni vogliono le chiavi nuove.** Database e accesso accettano ancora
+la `anon` in formato JWT; le Edge Functions no, e rispondono «The apikey header
+matched no key configured», che sembra un problema di permessi e non lo è. Per
+quelle serve la chiave `sb_publishable_…`, che sta in Project Settings ▸ API
+Keys ed è pubblica come l'altra.
+
+Una terza, più banale: l'editor della dashboard apre una funzione nuova col
+codice di esempio dentro. Se non lo si cancella prima di incollare, la funzione
+risponde `Hello` e sembra rotta l'app.
+
 ## Cosa manca per collegarlo
 
-Lo schema c'è, il client c'è (`src/core/supabase.js`), l'app ancora no:
+Porta e calendario sono collegati. Resta il pezzo grosso:
 
-1. la prima apertura chiede il codice del negozio, crea l'account e il profilo;
+1. ~~la prima apertura chiede il codice del negozio, crea l'account e il
+   profilo~~ — fatto;
 2. `store.js` legge e scrive sul server **le sole cose pubblicate**: turni e
    preferenze restano dove sono;
-3. l'accesso passa da Supabase Auth invece che dall'impronta locale. Per chi usa
-   l'app non cambia niente: password, e si entra.
+3. ~~l'accesso passa da Supabase Auth~~ — fatto.
 
 E prima di aprirlo ai colleghi, la domanda del capitolo 27, che con un server
 condiviso diventa più netta, non meno: vedi

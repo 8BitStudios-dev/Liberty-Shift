@@ -115,7 +115,10 @@ function sicuroJSON(testo) {
 }
 
 function traduci(stato, corpo) {
-  const grezzo = corpo?.message || corpo?.error_description || corpo?.msg || corpo?.hint || '';
+  // `errore` è il campo che usano le nostre funzioni, ed è già in italiano:
+  // senza, un rifiuto motivato diventava un anonimo "Errore 400".
+  const grezzo = corpo?.errore || corpo?.message || corpo?.error_description
+    || corpo?.msg || corpo?.hint || '';
   if (stato === 400 && /invalid login/i.test(grezzo)) return 'Password sbagliata.';
   // Gli errori sollevati dalle nostre funzioni nel database arrivano col loro
   // SQLSTATE e un messaggio già scritto in italiano: quella è la spiegazione
