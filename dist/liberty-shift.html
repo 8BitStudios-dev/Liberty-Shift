@@ -6969,20 +6969,20 @@ function passoChiSei() {
   return html`
     <h2 class="titolo-gruppo">Chi sei</h2>
     <p class="testo-tenue">
-      I colleghi vedranno «${b.nome || 'Lorenzo'} ${(b.cognome || 'Bandini').slice(0, 1).toUpperCase()}.».
+      I colleghi vedranno «${b.nome || 'Nome'} ${(b.cognome || 'Cognome').slice(0, 1).toUpperCase()}.».
       Il cognome intero resta sul tuo dispositivo.
     </p>
 
     <label class="campo">
       <span>Nome</span>
       <input type="text" class="testo" data-campo="nome" value="${b.nome}"
-             placeholder="Lorenzo" autocomplete="given-name">
+             placeholder="Nome" autocomplete="given-name">
     </label>
 
     <label class="campo">
       <span>Cognome</span>
       <input type="text" class="testo" data-campo="cognome" value="${b.cognome}"
-             placeholder="Bandini" autocomplete="family-name">
+             placeholder="Cognome" autocomplete="family-name">
     </label>
 
     <div class="campo">
