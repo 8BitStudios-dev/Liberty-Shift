@@ -3199,6 +3199,28 @@ const PERSONE = [
     disponibilita: [true, true, true, true, true, true, true],
     settimana: W([o, ['10:00', '16:00'], ['08:00', '14:00'], ['11:00', '17:00'], ['12:00', '18:00'], o, o]),
   },
+  {
+    id: 'u_elena', cognome: 'Conti', genere: 'F', oreSettimanali: 20, nome: 'Elena', cognomeIniziale: 'C', contratto: 'PT', admin: false,
+    preferenze: { preferisceMattine: true, evitaChiusure: true },
+    disponibilita: [true, false, true, true, true, false, true],
+    // Quattro turni da cinque ore: venti ore, il monte ore più basso fra i PT.
+    settimana: W([o, ['09:30', '14:30'], o, ['09:30', '14:30'], ['10:00', '15:00'], o, ['09:30', '14:30']]),
+  },
+  {
+    id: 'u_davide', cognome: 'Ferri', genere: 'M', oreSettimanali: 40, nome: 'Davide', cognomeIniziale: 'F', contratto: 'FT', admin: false,
+    preferenze: { preferiscePomeriggi: true, evitaAperture: true },
+    disponibilita: [true, true, false, true, false, true, true],
+    settimana: W([['12:00', '21:00'], ['09:30', '18:30'], o, ['11:00', '20:00'], o, ['10:00', '19:00'], ['08:00', '17:00']]),
+  },
+  {
+    // Genere non specificato: le concordanze usano le forme neutre di
+    // `concorda()`, e senza qualcuno così nella demo quella strada non si
+    // vedrebbe mai.
+    id: 'u_alex', cognome: 'Greco', genere: 'X', oreSettimanali: 25, nome: 'Alex', cognomeIniziale: 'G', contratto: 'PT', admin: false,
+    preferenze: { preferisceChiusure: true },
+    disponibilita: [false, true, true, false, true, true, false],
+    settimana: W([o, ['15:00', '21:00'], ['10:00', '16:00'], o, ['09:30', '15:30'], ['12:00', '19:00'], o]),
+  },
 ];
 
 function seed() {
