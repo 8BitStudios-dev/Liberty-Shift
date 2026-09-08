@@ -14,6 +14,25 @@ export function iniziali(u) {
   return u ? `${u.nome[0]}${u.cognomeIniziale}` : '?';
 }
 
+/**
+ * Il campo nome utente che serve solo al portachiavi.
+ *
+ * L'app non chiede l'email e ha una persona sola per dispositivo, quindi un
+ * campo del genere sullo schermo sarebbe una domanda senza scopo. Senza però
+ * il portachiavi di iOS non capisce a chi appartiene la password, e a volte
+ * non propone nemmeno di salvarla: la coppia nome utente più password è quello
+ * che lui riconosce.
+ *
+ * Sta fuori dall'ordine di tabulazione e fuori dalla lettura vocale: chi vede
+ * e chi ascolta non deve incontrarlo, perché per loro non c'è.
+ */
+export function campoPortachiavi(valore) {
+  return html`
+    <input class="campo-portachiavi" type="text" autocomplete="username"
+           name="nomeutente" value="${valore || 'Liberty Shift'}"
+           readonly tabindex="-1" aria-hidden="true">`;
+}
+
 export function badgeStato(status) {
   const m = STATUS_META[status] || { dot: '', label: status };
   return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;

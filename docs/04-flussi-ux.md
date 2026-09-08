@@ -274,6 +274,34 @@ persona. Finché il server non c'è, però, l'unica strada resta "Ricomincia da
 capo" nella schermata di accesso, che cancella i dati di quel dispositivo — e la
 schermata lo dice, invece di promettere un aiuto che oggi nessuno può dare.
 
+### Il portachiavi fa il lavoro di Face ID
+Le tre schermate con una password (creazione, ingresso, cambio) sono **moduli
+veri**, con dentro un campo nome utente che non si vede. Non è pignoleria:
+Safari propone di salvare una password solo quando la trova dentro un `form`
+accanto a un nome utente, e senza quella coppia a volte non chiede nemmeno. Con
+la coppia al suo posto, il portachiavi salva alla registrazione e poi rimette
+la password da solo con Face ID, sincronizzata fra iPhone e Mac. È il beneficio
+di una passkey senza scrivere una riga di WebAuthn.
+
+Il campo nome utente vale `Lorenzo B.`, la stessa forma che compare in giro per
+l'app, e si scrive in un posto solo: se ingresso e registrazione ne usassero
+due diverse, iOS salverebbe due voci e chiederebbe quale usare.
+
+Due dettagli che sembrano dettagli e non lo sono. Il campo si nasconde
+spostandolo fuori dallo schermo, mai con `display: none`, perché un campo tolto
+dal layout viene saltato anche dal riempimento automatico, ed era lui che
+serviva. E ogni modulo dichiara `data-invio`, l'azione che l'invio da tastiera
+deve eseguire: senza, il tasto Invio ricarica la pagina e l'app riparte da
+capo. Quattro test in `tests/portachiavi.test.js` tengono ferme tutte e due le
+cose.
+
+Una passkey vera, con Face ID al posto della password, resta possibile ma è
+un'altra decisione: funzionerebbe sul sito e nell'app aggiunta alla schermata
+Home, non nel file unico aperto a mano, perché le passkey sono legate al
+dominio. L'accesso con Apple invece è stato scartato: costa un abbonamento da
+sviluppatore, e restituisce comunque un indirizzo email, che è esattamente
+quello che questo progetto ha deciso di non raccogliere.
+
 **Cambio password**, dal Profilo in fondo: serve quella attuale. Chi trovasse il
 telefono già sbloccato non deve poter chiudere fuori il proprietario cambiandola.
 La sessione segue la credenziale nuova, così chi cambia password non si ritrova

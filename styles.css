@@ -364,6 +364,18 @@ p { margin: 8px 0; }
 .accesso .non-puoi { text-align: center; }
 .accesso-nota { margin-top: 18px; }
 
+/*
+ * Il campo che il portachiavi legge e la persona no.
+ *
+ * Non si nasconde con display:none: un campo che non esiste nel layout viene
+ * saltato anche dal riempimento automatico, ed era proprio lui che serviva.
+ * Questa è la nascosta "vera", quella che resta nella pagina ma non si vede.
+ */
+.campo-portachiavi {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
 .valore-fisso { font-size: 17px; font-weight: 600; margin: 0; }
 
 .tabella-dati {

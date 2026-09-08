@@ -12,6 +12,7 @@ import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 import { oreDelContratto, oreAutomatiche } from '../core/model.js';
 import { serverConfigurato } from '../core/config.js';
+import { campoPortachiavi } from './components.js';
 
 /** La bozza in corso di compilazione. */
 export const bozzaProfilo = {
@@ -244,6 +245,21 @@ function campoOre(b) {
     </div>`;
 }
 
+/**
+ * Il nome con cui la password finisce nel portachiavi.
+ *
+ * Deve essere lo stesso che la schermata d'ingresso mostrerà al riavvio,
+ * altrimenti iOS si ritrova due voci per la stessa app e chiede quale usare.
+ * È la forma di `nomeUtente()`, scritta qui perché al primo passo la persona
+ * non esiste ancora: c'è solo la bozza.
+ */
+function nomePerIlPortachiavi(b) {
+  const nome = b.nome.trim();
+  const iniziale = b.cognome.trim().slice(0, 1).toUpperCase();
+  if (!nome) return '';
+  return iniziale ? `${nome} ${iniziale}.` : nome;
+}
+
 function passoPassword() {
   const b = bozzaProfilo;
   return html`
@@ -253,26 +269,31 @@ function passoPassword() {
       chi ti ha passato il link.
     </p>
 
-    <label class="campo">
-      <span>Password</span>
-      <input type="password" class="testo" data-campo="password-nuova"
-             value="${b.password}" placeholder="Almeno ${REGOLE_PASSWORD.lunghezzaMinima} caratteri"
-             autocomplete="new-password">
-    </label>
+    <form data-invio="profilo-avanti">
+      ${raw(campoPortachiavi(nomePerIlPortachiavi(b)))}
 
-    <label class="campo">
-      <span>Ripetila</span>
-      <input type="password" class="testo" data-campo="password-conferma"
-             value="${b.conferma}" autocomplete="new-password">
-    </label>
+      <label class="campo">
+        <span>Password</span>
+        <input type="password" class="testo" data-campo="password-nuova"
+               value="${b.password}" placeholder="Almeno ${REGOLE_PASSWORD.lunghezzaMinima} caratteri"
+               autocomplete="new-password">
+      </label>
 
-    <p class="testo-tenue">
-      Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
-      permette di riconoscerla. Se la dimentichi, chi gestisce l'app può
-      reimpostarla.
-    </p>
+      <label class="campo">
+        <span>Ripetila</span>
+        <input type="password" class="testo" data-campo="password-conferma"
+               value="${b.conferma}" autocomplete="new-password">
+      </label>
 
-    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+      <p class="testo-tenue">
+        Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
+        permette di riconoscerla. Se la dimentichi, chi gestisce l'app può
+        reimpostarla. Se il telefono ti propone di salvarla nel portachiavi,
+        accetta: la volta dopo entri con Face ID.
+      </p>
+
+      <button type="submit" class="btn primario largo" data-act="profilo-avanti">Continua</button>
+    </form>`;
 }
 
 /**

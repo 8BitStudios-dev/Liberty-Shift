@@ -15,6 +15,7 @@ import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
 import { scaricaCalendario } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
+import { campoPortachiavi, nomeUtente } from './components.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -87,12 +88,15 @@ function schermataAccesso(errore = '') {
       <h1>Liberty Shift</h1>
       <p class="motto">Change shifts. Keep your plans.</p>
       <p class="testo-tenue">Inserisci la tua password.</p>
-      <label class="campo">
-        <input type="password" class="testo" data-campo="password"
-               placeholder="Password" autocomplete="current-password" autofocus>
-      </label>
-      ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : errore}</p>` : '')}
-      <button class="btn primario largo" data-act="entra">Entra</button>
+      <form data-invio="entra">
+        ${raw(campoPortachiavi(store.me ? nomeUtente(store.me) : ''))}
+        <label class="campo">
+          <input type="password" class="testo" data-campo="password"
+                 placeholder="Password" autocomplete="current-password" autofocus>
+        </label>
+        ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : errore}</p>` : '')}
+        <button type="submit" class="btn primario largo" data-act="entra">Entra</button>
+      </form>
       <p class="testo-tenue accesso-nota">
         Password dimenticata? Chiedi a chi gestisce l'app di reimpostarla.
         Finché il server non è collegato l'unica strada è ricominciare da capo,
@@ -224,18 +228,22 @@ const AZIONI = {
 
   'cambia-password': () => {
     const w = sheet('Cambia password', html`
-      <label class="campo">
-        <span>Password attuale</span>
-        <input type="password" class="testo" data-campo="vecchia" autocomplete="current-password">
-      </label>
-      <label class="campo">
-        <span>Nuova password</span>
-        <input type="password" class="testo" data-campo="nuova" autocomplete="new-password">
-      </label>
-      <label class="campo">
-        <span>Ripeti la nuova</span>
-        <input type="password" class="testo" data-campo="ripeti" autocomplete="new-password">
-      </label>
+      <form data-invio="conferma-password">
+        ${raw(campoPortachiavi(nomeUtente(store.me)))}
+        <label class="campo">
+          <span>Password attuale</span>
+          <input type="password" class="testo" data-campo="vecchia" autocomplete="current-password">
+        </label>
+        <label class="campo">
+          <span>Nuova password</span>
+          <input type="password" class="testo" data-campo="nuova" autocomplete="new-password">
+        </label>
+        <label class="campo">
+          <span>Ripeti la nuova</span>
+          <input type="password" class="testo" data-campo="ripeti" autocomplete="new-password">
+        </label>
+        <button type="submit" class="campo-portachiavi" tabindex="-1" aria-hidden="true"></button>
+      </form>
       <div data-esito></div>`, {
       azioni: '<button class="btn primario largo" data-act="conferma-password">Cambia</button>',
     });
@@ -749,9 +757,17 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 
-// Invio nel campo password: entrare senza toccare il pulsante.
-on(document.body, 'keydown', '[data-campo="password"]', (e) => {
-  if (e.key === 'Enter') AZIONI.entra();
+/*
+ * L'invio da tastiera nei moduli con la password.
+ *
+ * Il modulo vero c'è per il portachiavi: iOS propone di salvare una password
+ * solo quando la vede dentro un `form` insieme a un nome utente. Da lì in poi
+ * l'invio va intercettato, perché altrimenti la pagina si ricarica e l'app
+ * riparte da capo.
+ */
+on(document.body, 'submit', 'form[data-invio]', (e, form) => {
+  e.preventDefault();
+  AZIONI[form.dataset.invio]?.(e, form);
 });
 
 window.addEventListener('hashchange', render);

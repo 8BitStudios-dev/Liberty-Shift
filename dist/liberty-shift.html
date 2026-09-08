@@ -368,6 +368,18 @@ p { margin: 8px 0; }
 .accesso .non-puoi { text-align: center; }
 .accesso-nota { margin-top: 18px; }
 
+/*
+ * Il campo che il portachiavi legge e la persona no.
+ *
+ * Non si nasconde con display:none: un campo che non esiste nel layout viene
+ * saltato anche dal riempimento automatico, ed era proprio lui che serviva.
+ * Questa è la nascosta "vera", quella che resta nella pagina ma non si vede.
+ */
+.campo-portachiavi {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
 .valore-fisso { font-size: 17px; font-weight: 600; margin: 0; }
 
 .tabella-dati {
@@ -3359,6 +3371,25 @@ function iniziali(u) {
   return u ? `${u.nome[0]}${u.cognomeIniziale}` : '?';
 }
 
+/**
+ * Il campo nome utente che serve solo al portachiavi.
+ *
+ * L'app non chiede l'email e ha una persona sola per dispositivo, quindi un
+ * campo del genere sullo schermo sarebbe una domanda senza scopo. Senza però
+ * il portachiavi di iOS non capisce a chi appartiene la password, e a volte
+ * non propone nemmeno di salvarla: la coppia nome utente più password è quello
+ * che lui riconosce.
+ *
+ * Sta fuori dall'ordine di tabulazione e fuori dalla lettura vocale: chi vede
+ * e chi ascolta non deve incontrarlo, perché per loro non c'è.
+ */
+function campoPortachiavi(valore) {
+  return html`
+    <input class="campo-portachiavi" type="text" autocomplete="username"
+           name="nomeutente" value="${valore || 'Liberty Shift'}"
+           readonly tabindex="-1" aria-hidden="true">`;
+}
+
 function badgeStato(status) {
   const m = STATUS_META[status] || { dot: '', label: status };
   return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
@@ -3559,7 +3590,7 @@ function cardOpportunita({ richiesta, match }) {
     </article>`;
 }
 
-return { nomeUtente, iniziali, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, vuoto, cardOpportunita };
+return { nomeUtente, iniziali, campoPortachiavi, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, vuoto, cardOpportunita };
 })();
 
 // ---- src/ui/views.js
@@ -5331,6 +5362,7 @@ const { noteLegali, accettazioneNote, VERSIONE_NOTE } = M_legale;
 const { controllaPassword, REGOLE_PASSWORD } = M_accesso;
 const { oreDelContratto, oreAutomatiche } = M_model;
 const { serverConfigurato } = M_config;
+const { campoPortachiavi } = M_components;
 
 /** La bozza in corso di compilazione. */
 const bozzaProfilo = {
@@ -5563,6 +5595,21 @@ function campoOre(b) {
     </div>`;
 }
 
+/**
+ * Il nome con cui la password finisce nel portachiavi.
+ *
+ * Deve essere lo stesso che la schermata d'ingresso mostrerà al riavvio,
+ * altrimenti iOS si ritrova due voci per la stessa app e chiede quale usare.
+ * È la forma di `nomeUtente()`, scritta qui perché al primo passo la persona
+ * non esiste ancora: c'è solo la bozza.
+ */
+function nomePerIlPortachiavi(b) {
+  const nome = b.nome.trim();
+  const iniziale = b.cognome.trim().slice(0, 1).toUpperCase();
+  if (!nome) return '';
+  return iniziale ? `${nome} ${iniziale}.` : nome;
+}
+
 function passoPassword() {
   const b = bozzaProfilo;
   return html`
@@ -5572,26 +5619,31 @@ function passoPassword() {
       chi ti ha passato il link.
     </p>
 
-    <label class="campo">
-      <span>Password</span>
-      <input type="password" class="testo" data-campo="password-nuova"
-             value="${b.password}" placeholder="Almeno ${REGOLE_PASSWORD.lunghezzaMinima} caratteri"
-             autocomplete="new-password">
-    </label>
+    <form data-invio="profilo-avanti">
+      ${raw(campoPortachiavi(nomePerIlPortachiavi(b)))}
 
-    <label class="campo">
-      <span>Ripetila</span>
-      <input type="password" class="testo" data-campo="password-conferma"
-             value="${b.conferma}" autocomplete="new-password">
-    </label>
+      <label class="campo">
+        <span>Password</span>
+        <input type="password" class="testo" data-campo="password-nuova"
+               value="${b.password}" placeholder="Almeno ${REGOLE_PASSWORD.lunghezzaMinima} caratteri"
+               autocomplete="new-password">
+      </label>
 
-    <p class="testo-tenue">
-      Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
-      permette di riconoscerla. Se la dimentichi, chi gestisce l'app può
-      reimpostarla.
-    </p>
+      <label class="campo">
+        <span>Ripetila</span>
+        <input type="password" class="testo" data-campo="password-conferma"
+               value="${b.conferma}" autocomplete="new-password">
+      </label>
 
-    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+      <p class="testo-tenue">
+        Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
+        permette di riconoscerla. Se la dimentichi, chi gestisce l'app può
+        reimpostarla. Se il telefono ti propone di salvarla nel portachiavi,
+        accetta: la volta dopo entri con Face ID.
+      </p>
+
+      <button type="submit" class="btn primario largo" data-act="profilo-avanti">Continua</button>
+    </form>`;
 }
 
 /**
@@ -5656,6 +5708,7 @@ const { noteLegali, VERSIONE_NOTE } = M_legale;
 const { controllaPassword } = M_accesso;
 const { scaricaCalendario } = M_supabase;
 const { serverConfigurato } = M_config;
+const { campoPortachiavi, nomeUtente } = M_components;
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -5728,12 +5781,15 @@ function schermataAccesso(errore = '') {
       <h1>Liberty Shift</h1>
       <p class="motto">Change shifts. Keep your plans.</p>
       <p class="testo-tenue">Inserisci la tua password.</p>
-      <label class="campo">
-        <input type="password" class="testo" data-campo="password"
-               placeholder="Password" autocomplete="current-password" autofocus>
-      </label>
-      ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : errore}</p>` : '')}
-      <button class="btn primario largo" data-act="entra">Entra</button>
+      <form data-invio="entra">
+        ${raw(campoPortachiavi(store.me ? nomeUtente(store.me) : ''))}
+        <label class="campo">
+          <input type="password" class="testo" data-campo="password"
+                 placeholder="Password" autocomplete="current-password" autofocus>
+        </label>
+        ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : errore}</p>` : '')}
+        <button type="submit" class="btn primario largo" data-act="entra">Entra</button>
+      </form>
       <p class="testo-tenue accesso-nota">
         Password dimenticata? Chiedi a chi gestisce l'app di reimpostarla.
         Finché il server non è collegato l'unica strada è ricominciare da capo,
@@ -5865,18 +5921,22 @@ const AZIONI = {
 
   'cambia-password': () => {
     const w = sheet('Cambia password', html`
-      <label class="campo">
-        <span>Password attuale</span>
-        <input type="password" class="testo" data-campo="vecchia" autocomplete="current-password">
-      </label>
-      <label class="campo">
-        <span>Nuova password</span>
-        <input type="password" class="testo" data-campo="nuova" autocomplete="new-password">
-      </label>
-      <label class="campo">
-        <span>Ripeti la nuova</span>
-        <input type="password" class="testo" data-campo="ripeti" autocomplete="new-password">
-      </label>
+      <form data-invio="conferma-password">
+        ${raw(campoPortachiavi(nomeUtente(store.me)))}
+        <label class="campo">
+          <span>Password attuale</span>
+          <input type="password" class="testo" data-campo="vecchia" autocomplete="current-password">
+        </label>
+        <label class="campo">
+          <span>Nuova password</span>
+          <input type="password" class="testo" data-campo="nuova" autocomplete="new-password">
+        </label>
+        <label class="campo">
+          <span>Ripeti la nuova</span>
+          <input type="password" class="testo" data-campo="ripeti" autocomplete="new-password">
+        </label>
+        <button type="submit" class="campo-portachiavi" tabindex="-1" aria-hidden="true"></button>
+      </form>
       <div data-esito></div>`, {
       azioni: '<button class="btn primario largo" data-act="conferma-password">Cambia</button>',
     });
@@ -6390,9 +6450,17 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
 });
 
-// Invio nel campo password: entrare senza toccare il pulsante.
-on(document.body, 'keydown', '[data-campo="password"]', (e) => {
-  if (e.key === 'Enter') AZIONI.entra();
+/*
+ * L'invio da tastiera nei moduli con la password.
+ *
+ * Il modulo vero c'è per il portachiavi: iOS propone di salvare una password
+ * solo quando la vede dentro un `form` insieme a un nome utente. Da lì in poi
+ * l'invio va intercettato, perché altrimenti la pagina si ricarica e l'app
+ * riparte da capo.
+ */
+on(document.body, 'submit', 'form[data-invio]', (e, form) => {
+  e.preventDefault();
+  AZIONI[form.dataset.invio]?.(e, form);
 });
 
 window.addEventListener('hashchange', render);
