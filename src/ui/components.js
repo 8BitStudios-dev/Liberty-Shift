@@ -202,6 +202,29 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
     </button>`;
 }
 
+/**
+ * Il messaggio con cui si segnala una richiesta a un collega.
+ *
+ * Lo legge una persona sola, in chat, e deve bastarsi: chi lo riceve non ha
+ * l'app aperta e magari nemmeno installata. Quindi dice chi scrive, cosa
+ * cede, cosa cerca e dove si risponde, in quest'ordine, senza sigle.
+ */
+export function messaggioAvviso(richiesta, destinatario) {
+  const cedo = store.shift(richiesta.cedo.shiftId);
+  const giorni = (richiesta.cerco.giorni || []).map((g) => formatDay(g)).join(', ');
+  const cosa = richiesta.tipo === TIPO_CAMBIO.OFF
+    ? `vorrei libero ${formatDay(cedo.data)} e in cambio lavoro uno fra: ${giorni}`
+    : `cedo il turno di ${formatDay(cedo.data)} (${shiftLabel(cedo)}) e cerco un altro turno dello stesso giorno`;
+  return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
+    + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `
+    + `Se ti va di scambiare, rispondi qui o dall'app: ${indirizzoApp()}`;
+}
+
+/** L'indirizzo di questa copia dell'app, per chi deve ancora aprirla. */
+export function indirizzoApp() {
+  return `${location.origin}${location.pathname}`.replace(/index\.html$/, '');
+}
+
 export function vuoto(titolo, sottotitolo, azione = '') {
   return html`
     <div class="vuoto">

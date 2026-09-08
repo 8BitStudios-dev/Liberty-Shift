@@ -375,7 +375,33 @@ export function impostazioni() {
         <span class="chevron">›</span>
       </button>
       ${raw(rigaBacheca())}
+      ${raw(rigaDemo())}
     </section>`;
+}
+
+/**
+ * L'interruttore delle persone inventate.
+ *
+ * Non le cancella: le mette da parte e le rimette. Serve a mostrare l'app a
+ * un collega quando la bacheca vera è ancora vuota, e a togliersele di mezzo
+ * il giorno in cui i colleghi veri ci sono.
+ */
+function rigaDemo() {
+  const visibile = store.demoVisibile();
+  const quante = visibile
+    ? store.state.users.filter((u) => !u.daServer && u.id !== store.state.currentUserId).length
+    : (store.state.demoNascosta?.users || []).length;
+  return html`
+    <label class="tile switch-tile">
+      <span class="tile-icona">🎭</span>
+      <span>
+        <strong>Persone di esempio</strong>
+        <em>${visibile
+    ? `${quante} colleghi inventati, per far vedere l'app`
+    : 'Nascoste: in bacheca ci sono solo persone vere'}</em>
+      </span>
+      <input type="checkbox" data-act="mostra-demo" ${raw(visibile ? 'checked' : '')}>
+    </label>`;
 }
 
 /**

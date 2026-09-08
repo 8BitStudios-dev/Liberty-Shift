@@ -446,7 +446,10 @@ export const store = {
         aspettaMe: p.status === 'IN_ATTESA' && !p.accettataDa.includes(me),
         daRingraziare: p.status === 'ACCORDO' && !this.haGiaRingraziato(p.id),
       }))
-      .filter((x) => x.richiesta)
+      // Senza la richiesta, l'altra persona o il turno offerto non c'è niente
+      // da mostrare e niente da decidere: una riga a metà si limiterebbe a
+      // rompere la schermata mentre la disegna.
+      .filter((x) => x.richiesta && x.altro && this.shift(x.proposta.shiftOffertoId))
       .sort((a, b) => (b.aspettaMe - a.aspettaMe)
         || (b.daRingraziare - a.daRingraziare)
         || b.proposta.createdAt.localeCompare(a.proposta.createdAt));
@@ -710,6 +713,59 @@ export const store = {
     return esito;
   },
 
+  /**
+   * Le persone inventate si nascondono, non si cancellano.
+   *
+   * Servono a mostrare l'app quando la bacheca vera è ancora vuota, e
+   * smettono di servire nel momento in cui entra il secondo collega: una
+   * richiesta di Martina Rossi in mezzo a quelle vere è una perdita di tempo
+   * per chiunque provi a rispondere.
+   *
+   * Metterle da parte invece di eliminarle costa una riga in più e rende la
+   * cosa reversibile: la demo torna intera, con i suoi turni e le sue
+   * richieste, il giorno in cui serve di nuovo far vedere l'app a qualcuno.
+   */
+  mostraDemo(valore) {
+    if (valore) {
+      const messeDaParte = this.state.demoNascosta;
+      if (!messeDaParte) return;
+      for (const [dove, righe] of Object.entries(messeDaParte)) {
+        this.state[dove] = [...this.state[dove], ...righe];
+      }
+      delete this.state.demoNascosta;
+      this.commit();
+      return;
+    }
+
+    const io = this.state.currentUserId;
+    // Inventata è una persona che non viene dal server e non sono io: quello
+    // che ho scritto prima che il server esistesse resta dov'è.
+    const nascosti = new Set(
+      this.state.users.filter((u) => !u.daServer && u.id !== io).map((u) => u.id),
+    );
+    // Poi va via tutto quello che le nomina, comprese le proposte fra me e
+    // loro: lasciarne una vorrebbe dire una riga in posta che rimanda a un
+    // turno di nessuno, e la schermata che si rompe nel disegnarla.
+    const inventata = {
+      users: (u) => nascosti.has(u.id),
+      shifts: (s) => nascosti.has(s.userId),
+      requests: (r) => nascosti.has(r.userId),
+      proposals: (p) => nascosti.has(p.daUserId) || nascosti.has(p.aUserId),
+      ringraziamenti: (g) => nascosti.has(g.daUserId) || nascosti.has(g.aUserId),
+    };
+    const daParte = {};
+    for (const [dove, e] of Object.entries(inventata)) {
+      daParte[dove] = (this.state[dove] || []).filter(e);
+      this.state[dove] = (this.state[dove] || []).filter((x) => !e(x));
+    }
+    this.state.demoNascosta = daParte;
+    this.commit();
+  },
+
+  demoVisibile() {
+    return !this.state.demoNascosta;
+  },
+
   /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */
   profiloDaCompletare(versioneNote) {
     const p = this.state.profilo;
@@ -741,9 +797,17 @@ export const store = {
     if (!r) return { errori: ['Richiesta non trovata.'] };
     if (r.avvisati?.includes(userId)) return { errori: ['Hai già avvisato questa persona.'] };
     r.avvisati = [...(r.avvisati || []), userId];
-    this.notifica(userId, `${this.me.nome} cerca un cambio che potrebbe interessarti.`);
+
+    // Per una persona vera l'avviso dentro l'app non esiste: finirebbe nella
+    // memoria di questo telefono, per qualcuno che la leggerebbe dal suo. È
+    // la schermata a mandarlo davvero, dove i messaggi si leggono. Qui resta
+    // solo l'appunto di averglielo già chiesto.
+    const persona = this.user(userId);
+    if (persona && !persona.daServer) {
+      this.notifica(userId, `${this.me.nome} cerca un cambio che potrebbe interessarti.`);
+    }
     this.commit();
-    return { ok: true };
+    return { ok: true, daAvvisare: Boolean(persona?.daServer) };
   },
 
   notifica(userId, testo) {

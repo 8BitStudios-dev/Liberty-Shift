@@ -28,6 +28,35 @@ export function on(root, evento, selettore, handler) {
   });
 }
 
+/**
+ * Manda un messaggio fuori dall'app, dove i messaggi si leggono davvero.
+ *
+ * Un avviso dentro l'app raggiunge solo chi l'app ce l'ha aperta, e nessuno
+ * la tiene aperta aspettando. I cambi turno in negozio si chiedono in chat, e
+ * questa è la stessa chat: il foglio di condivisione del telefono, WhatsApp
+ * dove il foglio non c'è, gli appunti come ultima spiaggia.
+ */
+export async function condividi(testo) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: testo });
+      return 'condiviso';
+    } catch (e) {
+      // Chiudere il foglio è una scelta, non un guasto: non si ripiega su
+      // WhatsApp per qualcuno che ha appena detto di no.
+      if (e?.name === 'AbortError') return 'annullato';
+    }
+  }
+  const finestra = window.open(`https://wa.me/?text=${encodeURIComponent(testo)}`, '_blank');
+  if (finestra) return 'whatsapp';
+  try {
+    await navigator.clipboard.writeText(testo);
+    return 'copiato';
+  } catch {
+    return 'niente';
+  }
+}
+
 export function toast(testo) {
   let el = document.getElementById('toast');
   if (!el) {

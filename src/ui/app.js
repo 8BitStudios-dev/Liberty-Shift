@@ -1,4 +1,4 @@
-import { html, raw, on, toast, sheet } from './dom.js';
+import { html, raw, on, toast, sheet, condividi } from './dom.js';
 import { store } from '../core/store.js';
 import * as V from './views.js';
 import * as F from './flows.js';
@@ -16,7 +16,7 @@ import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
 import { scaricaCalendario } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
-import { campoPortachiavi, nomeUtente, chipsOrariTipici } from './components.js';
+import { campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso } from './components.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -176,6 +176,25 @@ function riassuntoImport({ aggiunti = 0, aggiornati = 0, bloccati = [] }) {
   return bloccati.length === 1
     ? `${base}. ${giorni} è in una richiesta aperta: non l'ho toccato`
     : `${base}. ${giorni} sono in richieste aperte: non li ho toccati`;
+}
+
+/**
+ * Segnala una richiesta a un collega vero, fuori dall'app.
+ *
+ * L'app non può bussare a un altro telefono: le notifiche che scrive restano
+ * in questo. Il messaggio esce da dove escono gli altri messaggi, e il toast
+ * dice quello che è successo davvero, perché "è stato avvisato" dopo un
+ * foglio chiuso senza mandare niente sarebbe una bugia.
+ */
+async function mandaAvviso(richiesta, persona) {
+  const esito = await condividi(messaggioAvviso(richiesta, persona));
+  toast({
+    condiviso: `Messaggio per ${persona.nome} inviato`,
+    whatsapp: `Messaggio per ${persona.nome} pronto su WhatsApp`,
+    copiato: 'Messaggio copiato: incollalo dove preferisci',
+    annullato: `${persona.nome} non è stato avvisato`,
+    niente: 'Non sono riuscito a preparare il messaggio',
+  }[esito]);
 }
 
 /** Chiude ogni tendina aperta, qualunque essa sia. */
@@ -340,6 +359,12 @@ const AZIONI = {
     toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai('#/home');
   },
+  'mostra-demo': (e) => {
+    store.mostraDemo(e.target.checked);
+    toast(e.target.checked ? 'Persone di esempio rimesse' : 'Persone di esempio nascoste');
+    render();
+  },
+
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
 
   // La guida, riaperta a mano dal punto interrogativo nella testata.
@@ -371,10 +396,13 @@ const AZIONI = {
 
   // Chi ha solo una disponibilità non ha una richiesta su cui proporre:
   // si avvisa, e sarà lui a rispondere.
-  avvisa: (_, el) => {
-    const { errori } = store.avvisa(el.dataset.user, el.dataset.richiesta);
-    toast(errori ? errori[0] : `${store.user(el.dataset.user).nome} è stato avvisato`);
+  avvisa: async (_, el) => {
+    const persona = store.user(el.dataset.user);
+    const { errori, daAvvisare } = store.avvisa(el.dataset.user, el.dataset.richiesta);
+    if (errori) return toast(errori[0]);
     render();
+    if (!daAvvisare) return toast(`${persona.nome} è stato avvisato`);
+    await mandaAvviso(store.request(el.dataset.richiesta), persona);
   },
 
   // Dal Cambio rapido la richiesta non esiste ancora: si crea al volo sul
@@ -394,9 +422,12 @@ const AZIONI = {
       usaPriorita: false,
     });
     if (errori) return toast(errori[0]);
-    store.avvisa(el.dataset.user, richiesta.id);
-    toast(`Richiesta pubblicata, ${store.user(el.dataset.user).nome} è stato avvisato`);
+    const persona = store.user(el.dataset.user);
+    const { daAvvisare } = store.avvisa(el.dataset.user, richiesta.id);
     vai(`#/richiesta?id=${richiesta.id}`);
+    if (!daAvvisare) return toast(`Richiesta pubblicata, ${persona.nome} è stato avvisato`);
+    toast('Richiesta pubblicata');
+    mandaAvviso(richiesta, persona);
   },
 
   'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },

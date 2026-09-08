@@ -454,6 +454,10 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 
 .switch { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--bordo); font-size: 15px; }
 .switch input { width: 20px; height: 20px; accent-color: var(--accento); }
+
+/* Una riga dell'elenco che invece di portare altrove accende qualcosa. */
+.switch-tile { cursor: pointer; }
+.switch-tile input { width: 20px; height: 20px; accent-color: var(--accento); flex: none; }
 .switch.disabilitato { opacity: .5; }
 
 .progresso { height: 3px; background: var(--superficie-2); border-radius: 2px; overflow: hidden; margin-bottom: 18px; }

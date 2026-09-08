@@ -458,6 +458,10 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 
 .switch { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--bordo); font-size: 15px; }
 .switch input { width: 20px; height: 20px; accent-color: var(--accento); }
+
+/* Una riga dell'elenco che invece di portare altrove accende qualcosa. */
+.switch-tile { cursor: pointer; }
+.switch-tile input { width: 20px; height: 20px; accent-color: var(--accento); flex: none; }
 .switch.disabilitato { opacity: .5; }
 
 .progresso { height: 3px; background: var(--superficie-2); border-radius: 2px; overflow: hidden; margin-bottom: 18px; }
@@ -3533,7 +3537,10 @@ const store = {
         aspettaMe: p.status === 'IN_ATTESA' && !p.accettataDa.includes(me),
         daRingraziare: p.status === 'ACCORDO' && !this.haGiaRingraziato(p.id),
       }))
-      .filter((x) => x.richiesta)
+      // Senza la richiesta, l'altra persona o il turno offerto non c'è niente
+      // da mostrare e niente da decidere: una riga a metà si limiterebbe a
+      // rompere la schermata mentre la disegna.
+      .filter((x) => x.richiesta && x.altro && this.shift(x.proposta.shiftOffertoId))
       .sort((a, b) => (b.aspettaMe - a.aspettaMe)
         || (b.daRingraziare - a.daRingraziare)
         || b.proposta.createdAt.localeCompare(a.proposta.createdAt));
@@ -3797,6 +3804,59 @@ const store = {
     return esito;
   },
 
+  /**
+   * Le persone inventate si nascondono, non si cancellano.
+   *
+   * Servono a mostrare l'app quando la bacheca vera è ancora vuota, e
+   * smettono di servire nel momento in cui entra il secondo collega: una
+   * richiesta di Martina Rossi in mezzo a quelle vere è una perdita di tempo
+   * per chiunque provi a rispondere.
+   *
+   * Metterle da parte invece di eliminarle costa una riga in più e rende la
+   * cosa reversibile: la demo torna intera, con i suoi turni e le sue
+   * richieste, il giorno in cui serve di nuovo far vedere l'app a qualcuno.
+   */
+  mostraDemo(valore) {
+    if (valore) {
+      const messeDaParte = this.state.demoNascosta;
+      if (!messeDaParte) return;
+      for (const [dove, righe] of Object.entries(messeDaParte)) {
+        this.state[dove] = [...this.state[dove], ...righe];
+      }
+      delete this.state.demoNascosta;
+      this.commit();
+      return;
+    }
+
+    const io = this.state.currentUserId;
+    // Inventata è una persona che non viene dal server e non sono io: quello
+    // che ho scritto prima che il server esistesse resta dov'è.
+    const nascosti = new Set(
+      this.state.users.filter((u) => !u.daServer && u.id !== io).map((u) => u.id),
+    );
+    // Poi va via tutto quello che le nomina, comprese le proposte fra me e
+    // loro: lasciarne una vorrebbe dire una riga in posta che rimanda a un
+    // turno di nessuno, e la schermata che si rompe nel disegnarla.
+    const inventata = {
+      users: (u) => nascosti.has(u.id),
+      shifts: (s) => nascosti.has(s.userId),
+      requests: (r) => nascosti.has(r.userId),
+      proposals: (p) => nascosti.has(p.daUserId) || nascosti.has(p.aUserId),
+      ringraziamenti: (g) => nascosti.has(g.daUserId) || nascosti.has(g.aUserId),
+    };
+    const daParte = {};
+    for (const [dove, e] of Object.entries(inventata)) {
+      daParte[dove] = (this.state[dove] || []).filter(e);
+      this.state[dove] = (this.state[dove] || []).filter((x) => !e(x));
+    }
+    this.state.demoNascosta = daParte;
+    this.commit();
+  },
+
+  demoVisibile() {
+    return !this.state.demoNascosta;
+  },
+
   /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */
   profiloDaCompletare(versioneNote) {
     const p = this.state.profilo;
@@ -3828,9 +3888,17 @@ const store = {
     if (!r) return { errori: ['Richiesta non trovata.'] };
     if (r.avvisati?.includes(userId)) return { errori: ['Hai già avvisato questa persona.'] };
     r.avvisati = [...(r.avvisati || []), userId];
-    this.notifica(userId, `${this.me.nome} cerca un cambio che potrebbe interessarti.`);
+
+    // Per una persona vera l'avviso dentro l'app non esiste: finirebbe nella
+    // memoria di questo telefono, per qualcuno che la leggerebbe dal suo. È
+    // la schermata a mandarlo davvero, dove i messaggi si leggono. Qui resta
+    // solo l'appunto di averglielo già chiesto.
+    const persona = this.user(userId);
+    if (persona && !persona.daServer) {
+      this.notifica(userId, `${this.me.nome} cerca un cambio che potrebbe interessarti.`);
+    }
     this.commit();
-    return { ok: true };
+    return { ok: true, daAvvisare: Boolean(persona?.daServer) };
   },
 
   notifica(userId, testo) {
@@ -3904,6 +3972,35 @@ function on(root, evento, selettore, handler) {
   });
 }
 
+/**
+ * Manda un messaggio fuori dall'app, dove i messaggi si leggono davvero.
+ *
+ * Un avviso dentro l'app raggiunge solo chi l'app ce l'ha aperta, e nessuno
+ * la tiene aperta aspettando. I cambi turno in negozio si chiedono in chat, e
+ * questa è la stessa chat: il foglio di condivisione del telefono, WhatsApp
+ * dove il foglio non c'è, gli appunti come ultima spiaggia.
+ */
+async function condividi(testo) {
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: testo });
+      return 'condiviso';
+    } catch (e) {
+      // Chiudere il foglio è una scelta, non un guasto: non si ripiega su
+      // WhatsApp per qualcuno che ha appena detto di no.
+      if (e?.name === 'AbortError') return 'annullato';
+    }
+  }
+  const finestra = window.open(`https://wa.me/?text=${encodeURIComponent(testo)}`, '_blank');
+  if (finestra) return 'whatsapp';
+  try {
+    await navigator.clipboard.writeText(testo);
+    return 'copiato';
+  } catch {
+    return 'niente';
+  }
+}
+
 function toast(testo) {
   let el = document.getElementById('toast');
   if (!el) {
@@ -3959,7 +4056,7 @@ document.addEventListener('toggle', (e) => {
   else riquadriAperti.delete(chiave);
 }, true);
 
-return { esc, html, raw, on, toast, sheet, riquadriAperti };
+return { esc, html, raw, on, condividi, toast, sheet, riquadriAperti };
 })();
 
 // ---- src/ui/components.js
@@ -4168,6 +4265,29 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
     </button>`;
 }
 
+/**
+ * Il messaggio con cui si segnala una richiesta a un collega.
+ *
+ * Lo legge una persona sola, in chat, e deve bastarsi: chi lo riceve non ha
+ * l'app aperta e magari nemmeno installata. Quindi dice chi scrive, cosa
+ * cede, cosa cerca e dove si risponde, in quest'ordine, senza sigle.
+ */
+function messaggioAvviso(richiesta, destinatario) {
+  const cedo = store.shift(richiesta.cedo.shiftId);
+  const giorni = (richiesta.cerco.giorni || []).map((g) => formatDay(g)).join(', ');
+  const cosa = richiesta.tipo === TIPO_CAMBIO.OFF
+    ? `vorrei libero ${formatDay(cedo.data)} e in cambio lavoro uno fra: ${giorni}`
+    : `cedo il turno di ${formatDay(cedo.data)} (${shiftLabel(cedo)}) e cerco un altro turno dello stesso giorno`;
+  return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
+    + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `
+    + `Se ti va di scambiare, rispondi qui o dall'app: ${indirizzoApp()}`;
+}
+
+/** L'indirizzo di questa copia dell'app, per chi deve ancora aprirla. */
+function indirizzoApp() {
+  return `${location.origin}${location.pathname}`.replace(/index\.html$/, '');
+}
+
 function vuoto(titolo, sottotitolo, azione = '') {
   return html`
     <div class="vuoto">
@@ -4219,7 +4339,7 @@ function cardOpportunita({ richiesta, match }) {
     </article>`;
 }
 
-return { nomeUtente, iniziali, campoPortachiavi, chipsOrariTipici, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, vuoto, cardOpportunita };
+return { nomeUtente, iniziali, campoPortachiavi, chipsOrariTipici, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, messaggioAvviso, indirizzoApp, vuoto, cardOpportunita };
 })();
 
 // ---- src/ui/views.js
@@ -4601,7 +4721,33 @@ function impostazioni() {
         <span class="chevron">›</span>
       </button>
       ${raw(rigaBacheca())}
+      ${raw(rigaDemo())}
     </section>`;
+}
+
+/**
+ * L'interruttore delle persone inventate.
+ *
+ * Non le cancella: le mette da parte e le rimette. Serve a mostrare l'app a
+ * un collega quando la bacheca vera è ancora vuota, e a togliersele di mezzo
+ * il giorno in cui i colleghi veri ci sono.
+ */
+function rigaDemo() {
+  const visibile = store.demoVisibile();
+  const quante = visibile
+    ? store.state.users.filter((u) => !u.daServer && u.id !== store.state.currentUserId).length
+    : (store.state.demoNascosta?.users || []).length;
+  return html`
+    <label class="tile switch-tile">
+      <span class="tile-icona">🎭</span>
+      <span>
+        <strong>Persone di esempio</strong>
+        <em>${visibile
+    ? `${quante} colleghi inventati, per far vedere l'app`
+    : 'Nascoste: in bacheca ci sono solo persone vere'}</em>
+      </span>
+      <input type="checkbox" data-act="mostra-demo" ${raw(visibile ? 'checked' : '')}>
+    </label>`;
 }
 
 /**
@@ -6352,7 +6498,7 @@ return { bozzaProfilo, passi, erroriDelPasso, passoDelCodice, apriProfilo, valid
 
 // ---- src/ui/app.js
 const M_app = (() => {
-const { html, raw, on, toast, sheet } = M_dom;
+const { html, raw, on, toast, sheet, condividi } = M_dom;
 const { store } = M_store;
 const V = M_views;
 const F = M_flows;
@@ -6370,7 +6516,7 @@ const { noteLegali, VERSIONE_NOTE } = M_legale;
 const { controllaPassword } = M_accesso;
 const { scaricaCalendario } = M_supabase;
 const { serverConfigurato } = M_config;
-const { campoPortachiavi, nomeUtente, chipsOrariTipici } = M_components;
+const { campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso } = M_components;
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -6530,6 +6676,25 @@ function riassuntoImport({ aggiunti = 0, aggiornati = 0, bloccati = [] }) {
   return bloccati.length === 1
     ? `${base}. ${giorni} è in una richiesta aperta: non l'ho toccato`
     : `${base}. ${giorni} sono in richieste aperte: non li ho toccati`;
+}
+
+/**
+ * Segnala una richiesta a un collega vero, fuori dall'app.
+ *
+ * L'app non può bussare a un altro telefono: le notifiche che scrive restano
+ * in questo. Il messaggio esce da dove escono gli altri messaggi, e il toast
+ * dice quello che è successo davvero, perché "è stato avvisato" dopo un
+ * foglio chiuso senza mandare niente sarebbe una bugia.
+ */
+async function mandaAvviso(richiesta, persona) {
+  const esito = await condividi(messaggioAvviso(richiesta, persona));
+  toast({
+    condiviso: `Messaggio per ${persona.nome} inviato`,
+    whatsapp: `Messaggio per ${persona.nome} pronto su WhatsApp`,
+    copiato: 'Messaggio copiato: incollalo dove preferisci',
+    annullato: `${persona.nome} non è stato avvisato`,
+    niente: 'Non sono riuscito a preparare il messaggio',
+  }[esito]);
 }
 
 /** Chiude ogni tendina aperta, qualunque essa sia. */
@@ -6694,6 +6859,12 @@ const AZIONI = {
     toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai('#/home');
   },
+  'mostra-demo': (e) => {
+    store.mostraDemo(e.target.checked);
+    toast(e.target.checked ? 'Persone di esempio rimesse' : 'Persone di esempio nascoste');
+    render();
+  },
+
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
 
   // La guida, riaperta a mano dal punto interrogativo nella testata.
@@ -6725,10 +6896,13 @@ const AZIONI = {
 
   // Chi ha solo una disponibilità non ha una richiesta su cui proporre:
   // si avvisa, e sarà lui a rispondere.
-  avvisa: (_, el) => {
-    const { errori } = store.avvisa(el.dataset.user, el.dataset.richiesta);
-    toast(errori ? errori[0] : `${store.user(el.dataset.user).nome} è stato avvisato`);
+  avvisa: async (_, el) => {
+    const persona = store.user(el.dataset.user);
+    const { errori, daAvvisare } = store.avvisa(el.dataset.user, el.dataset.richiesta);
+    if (errori) return toast(errori[0]);
     render();
+    if (!daAvvisare) return toast(`${persona.nome} è stato avvisato`);
+    await mandaAvviso(store.request(el.dataset.richiesta), persona);
   },
 
   // Dal Cambio rapido la richiesta non esiste ancora: si crea al volo sul
@@ -6748,9 +6922,12 @@ const AZIONI = {
       usaPriorita: false,
     });
     if (errori) return toast(errori[0]);
-    store.avvisa(el.dataset.user, richiesta.id);
-    toast(`Richiesta pubblicata, ${store.user(el.dataset.user).nome} è stato avvisato`);
+    const persona = store.user(el.dataset.user);
+    const { daAvvisare } = store.avvisa(el.dataset.user, richiesta.id);
     vai(`#/richiesta?id=${richiesta.id}`);
+    if (!daAvvisare) return toast(`Richiesta pubblicata, ${persona.nome} è stato avvisato`);
+    toast('Richiesta pubblicata');
+    mandaAvviso(richiesta, persona);
   },
 
   'scegli-cedo': (_, el) => { F.draft.cedoShiftId = el.dataset.id; render(); },

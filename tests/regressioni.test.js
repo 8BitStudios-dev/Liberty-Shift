@@ -232,3 +232,103 @@ test('gli orari della demo sono fra quelli veri dello store', async () => {
     .map((s) => s.start);
   assert.deepEqual([...new Set(fuori)], [], 'la demo si mostra ai colleghi: deve somigliare al vero');
 });
+
+// --- le persone inventate accanto ai colleghi veri ---------------------
+
+test('nascondere la demo la mette da parte, non la cancella', () => {
+  store.init();
+  const io = store.state.currentUserId;
+  const primaUtenti = store.state.users.length;
+  const primaRichieste = store.state.requests.length;
+
+  store.mostraDemo(false);
+
+  assert.equal(store.demoVisibile(), false);
+  assert.deepEqual(store.state.users.map((u) => u.id), [io], 'resto solo io');
+  assert.ok(store.state.requests.every((r) => r.userId === io), 'e solo le mie richieste');
+  assert.ok(store.state.shifts.every((s) => s.userId === io), 'e solo i miei turni');
+
+  store.mostraDemo(true);
+
+  assert.equal(store.demoVisibile(), true);
+  assert.equal(store.state.users.length, primaUtenti, 'tornano tutte');
+  assert.equal(store.state.requests.length, primaRichieste);
+});
+
+test('nascondere la demo non tocca quello che viene dal server', () => {
+  store.init();
+  store.state.users.push({
+    id: 'u-vera', daServer: true, nome: 'Anna', cognome: '', cognomeIniziale: 'V',
+    contratto: 'PT', oreSettimanali: 25, genere: 'F',
+    preferenze: {}, disponibilita: {}, prioritaUsata: {},
+  });
+
+  store.mostraDemo(false);
+
+  assert.ok(store.state.users.some((u) => u.id === 'u-vera'), 'i colleghi veri restano');
+  assert.equal(store.state.users.length, 2, 'io e lei, nessun altro');
+});
+
+test('avvisare un collega vero non finge una notifica che non arriverebbe', () => {
+  store.init();
+  const io = store.state.currentUserId;
+  store.state.users.push({
+    id: 'u-vera', daServer: true, nome: 'Anna', cognome: '', cognomeIniziale: 'V',
+    contratto: 'PT', oreSettimanali: 25, genere: 'F',
+    preferenze: {}, disponibilita: {}, prioritaUsata: {},
+  });
+  const mio = store.state.shifts.find((s) => s.userId === io && s.tipo === 'WORK');
+  store.state.requests.push({
+    id: 'rq-avviso', userId: io, createdAt: new Date().toISOString(), status: STATUS.APERTA,
+    tipo: 'ORARIO', cedo: { shiftId: mio.id, flessibile: false }, cerco: { giorni: [mio.data] },
+  });
+  const primaNotifiche = store.state.notifications.length;
+
+  const esito = store.avvisa('u-vera', 'rq-avviso');
+
+  assert.equal(esito.daAvvisare, true, 'la schermata deve mandarlo fuori dall\'app');
+  assert.equal(store.state.notifications.length, primaNotifiche,
+    'una notifica locale per lei resterebbe su questo telefono: e\' la bugia da non scrivere');
+  assert.ok(store.request('rq-avviso').avvisati.includes('u-vera'),
+    'ma l\'appunto di averglielo chiesto resta');
+});
+
+test('con una persona inventata la notifica ha ancora senso: e\' su questo telefono', () => {
+  // Da capo davvero: i test prima di questo hanno lasciato in memoria un
+  // collega vero, e `init()` rilegge quello che c'era.
+  store.reset();
+  const io = store.state.currentUserId;
+  const altro = store.state.users.find((u) => u.id !== io && !u.daServer);
+  const mio = store.state.shifts.find((s) => s.userId === io && s.tipo === 'WORK');
+  store.state.requests.push({
+    id: 'rq-demo', userId: io, createdAt: new Date().toISOString(), status: STATUS.APERTA,
+    tipo: 'ORARIO', cedo: { shiftId: mio.id, flessibile: false }, cerco: { giorni: [mio.data] },
+  });
+
+  const esito = store.avvisa(altro.id, 'rq-demo');
+
+  assert.equal(esito.daAvvisare, false);
+  assert.ok(store.state.notifications.some((n) => n.userId === altro.id));
+});
+
+test('nascondere la demo non lascia proposte che puntano a nessuno', () => {
+  // Una proposta fra me e una persona inventata è parte della demo, anche se
+  // da un lato ci sono io: tenerla vorrebbe dire una riga in posta che
+  // rimanda a un turno che non c'è più, e la schermata che si rompe.
+  store.reset();
+  const io = store.state.currentUserId;
+
+  store.mostraDemo(false);
+
+  const presenti = new Set(store.state.users.map((u) => u.id));
+  for (const p of store.state.proposals) {
+    assert.ok(presenti.has(p.daUserId) && presenti.has(p.aUserId),
+      'una proposta senza una delle due parti');
+  }
+  const turni = new Set(store.state.shifts.map((s) => s.id));
+  for (const r of store.state.requests) {
+    assert.ok(turni.has(r.cedo.shiftId), 'una richiesta senza il turno che cede');
+  }
+  assert.ok(store.inbox().every((v) => v.altro && v.richiesta));
+  assert.equal(store.state.users.length, 1, `resto solo io (${io})`);
+});
