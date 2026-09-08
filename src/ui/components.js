@@ -103,14 +103,22 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
     </div>`;
 }
 
-/** Una riga sola: il minimo per capire se ti riguarda. Il resto è nel dettaglio. */
+/**
+ * Una riga sola: il minimo per capire se ti riguarda. Il resto è nel dettaglio.
+ *
+ * "cede"/"cerca" per l'orario, "cerca"/"offre" per l'OFF: stesso schema verbo
+ * + informazione in entrambi i casi. Prima l'orario usava una freccia
+ * ("08:00–17:00 → 11:00–20:00") senza dire chi cede e chi cerca, e nella
+ * lista delle ultime richieste, mescolata a righe OFF che invece lo dicevano,
+ * sembrava mancante.
+ */
 export function sintesiRichiesta(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   if (request.tipo === TIPO_CAMBIO.OFF) {
     return `cerca OFF ${formatDay(cedo?.data)} · offre ${giorni.map((g) => formatDay(g)).join(' o ')}`;
   }
-  return `${formatDay(cedo?.data)} · ${shiftLabel(cedo)} → ${wantLabel(request.cerco)}`;
+  return `${formatDay(cedo?.data)} · cede ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`;
 }
 
 /** Il ruolo della richiesta nel giorno guardato, col turno ceduto già risolto. */
