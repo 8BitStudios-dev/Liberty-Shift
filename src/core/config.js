@@ -22,7 +22,7 @@ export const SERVER = {
    *
    * È pubblica quanto l'altra: senza una sessione non apre niente.
    */
-  chiavePubblicabile: '',
+  chiavePubblicabile: 'sb_publishable_7zoKcK51OdsBKUgNZLI2Qw_DVvnVQeH',
   chiaveAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZXJlYnRraWJnbXR5dnpuZnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE4NzAsImV4cCI6MjEwNDM1Nzg3MH0.icOOSXRX6k3jYmyj66NQg_EMDs5cvvY5etzEvJ7xQfY',
 };
 

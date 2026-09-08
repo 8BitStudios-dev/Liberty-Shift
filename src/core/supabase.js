@@ -282,6 +282,12 @@ export async function scaricaCalendario(url) {
     body: JSON.stringify({ url }),
   });
   if (r.errore) return { dati: null, errore: r.errore };
+  // La funzione appena creata risponde "Hello": è il codice di esempio che
+  // Supabase mette dentro, e che va sostituito. Dirlo per nome evita di
+  // cercare il guasto nell'app.
+  if (/^Hello/i.test(String(r.dati?.message || ''))) {
+    return { dati: null, errore: 'La funzione sul server contiene ancora il codice di esempio.' };
+  }
   if (!r.dati?.ics) return { dati: null, errore: r.dati?.errore || 'Risposta vuota dal server.' };
   return { dati: r.dati.ics, errore: null };
 }

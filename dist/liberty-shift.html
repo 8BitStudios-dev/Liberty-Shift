@@ -2046,7 +2046,7 @@ const SERVER = {
    *
    * È pubblica quanto l'altra: senza una sessione non apre niente.
    */
-  chiavePubblicabile: '',
+  chiavePubblicabile: 'sb_publishable_7zoKcK51OdsBKUgNZLI2Qw_DVvnVQeH',
   chiaveAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZXJlYnRraWJnbXR5dnpuZnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE4NzAsImV4cCI6MjEwNDM1Nzg3MH0.icOOSXRX6k3jYmyj66NQg_EMDs5cvvY5etzEvJ7xQfY',
 };
 
@@ -2344,6 +2344,12 @@ async function scaricaCalendario(url) {
     body: JSON.stringify({ url }),
   });
   if (r.errore) return { dati: null, errore: r.errore };
+  // La funzione appena creata risponde "Hello": è il codice di esempio che
+  // Supabase mette dentro, e che va sostituito. Dirlo per nome evita di
+  // cercare il guasto nell'app.
+  if (/^Hello/i.test(String(r.dati?.message || ''))) {
+    return { dati: null, errore: 'La funzione sul server contiene ancora il codice di esempio.' };
+  }
   if (!r.dati?.ics) return { dati: null, errore: r.dati?.errore || 'Risposta vuota dal server.' };
   return { dati: r.dati.ics, errore: null };
 }
