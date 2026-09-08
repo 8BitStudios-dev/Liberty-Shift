@@ -255,15 +255,14 @@ dei propri turni, cioè esattamente quello che le note d'uso promettono di non
 far uscire dal telefono.
 
 ## Invitare un collega
-In Impostazioni, e solo per chi è iscritto al negozio sul server. Compone il
-messaggio con il link e il codice, più la riga che risponde alla domanda che si
-fa chiunque riceva il link di un'app che parla di orari di lavoro: *i tuoi
-turni restano sul tuo telefono, in bacheca finisce solo quello che pubblichi*.
+Nel Profilo, e solo per chi è iscritto al negozio sul server. Un tocco condivide
+un messaggio fisso, sempre lo stesso: cos'è l'app, cosa fare, il link.
 
-Il codice del negozio **si riscrive ogni volta e non viene conservato**. Sul
-server c'è solo la sua impronta bcrypt, e una copia in chiaro nel telefono di
-chi invita sarebbe l'unico posto al mondo in cui quel codice sta scritto per
-esteso. Costa quattro caratteri a invito, e sono sette inviti in tutto.
+Il codice del negozio **non ci sta dentro**. È un segreto condiviso da chi è già
+iscritto — sul server c'è solo la sua impronta bcrypt — e scriverlo in un
+messaggio che può girare oltre le due persone sarebbe l'unico posto al mondo in
+cui comparirebbe per esteso. Chi riceve l'invito lo chiede a voce a chi lo ha
+mandato.
 
 ### I codici del gestionale
 Il calendario aziendale non scrive "riposo": scrive `SO ADO`, `ITA Time Away F

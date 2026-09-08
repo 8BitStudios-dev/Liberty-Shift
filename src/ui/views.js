@@ -284,6 +284,7 @@ export function profilo() {
 
     <section class="sezione">
       ${raw(bottoneInbox())}
+      ${raw(rigaBacheca())}
     </section>
 
     <section class="sezione">
@@ -372,7 +373,6 @@ export function impostazioni() {
         </span>
         <span class="chevron">›</span>
       </button>
-      ${raw(rigaBacheca())}
       ${raw(store.state.profilo?.idServer ? `
         <button class="tile" data-act="invita">
           <span class="tile-icona">✉️</span>
@@ -434,7 +434,7 @@ function rigaBacheca() {
     <button class="tile" data-act="sincronizza">
       <span class="tile-icona">${inCoda ? '📤' : '🔄'}</span>
       <span>
-        <strong>Bacheca condivisa</strong>
+        <strong>Sincronizza server</strong>
         <em>${errore ? `⚠️ ${errore}` : stato}</em>
       </span>
       <span class="chevron">›</span>
