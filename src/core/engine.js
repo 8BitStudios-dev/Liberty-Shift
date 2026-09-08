@@ -9,7 +9,7 @@ import {
 import {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
-  applicaPreferenze, concorda,
+  applicaPreferenze, concorda, contractOf,
 } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -114,7 +114,7 @@ export function validateRequest(request, shiftsById, shifts = null) {
   if (mio && tipo === TIPO_CAMBIO.OFF) {
     for (const g of giorni) {
       if (g === mio.data) {
-        errori.push('Il giorno che vuoi liberare non può essere anche quello che offri.');
+        errori.push('Il giorno che vuoi avere OFF non può essere anche quello che offri.');
         continue;
       }
       if (!sameAppleWeek(mio.data, g)) {
@@ -125,7 +125,7 @@ export function validateRequest(request, shiftsById, shifts = null) {
       if (shifts) {
         const suo = shifts.find((s) => s.userId === (userId ?? mio.userId) && s.data === g);
         if (suo && suo.tipo === 'WORK') {
-          errori.push(`Il ${formatDay(g)} lavori già (${shiftLabel(suo)}): puoi offrire solo i giorni in cui sei libero.`);
+          errori.push(`Il ${formatDay(g)} lavori già (${shiftLabel(suo)}): puoi offrire solo i giorni in cui sei OFF.`);
         }
       }
     }
@@ -153,33 +153,49 @@ function indexShifts(shifts) {
 const nome = (u) => `${u.nome} ${u.cognomeIniziale}.`;
 const contrattoDi = (u) => RULES.contracts[u.contratto]?.label || u.contratto;
 
+const maiuscola = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 /**
  * Le frasi che spiegano l'adattamento e l'impatto sul monte ore.
  *
- * Sempre con il nome proprio, mai con "sei" o "per te": la stessa scheda
- * viene letta da chi pubblica la richiesta e da chi può risolverla, e un "tu"
- * giusto da un lato è sbagliato dall'altro.
+ * `chiGuarda` è l'id di chi sta guardando lo schermo in questo momento — non
+ * chi pubblica la richiesta, chi la sta leggendo adesso, che può essere l'uno
+ * o l'altro a seconda di dove si apre la stessa scheda. Alla persona che
+ * corrisponde si parla in seconda persona; all'altra si continua a nominarla,
+ * perché per lei quella frase non è "tu".
+ *
+ * Il "come" un adattamento arriva al suo risultato (quante ore lascia
+ * l'altra persona) non si spiega più: chi guarda vuole sapere cosa succede a
+ * lui, non i conti di qualcun altro.
  */
-function verificheIncrociate(coppie, shifts) {
+function verificheIncrociate(coppie, shifts, chiGuarda) {
   const reasons = [];
   const avvisi = [];
   let penalita = 0;
   let bonus = 0;
-  for (const [chi, cede, riceve] of coppie) {
+  for (const [chi, cede, riceve, altra] of coppie) {
+    const io = chi.id === chiGuarda;
     // Le preferenze pesano sul turno che quella persona riceverebbe davvero,
     // cioè quello già adattato alle sue ore.
-    const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede));
+    const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede), { io });
     bonus += pref.bonus;
-    if (pref.bonus) reasons.push(`${chi.nome} ${pref.reasons[0]}`);
+    if (pref.bonus) reasons.push(io ? maiuscola(pref.reasons[0]) : `${chi.nome} ${pref.reasons[0]}`);
     const t = trasformaTurno(riceve, cede);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
-      reasons.push(`${chi.nome} lascia ${durataOre(cede)}h, quindi ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
+      // Un Full Time ha sempre turni da 9h: dirlo è più semplice (e più
+      // vero, non dipende dal turno specifico) che dare un numero. t.originale
+      // è il turno grezzo dell'altra persona, non il proprio: va detto di chi è.
+      if (io) {
+        reasons.push(contractOf(chi).ore.length === 1
+          ? `Sei ${chi.contratto} quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`
+          : `Lasci ${durataOre(cede)}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
+      }
     }
-    if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
+    if (t.avviso) avvisi.push(io ? t.avviso : `${nome(chi)}: ${t.avviso}`);
     if (cede) {
       const ore = impattoMonteOre(chi, cede, riceve, shifts);
-      if (ore.avviso) avvisi.push(`${nome(chi)}: ${ore.avviso}.`);
+      if (ore.avviso) avvisi.push(io ? `${ore.avviso}.` : `${nome(chi)}: ${ore.avviso}.`);
     }
   }
   return { reasons, avvisi, penalita, bonus };
@@ -223,6 +239,9 @@ function matchOrario(request, ctx) {
     const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
       && r.tipo === TIPO_CAMBIO.ORARIO && idx.byId[r.cedo.shiftId]?.data === giorno);
 
+    const ioSonoU = u.id === ctx.currentUserId;
+    const ioSonoAutore = autore.id === ctx.currentUserId;
+
     let score;
     let origine;
     const reasons = [];
@@ -231,8 +250,19 @@ function matchOrario(request, ctx) {
       if (perLui.score === 0) continue;
       score = Math.round((perMe.score + perLui.score) / 2);
       origine = 'RICHIESTA';
-      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno: ${perMe.reasons[0]}`);
-      reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
+      // perMe dice se quello che riceverebbe l'autore (il turno di u, adattato
+      // alle sue ore) soddisfa quello che l'autore cerca.
+      const perAutoreAdattato = turnoAdattato(suo, mioCedo);
+      reasons.push(
+        `${ioSonoU ? 'Hai' : `${nome(u)} ha`} ${shiftLabel(suo)} quel giorno, che per ${ioSonoAutore ? 'te' : nome(autore)} diventa ${perAutoreAdattato.start}–${perAutoreAdattato.end}: ${perMe.reasons[0]}`,
+      );
+      // Simmetrico: quello che riceverebbe u (il turno che cedo, adattato
+      // alle sue ore) soddisfa quello che u stesso cerca nella sua richiesta.
+      const perUAdattato = turnoAdattato(mioCedo, suo);
+      const ilTurnoDiAutore = ioSonoAutore ? `il tuo turno ${shiftLabel(mioCedo)}` : `${shiftLabel(mioCedo)} di ${nome(autore)}`;
+      reasons.push(
+        `${ioSonoU ? 'Cerchi' : `${nome(u)} cerca`} ${wantLabel(suaRichiesta.cerco)}: ${ilTurnoDiAutore}, per ${ioSonoU ? 'te' : nome(u)}, diventa ${perUAdattato.start}–${perUAdattato.end}`,
+      );
     } else {
       // Chi non ha pubblicato niente si giudica dal turno che ha già in
       // calendario: non serve più che si sia anche dichiarato disponibile a
@@ -245,16 +275,21 @@ function matchOrario(request, ctx) {
       origine = 'CALENDARIO';
       if (disponibileIl(u, giorno)) {
         score += RULES.disponibilitaBonus;
-        const dichiarato = concorda(u, {
-          m: 'si è anche dichiarato disponibile', f: 'si è anche dichiarata disponibile', n: 'ha anche dato la disponibilità',
-        });
-        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a cambiare`);
+        reasons.push(ioSonoU
+          ? concorda(u, {
+            m: `Hai ${shiftLabel(suo)} quel giorno e ti sei anche dichiarato disponibile a cambiare`,
+            f: `Hai ${shiftLabel(suo)} quel giorno e ti sei anche dichiarata disponibile a cambiare`,
+            n: `Hai ${shiftLabel(suo)} quel giorno e hai anche dato la disponibilità a cambiare`,
+          })
+          : `${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${concorda(u, {
+            m: 'si è anche dichiarato disponibile', f: 'si è anche dichiarata disponibile', n: 'ha anche dato la disponibilità',
+          })} a cambiare`);
       } else {
-        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
+        reasons.push(ioSonoU ? `Hai ${shiftLabel(suo)} quel giorno` : `${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
       }
     }
 
-    const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
+    const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
     score = clamp(Math.round(score - v.penalita + v.bonus), 0,
       origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
     if (score < RULES.potentialThreshold) continue;
@@ -315,6 +350,9 @@ function matchOff(request, ctx) {
         && idx.byId[r.cedo.shiftId]?.data === giorno
         && (r.cerco.giorni || []).includes(mioCedo.data));
 
+      const ioSonoU = u.id === ctx.currentUserId;
+      const ioSonoAutore = autore.id === ctx.currentUserId;
+
       let score;
       let origine;
       const reasons = [];
@@ -323,7 +361,9 @@ function matchOff(request, ctx) {
         if (perLui.score === 0) continue;
         score = Math.round((perMe.score + perLui.score) / 2);
         origine = 'RICHIESTA';
-        reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
+        reasons.push(ioSonoU
+          ? `Vuoi OFF ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`
+          : `${nome(u)} vuole OFF ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
         // Come nel cambio orario: essere liberi quel giorno è già stato
         // controllato sopra, e basta per proporre lo scambio. La
@@ -333,22 +373,28 @@ function matchOff(request, ctx) {
         origine = 'CALENDARIO';
         if (disponibileIl(u, mioCedo.data)) {
           score += RULES.disponibilitaBonus;
-          reasons.push(concorda(u, {
-            m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
-            f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
-            n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
-          }));
+          reasons.push(ioSonoU
+            ? concorda(u, {
+              m: `Sei OFF ${formatDay(mioCedo.data)} e ti sei dichiarato disponibile a lavorarci`,
+              f: `Sei OFF ${formatDay(mioCedo.data)} e ti sei dichiarata disponibile a lavorarci`,
+              n: `Non lavori ${formatDay(mioCedo.data)} e hai dato la disponibilità a lavorarci`,
+            })
+            : concorda(u, {
+              m: `è OFF ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
+              f: `è OFF ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
+              n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
+            }));
         } else {
-          reasons.push(concorda(u, {
-            m: `è libero ${formatDay(mioCedo.data)}`,
-            f: `è libera ${formatDay(mioCedo.data)}`,
-            n: `non lavora ${formatDay(mioCedo.data)}`,
-          }));
+          reasons.push(ioSonoU
+            ? concorda(u, { m: `Sei OFF ${formatDay(mioCedo.data)}`, f: `Sei OFF ${formatDay(mioCedo.data)}`, n: `Non lavori ${formatDay(mioCedo.data)}` })
+            : concorda(u, { m: `è OFF ${formatDay(mioCedo.data)}`, f: `è OFF ${formatDay(mioCedo.data)}`, n: `non lavora ${formatDay(mioCedo.data)}` }));
         }
       }
-      reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
+      reasons.push(ioSonoAutore
+        ? `Lavoreresti ${formatDay(giorno)} al posto di ${nome(u)}: ${perMe.reasons[0]}`
+        : `${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto ${ioSonoU ? 'tuo' : 'suo'}: ${perMe.reasons[0]}`);
 
-      const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
+      const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
       score = clamp(Math.round(score - v.penalita + v.bonus), 0,
         origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
       if (score < RULES.potentialThreshold) continue;

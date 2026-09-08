@@ -229,12 +229,16 @@ test('un adattamento che sborda dalla fascia dello store viene segnalato', () =>
   assert.match(trasformaTurno(shift('2026-09-18', '11:00', '14:00'), lascia9).avviso, /fuori dalla fascia/);
 });
 
-test('il match spiega l\'adattamento invece di limitarsi a segnalarlo', () => {
+test('il match spiega l\'adattamento invece di limitarsi a segnalarlo, ma solo per chi guarda', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
   const martina = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
-  assert.ok(martina.reasons.some((r) => /lascia .*h, quindi .* diventa/.test(r)));
   assert.equal(martina.adattato.trasformato, true);
+  // Lorenzo (chi guarda, autore di questa richiesta) è FT: l'adattamento si
+  // spiega col contratto, non con un numero di ore.
+  assert.ok(martina.reasons.some((r) => /^Sei FT quindi .*, per te, diventa /.test(r)));
+  // Il "come" per Martina (l'altra parte) non si spiega più.
+  assert.ok(!martina.reasons.some((r) => /Martina.*lascia/.test(r)));
 });
 
 test('il match porta anche l\'orario adattato per la controparte, non solo per chi guarda', () => {
@@ -485,16 +489,31 @@ test('le opportunità sono agganciate ai giorni giusti', () => {
   }
 });
 
-test('le spiegazioni non danno del tu a nessuno: valgono da entrambi i lati', () => {
+test('la seconda persona compare solo nelle richieste che riguardano chi guarda', () => {
+  // Non è più vero che le spiegazioni sono sempre in terza persona: quando la
+  // richiesta o il match coinvolgono chi sta guardando (ctx.currentUserId),
+  // la sua parte si legge in seconda persona. Quello che resta vietato è che
+  // compaia in una richiesta che chi guarda non c'entra per niente: lì
+  // sarebbe la stessa frase di parte di prima, solo spostata.
   const s = seed();
+  const secondaPersona = /\b(sei|tuo|tua|tuoi|per te|hai|vuoi|cerchi|lavoreresti|lasci)\b/i;
+  let trovataAlmenoUna = false;
   for (const r of s.requests) {
+    const autoreCoinvolto = r.userId === s.currentUserId;
     for (const m of findMatches(r, s)) {
+      const meCoinvolto = autoreCoinvolto || m.userId === s.currentUserId;
       for (const frase of [...m.reasons, ...m.avvisi]) {
-        assert.doesNotMatch(frase, /\b(sei|tuo|tua|tuoi|per te|hai)\b/i,
-          `frase di parte: "${frase}"`);
+        const usaSeconda = secondaPersona.test(frase);
+        if (usaSeconda) trovataAlmenoUna = true;
+        if (!meCoinvolto) {
+          assert.ok(!usaSeconda, `frase di parte, ma chi guarda non c'entra: "${frase}"`);
+        }
       }
     }
   }
+  // Se non ne trova nessuna il test non starebbe verificando niente: nel seed
+  // Lorenzo (currentUserId) ha sia richieste sue sia match come candidato.
+  assert.ok(trovataAlmenoUna, 'nessuna frase in seconda persona trovata: il seed non copre più il caso');
 });
 
 test('richiesteSulGiorno conta anche quelle che non posso risolvere', () => {
@@ -522,7 +541,7 @@ test('la stessa richiesta OFF cambia ruolo a seconda del giorno che si guarda', 
 
   const sabato = ruoloNelGiorno(richiesta, '2026-09-12', cedo);
   assert.equal(sabato.ruolo, 'CERCA');
-  assert.match(sabato.sintesi, /vuole libero questo giorno/);
+  assert.match(sabato.sintesi, /vuole OFF questo giorno/);
 
   const lunedi = ruoloNelGiorno(richiesta, '2026-09-14', cedo);
   const mercoledi = ruoloNelGiorno(richiesta, '2026-09-16', cedo);

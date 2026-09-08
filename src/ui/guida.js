@@ -75,7 +75,7 @@ export const GUIDE = {
       </p>
 
       <p class="esempio">
-        Luca vuole libero venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
+        Luca vuole OFF venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
         lavori: siete la risposta l'uno dell'altro.
       </p>
 
@@ -100,10 +100,10 @@ export const GUIDE = {
 
       <h3>📅 Cambio OFF</h3>
       <p>
-        Vuoi libero un giorno intero. In cambio offri un giorno in cui sei a
+        Vuoi OFF un giorno intero. In cambio offri un giorno in cui sei a
         casa, e prendi il turno di chi ti libera.
       </p>
-      <p class="esempio">«Voglio libero sabato, in cambio lavoro lunedì.»</p>
+      <p class="esempio">«Voglio OFF sabato, in cambio lavoro lunedì.»</p>
 
       <p class="testo-tenue">
         Compaiono solo i giorni della stessa settimana: da sabato a venerdì,
@@ -121,7 +121,7 @@ export const GUIDE = {
       <h3>Le barre sotto i numeri</h3>
       <ul class="elenco piccolo">
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
-          rossa: qualcuno vuole liberarsi;</li>
+          rossa: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
           verde: qualcuno offre un turno o una giornata;</li>
         <li>bordo oro: c'è una priorità.</li>
@@ -130,8 +130,8 @@ export const GUIDE = {
       <h3>Aprendo un giorno</h3>
       <p>Due blocchi: <strong>Cercano</strong> e <strong>Offrono</strong>.</p>
       <p class="esempio">
-        Marco vuole libero sabato 12 e offre lunedì 14. Sul 12 leggi «vuole
-        libero questo giorno», sul 14 «offre di lavorare questo giorno».
+        Marco vuole OFF sabato 12 e offre lunedì 14. Sul 12 leggi «vuole
+        OFF questo giorno», sul 14 «offre di lavorare questo giorno».
       </p>
 
       <p class="testo-tenue">

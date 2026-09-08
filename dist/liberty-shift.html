@@ -1353,8 +1353,8 @@ function ruoloNelGiorno(request, giorno, cedo) {
       icona: '📅',
       verbo: 'cerca OFF',
       sintesi: giorni.length
-        ? `vuole libero questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
-        : 'vuole libero questo giorno',
+        ? `vuole OFF questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
+        : 'vuole OFF questo giorno',
     };
   }
   if (giorni.includes(giorno)) {
@@ -1364,7 +1364,7 @@ function ruoloNelGiorno(request, giorno, cedo) {
       verbo: 'offre OFF',
       // Solo il giorno che si sta guardando: gli altri che la richiesta offre
       // hanno una casella loro, ed è lì che vanno letti.
-      sintesi: `offre di lavorare questo giorno · in cambio vuole libero ${formatDay(cedo?.data)}`,
+      sintesi: `offre di lavorare questo giorno · in cambio vuole OFF ${formatDay(cedo?.data)}`,
     };
   }
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
@@ -1383,9 +1383,10 @@ function ruoloNelGiorno(request, giorno, cedo) {
  * invece si prende una volta sola, altrimenti bastava un turno lungo per
  * scalare la classifica.
  *
- * Il testo è sempre in terza persona, mai con l'etichetta del profilo presa
- * di peso (quella è scritta in prima persona, "Preferisco le mattine"): la
- * stessa frase la legge sia chi pubblica la richiesta sia chi la risolve.
+ * `io` sceglie la persona grammaticale: seconda quando la frase la legge solo
+ * la persona a cui si riferisce (è chi chiama la funzione a saperlo — vedi
+ * `verificheIncrociate`), terza altrimenti. Mai l'etichetta del profilo presa
+ * di peso (quella è scritta in prima persona, "Preferisco le mattine").
  */
 // La notte non sta in RULES.fasce (è un caso a parte, vedi fasceDi/isNotturno):
 // serve un'etichetta di riserva per quando una preferenza la riguarda.
@@ -1393,7 +1394,7 @@ function fasciaLabel(key) {
   return RULES.fasce[key]?.label ?? 'le notti visual';
 }
 
-function applicaPreferenze(user, shift) {
+function applicaPreferenze(user, shift, { io = false } = {}) {
   const fasce = fasceDi(shift);
   if (!fasce.length || !user?.preferenze) return { bonus: 0, reasons: [] };
 
@@ -1402,7 +1403,7 @@ function applicaPreferenze(user, shift) {
   if (evitata) {
     return {
       bonus: -RULES.evitaPenalty,
-      reasons: [`evita ${fasciaLabel(evitata.fascia)}, e ${shiftLabel(shift)} lo è`],
+      reasons: [`${io ? 'eviti' : 'evita'} ${fasciaLabel(evitata.fascia)}, e ${shiftLabel(shift)} lo è`],
     };
   }
 
@@ -1410,7 +1411,7 @@ function applicaPreferenze(user, shift) {
   if (!preferite.length) return { bonus: 0, reasons: [] };
   return {
     bonus: RULES.preferenzaBonus,
-    reasons: [`preferisce ${preferite.map((p) => fasciaLabel(p.fascia)).join(' e ')}, e ${shiftLabel(shift)} lo è`],
+    reasons: [`${io ? 'preferisci' : 'preferisce'} ${preferite.map((p) => fasciaLabel(p.fascia)).join(' e ')}, e ${shiftLabel(shift)} lo è`],
   };
 }
 
@@ -1430,7 +1431,7 @@ const {
 const {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
-  applicaPreferenze, concorda,
+  applicaPreferenze, concorda, contractOf,
 } = M_model;
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -1535,7 +1536,7 @@ function validateRequest(request, shiftsById, shifts = null) {
   if (mio && tipo === TIPO_CAMBIO.OFF) {
     for (const g of giorni) {
       if (g === mio.data) {
-        errori.push('Il giorno che vuoi liberare non può essere anche quello che offri.');
+        errori.push('Il giorno che vuoi avere OFF non può essere anche quello che offri.');
         continue;
       }
       if (!sameAppleWeek(mio.data, g)) {
@@ -1546,7 +1547,7 @@ function validateRequest(request, shiftsById, shifts = null) {
       if (shifts) {
         const suo = shifts.find((s) => s.userId === (userId ?? mio.userId) && s.data === g);
         if (suo && suo.tipo === 'WORK') {
-          errori.push(`Il ${formatDay(g)} lavori già (${shiftLabel(suo)}): puoi offrire solo i giorni in cui sei libero.`);
+          errori.push(`Il ${formatDay(g)} lavori già (${shiftLabel(suo)}): puoi offrire solo i giorni in cui sei OFF.`);
         }
       }
     }
@@ -1574,33 +1575,49 @@ function indexShifts(shifts) {
 const nome = (u) => `${u.nome} ${u.cognomeIniziale}.`;
 const contrattoDi = (u) => RULES.contracts[u.contratto]?.label || u.contratto;
 
+const maiuscola = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
 /**
  * Le frasi che spiegano l'adattamento e l'impatto sul monte ore.
  *
- * Sempre con il nome proprio, mai con "sei" o "per te": la stessa scheda
- * viene letta da chi pubblica la richiesta e da chi può risolverla, e un "tu"
- * giusto da un lato è sbagliato dall'altro.
+ * `chiGuarda` è l'id di chi sta guardando lo schermo in questo momento — non
+ * chi pubblica la richiesta, chi la sta leggendo adesso, che può essere l'uno
+ * o l'altro a seconda di dove si apre la stessa scheda. Alla persona che
+ * corrisponde si parla in seconda persona; all'altra si continua a nominarla,
+ * perché per lei quella frase non è "tu".
+ *
+ * Il "come" un adattamento arriva al suo risultato (quante ore lascia
+ * l'altra persona) non si spiega più: chi guarda vuole sapere cosa succede a
+ * lui, non i conti di qualcun altro.
  */
-function verificheIncrociate(coppie, shifts) {
+function verificheIncrociate(coppie, shifts, chiGuarda) {
   const reasons = [];
   const avvisi = [];
   let penalita = 0;
   let bonus = 0;
-  for (const [chi, cede, riceve] of coppie) {
+  for (const [chi, cede, riceve, altra] of coppie) {
+    const io = chi.id === chiGuarda;
     // Le preferenze pesano sul turno che quella persona riceverebbe davvero,
     // cioè quello già adattato alle sue ore.
-    const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede));
+    const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede), { io });
     bonus += pref.bonus;
-    if (pref.bonus) reasons.push(`${chi.nome} ${pref.reasons[0]}`);
+    if (pref.bonus) reasons.push(io ? maiuscola(pref.reasons[0]) : `${chi.nome} ${pref.reasons[0]}`);
     const t = trasformaTurno(riceve, cede);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
-      reasons.push(`${chi.nome} lascia ${durataOre(cede)}h, quindi ${t.originale} per ${chi.nome} diventa ${t.start}–${t.end}`);
+      // Un Full Time ha sempre turni da 9h: dirlo è più semplice (e più
+      // vero, non dipende dal turno specifico) che dare un numero. t.originale
+      // è il turno grezzo dell'altra persona, non il proprio: va detto di chi è.
+      if (io) {
+        reasons.push(contractOf(chi).ore.length === 1
+          ? `Sei ${chi.contratto} quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`
+          : `Lasci ${durataOre(cede)}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
+      }
     }
-    if (t.avviso) avvisi.push(`${nome(chi)}: ${t.avviso}`);
+    if (t.avviso) avvisi.push(io ? t.avviso : `${nome(chi)}: ${t.avviso}`);
     if (cede) {
       const ore = impattoMonteOre(chi, cede, riceve, shifts);
-      if (ore.avviso) avvisi.push(`${nome(chi)}: ${ore.avviso}.`);
+      if (ore.avviso) avvisi.push(io ? `${ore.avviso}.` : `${nome(chi)}: ${ore.avviso}.`);
     }
   }
   return { reasons, avvisi, penalita, bonus };
@@ -1644,6 +1661,9 @@ function matchOrario(request, ctx) {
     const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
       && r.tipo === TIPO_CAMBIO.ORARIO && idx.byId[r.cedo.shiftId]?.data === giorno);
 
+    const ioSonoU = u.id === ctx.currentUserId;
+    const ioSonoAutore = autore.id === ctx.currentUserId;
+
     let score;
     let origine;
     const reasons = [];
@@ -1652,8 +1672,19 @@ function matchOrario(request, ctx) {
       if (perLui.score === 0) continue;
       score = Math.round((perMe.score + perLui.score) / 2);
       origine = 'RICHIESTA';
-      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno: ${perMe.reasons[0]}`);
-      reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
+      // perMe dice se quello che riceverebbe l'autore (il turno di u, adattato
+      // alle sue ore) soddisfa quello che l'autore cerca.
+      const perAutoreAdattato = turnoAdattato(suo, mioCedo);
+      reasons.push(
+        `${ioSonoU ? 'Hai' : `${nome(u)} ha`} ${shiftLabel(suo)} quel giorno, che per ${ioSonoAutore ? 'te' : nome(autore)} diventa ${perAutoreAdattato.start}–${perAutoreAdattato.end}: ${perMe.reasons[0]}`,
+      );
+      // Simmetrico: quello che riceverebbe u (il turno che cedo, adattato
+      // alle sue ore) soddisfa quello che u stesso cerca nella sua richiesta.
+      const perUAdattato = turnoAdattato(mioCedo, suo);
+      const ilTurnoDiAutore = ioSonoAutore ? `il tuo turno ${shiftLabel(mioCedo)}` : `${shiftLabel(mioCedo)} di ${nome(autore)}`;
+      reasons.push(
+        `${ioSonoU ? 'Cerchi' : `${nome(u)} cerca`} ${wantLabel(suaRichiesta.cerco)}: ${ilTurnoDiAutore}, per ${ioSonoU ? 'te' : nome(u)}, diventa ${perUAdattato.start}–${perUAdattato.end}`,
+      );
     } else {
       // Chi non ha pubblicato niente si giudica dal turno che ha già in
       // calendario: non serve più che si sia anche dichiarato disponibile a
@@ -1666,16 +1697,21 @@ function matchOrario(request, ctx) {
       origine = 'CALENDARIO';
       if (disponibileIl(u, giorno)) {
         score += RULES.disponibilitaBonus;
-        const dichiarato = concorda(u, {
-          m: 'si è anche dichiarato disponibile', f: 'si è anche dichiarata disponibile', n: 'ha anche dato la disponibilità',
-        });
-        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a cambiare`);
+        reasons.push(ioSonoU
+          ? concorda(u, {
+            m: `Hai ${shiftLabel(suo)} quel giorno e ti sei anche dichiarato disponibile a cambiare`,
+            f: `Hai ${shiftLabel(suo)} quel giorno e ti sei anche dichiarata disponibile a cambiare`,
+            n: `Hai ${shiftLabel(suo)} quel giorno e hai anche dato la disponibilità a cambiare`,
+          })
+          : `${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${concorda(u, {
+            m: 'si è anche dichiarato disponibile', f: 'si è anche dichiarata disponibile', n: 'ha anche dato la disponibilità',
+          })} a cambiare`);
       } else {
-        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
+        reasons.push(ioSonoU ? `Hai ${shiftLabel(suo)} quel giorno` : `${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
       }
     }
 
-    const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
+    const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
     score = clamp(Math.round(score - v.penalita + v.bonus), 0,
       origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
     if (score < RULES.potentialThreshold) continue;
@@ -1736,6 +1772,9 @@ function matchOff(request, ctx) {
         && idx.byId[r.cedo.shiftId]?.data === giorno
         && (r.cerco.giorni || []).includes(mioCedo.data));
 
+      const ioSonoU = u.id === ctx.currentUserId;
+      const ioSonoAutore = autore.id === ctx.currentUserId;
+
       let score;
       let origine;
       const reasons = [];
@@ -1744,7 +1783,9 @@ function matchOff(request, ctx) {
         if (perLui.score === 0) continue;
         score = Math.round((perMe.score + perLui.score) / 2);
         origine = 'RICHIESTA';
-        reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
+        reasons.push(ioSonoU
+          ? `Vuoi OFF ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`
+          : `${nome(u)} vuole OFF ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
         // Come nel cambio orario: essere liberi quel giorno è già stato
         // controllato sopra, e basta per proporre lo scambio. La
@@ -1754,22 +1795,28 @@ function matchOff(request, ctx) {
         origine = 'CALENDARIO';
         if (disponibileIl(u, mioCedo.data)) {
           score += RULES.disponibilitaBonus;
-          reasons.push(concorda(u, {
-            m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
-            f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
-            n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
-          }));
+          reasons.push(ioSonoU
+            ? concorda(u, {
+              m: `Sei OFF ${formatDay(mioCedo.data)} e ti sei dichiarato disponibile a lavorarci`,
+              f: `Sei OFF ${formatDay(mioCedo.data)} e ti sei dichiarata disponibile a lavorarci`,
+              n: `Non lavori ${formatDay(mioCedo.data)} e hai dato la disponibilità a lavorarci`,
+            })
+            : concorda(u, {
+              m: `è OFF ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
+              f: `è OFF ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
+              n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
+            }));
         } else {
-          reasons.push(concorda(u, {
-            m: `è libero ${formatDay(mioCedo.data)}`,
-            f: `è libera ${formatDay(mioCedo.data)}`,
-            n: `non lavora ${formatDay(mioCedo.data)}`,
-          }));
+          reasons.push(ioSonoU
+            ? concorda(u, { m: `Sei OFF ${formatDay(mioCedo.data)}`, f: `Sei OFF ${formatDay(mioCedo.data)}`, n: `Non lavori ${formatDay(mioCedo.data)}` })
+            : concorda(u, { m: `è OFF ${formatDay(mioCedo.data)}`, f: `è OFF ${formatDay(mioCedo.data)}`, n: `non lavora ${formatDay(mioCedo.data)}` }));
         }
       }
-      reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
+      reasons.push(ioSonoAutore
+        ? `Lavoreresti ${formatDay(giorno)} al posto di ${nome(u)}: ${perMe.reasons[0]}`
+        : `${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto ${ioSonoU ? 'tuo' : 'suo'}: ${perMe.reasons[0]}`);
 
-      const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
+      const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
       score = clamp(Math.round(score - v.penalita + v.bonus), 0,
         origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
       if (score < RULES.potentialThreshold) continue;
@@ -4551,6 +4598,48 @@ function cardRichiesta(request, giorno = null) {
     </button>`;
 }
 
+/**
+ * Il riassunto in alto: cosa cambia per te, prima di ogni dettaglio.
+ *
+ * Nel cambio OFF il punto non è l'orario, è che una giornata diventa OFF e
+ * l'altra no — dirlo con "faresti X, [nome] prende Y" lasciava capire tutto
+ * il resto tranne quello. Qui il giorno OFF viene prima, perché è la ragione
+ * per cui si guarda questa scheda; il giorno di lavoro viene dopo, con quello
+ * che avevi lì prima tra parentesi, a chiudere il cerchio.
+ *
+ * Del turno che prende l'altra persona non si spiega l'adattamento: quello
+ * la riguarda, non te (vedi `verificheIncrociate`, stessa regola).
+ */
+function riassuntoMatch(match, u, turno, opzioni) {
+  if (match.cambio !== TIPO_CAMBIO.OFF || !opzioni.mioCedo) {
+    return html`
+      <div class="turno-offerto">
+        Faresti <strong>${formatDay(turno?.data)}</strong> ·
+        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+        ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
+      </div>`;
+  }
+
+  const primaDelCambio = store.state.shifts.find(
+    (s) => s.userId === store.state.currentUserId && s.data === turno?.data,
+  );
+  const eri = !primaDelCambio || primaDelCambio.tipo === 'OFF'
+    ? 'eri OFF'
+    : `avevi ${shiftLabel(primaDelCambio)}`;
+
+  return html`
+    <div class="turno-offerto">
+      <strong>${formatDay(opzioni.mioCedo.data)} diventi OFF</strong> — ${u?.nome} prende il tuo turno ·
+      <strong>${shiftLabel(opzioni.mioCedo)}</strong>
+    </div>
+    <div class="turno-ceduto">
+      In cambio lavoreresti <strong>${formatDay(turno?.data)}</strong> ·
+      <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+      ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
+      <span class="testo-tenue">(${eri})</span>
+    </div>`;
+}
+
 function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);
   const turno = store.shift(match.shiftOffertoId);
@@ -4569,14 +4658,7 @@ function cardMatch(match, opzioni = {}) {
         ${verde ? '🟢 Match' : '🟡 Potenziale'}
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
-      <div class="turno-offerto">
-        Faresti <strong>${formatDay(turno?.data)}</strong> ·
-        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
-        ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
-      </div>
-      ${raw(opzioni.mioCedo
-    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · <strong>${esc(match.adattatoControparte?.trasformato ? `${match.adattatoControparte.start}–${match.adattatoControparte.end}` : shiftLabel(opzioni.mioCedo))}</strong>${match.adattatoControparte?.trasformato ? ` <span class="tag">${esc(shiftLabel(opzioni.mioCedo))} adattato al contratto di ${esc(u?.nome)}</span>` : ''}</div>`
-    : '')}
+      ${raw(riassuntoMatch(match, u, turno, opzioni))}
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
       </ul>
@@ -4639,7 +4721,7 @@ function messaggioAvviso(richiesta, destinatario) {
   const cedo = store.shift(richiesta.cedo.shiftId);
   const giorni = (richiesta.cerco.giorni || []).map((g) => formatDay(g)).join(', ');
   const cosa = richiesta.tipo === TIPO_CAMBIO.OFF
-    ? `vorrei libero ${formatDay(cedo.data)} e in cambio lavoro uno fra: ${giorni}`
+    ? `vorrei OFF ${formatDay(cedo.data)} e in cambio lavoro uno fra: ${giorni}`
     : `cedo il turno di ${formatDay(cedo.data)} (${shiftLabel(cedo)}) e cerco un altro turno dello stesso giorno`;
   return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
     + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `
@@ -4927,7 +5009,7 @@ function calendario(params) {
  * da fuori sono la stessa cosa, un turno che si può prendere.
  */
 const GRUPPI_GIORNO = [
-  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno libero. Se tu sei a casa, puoi prendere il loro turno.' },
+  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono OFF questo giorno. Se tu sei a casa, puoi prendere il loro turno.' },
   { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate messi a disposizione: qui si prende.' },
 ];
 
@@ -5667,7 +5749,7 @@ function vistaRapida() {
   ))}
     ${raw(gruppo(
     `📅 Cambio OFF (${off.length})`,
-    'Ti liberano la giornata, tu lavori in un giorno in cui sei a casa.',
+    'Ti danno OFF quella giornata, tu lavori in un giorno in cui sei a casa.',
     off,
   ))}
 
@@ -5713,7 +5795,7 @@ function scelta() {
       <span class="tile-icona">📅</span>
       <span>
         <strong>Cambio OFF</strong>
-        <em>Vuoi libero un giorno e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
+        <em>Vuoi un giorno OFF e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
       </span>
     </button>
 
@@ -5747,9 +5829,9 @@ function passoCedo() {
     </button>`).join('');
 
   return html`
-    ${raw(barra(off ? 'Quale giorno vuoi libero?' : 'Quale turno vuoi cambiare?', 1))}
+    ${raw(barra(off ? 'Quale giorno vuoi OFF?' : 'Quale turno vuoi cambiare?', 1))}
     <p class="testo-tenue">${off
-    ? 'Scegli il turno del giorno che ti serve libero. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
+    ? 'Scegli il turno del giorno che ti serve OFF. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
     : 'Scegli il turno di cui vuoi cambiare l\'orario. Resti nello stesso giorno.'}</p>
     ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
     : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}
@@ -5829,12 +5911,12 @@ function passoCercoOff() {
   return html`
     ${raw(barra('Cosa offri in cambio?', 2))}
     <div class="card riepilogo">
-      <p>Vuoi libero <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
+      <p>Vuoi OFF <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
     </div>
     ${raw(liberi.length ? `
-      <p class="testo-tenue">Offri i giorni liberi in cui saresti disposto a lavorare. Più ne offri, più è probabile trovare qualcuno.</p>
+      <p class="testo-tenue">Offri i giorni OFF in cui saresti disposto a lavorare. Più ne offri, più è probabile trovare qualcuno.</p>
       <div class="pillole">${pillole}</div>`
-    : vuoto('Nessun giorno libero', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
+    : vuoto('Nessun giorno OFF', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
 
     ${raw(draft.cerco.giorni.length ? `
       <h3>Il turno che prenderesti</h3>
@@ -6548,7 +6630,7 @@ const GUIDE = {
       </p>
 
       <p class="esempio">
-        Luca vuole libero venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
+        Luca vuole OFF venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
         lavori: siete la risposta l'uno dell'altro.
       </p>
 
@@ -6573,10 +6655,10 @@ const GUIDE = {
 
       <h3>📅 Cambio OFF</h3>
       <p>
-        Vuoi libero un giorno intero. In cambio offri un giorno in cui sei a
+        Vuoi OFF un giorno intero. In cambio offri un giorno in cui sei a
         casa, e prendi il turno di chi ti libera.
       </p>
-      <p class="esempio">«Voglio libero sabato, in cambio lavoro lunedì.»</p>
+      <p class="esempio">«Voglio OFF sabato, in cambio lavoro lunedì.»</p>
 
       <p class="testo-tenue">
         Compaiono solo i giorni della stessa settimana: da sabato a venerdì,
@@ -6594,7 +6676,7 @@ const GUIDE = {
       <h3>Le barre sotto i numeri</h3>
       <ul class="elenco piccolo">
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
-          rossa: qualcuno vuole liberarsi;</li>
+          rossa: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
           verde: qualcuno offre un turno o una giornata;</li>
         <li>bordo oro: c'è una priorità.</li>
@@ -6603,8 +6685,8 @@ const GUIDE = {
       <h3>Aprendo un giorno</h3>
       <p>Due blocchi: <strong>Cercano</strong> e <strong>Offrono</strong>.</p>
       <p class="esempio">
-        Marco vuole libero sabato 12 e offre lunedì 14. Sul 12 leggi «vuole
-        libero questo giorno», sul 14 «offre di lavorare questo giorno».
+        Marco vuole OFF sabato 12 e offre lunedì 14. Sul 12 leggi «vuole
+        OFF questo giorno», sul 14 «offre di lavorare questo giorno».
       </p>
 
       <p class="testo-tenue">

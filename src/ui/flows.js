@@ -95,7 +95,7 @@ export function vistaRapida() {
   ))}
     ${raw(gruppo(
     `📅 Cambio OFF (${off.length})`,
-    'Ti liberano la giornata, tu lavori in un giorno in cui sei a casa.',
+    'Ti danno OFF quella giornata, tu lavori in un giorno in cui sei a casa.',
     off,
   ))}
 
@@ -141,7 +141,7 @@ export function scelta() {
       <span class="tile-icona">📅</span>
       <span>
         <strong>Cambio OFF</strong>
-        <em>Vuoi libero un giorno e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
+        <em>Vuoi un giorno OFF e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
       </span>
     </button>
 
@@ -175,9 +175,9 @@ function passoCedo() {
     </button>`).join('');
 
   return html`
-    ${raw(barra(off ? 'Quale giorno vuoi libero?' : 'Quale turno vuoi cambiare?', 1))}
+    ${raw(barra(off ? 'Quale giorno vuoi OFF?' : 'Quale turno vuoi cambiare?', 1))}
     <p class="testo-tenue">${off
-    ? 'Scegli il turno del giorno che ti serve libero. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
+    ? 'Scegli il turno del giorno che ti serve OFF. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
     : 'Scegli il turno di cui vuoi cambiare l\'orario. Resti nello stesso giorno.'}</p>
     ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
     : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}
@@ -257,12 +257,12 @@ function passoCercoOff() {
   return html`
     ${raw(barra('Cosa offri in cambio?', 2))}
     <div class="card riepilogo">
-      <p>Vuoi libero <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
+      <p>Vuoi OFF <strong>${formatDay(cedo.data, true)}</strong>, dove hai ${shiftLabel(cedo)}.</p>
     </div>
     ${raw(liberi.length ? `
-      <p class="testo-tenue">Offri i giorni liberi in cui saresti disposto a lavorare. Più ne offri, più è probabile trovare qualcuno.</p>
+      <p class="testo-tenue">Offri i giorni OFF in cui saresti disposto a lavorare. Più ne offri, più è probabile trovare qualcuno.</p>
       <div class="pillole">${pillole}</div>`
-    : vuoto('Nessun giorno libero', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
+    : vuoto('Nessun giorno OFF', `Quella settimana lavori tutti i giorni: senza un OFF da offrire non c'è niente da scambiare. Prova un cambio orario.`))}
 
     ${raw(draft.cerco.giorni.length ? `
       <h3>Il turno che prenderesti</h3>

@@ -35,9 +35,11 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 - `src/core/` non conosce il DOM; `src/ui/` non riscrive le regole. Una regola
   che vive in due posti diverge, prima o poi.
 - Ogni assunzione discutibile sta in `src/core/rules.js`, in un posto solo.
-- Le frasi che leggono entrambe le parti di uno scambio si scrivono con i nomi
-  propri, mai in seconda persona: un "sei Part Time" giusto da un lato è falso
-  dall'altro. C'è un test che rifiuta le frasi di parte.
+- Le spiegazioni di un match sanno chi sta guardando (`ctx.currentUserId`, in
+  `verificheIncrociate`/`matchOrario`/`matchOff`): alla persona che corrisponde
+  si parla in seconda persona ("sei Part Time"), all'altra si continua a
+  nominarla — mai il contrario, e mai per una richiesta che chi guarda non
+  c'entra. C'è un test che verifica che il "tu" non esca da lì.
 
 ## Trappole note
 
