@@ -129,6 +129,11 @@ instradabile: lì non arriva posta nemmeno per sbaglio. Il `.local` scelto
 all'inizio è stato abbandonato per forza, non per gusto — Supabase lo rifiuta
 con `email_address_invalid`.
 
+Cambio password: passa da `PUT /auth/v1/user`, e in app viene rifiutato senza
+rete. La password che conta all'ingresso è quella dell'account, quindi
+cambiarne solo l'impronta locale lasciava la persona con la password nuova
+rifiutata e la vecchia ancora valida.
+
 Password dimenticata: *Authentication ▸ Users ▸* la persona *▸ Reset password*.
 È un potere sugli account altrui, e le note d'uso dicono già il limite — si usa
 su richiesta dell'interessato e per nient'altro.
@@ -173,6 +178,22 @@ Per pubblicarla: **Edge Functions ▸ Deploy a new function ▸ via editor**, no
 gli indirizzi delle funzioni distinguono maiuscole e minuscole, e una `c`
 minuscola risponde `404 NOT_FOUND` senza spiegare perché. Serve l'accesso di un
 utente autenticato, quindi un estraneo non può usarla come proxy.
+
+## La sessione che scade mentre l'app è aperta
+
+Il token di accesso dura **un'ora**; l'app resta aperta per giorni. La prima
+chiamata dopo la scadenza tornava `401`, che il traduttore rendeva con «non hai
+accesso a questo dato»: una frase che manda a cercare un permesso mancante
+quando il problema era solo un token vecchio.
+
+Ora `chiama()` riconosce quel caso, usa il `refresh_token` per prendere un
+token nuovo e **ripete la richiesta una volta sola**. Se anche il rinnovo
+fallisce, la sessione morta viene cancellata e il messaggio dice la cosa vera,
+cioè di rientrare con la password. Un solo tentativo, mai due: un rifiuto vero
+di permessi non deve diventare un giro infinito di rinnovi.
+
+Tre test in `tests/regressioni.test.js` coprono i tre esiti, con un server
+finto: rinnovo riuscito, rinnovo fallito, rifiuto vero.
 
 ## Due trappole pagate, perché non si ripetano
 

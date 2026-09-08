@@ -11,7 +11,7 @@ import { seed } from './seed.js';
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
-  scaricaCalendario,
+  scaricaCalendario, cambiaPasswordServer,
 } from './supabase.js';
 import { parseICS } from './ics.js';
 
@@ -80,7 +80,13 @@ export const store = {
     return this.shiftsOf(this.state.currentUserId, { soloFuturi: true })
       .filter((s) => turnoOfferibile(request, s, this.state.shifts, byId).ok);
   },
-  /** Posso rispondere a questa richiesta? Falso anche se è mia o già chiusa. */
+  /**
+   * Va detto «al momento non puoi cambiare» su questa richiesta?
+   *
+   * Falso quando non c'è niente da dire, e sono tre casi diversi: la richiesta
+   * è mia, è già chiusa, oppure ho un turno da offrire. L'avviso serve solo a
+   * chi guarda una richiesta viva di qualcun altro e non ha niente in mano.
+   */
   possoRispondere(request) {
     if (!request || request.userId === this.state.currentUserId) return true;
     if (!isOpen(request)) return true;
@@ -135,8 +141,23 @@ export const store = {
   importaTurni(turni, { userId = this.state.currentUserId } = {}) {
     let aggiornati = 0;
     let aggiunti = 0;
+    // I turni già messi sul piatto in una richiesta aperta non si toccano.
+    // Il calendario si riscarica da solo ogni sei ore, e senza questo freno
+    // l'orario di un turno offerto ai colleghi cambierebbe sotto il loro naso
+    // dopo che l'hanno letto. Il giorno si salta e lo si dice.
+    const impegnati = new Set(
+      this.state.requests.filter(isOpen).map((r) => r.cedo.shiftId),
+    );
+    const bloccati = [];
     for (const t of turni) {
       const esistente = this.state.shifts.find((s) => s.userId === userId && s.data === t.data);
+      if (esistente && impegnati.has(esistente.id)) {
+        // Uguale a com'era: non c'è niente da riscrivere e niente da dire.
+        const identico = esistente.tipo === t.tipo && esistente.start === t.start
+          && esistente.end === t.end;
+        if (!identico) bloccati.push(t.data);
+        continue;
+      }
       if (esistente) {
         Object.assign(esistente, { tipo: t.tipo, start: t.start, end: t.end });
         aggiornati += 1;
@@ -148,7 +169,7 @@ export const store = {
       }
     }
     this.commit();
-    return { aggiunti, aggiornati };
+    return { aggiunti, aggiornati, bloccati };
   },
 
   eliminaTurno(id) {
@@ -365,19 +386,6 @@ export const store = {
     this.commit();
   },
 
-  /**
-   * Attivare una preferenza spegne la sua opposta: "evito le mattine" e
-   * "preferisco le mattine" insieme non vogliono dire niente, e lasciarle
-   * entrambe accese scaricherebbe sul motore una contraddizione che si può
-   * togliere qui, dove nasce.
-   */
-  /**
-   * Il profilo della persona che usa l'app.
-   *
-   * Non crea un utente nuovo: riscrive quello corrente. Così i turni e le
-   * richieste della demo restano coerenti e l'app è viva dal primo minuto,
-   * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
-   */
   /** Le credenziali di chi usa l'app, senza la password: solo la sua impronta. */
   get credenziali() {
     return this.state.profilo?.credenziali || null;
@@ -434,9 +442,20 @@ export const store = {
    * Cambio password. Serve quella attuale: se qualcuno trova il telefono
    * sbloccato non deve potersi chiudere dentro cambiandola.
    */
-  cambiaPassword(attuale, nuova) {
+  async cambiaPassword(attuale, nuova) {
     if (!verificaPassword(attuale, this.credenziali)) {
       return { errore: 'La password attuale non è corretta.' };
+    }
+    // Col server collegato la password che conta è quella dell'account. Il
+    // server viene prima apposta: se cambiasse solo l'impronta locale, al
+    // prossimo ingresso la password nuova verrebbe rifiutata e la vecchia
+    // continuerebbe a funzionare.
+    if (serverConfigurato() && this.state.profilo?.identificativo) {
+      if (!collegato()) {
+        return { errore: 'Serve la rete: la password la custodisce il server, non questo telefono.' };
+      }
+      const r = await cambiaPasswordServer(nuova);
+      if (r.errore) return { errore: r.errore };
     }
     this.state.profilo.credenziali = creaCredenziali(nuova);
     // La sessione segue la credenziale nuova: cambiare password non deve
@@ -496,6 +515,13 @@ export const store = {
     return { ok: true };
   },
 
+  /**
+   * Il profilo della persona che usa l'app.
+   *
+   * Non crea un utente nuovo: riscrive quello corrente. Così i turni e le
+   * richieste della demo restano coerenti e l'app è viva dal primo minuto,
+   * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
+   */
   completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote }) {
     const me = this.me;
     const cog = (cognome || '').trim();
@@ -579,6 +605,12 @@ export const store = {
     return !p?.completato || p.versioneNote !== versioneNote;
   },
 
+  /**
+   * Attivare una preferenza spegne la sua opposta: "evito le mattine" e
+   * "preferisco le mattine" insieme non vogliono dire niente, e lasciarle
+   * entrambe accese scaricherebbe sul motore una contraddizione che si può
+   * togliere qui, dove nasce.
+   */
   impostaPreferenze(patch) {
     for (const [key, valore] of Object.entries(patch)) {
       this.me.preferenze[key] = valore;

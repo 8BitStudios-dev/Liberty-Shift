@@ -6,6 +6,7 @@
 // server domani — perché quella è l'unica parte che cambierà.
 
 import { RULES } from './rules.js';
+import { addDays } from './time.js';
 
 const RIGHE_UNITE = /\r?\n[ \t]/g;
 
@@ -109,7 +110,7 @@ export function parseICS(testo) {
 
     if (c.nome === 'END' && c.valore.toUpperCase() === 'VEVENT') {
       const t = eventoInTurno(corrente);
-      if (t.turno) turni.push(t.turno);
+      if (t.turni?.length) turni.push(...t.turni);
       else ignorati.push({ titolo: corrente.titolo || '(senza titolo)', motivo: t.motivo });
       corrente = null;
       continue;
@@ -148,30 +149,52 @@ export function parseICS(testo) {
   };
 }
 
+/**
+ * Un blocco di ferie dura più di un giorno, e lo standard lo dice in un modo
+ * che si sbaglia facilmente: in un evento di giornata intera **il DTEND è
+ * escluso**. Una settimana di ferie dal 10 al 15 si scrive `DTSTART:20260810`
+ * e `DTEND:20260816`. Leggendo solo l'inizio, cinque giorni su sei sparivano
+ * dal calendario, e la persona risultava al lavoro mentre era via.
+ *
+ * Il tetto esiste perché un calendario storto (o un evento senza fine scritto
+ * male) non deve poter riempire l'app di anni di riposi.
+ */
+const GIORNI_MASSIMI = 60;
+
+function giorniCoperti(e) {
+  const dal = e.inizio.data;
+  if (!e.fine?.giornataIntera || e.fine.data <= dal) return [dal];
+  const giorni = [];
+  for (let d = dal; d < e.fine.data && giorni.length < GIORNI_MASSIMI; d = addDays(d, 1)) {
+    giorni.push(d);
+  }
+  return giorni;
+}
+
 function eventoInTurno(e) {
   if (e.stato === 'CANCELLED') return { motivo: 'evento annullato' };
   if (!e.inizio) return { motivo: 'senza data' };
+
+  const off = (data) => ({ data, tipo: 'OFF', start: null, end: null, titolo: e.titolo });
 
   // Un evento di giornata intera è un OFF solo se lo dice il titolo: gli altri
   // (compleanni, promemoria, festività del calendario) non sono turni.
   if (e.inizio.giornataIntera) {
     return eOff(e.titolo)
-      ? { turno: { data: e.inizio.data, tipo: 'OFF', start: null, end: null, titolo: e.titolo } }
+      ? { turni: giorniCoperti(e).map(off) }
       : { motivo: 'giornata intera che non sembra un OFF' };
   }
 
-  if (eOff(e.titolo)) {
-    return { turno: { data: e.inizio.data, tipo: 'OFF', start: null, end: null, titolo: e.titolo } };
-  }
+  if (eOff(e.titolo)) return { turni: [off(e.inizio.data)] };
   if (!e.fine?.ora) return { motivo: 'senza orario di fine' };
 
   return {
-    turno: {
+    turni: [{
       data: e.inizio.data,
       tipo: 'WORK',
       start: e.inizio.ora,
       end: e.fine.ora,
       titolo: e.titolo || '',
-    },
+    }],
   };
 }

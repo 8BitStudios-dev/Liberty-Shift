@@ -81,7 +81,7 @@ const intestazioni = (token, percorso) => ({
  * dentro diventa una frase che una persona può leggere senza sapere cosa sia
  * una row level security.
  */
-async function chiama(percorso, opzioni = {}, { autenticata = true } = {}) {
+async function chiama(percorso, opzioni = {}, { autenticata = true, riprovato = false } = {}) {
   if (!serverConfigurato()) return { dati: null, errore: 'Il server non è collegato.' };
 
   const sessione = leggiSessione();
@@ -105,6 +105,16 @@ async function chiama(percorso, opzioni = {}, { autenticata = true } = {}) {
 
   const testo = await risposta.text();
   const corpo = testo ? sicuroJSON(testo) : null;
+
+  // Il token dura un'ora, l'app resta aperta per giorni: la prima chiamata
+  // dopo la scadenza non è un problema di permessi, è solo un token vecchio.
+  // Senza questo passaggio, chi lascia l'app aperta dalla mattina si sentiva
+  // dire "non hai accesso a questo dato" su roba sua.
+  if (risposta.status === 401 && autenticata && !riprovato && leggiSessione()?.refresh_token) {
+    const r = await rinnova();
+    if (!r.errore) return chiama(percorso, opzioni, { autenticata, riprovato: true });
+    return { dati: null, errore: 'Sessione scaduta: rientra con la tua password.' };
+  }
 
   if (!risposta.ok) return { dati: null, errore: traduci(risposta.status, corpo) };
   return { dati: corpo, errore: null };
@@ -180,6 +190,18 @@ export async function rinnova() {
   }
   scriviSessione(r.dati);
   return r;
+}
+
+/**
+ * Cambia la password dell'account.
+ *
+ * Col server collegato la password vera è questa, non l'impronta locale: se si
+ * cambiasse solo quella, al prossimo ingresso il server rifiuterebbe la nuova
+ * e accetterebbe ancora la vecchia. Cioè esattamente il contrario di quello
+ * che ha appena chiesto la persona.
+ */
+export async function cambiaPasswordServer(nuova) {
+  return chiama('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: nuova }) });
 }
 
 export function esciDalServer() {

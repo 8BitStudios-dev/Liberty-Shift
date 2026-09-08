@@ -49,6 +49,9 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   che deve stare in entrambi va incorporato nel CSS come data URI.
 - **`sw.js` elenca i file a mano.** Aggiungendo un modulo va aggiunto anche lì,
   altrimenti offline l'app si apre a metà. Due test lo verificano.
+- **Nell'ICS il `DTEND` di una giornata intera è escluso.** Ferie dal 10 al 15
+  si scrivono `DTSTART:20260810` / `DTEND:20260816`. Leggere solo l'inizio
+  faceva sparire cinque giorni su sei e metteva al lavoro chi era via.
 - **Un array interpolato dentro `html``` viene escapato**: per una lista già
   montata serve `raw(righe.join(''))`.
 - **Il build controlla la sintassi del bundle** prima di scrivere `dist/`: un

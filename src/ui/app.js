@@ -161,6 +161,22 @@ function render() {
   tabbar.hidden = !attivo;
 }
 
+/**
+ * Com'è andato un import, detto in una riga.
+ *
+ * I giorni saltati vanno nominati: sono turni già offerti ai colleghi, e
+ * lasciarli fuori in silenzio farebbe credere che il calendario sia
+ * aggiornato quando su quei giorni non lo è.
+ */
+function riassuntoImport({ aggiunti = 0, aggiornati = 0, bloccati = [] }) {
+  const base = `${aggiunti} turni aggiunti, ${aggiornati} aggiornati`;
+  if (!bloccati.length) return base;
+  const giorni = bloccati.map((d) => formatDay(d)).join(', ');
+  return bloccati.length === 1
+    ? `${base}. ${giorni} è in una richiesta aperta: non l'ho toccato`
+    : `${base}. ${giorni} sono in richieste aperte: non li ho toccati`;
+}
+
 /** Chiude ogni tendina aperta, qualunque essa sia. */
 function chiudiSheet() {
   document.querySelectorAll('.sheet-backdrop [data-chiudi]').forEach((b) => b.click());
@@ -250,14 +266,17 @@ const AZIONI = {
     setTimeout(() => w.el.querySelector('[data-campo="vecchia"]')?.focus(), 40);
   },
 
-  'conferma-password': (_, el) => {
+  'conferma-password': async (_, el) => {
     const wrap = el.closest('.sheet-backdrop');
     const val = (n) => wrap.querySelector(`[data-campo="${n}"]`).value;
     const esito = wrap.querySelector('[data-esito]');
     const mostra = (testo) => { esito.innerHTML = `<p class="non-puoi">${testo}</p>`; };
     const problema = controllaPassword(val('nuova'), val('ripeti'));
     if (problema) return mostra(problema);
-    const r = store.cambiaPassword(val('vecchia'), val('nuova'));
+    // Il cambio passa dal server, quindi può volerci un attimo: senza dirlo
+    // sembrerebbe che il pulsante non abbia fatto niente.
+    esito.innerHTML = '<p class="testo-tenue">Un attimo…</p>';
+    const r = await store.cambiaPassword(val('vecchia'), val('nuova'));
     if (r.errore) return mostra(r.errore);
     wrap.querySelector('[data-chiudi]').click();
     toast('Password cambiata');
@@ -622,7 +641,7 @@ const AZIONI = {
     if (em) em.textContent = testo;
     if (esito.errore) return toast(esito.errore);
     if (esito.saltato) return toast('Nessun calendario collegato');
-    toast(`${esito.aggiunti} turni aggiunti, ${esito.aggiornati} aggiornati`);
+    toast(riassuntoImport(esito));
     render();
   },
 
@@ -630,9 +649,9 @@ const AZIONI = {
     const wrap = el.closest('.sheet-backdrop');
     const turni = wrap._turni || [];
     if (!turni.length) return toast('Niente da importare');
-    const { aggiunti, aggiornati } = store.importaTurni(turni);
+    const esito = store.importaTurni(turni);
     wrap.querySelector('[data-chiudi]').click();
-    toast(`${aggiunti} turni aggiunti, ${aggiornati} aggiornati`);
+    toast(riassuntoImport(esito));
     render();
   },
 

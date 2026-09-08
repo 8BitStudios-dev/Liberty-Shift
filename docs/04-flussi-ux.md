@@ -195,6 +195,14 @@ Nel Profilo c'è comunque **Aggiorna turni dal calendario**, con l'ora
 dell'ultimo giro, per il giorno in cui il turno cambia in mattinata. L'app
 sostituisce solo i giorni che il file nomina.
 
+Con una eccezione che conta: **un turno già messo sul piatto in una richiesta
+aperta non viene toccato.** Il calendario si riscarica da solo, e senza questo
+freno l'orario di un turno offerto ai colleghi sarebbe cambiato sotto il loro
+naso dopo che l'avevano letto. Quei giorni si saltano e il messaggio finale li
+nomina, invece di lasciar credere che sia tutto aggiornato. Per aggiornarli
+davvero si cancella la richiesta, che è già la regola del capitolo 23: una
+richiesta pubblicata non si modifica, si rifà.
+
 Quando in un giorno c'è sia un riposo programmato sia un turno — capita, il
 gestionale li sovrappone — **vince il turno lavorato**: se ci sono delle ore,
 quel giorno si lavora, comunque lo chiami il codice.
@@ -306,6 +314,12 @@ quello che questo progetto ha deciso di non raccogliere.
 telefono già sbloccato non deve poter chiudere fuori il proprietario cambiandola.
 La sessione segue la credenziale nuova, così chi cambia password non si ritrova
 alla porta.
+
+Col server collegato il cambio **passa prima dal server**, e senza rete viene
+rifiutato. Non è pignoleria: la password che conta all'ingresso è quella
+dell'account, e cambiare solo l'impronta locale produceva il peggiore dei
+risultati possibili, cioè la password nuova rifiutata e la vecchia ancora
+buona. Meglio un "serve la rete" che un lucchetto al contrario.
 
 ## La prima apertura
 Quattro passi, e non si salta nessuno: **chi sei** (nome, cognome, come
