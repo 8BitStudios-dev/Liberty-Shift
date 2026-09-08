@@ -273,20 +273,11 @@ function matchOrario(request, ctx) {
       // escludono più il turno: sta a chi guarda i match decidere.
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
       origine = 'CALENDARIO';
-      if (disponibileIl(u, giorno)) {
-        score += RULES.disponibilitaBonus;
-        reasons.push(ioSonoU
-          ? concorda(u, {
-            m: `Hai ${shiftLabel(suo)} quel giorno e ti sei anche dichiarato disponibile a cambiare`,
-            f: `Hai ${shiftLabel(suo)} quel giorno e ti sei anche dichiarata disponibile a cambiare`,
-            n: `Hai ${shiftLabel(suo)} quel giorno e hai anche dato la disponibilità a cambiare`,
-          })
-          : `${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${concorda(u, {
-            m: 'si è anche dichiarato disponibile', f: 'si è anche dichiarata disponibile', n: 'ha anche dato la disponibilità',
-          })} a cambiare`);
-      } else {
-        reasons.push(ioSonoU ? `Hai ${shiftLabel(suo)} quel giorno` : `${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
-      }
+      // Il bonus della disponibilità dichiarata si vede nel punteggio: dirlo
+      // anche a parole ("si è anche dichiarata disponibile a cambiare") era
+      // ovvio, dato che il turno lo si vede già subito sopra.
+      if (disponibileIl(u, giorno)) score += RULES.disponibilitaBonus;
+      reasons.push(ioSonoU ? `Hai ${shiftLabel(suo)} quel giorno` : `${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
