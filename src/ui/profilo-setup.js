@@ -289,7 +289,7 @@ function passoCodice() {
 
     <label class="campo">
       <input type="text" class="testo" data-campo="codice" value="${b.codice}"
-             autocapitalize="characters" autocomplete="off" autofocus>
+             placeholder="RXXX" autocapitalize="characters" autocomplete="off" autofocus>
     </label>
 
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;

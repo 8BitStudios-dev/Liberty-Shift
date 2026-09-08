@@ -11,7 +11,9 @@ import { seed } from './seed.js';
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
+  scaricaCalendario,
 } from './supabase.js';
+import { parseICS } from './ics.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
@@ -519,6 +521,10 @@ export const store = {
       // e riscriverli da capo vorrebbe dire un secondo account.
       identificativo: this.state.profilo?.identificativo || null,
       idServer: this.state.profilo?.idServer || null,
+      // Anche il calendario collegato: correggere il proprio cognome non deve
+      // costare il reinserimento dell'indirizzo dei turni.
+      calendarioUrl: this.state.profilo?.calendarioUrl || null,
+      calendarioAggiornatoIl: this.state.profilo?.calendarioAggiornatoIl || null,
     };
     if (credenziali) apriSessione(credenziali);
     this.commit();
@@ -534,6 +540,37 @@ export const store = {
   ricordaCalendario(url) {
     this.state.profilo = { ...(this.state.profilo || {}), calendarioUrl: url };
     this.commit();
+  },
+
+  /**
+   * Riscarica il calendario e aggiorna i turni.
+   *
+   * Con l'indirizzo salvato non serve più incollare niente: l'app se lo
+   * riprende da sola all'apertura, al massimo una volta ogni sei ore. Non è
+   * una scelta di prestazioni, è di rispetto — chi apre l'app quindici volte
+   * al giorno non deve scaricare quindici volte lo stesso file.
+   *
+   * Fallisce in silenzio di proposito: se non c'è campo, i turni che hai già
+   * restano al loro posto e l'app si apre lo stesso.
+   */
+  async aggiornaCalendario({ forzato = false } = {}) {
+    const url = this.state.profilo?.calendarioUrl;
+    if (!url || !collegato()) return { saltato: true };
+
+    const ultimo = this.state.profilo?.calendarioAggiornatoIl;
+    const oreDaAllora = ultimo ? (Date.now() - new Date(ultimo).getTime()) / 3600000 : Infinity;
+    if (!forzato && oreDaAllora < RULES.calendario.oreFraAggiornamenti) return { saltato: true };
+
+    const { dati, errore } = await scaricaCalendario(url);
+    if (errore) return { errore };
+
+    const { turni, errore: erroreLettura } = parseICS(dati);
+    if (erroreLettura || !turni.length) return { errore: erroreLettura || 'Nessun turno nel calendario.' };
+
+    const esito = this.importaTurni(turni);
+    this.state.profilo.calendarioAggiornatoIl = new Date().toISOString();
+    this.commit();
+    return esito;
   },
 
   /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */

@@ -456,6 +456,8 @@ function legendaFasce() {
  */
 function sezioneTurni() {
   return html`
+    ${raw(rigaAggiornaCalendario())}
+
     <button class="tile" data-act="importa">
       <span class="tile-icona">📥</span>
       <span>
@@ -473,6 +475,41 @@ function sezioneTurni() {
       </span>
       <span class="chevron">›</span>
     </button>`;
+}
+
+/**
+ * Riscarica i turni dall'indirizzo già salvato.
+ *
+ * Compare solo a chi quell'indirizzo ce l'ha: prima di allora sarebbe un
+ * pulsante che non può funzionare. L'app si aggiorna comunque da sola
+ * all'apertura; questo serve al giorno in cui il turno cambia in mattinata e
+ * non si ha voglia di aspettare.
+ */
+function rigaAggiornaCalendario() {
+  const p = store.state.profilo;
+  if (!p?.calendarioUrl) return '';
+  return html`
+    <button class="tile" data-act="aggiorna-calendario">
+      <span class="tile-icona">🔄</span>
+      <span>
+        <strong>Aggiorna turni dal calendario</strong>
+        <em>${p.calendarioAggiornatoIl
+    ? `Ultimo aggiornamento ${quandoFa(p.calendarioAggiornatoIl)}`
+    : 'Dal calendario che hai già collegato'}</em>
+      </span>
+      <span class="chevron">›</span>
+    </button>`;
+}
+
+/** Quanto tempo fa, detto come lo direbbe una persona. */
+function quandoFa(iso) {
+  const minuti = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (minuti < 2) return 'poco fa';
+  if (minuti < 60) return `${minuti} minuti fa`;
+  const ore = Math.round(minuti / 60);
+  if (ore < 24) return `${ore} ${ore === 1 ? 'ora' : 'ore'} fa`;
+  const giorni = Math.round(ore / 24);
+  return giorni === 1 ? 'ieri' : `${giorni} giorni fa`;
 }
 
 /** Il tasto per le proposte, con quante ne aspettano una risposta. */

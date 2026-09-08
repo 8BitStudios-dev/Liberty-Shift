@@ -623,6 +623,15 @@ const RULES = {
    * è una riga qui: è l'unico posto che decide.
    */
   calendario: {
+    /**
+     * Ogni quante ore l'app riscarica il calendario da sola.
+     *
+     * I turni escono una volta ogni due settimane: sei ore sono già
+     * generose, e chi apre l'app quindici volte al giorno non deve scaricare
+     * quindici volte lo stesso file. Dal Profilo si può sempre forzare.
+     */
+    oreFraAggiornamenti: 6,
+
     codiciOff: [
       /\b(off|riposo|libero|ferie|permesso|festivo)\b/i,
       /\bSO\b|\bADO\b/i,          // scheduled off, additional day off
@@ -2611,7 +2620,9 @@ const { seed } = M_seed;
 const { serverConfigurato } = M_config;
 const {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
+  scaricaCalendario,
 } = M_supabase;
+const { parseICS } = M_ics;
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
@@ -3119,6 +3130,10 @@ const store = {
       // e riscriverli da capo vorrebbe dire un secondo account.
       identificativo: this.state.profilo?.identificativo || null,
       idServer: this.state.profilo?.idServer || null,
+      // Anche il calendario collegato: correggere il proprio cognome non deve
+      // costare il reinserimento dell'indirizzo dei turni.
+      calendarioUrl: this.state.profilo?.calendarioUrl || null,
+      calendarioAggiornatoIl: this.state.profilo?.calendarioAggiornatoIl || null,
     };
     if (credenziali) apriSessione(credenziali);
     this.commit();
@@ -3134,6 +3149,37 @@ const store = {
   ricordaCalendario(url) {
     this.state.profilo = { ...(this.state.profilo || {}), calendarioUrl: url };
     this.commit();
+  },
+
+  /**
+   * Riscarica il calendario e aggiorna i turni.
+   *
+   * Con l'indirizzo salvato non serve più incollare niente: l'app se lo
+   * riprende da sola all'apertura, al massimo una volta ogni sei ore. Non è
+   * una scelta di prestazioni, è di rispetto — chi apre l'app quindici volte
+   * al giorno non deve scaricare quindici volte lo stesso file.
+   *
+   * Fallisce in silenzio di proposito: se non c'è campo, i turni che hai già
+   * restano al loro posto e l'app si apre lo stesso.
+   */
+  async aggiornaCalendario({ forzato = false } = {}) {
+    const url = this.state.profilo?.calendarioUrl;
+    if (!url || !collegato()) return { saltato: true };
+
+    const ultimo = this.state.profilo?.calendarioAggiornatoIl;
+    const oreDaAllora = ultimo ? (Date.now() - new Date(ultimo).getTime()) / 3600000 : Infinity;
+    if (!forzato && oreDaAllora < RULES.calendario.oreFraAggiornamenti) return { saltato: true };
+
+    const { dati, errore } = await scaricaCalendario(url);
+    if (errore) return { errore };
+
+    const { turni, errore: erroreLettura } = parseICS(dati);
+    if (erroreLettura || !turni.length) return { errore: erroreLettura || 'Nessun turno nel calendario.' };
+
+    const esito = this.importaTurni(turni);
+    this.state.profilo.calendarioAggiornatoIl = new Date().toISOString();
+    this.commit();
+    return esito;
   },
 
   /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */
@@ -3976,6 +4022,8 @@ function legendaFasce() {
  */
 function sezioneTurni() {
   return html`
+    ${raw(rigaAggiornaCalendario())}
+
     <button class="tile" data-act="importa">
       <span class="tile-icona">📥</span>
       <span>
@@ -3993,6 +4041,41 @@ function sezioneTurni() {
       </span>
       <span class="chevron">›</span>
     </button>`;
+}
+
+/**
+ * Riscarica i turni dall'indirizzo già salvato.
+ *
+ * Compare solo a chi quell'indirizzo ce l'ha: prima di allora sarebbe un
+ * pulsante che non può funzionare. L'app si aggiorna comunque da sola
+ * all'apertura; questo serve al giorno in cui il turno cambia in mattinata e
+ * non si ha voglia di aspettare.
+ */
+function rigaAggiornaCalendario() {
+  const p = store.state.profilo;
+  if (!p?.calendarioUrl) return '';
+  return html`
+    <button class="tile" data-act="aggiorna-calendario">
+      <span class="tile-icona">🔄</span>
+      <span>
+        <strong>Aggiorna turni dal calendario</strong>
+        <em>${p.calendarioAggiornatoIl
+    ? `Ultimo aggiornamento ${quandoFa(p.calendarioAggiornatoIl)}`
+    : 'Dal calendario che hai già collegato'}</em>
+      </span>
+      <span class="chevron">›</span>
+    </button>`;
+}
+
+/** Quanto tempo fa, detto come lo direbbe una persona. */
+function quandoFa(iso) {
+  const minuti = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (minuti < 2) return 'poco fa';
+  if (minuti < 60) return `${minuti} minuti fa`;
+  const ore = Math.round(minuti / 60);
+  if (ore < 24) return `${ore} ${ore === 1 ? 'ora' : 'ore'} fa`;
+  const giorni = Math.round(ore / 24);
+  return giorni === 1 ? 'ieri' : `${giorni} giorni fa`;
 }
 
 /** Il tasto per le proposte, con quante ne aspettano una risposta. */
@@ -5525,7 +5608,7 @@ function passoCodice() {
 
     <label class="campo">
       <input type="text" class="testo" data-campo="codice" value="${b.codice}"
-             autocapitalize="characters" autocomplete="off" autofocus>
+             placeholder="RXXX" autocapitalize="characters" autocomplete="off" autofocus>
     </label>
 
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
@@ -6077,7 +6160,8 @@ const AZIONI = {
         </p>
         <p class="testo-tenue">
           Tieni l'indirizzo da parte: chi ce l'ha legge i tuoi turni. L'app lo
-          conserva su questo dispositivo per non fartelo ricercare ogni volta.
+          conserva su questo dispositivo, e da lì in poi ricontrolla il
+          calendario da sola ogni volta che la apri.
         </p>
       </details>
       <label class="campo">
@@ -6160,6 +6244,19 @@ const AZIONI = {
     const area = wrap.querySelector('[data-campo="ics"]');
     area.value = dati;
     area.dispatchEvent(new Event('input'));
+  },
+
+  /** Riscarica subito dall'indirizzo salvato, senza aspettare le sei ore. */
+  'aggiorna-calendario': async (_, el) => {
+    const em = el.querySelector('em');
+    const testo = em?.textContent;
+    if (em) em.textContent = 'Scarico…';
+    const esito = await store.aggiornaCalendario({ forzato: true });
+    if (em) em.textContent = testo;
+    if (esito.errore) return toast(esito.errore);
+    if (esito.saltato) return toast('Nessun calendario collegato');
+    toast(`${esito.aggiunti} turni aggiunti, ${esito.aggiornati} aggiornati`);
+    render();
   },
 
   'conferma-import': (_, el) => {
@@ -6304,6 +6401,20 @@ store.init();
 store.subscribe(() => {});
 if (!location.hash) location.hash = '#/home';
 render();
+aggiornamentoSilenzioso();
+
+/**
+ * I turni si riprendono da soli, se c'è un indirizzo salvato.
+ *
+ * Gira dopo il primo render e senza bloccarlo: chi apre l'app vuole vedere la
+ * sua settimana, non una rotella. Se va a buon fine ridisegna, se fallisce non
+ * dice niente — i turni che c'erano restano dove sono, e un avviso all'apertura
+ * per una rete che non c'è sarebbe solo fastidio.
+ */
+async function aggiornamentoSilenzioso() {
+  const esito = await store.aggiornaCalendario();
+  if (!esito.saltato && !esito.errore) render();
+}
 
 
 return {  };

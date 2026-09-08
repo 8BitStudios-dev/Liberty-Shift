@@ -519,7 +519,8 @@ const AZIONI = {
         </p>
         <p class="testo-tenue">
           Tieni l'indirizzo da parte: chi ce l'ha legge i tuoi turni. L'app lo
-          conserva su questo dispositivo per non fartelo ricercare ogni volta.
+          conserva su questo dispositivo, e da lì in poi ricontrolla il
+          calendario da sola ogni volta che la apri.
         </p>
       </details>
       <label class="campo">
@@ -602,6 +603,19 @@ const AZIONI = {
     const area = wrap.querySelector('[data-campo="ics"]');
     area.value = dati;
     area.dispatchEvent(new Event('input'));
+  },
+
+  /** Riscarica subito dall'indirizzo salvato, senza aspettare le sei ore. */
+  'aggiorna-calendario': async (_, el) => {
+    const em = el.querySelector('em');
+    const testo = em?.textContent;
+    if (em) em.textContent = 'Scarico…';
+    const esito = await store.aggiornaCalendario({ forzato: true });
+    if (em) em.textContent = testo;
+    if (esito.errore) return toast(esito.errore);
+    if (esito.saltato) return toast('Nessun calendario collegato');
+    toast(`${esito.aggiunti} turni aggiunti, ${esito.aggiornati} aggiornati`);
+    render();
   },
 
   'conferma-import': (_, el) => {
@@ -746,6 +760,20 @@ store.init();
 store.subscribe(() => {});
 if (!location.hash) location.hash = '#/home';
 render();
+aggiornamentoSilenzioso();
+
+/**
+ * I turni si riprendono da soli, se c'è un indirizzo salvato.
+ *
+ * Gira dopo il primo render e senza bloccarlo: chi apre l'app vuole vedere la
+ * sua settimana, non una rotella. Se va a buon fine ridisegna, se fallisce non
+ * dice niente — i turni che c'erano restano dove sono, e un avviso all'apertura
+ * per una rete che non c'è sarebbe solo fastidio.
+ */
+async function aggiornamentoSilenzioso() {
+  const esito = await store.aggiornaCalendario();
+  if (!esito.saltato && !esito.errore) render();
+}
 
 // PWA
 if ('serviceWorker' in navigator) {

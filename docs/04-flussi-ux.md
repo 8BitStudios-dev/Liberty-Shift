@@ -162,16 +162,13 @@ Profilo, in una sezione con due strade in ordine di comodità:
 
    Quelle della prima versione erano sbagliate. Parlavano di esportare un file
    `.ics`, e il calendario dei turni non è un file: è una **sottoscrizione**, un
-   indirizzo che il telefono interroga. Da iPhone un calendario sottoscritto non
-   si esporta, quindi il percorso vero è un altro — l'app **Comandi**, con
-   *Ottieni contenuto di URL* e *Copia negli appunti*, e poi si incolla qui.
-   Si costruisce una volta e si rilancia quando serve.
+   indirizzo che il telefono interroga. Oggi si incolla quell'indirizzo e si
+   tocca *Scarica*: a leggerlo è la funzione `Calendario` sul server, perché il
+   browser non può (il server di Apple non manda le intestazioni CORS). Il
+   passaggio dall'app Comandi, che era l'unica strada prima, è caduto: la prima
+   persona che ci ha provato si è fermata lì.
 
-   L'indirizzo non si può leggere direttamente dall'app: il server di Apple non
-   manda le intestazioni CORS, quindi il browser rifiuta la chiamata. Servirebbe
-   un pezzo di server che scarichi al posto nostro, ed è la stessa cosa che
-   `05-decisioni-aperte.md` tiene in sospeso — con l'aggravante che a quel punto
-   il calendario intero passerebbe da un server, non solo i turni pubblicati.
+   Incollare il contenuto continua a funzionare, per chi ce l'ha già.
 2. **Inserisci manualmente i turni**, che apre il giorno di oggi nel calendario
    delle due settimane, cioè lo stesso posto dove si correggono.
 
@@ -182,10 +179,21 @@ italiane e buttava via 36 giornate su 71, lasciando il calendario mezzo vuoto e
 la persona a chiedersi cosa avesse sbagliato. I codici veri stanno in
 `RULES.calendario.codiciOff`: aggiungerne uno è una riga sola.
 
-L'import non è automatico e non può esserlo: il calendario dei turni è una
-sottoscrizione, e il browser non può leggerla da solo (nessuna intestazione
-CORS dal server di Apple). Quando escono i turni nuovi si rilancia il comando e
-si reincolla; l'app sostituisce solo i giorni che il file nomina.
+### L'aggiornamento da solo
+Una volta scaricato, l'indirizzo resta su quel dispositivo, e da lì in poi
+l'app se lo riprende **all'apertura**, al massimo una volta ogni sei ore
+(`RULES.calendario.oreFraAggiornamenti`). Il tetto non è una questione di
+prestazioni: chi apre l'app quindici volte in un pomeriggio non deve scaricare
+quindici volte lo stesso file.
+
+Il giro parte dopo il primo disegno della schermata e fallisce in silenzio: chi
+apre l'app vuole vedere la sua settimana, non una rotella, e un avviso perché
+manca la rete sposterebbe il problema addosso a chi non può risolverlo. I turni
+già presenti restano dove sono.
+
+Nel Profilo c'è comunque **Aggiorna turni dal calendario**, con l'ora
+dell'ultimo giro, per il giorno in cui il turno cambia in mattinata. L'app
+sostituisce solo i giorni che il file nomina.
 
 Quando in un giorno c'è sia un riposo programmato sia un turno — capita, il
 gestionale li sovrappone — **vince il turno lavorato**: se ci sono delle ore,

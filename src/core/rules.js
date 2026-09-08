@@ -46,6 +46,15 @@ export const RULES = {
    * è una riga qui: è l'unico posto che decide.
    */
   calendario: {
+    /**
+     * Ogni quante ore l'app riscarica il calendario da sola.
+     *
+     * I turni escono una volta ogni due settimane: sei ore sono già
+     * generose, e chi apre l'app quindici volte al giorno non deve scaricare
+     * quindici volte lo stesso file. Dal Profilo si può sempre forzare.
+     */
+    oreFraAggiornamenti: 6,
+
     codiciOff: [
       /\b(off|riposo|libero|ferie|permesso|festivo)\b/i,
       /\bSO\b|\bADO\b/i,          // scheduled off, additional day off
