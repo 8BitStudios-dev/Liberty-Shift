@@ -762,9 +762,16 @@ const RULES = {
    * Time è 40 ore e basta, un Part Time sceglie fra 20, 25 e 30. Chiederlo
    * comunque a un Full Time era una domanda con una risposta sola.
    */
+  /**
+   * `rotazione` dice chi lavora a settimane che si ripetono in ordine.
+   *
+   * È una cosa da Part Time: un Full Time fa cinque giorni su sette e le
+   * settimane non girano ad A, B, C. Offrirgli comunque la rotazione sarebbe
+   * una voce in più da capire e scartare, in una schermata che ne ha già tre.
+   */
   contracts: {
-    FT: { label: 'Full Time', ore: [40] },
-    PT: { label: 'Part Time', ore: [20, 25, 30] },
+    FT: { label: 'Full Time', ore: [40], rotazione: false },
+    PT: { label: 'Part Time', ore: [20, 25, 30], rotazione: true },
   },
 
   adattamentoPenalty: 5,
@@ -1067,6 +1074,11 @@ function spostaTurno(nuovoInizio, start, end) {
   return `${String(Math.floor(fine / 60)).padStart(2, '0')}:${String(fine % 60).padStart(2, '0')}`;
 }
 
+/** Questo contratto lavora a settimane che girano? */
+function usaRotazione(contratto) {
+  return Boolean(RULES.contracts[contratto]?.rotazione);
+}
+
 function shiftLabel(shift) {
   if (!shift) return '—';
   if (shift.tipo === 'OFF') return 'OFF';
@@ -1344,7 +1356,7 @@ function applicaPreferenze(user, shift) {
   };
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, spostaTurno, shiftLabel, wantLabel, concorda, contractOf, oreDelContratto, oreAutomatiche, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
+return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, spostaTurno, usaRotazione, shiftLabel, wantLabel, concorda, contractOf, oreDelContratto, oreAutomatiche, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
 })();
 
 // ---- src/core/engine.js
@@ -3248,7 +3260,7 @@ const M_store = (() => {
 // chiamate a un backend non tocca né il motore né la UI.
 
 const { RULES, PREFERENZE, STATUS } = M_rules;
-const { newId, isExpired, hasPriority, isOpen } = M_model;
+const { newId, isExpired, hasPriority, isOpen, usaRotazione } = M_model;
 const { validateRequest, nextStatus, turnoOfferibile } = M_engine;
 const { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } = M_accesso;
 const { monthKey, todayISO } = M_time;
@@ -3783,7 +3795,17 @@ const store = {
 
   impostaContratto(patch) {
     Object.assign(this.me, patch);
+    this.allineaRotazione();
     this.commit();
+  },
+
+  /**
+   * Un contratto che non lavora a settimane che girano non tiene una
+   * rotazione. Lasciarla lì significherebbe una previsione invisibile che
+   * continua a riempire i mesi da una schermata che non esiste più.
+   */
+  allineaRotazione() {
+    if (this.me.rotazione && !usaRotazione(this.me.contratto)) delete this.me.rotazione;
   },
 
   /** Le credenziali di chi usa l'app, senza la password: solo la sua impronta. */
@@ -3935,6 +3957,7 @@ const store = {
       contratto: contratto || me.contratto,
       oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,
     });
+    this.allineaRotazione();
     const credenziali = password
       ? creaCredenziali(password)
       : this.state.profilo?.credenziali || null;
@@ -4562,7 +4585,9 @@ const {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
   ruoloNelGiorno,
 } = M_components;
-const { hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana } = M_model;
+const {
+  hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
+} = M_model;
 const {
   slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
 } = M_engine;
@@ -5132,6 +5157,9 @@ function riepilogoRotazione() {
  * non ha ancora messo dentro un turno.
  */
 function rigaRotazione() {
+  // Le settimane che girano sono una cosa da Part Time: la regola sta in
+  // RULES.contracts, non qui.
+  if (!usaRotazione(store.me.contratto)) return '';
   const r = store.me.rotazione;
   const attiva = r && !rotazioneVuota(r);
   const lettera = attiva ? letteraDi(r, appleWeekKey(todayISO())) : null;
@@ -5326,7 +5354,7 @@ function ilTuoMese() {
  * si legge da sola e si vede subito se è sfasata di una settimana.
  */
 function lettera(me, settimana) {
-  const l = me.rotazione && !rotazioneVuota(me.rotazione)
+  const l = usaRotazione(me.contratto) && me.rotazione && !rotazioneVuota(me.rotazione)
     ? letteraDi(me.rotazione, settimana)
     : null;
   return l ? html`<span class="lettera-rot">${l}</span>` : '';
@@ -6286,7 +6314,7 @@ const M_guida = (() => {
 const { html, raw } = M_dom;
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-const VERSIONE_GUIDA = '6';
+const VERSIONE_GUIDA = '7';
 
 const GUIDE = {
   home: {
@@ -6459,6 +6487,11 @@ const GUIDE = {
 
       <h3>I tuoi turni</h3>
       <p>Dal calendario dei turni, o a mano. Restano su questo telefono.</p>
+      <p class="testo-tenue">
+        Se sei Part Time e le tue settimane girano ad A, B, C, dillo una volta
+        nella Rotazione: l'app riempie i mesi avanti da sola, lasciando stare i
+        giorni dove un turno c'è già.
+      </p>
 
       <h3>Preferenze</h3>
       <ul class="elenco piccolo">

@@ -9,7 +9,7 @@
 import { html, raw } from './dom.js';
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-export const VERSIONE_GUIDA = '6';
+export const VERSIONE_GUIDA = '7';
 
 export const GUIDE = {
   home: {
@@ -182,6 +182,11 @@ export const GUIDE = {
 
       <h3>I tuoi turni</h3>
       <p>Dal calendario dei turni, o a mano. Restano su questo telefono.</p>
+      <p class="testo-tenue">
+        Se sei Part Time e le tue settimane girano ad A, B, C, dillo una volta
+        nella Rotazione: l'app riempie i mesi avanti da sola, lasciando stare i
+        giorni dove un turno c'è già.
+      </p>
 
       <h3>Preferenze</h3>
       <ul class="elenco piccolo">

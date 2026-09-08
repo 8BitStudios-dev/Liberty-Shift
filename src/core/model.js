@@ -134,6 +134,11 @@ export function spostaTurno(nuovoInizio, start, end) {
   return `${String(Math.floor(fine / 60)).padStart(2, '0')}:${String(fine % 60).padStart(2, '0')}`;
 }
 
+/** Questo contratto lavora a settimane che girano? */
+export function usaRotazione(contratto) {
+  return Boolean(RULES.contracts[contratto]?.rotazione);
+}
+
 export function shiftLabel(shift) {
   if (!shift) return '—';
   if (shift.tipo === 'OFF') return 'OFF';

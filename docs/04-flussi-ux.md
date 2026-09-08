@@ -209,6 +209,13 @@ turno di Lorenzo cadeva nell'apertura invece che nella mattina, e la sua
 preferenza non si accendeva mai.
 
 ### La rotazione: A, B, C, e poi da capo
+**Solo per i Part Time**, ed è scritto in `RULES.contracts`: un Full Time fa
+cinque giorni su sette e le sue settimane non girano. Offrirgli comunque la
+rotazione sarebbe una voce in più da capire e scartare, in una schermata che ne
+ha già tre. Chi passa da Part Time a Full Time se la vede dimenticare, perché
+una rotazione che resta senza la sua schermata è una previsione invisibile che
+continua a riempire i mesi.
+
 Diversi Part Time non hanno una settimana tipo, ne hanno tre o quattro che si
 ripetono in ordine. Chi lavora così, senza il calendario collegato, reinserisce
 le stesse giornate ogni mese.

@@ -122,3 +122,32 @@ test('tre mesi di rotazione non ripetono mai lo stesso giorno', () => {
   // Tre settimane con 3, 3 e 3 turni, per tredici settimane.
   assert.equal(nuovi.length, 13 * 3);
 });
+
+// --- di chi è la rotazione ---------------------------------------------
+
+test('le settimane che girano sono una cosa da Part Time', async () => {
+  const { usaRotazione } = await import('../src/core/model.js');
+  assert.equal(usaRotazione('PT'), true);
+  assert.equal(usaRotazione('FT'), false);
+  // Un contratto che non esiste non deve far esplodere una schermata.
+  assert.equal(usaRotazione(undefined), false);
+});
+
+test('passando a Full Time la rotazione si dimentica', async () => {
+  globalThis.localStorage = {
+    _dati: new Map(),
+    getItem(k) { return this._dati.has(k) ? this._dati.get(k) : null; },
+    setItem(k, v) { this._dati.set(k, String(v)); },
+    removeItem(k) { this._dati.delete(k); },
+  };
+  const { store } = await import('../src/core/store.js');
+  store.reset();
+  store.impostaContratto({ contratto: 'PT', oreSettimanali: 30 });
+  store.salvaRotazione({ ancora: SAB, settimane: [{ nome: 'A', giorni: [turno('10:00', '16:00'), null, null, null, null, null, null] }] });
+  assert.ok(store.me.rotazione, 'un Part Time la può avere');
+
+  store.impostaContratto({ contratto: 'FT', oreSettimanali: 40 });
+
+  assert.equal(store.me.rotazione, undefined,
+    'lasciarla sarebbe una previsione invisibile che continua a riempire i mesi');
+});

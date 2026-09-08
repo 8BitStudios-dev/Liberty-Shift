@@ -3,7 +3,7 @@
 // chiamate a un backend non tocca né il motore né la UI.
 
 import { RULES, PREFERENZE, STATUS } from './rules.js';
-import { newId, isExpired, hasPriority, isOpen } from './model.js';
+import { newId, isExpired, hasPriority, isOpen, usaRotazione } from './model.js';
 import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
 import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
 import { monthKey, todayISO } from './time.js';
@@ -538,7 +538,17 @@ export const store = {
 
   impostaContratto(patch) {
     Object.assign(this.me, patch);
+    this.allineaRotazione();
     this.commit();
+  },
+
+  /**
+   * Un contratto che non lavora a settimane che girano non tiene una
+   * rotazione. Lasciarla lì significherebbe una previsione invisibile che
+   * continua a riempire i mesi da una schermata che non esiste più.
+   */
+  allineaRotazione() {
+    if (this.me.rotazione && !usaRotazione(this.me.contratto)) delete this.me.rotazione;
   },
 
   /** Le credenziali di chi usa l'app, senza la password: solo la sua impronta. */
@@ -690,6 +700,7 @@ export const store = {
       contratto: contratto || me.contratto,
       oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,
     });
+    this.allineaRotazione();
     const credenziali = password
       ? creaCredenziali(password)
       : this.state.profilo?.credenziali || null;

@@ -125,9 +125,16 @@ export const RULES = {
    * Time è 40 ore e basta, un Part Time sceglie fra 20, 25 e 30. Chiederlo
    * comunque a un Full Time era una domanda con una risposta sola.
    */
+  /**
+   * `rotazione` dice chi lavora a settimane che si ripetono in ordine.
+   *
+   * È una cosa da Part Time: un Full Time fa cinque giorni su sette e le
+   * settimane non girano ad A, B, C. Offrirgli comunque la rotazione sarebbe
+   * una voce in più da capire e scartare, in una schermata che ne ha già tre.
+   */
   contracts: {
-    FT: { label: 'Full Time', ore: [40] },
-    PT: { label: 'Part Time', ore: [20, 25, 30] },
+    FT: { label: 'Full Time', ore: [40], rotazione: false },
+    PT: { label: 'Part Time', ore: [20, 25, 30], rotazione: true },
   },
 
   adattamentoPenalty: 5,

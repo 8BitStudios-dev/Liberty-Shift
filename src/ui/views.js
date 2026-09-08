@@ -4,7 +4,9 @@ import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
   ruoloNelGiorno,
 } from './components.js';
-import { hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana } from '../core/model.js';
+import {
+  hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
+} from '../core/model.js';
 import {
   slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
 } from '../core/engine.js';
@@ -574,6 +576,9 @@ export function riepilogoRotazione() {
  * non ha ancora messo dentro un turno.
  */
 function rigaRotazione() {
+  // Le settimane che girano sono una cosa da Part Time: la regola sta in
+  // RULES.contracts, non qui.
+  if (!usaRotazione(store.me.contratto)) return '';
   const r = store.me.rotazione;
   const attiva = r && !rotazioneVuota(r);
   const lettera = attiva ? letteraDi(r, appleWeekKey(todayISO())) : null;
@@ -768,7 +773,7 @@ export function ilTuoMese() {
  * si legge da sola e si vede subito se è sfasata di una settimana.
  */
 function lettera(me, settimana) {
-  const l = me.rotazione && !rotazioneVuota(me.rotazione)
+  const l = usaRotazione(me.contratto) && me.rotazione && !rotazioneVuota(me.rotazione)
     ? letteraDi(me.rotazione, settimana)
     : null;
   return l ? html`<span class="lettera-rot">${l}</span>` : '';
