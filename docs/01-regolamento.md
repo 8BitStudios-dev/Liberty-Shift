@@ -263,29 +263,32 @@ richiesta di nuovo.
 
 ## R19 — Preferenze
 Le preferenze del profilo sono due cose diverse, e l'app le tiene separate
-perché si comportano in modo diverso.
+perché pesano in modo diverso — ma nessuna delle due esclude più un turno.
 
 | Gruppo | Effetto | Voci |
 |---|---|---|
-| **Turni da evitare** | filtro netto: quei turni non compaiono, nemmeno con un punteggio basso | aperture, mattine, pomeriggi, chiusure, notti visual |
+| **Turni da evitare** | abbassa molto il punteggio, `RULES.evitaPenalty` punti | aperture, mattine, pomeriggi, chiusure, notti visual |
 | **Turni preferiti** | sposta il punteggio di `RULES.preferenzaBonus` punti | aperture, mattine, pomeriggi, chiusure |
 
 Le voci stanno in `PREFERENZE`, ciascuna collegata a una fascia di R6 invece che
 a una catena di `if`: aggiungerne una è una riga di tabella.
 
 Un turno in due fasce può incrociare due preferenze. Se anche una sola dice
-"evito", il turno è **escluso**: chi non vuole le chiusure non cambia idea
-perché quel turno è anche una mattina. Il bonus invece si prende **una volta
-sola**, altrimenti bastava un turno lungo per scalare la classifica.
+"evito", conta solo quella: chi non vuole le chiusure non cambia idea perché
+quel turno è anche una mattina. Il bonus invece si prende **una volta sola**,
+altrimenti bastava un turno lungo per scalare la classifica.
 
 **Due preferenze opposte non possono stare accese insieme.** "Evito le mattine"
 e "preferisco le mattine" insieme non vogliono dire niente, quindi attivarne una
 spegne l'altra, nello store, dove nasce la contraddizione. Il motore non deve
 sapere che esiste.
 
-Il filtro netto vale solo per chi compare **da una disponibilità dichiarata**:
-chi ha pubblicato una richiesta ha già detto cosa cerca, e quella prevale sulla
-preferenza generica del profilo.
+Un turno da evitare pesa abbastanza da sparire nella maggior parte dei casi
+(la penalità basta di solito a portarlo sotto `potentialThreshold`), ma non è
+più un veto: se il resto del match è forte, resta visibile — decide chi
+guarda, non il motore al posto suo. Prima della versione attuale era un filtro
+netto; il cambio è voluto, perché un veto rigido nascondeva anche scambi
+altrimenti ottimi per colpa di un solo dettaglio.
 
 "Disponibile nel weekend" non esiste più: non incideva su niente, e una
 preferenza che non fa nulla è peggio di una che manca.
@@ -295,16 +298,27 @@ Era una preferenza che non faceva niente, e la documentazione diceva il
 contrario. Ora è implementata.
 
 ## R15 — Chi può comparire fra i match
-Solo chi ha dato un segnale:
-1. una richiesta pubblicata compatibile;
-2. una disponibilità dichiarata per quel giorno.
+Chi lavora (o è libero, nel cambio OFF) nel giorno giusto e il cui turno
+soddisfa quello che si cerca compare sempre, con un'origine diversa a seconda
+di cosa ha detto:
 
-Chi non ha fatto né l'una né l'altra cosa non viene mai mostrato.
+1. **richiesta pubblicata** compatibile → origine `RICHIESTA`, può arrivare a
+   MATCH pieno;
+2. **solo il calendario** → origine `CALENDARIO`, tagliato a 75 (mai un MATCH
+   pieno): è un'occasione trovata dal motore, non un accordo che qualcuno ha
+   già proposto.
 
-La disponibilità si dichiara giorno per giorno, dal calendario delle due
-settimane nel Profilo: è un interruttore sul dettaglio del giorno, nello stesso
-posto dove si inserisce il turno. Prima era una griglia di ✅ separata, che
-nessuno avrebbe aggiornato ogni settimana.
+Una disponibilità dichiarata per quel giorno non è più condizione per
+comparire: è un bonus (`RULES.disponibilitaBonus`) sopra il punteggio del
+calendario. Prima era l'unica alternativa a una richiesta pubblicata, e senza
+nessuna delle due un collega non compariva mai; il cambio è voluto, perché il
+Cambio Rapido deve trovare scambi comodi a cui nessuno aveva pensato, non solo
+confermare chi si era già offerto — aiutare un collega sui suoi turni
+favorevoli vale anche senza che lui abbia dato disponibilità a cambiare.
+
+La disponibilità si dichiara comunque giorno per giorno, dal calendario delle
+due settimane nel Profilo: è un interruttore sul dettaglio del giorno, nello
+stesso posto dove si inserisce il turno.
 
 ## R16 — Niente doppio impegno
 Nel cambio OFF puoi offrire solo i giorni in cui sei libero, e la controparte

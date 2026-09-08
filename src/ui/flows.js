@@ -101,7 +101,7 @@ export function vistaRapida() {
 
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
-    `Per ${formatDay(cedo.data)} non risulta nessun collega con una richiesta compatibile o una disponibilità dichiarata. Pubblicare la richiesta la mette comunque in bacheca.`,
+    `Per ${formatDay(cedo.data)} non risulta nessun collega con un turno che vada bene. Pubblicare la richiesta la mette comunque in bacheca.`,
     '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
   ))}
     ${raw(risultati.length ? `
@@ -399,10 +399,10 @@ export function match(params) {
     ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
     ${raw(risultati.length ? '' : vuoto(
     'Ancora nessuno',
-    'Nessun collega ha pubblicato una richiesta compatibile né dichiarato disponibilità su quel giorno. La richiesta resta in bacheca.',
+    'Nessun collega ha un turno compatibile su quel giorno. La richiesta resta in bacheca.',
     '<button class="btn secondario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
   ))}
-    <p class="testo-tenue">Chi non ha dato nessun segnale di interesse non compare: l'app non manda richieste a caso.</p>`;
+    <p class="testo-tenue">I match nascono dal calendario e dalle preferenze di tutti; una richiesta pubblicata o una disponibilità dichiarata valgono di più, ma non sono più necessarie per comparire.</p>`;
 }
 
 // ---------------------------------------------------- DETTAGLIO RICHIESTA

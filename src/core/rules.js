@@ -72,9 +72,15 @@ export const RULES = {
   matchThreshold: 85,     // >= verde
   potentialThreshold: 50, // >= giallo, sotto non viene mostrato
 
-  // Un match nato da una disponibilità di profilo non può mai
-  // presentarsi come match pieno: è solo un indizio di interesse.
+  // Un match nato dal solo calendario, senza una richiesta reciproca a
+  // conferma, non può mai presentarsi come match pieno: è un'occasione da
+  // valutare, non un accordo già a metà.
   availabilityScoreCap: 75,
+
+  // Bonus per chi, quel giorno, si è anche dichiarato disponibile a
+  // cambiare: non serve più per comparire, ma un sì esplicito vale di più
+  // di un turno trovato e basta.
+  disponibilitaBonus: 10,
 
   // Priorità
   priority: {
@@ -142,15 +148,24 @@ export const RULES = {
   // Quanto pesa una preferenza soddisfatta. Poco per costruzione: è un
   // "mi farebbe piacere", non una condizione.
   preferenzaBonus: 4,
+
+  // Quanto pesa un turno che si evita. Molto, ma non è più un veto: un
+  // turno da evitare abbassa il punteggio abbastanza da sparire nella
+  // maggior parte dei casi (sotto potentialThreshold), ma resta visibile
+  // quando il resto del match è forte — è l'utente a decidere, non il
+  // motore al posto suo.
+  evitaPenalty: 30,
 };
 
 /**
  * Le preferenze del profilo.
  *
  * Due gruppi che si comportano in modo diverso, ed è la differenza che conta:
- * quello che **eviti** è un filtro netto — quei turni non compaiono affatto —
- * mentre quello che **preferisci** sposta il punteggio di pochi punti e basta.
- * Metterle nella stessa lista senza dirlo sarebbe una bugia comoda.
+ * quello che **eviti** abbassa molto il punteggio (`RULES.evitaPenalty`),
+ * mentre quello che **preferisci** lo sposta di pochi punti
+ * (`RULES.preferenzaBonus`). Nessuno dei due esclude più il turno: un
+ * "evito le chiusure" pesa, ma non decide al posto di chi guarda i match —
+ * un turno altrimenti ottimo resta visibile, solo più in basso.
  *
  * `fascia` collega la preferenza a una fascia oraria (R6), così il motore non ha
  * una catena di `if` da tenere allineata a mano, e `opposta` impedisce di

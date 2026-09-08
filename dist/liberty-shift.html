@@ -713,9 +713,15 @@ const RULES = {
   matchThreshold: 85,     // >= verde
   potentialThreshold: 50, // >= giallo, sotto non viene mostrato
 
-  // Un match nato da una disponibilità di profilo non può mai
-  // presentarsi come match pieno: è solo un indizio di interesse.
+  // Un match nato dal solo calendario, senza una richiesta reciproca a
+  // conferma, non può mai presentarsi come match pieno: è un'occasione da
+  // valutare, non un accordo già a metà.
   availabilityScoreCap: 75,
+
+  // Bonus per chi, quel giorno, si è anche dichiarato disponibile a
+  // cambiare: non serve più per comparire, ma un sì esplicito vale di più
+  // di un turno trovato e basta.
+  disponibilitaBonus: 10,
 
   // Priorità
   priority: {
@@ -783,15 +789,24 @@ const RULES = {
   // Quanto pesa una preferenza soddisfatta. Poco per costruzione: è un
   // "mi farebbe piacere", non una condizione.
   preferenzaBonus: 4,
+
+  // Quanto pesa un turno che si evita. Molto, ma non è più un veto: un
+  // turno da evitare abbassa il punteggio abbastanza da sparire nella
+  // maggior parte dei casi (sotto potentialThreshold), ma resta visibile
+  // quando il resto del match è forte — è l'utente a decidere, non il
+  // motore al posto suo.
+  evitaPenalty: 30,
 };
 
 /**
  * Le preferenze del profilo.
  *
  * Due gruppi che si comportano in modo diverso, ed è la differenza che conta:
- * quello che **eviti** è un filtro netto — quei turni non compaiono affatto —
- * mentre quello che **preferisci** sposta il punteggio di pochi punti e basta.
- * Metterle nella stessa lista senza dirlo sarebbe una bugia comoda.
+ * quello che **eviti** abbassa molto il punteggio (`RULES.evitaPenalty`),
+ * mentre quello che **preferisci** lo sposta di pochi punti
+ * (`RULES.preferenzaBonus`). Nessuno dei due esclude più il turno: un
+ * "evito le chiusure" pesa, ma non decide al posto di chi guarda i match —
+ * un turno altrimenti ottimo resta visibile, solo più in basso.
  *
  * `fascia` collega la preferenza a una fascia oraria (R6), così il motore non ha
  * una catena di `if` da tenere allineata a mano, e `opposta` impedisce di
@@ -1331,32 +1346,44 @@ function ruoloNelGiorno(request, giorno, cedo) {
 /**
  * Le preferenze applicate a un turno che una persona riceverebbe.
  *
- * Restituisce { escluso, bonus, reasons }. La differenza fra i due gruppi è
- * tutta qui: quello che si evita esclude il turno, quello che si preferisce
- * vale qualche punto.
+ * Restituisce { bonus, reasons }. Né l'uno né l'altro gruppo escludono più il
+ * turno: quello che si evita abbassa molto il punteggio (`RULES.evitaPenalty`),
+ * quello che si preferisce lo alza di poco (`RULES.preferenzaBonus`).
  *
  * Un turno può stare in due fasce, quindi può incrociare due preferenze. Se
- * anche una sola dice "evito", il turno è escluso: chi ha detto che non vuole
- * le chiusure non cambia idea perché quel turno è anche una mattina. Il bonus
+ * anche una sola dice "evito" conta solo quella, perché chi non vuole le
+ * chiusure non cambia idea perché quel turno è anche una mattina. Il bonus
  * invece si prende una volta sola, altrimenti bastava un turno lungo per
  * scalare la classifica.
+ *
+ * Il testo è sempre in terza persona, mai con l'etichetta del profilo presa
+ * di peso (quella è scritta in prima persona, "Preferisco le mattine"): la
+ * stessa frase la legge sia chi pubblica la richiesta sia chi la risolve.
  */
+// La notte non sta in RULES.fasce (è un caso a parte, vedi fasceDi/isNotturno):
+// serve un'etichetta di riserva per quando una preferenza la riguarda.
+function fasciaLabel(key) {
+  return RULES.fasce[key]?.label ?? 'le notti visual';
+}
+
 function applicaPreferenze(user, shift) {
   const fasce = fasceDi(shift);
-  if (!fasce.length || !user?.preferenze) return { escluso: false, bonus: 0, reasons: [] };
+  if (!fasce.length || !user?.preferenze) return { bonus: 0, reasons: [] };
 
   const attive = PREFERENZE.filter((p) => user.preferenze[p.key] && fasce.includes(p.fascia));
   const evitata = attive.find((p) => p.gruppo === 'evita');
   if (evitata) {
-    return { escluso: true, bonus: 0, reasons: [`${user.nome}: ${evitata.label.toLowerCase()}`] };
+    return {
+      bonus: -RULES.evitaPenalty,
+      reasons: [`evita ${fasciaLabel(evitata.fascia)}, e ${shiftLabel(shift)} lo è`],
+    };
   }
 
   const preferite = attive.filter((p) => p.gruppo === 'preferisce');
-  if (!preferite.length) return { escluso: false, bonus: 0, reasons: [] };
+  if (!preferite.length) return { bonus: 0, reasons: [] };
   return {
-    escluso: false,
     bonus: RULES.preferenzaBonus,
-    reasons: [`${preferite.map((p) => p.label.toLowerCase()).join(' e ')}, e ${shiftLabel(shift)} lo è`],
+    reasons: [`preferisce ${preferite.map((p) => fasciaLabel(p.fascia)).join(' e ')}, e ${shiftLabel(shift)} lo è`],
   };
 }
 
@@ -1601,21 +1628,29 @@ function matchOrario(request, ctx) {
       reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno: ${perMe.reasons[0]}`);
       reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
     } else {
-      if (!disponibileIl(u, giorno)) continue;
-      // Chi non ha pubblicato niente si giudica dalle preferenze del profilo:
-      // è l'unica cosa che ha detto.
-      if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
+      // Chi non ha pubblicato niente si giudica dal turno che ha già in
+      // calendario: non serve più che si sia anche dichiarato disponibile a
+      // cambiare, altrimenti il Cambio Rapido non troverebbe mai gli scambi
+      // a cui nessuno aveva pensato. La disponibilità dichiarata, quando
+      // c'è, resta un segnale in più e vale un bonus (sotto, con le
+      // preferenze). Le preferenze da evitare pesano parecchio ma non
+      // escludono più il turno: sta a chi guarda i match decidere.
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
-      origine = 'DISPONIBILITA';
-      const dichiarato = concorda(u, {
-        m: 'si è dichiarato disponibile', f: 'si è dichiarata disponibile', n: 'ha dato la disponibilità',
-      });
-      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a scambiare`);
+      origine = 'CALENDARIO';
+      if (disponibileIl(u, giorno)) {
+        score += RULES.disponibilitaBonus;
+        const dichiarato = concorda(u, {
+          m: 'si è anche dichiarato disponibile', f: 'si è anche dichiarata disponibile', n: 'ha anche dato la disponibilità',
+        });
+        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a cambiare`);
+      } else {
+        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
+      }
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
     score = clamp(Math.round(score - v.penalita + v.bonus), 0,
-      origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
+      origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
     if (score < RULES.potentialThreshold) continue;
 
     risultati.push({
@@ -1684,21 +1719,32 @@ function matchOff(request, ctx) {
         origine = 'RICHIESTA';
         reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
-        if (!disponibileIl(u, mioCedo.data)) continue;
-        if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
+        // Come nel cambio orario: essere liberi quel giorno è già stato
+        // controllato sopra, e basta per proporre lo scambio. La
+        // disponibilità dichiarata a lavorarci non è più condizione, ma
+        // resta un bonus quando c'è.
         score = Math.min(perMe.score, RULES.availabilityScoreCap);
-        origine = 'DISPONIBILITA';
-        reasons.push(concorda(u, {
-          m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
-          f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
-          n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
-        }));
+        origine = 'CALENDARIO';
+        if (disponibileIl(u, mioCedo.data)) {
+          score += RULES.disponibilitaBonus;
+          reasons.push(concorda(u, {
+            m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
+            f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
+            n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
+          }));
+        } else {
+          reasons.push(concorda(u, {
+            m: `è libero ${formatDay(mioCedo.data)}`,
+            f: `è libera ${formatDay(mioCedo.data)}`,
+            n: `non lavora ${formatDay(mioCedo.data)}`,
+          }));
+        }
       }
       reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
 
       const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
       score = clamp(Math.round(score - v.penalita + v.bonus), 0,
-        origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
+        origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
       if (score < RULES.potentialThreshold) continue;
 
       const chiave = `${u.id}|${suo.id}`;
@@ -4446,7 +4492,7 @@ function cardMatch(match, opzioni = {}) {
       </header>
       <div class="match-tipo">
         ${verde ? '🟢 Match' : '🟡 Potenziale'}
-        · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'disponibilità dal profilo'}
+        · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
       <div class="turno-offerto">
         Faresti <strong>${formatDay(turno?.data)}</strong> ·
@@ -5047,16 +5093,16 @@ function rigaBacheca() {
  * Le preferenze, in due riquadri che si aprono.
  *
  * Aperte tutte insieme erano sei interruttori in fila, e la differenza che
- * conta — quello che eviti sparisce dai match, quello che preferisci vale
- * qualche punto — si perdeva nell'elenco. Chiusi, il profilo resta leggibile e
- * si vede a colpo d'occhio quante ne hai attive.
+ * conta — quanto pesa quello che eviti, quanto poco quello che preferisci —
+ * si perdeva nell'elenco. Chiusi, il profilo resta leggibile e si vede a
+ * colpo d'occhio quante ne hai attive.
  */
 function sezionePreferenze(me) {
   const gruppi = [
     {
       key: 'evita',
       titolo: 'Turni da evitare',
-      nota: 'Filtro netto: questi turni non ti vengono proposti, nemmeno con un punteggio basso.',
+      nota: `Abbassa il punteggio di ${RULES.evitaPenalty} punti: di solito basta a far sparire il turno, ma non è un divieto — se il resto del match è forte, resta visibile.`,
     },
     {
       key: 'preferisce',
@@ -5546,7 +5592,7 @@ function vistaRapida() {
 
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
-    `Per ${formatDay(cedo.data)} non risulta nessun collega con una richiesta compatibile o una disponibilità dichiarata. Pubblicare la richiesta la mette comunque in bacheca.`,
+    `Per ${formatDay(cedo.data)} non risulta nessun collega con un turno che vada bene. Pubblicare la richiesta la mette comunque in bacheca.`,
     '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
   ))}
     ${raw(risultati.length ? `
@@ -5844,10 +5890,10 @@ function match(params) {
     ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
     ${raw(risultati.length ? '' : vuoto(
     'Ancora nessuno',
-    'Nessun collega ha pubblicato una richiesta compatibile né dichiarato disponibilità su quel giorno. La richiesta resta in bacheca.',
+    'Nessun collega ha un turno compatibile su quel giorno. La richiesta resta in bacheca.',
     '<button class="btn secondario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
   ))}
-    <p class="testo-tenue">Chi non ha dato nessun segnale di interesse non compare: l'app non manda richieste a caso.</p>`;
+    <p class="testo-tenue">I match nascono dal calendario e dalle preferenze di tutti; una richiesta pubblicata o una disponibilità dichiarata valgono di più, ma non sono più necessarie per comparire.</p>`;
 }
 
 // ---------------------------------------------------- DETTAGLIO RICHIESTA

@@ -234,21 +234,29 @@ function matchOrario(request, ctx) {
       reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno: ${perMe.reasons[0]}`);
       reasons.push(`e cerca ${wantLabel(suaRichiesta.cerco)}: ${shiftLabel(mioCedo)} di ${nome(autore)} ci rientra`);
     } else {
-      if (!disponibileIl(u, giorno)) continue;
-      // Chi non ha pubblicato niente si giudica dalle preferenze del profilo:
-      // è l'unica cosa che ha detto.
-      if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
+      // Chi non ha pubblicato niente si giudica dal turno che ha già in
+      // calendario: non serve più che si sia anche dichiarato disponibile a
+      // cambiare, altrimenti il Cambio Rapido non troverebbe mai gli scambi
+      // a cui nessuno aveva pensato. La disponibilità dichiarata, quando
+      // c'è, resta un segnale in più e vale un bonus (sotto, con le
+      // preferenze). Le preferenze da evitare pesano parecchio ma non
+      // escludono più il turno: sta a chi guarda i match decidere.
       score = Math.min(perMe.score, RULES.availabilityScoreCap);
-      origine = 'DISPONIBILITA';
-      const dichiarato = concorda(u, {
-        m: 'si è dichiarato disponibile', f: 'si è dichiarata disponibile', n: 'ha dato la disponibilità',
-      });
-      reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a scambiare`);
+      origine = 'CALENDARIO';
+      if (disponibileIl(u, giorno)) {
+        score += RULES.disponibilitaBonus;
+        const dichiarato = concorda(u, {
+          m: 'si è anche dichiarato disponibile', f: 'si è anche dichiarata disponibile', n: 'ha anche dato la disponibilità',
+        });
+        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno e ${dichiarato} a cambiare`);
+      } else {
+        reasons.push(`${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
+      }
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
     score = clamp(Math.round(score - v.penalita + v.bonus), 0,
-      origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
+      origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
     if (score < RULES.potentialThreshold) continue;
 
     risultati.push({
@@ -317,21 +325,32 @@ function matchOff(request, ctx) {
         origine = 'RICHIESTA';
         reasons.push(`${nome(u)} vuole liberare ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
-        if (!disponibileIl(u, mioCedo.data)) continue;
-        if (applicaPreferenze(u, turnoAdattato(mioCedo, suo)).escluso) continue;
+        // Come nel cambio orario: essere liberi quel giorno è già stato
+        // controllato sopra, e basta per proporre lo scambio. La
+        // disponibilità dichiarata a lavorarci non è più condizione, ma
+        // resta un bonus quando c'è.
         score = Math.min(perMe.score, RULES.availabilityScoreCap);
-        origine = 'DISPONIBILITA';
-        reasons.push(concorda(u, {
-          m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
-          f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
-          n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
-        }));
+        origine = 'CALENDARIO';
+        if (disponibileIl(u, mioCedo.data)) {
+          score += RULES.disponibilitaBonus;
+          reasons.push(concorda(u, {
+            m: `è libero ${formatDay(mioCedo.data)} e si è dichiarato disponibile a lavorarci`,
+            f: `è libera ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
+            n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
+          }));
+        } else {
+          reasons.push(concorda(u, {
+            m: `è libero ${formatDay(mioCedo.data)}`,
+            f: `è libera ${formatDay(mioCedo.data)}`,
+            n: `non lavora ${formatDay(mioCedo.data)}`,
+          }));
+        }
       }
       reasons.push(`${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto suo: ${perMe.reasons[0]}`);
 
       const v = verificheIncrociate([[autore, mioCedo, suo], [u, suo, mioCedo]], ctx.shifts);
       score = clamp(Math.round(score - v.penalita + v.bonus), 0,
-        origine === 'DISPONIBILITA' ? RULES.availabilityScoreCap : 100);
+        origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
       if (score < RULES.potentialThreshold) continue;
 
       const chiave = `${u.id}|${suo.id}`;

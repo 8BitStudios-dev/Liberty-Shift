@@ -156,7 +156,7 @@ export function cardMatch(match, opzioni = {}) {
       </header>
       <div class="match-tipo">
         ${verde ? '🟢 Match' : '🟡 Potenziale'}
-        · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'disponibilità dal profilo'}
+        · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
       <div class="turno-offerto">
         Faresti <strong>${formatDay(turno?.data)}</strong> ·
