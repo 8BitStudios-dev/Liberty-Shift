@@ -59,3 +59,18 @@ test("l'ordine nel file non cambia chi vince", () => {
   const { turni } = parseICS(testo);
   assert.equal(turni[0].tipo, 'WORK');
 });
+
+test("incollare l'indirizzo invece del contenuto lo dice chiaramente", () => {
+  // È l'errore che ha fatto la prima persona che ha provato l'import, e non
+  // per distrazione: le istruzioni parlano dell'indirizzo, e il campo è lì
+  // sotto. Il messaggio deve dire cosa fare, non che manca un evento.
+  for (const indirizzo of [
+    'https://sm-cal.apple.com/cal/0123456789',
+    'webcal://sm-cal.apple.com/cal/0123456789',
+    '  https://esempio.it/turni.ics  ',
+  ]) {
+    const { errore } = parseICS(indirizzo);
+    assert.match(errore, /indirizzo del calendario, non il suo contenuto/);
+    assert.match(errore, /Comandi/);
+  }
+});

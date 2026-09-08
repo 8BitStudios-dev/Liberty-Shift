@@ -499,7 +499,9 @@ const AZIONI = {
   importa: () => {
     const w = sheet('📥 Importa turni', html`
       <p class="testo-tenue">
-        Incolla qui il contenuto del calendario dei turni in formato ICS.
+        Serve il <strong>contenuto</strong> del calendario, non il suo
+        indirizzo: un testo lungo che comincia con <code>BEGIN:VCALENDAR</code>.
+        Le istruzioni qui sotto dicono come ottenerlo.
       </p>
       <details class="riquadro" open>
         <summary><span>Come si copia il calendario dei turni</span><span class="conteggio">iPhone</span></summary>
@@ -518,7 +520,8 @@ const AZIONI = {
           <li>Aggiungi <em>Ottieni contenuto di URL</em> e incolla lì
             l'indirizzo.</li>
           <li>Aggiungi <em>Copia negli appunti</em>, sotto.</li>
-          <li>Lancia il comando, torna qui e incolla nel riquadro sotto.</li>
+          <li>Lancia il comando: negli appunti finisce il testo del
+            calendario, non l'indirizzo. Torna qui e incollalo sotto.</li>
         </ol>
         <p class="testo-tenue">
           <strong>Da Mac</strong> è più corto: Calendario ▸ tasto destro sul
@@ -531,7 +534,7 @@ const AZIONI = {
         </p>
       </details>
       <label class="campo">
-        <span>Contenuto del calendario</span>
+        <span>Contenuto del calendario (comincia con BEGIN:VCALENDAR)</span>
         <textarea data-campo="ics" rows="5" placeholder="BEGIN:VCALENDAR…"></textarea>
       </label>
       <div data-anteprima></div>`, {

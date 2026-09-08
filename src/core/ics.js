@@ -78,6 +78,19 @@ const eOff = (titolo) => RULES.calendario.codiciOff.some((re) => re.test(titolo 
  * incollato da qualcuno è sempre da trattare come possibilmente sbagliato.
  */
 export function parseICS(testo) {
+  // L'errore più probabile non è un file storto: è l'indirizzo incollato al
+  // posto del contenuto. Le due cose si somigliano abbastanza da confondersi,
+  // e "manca almeno un evento" non aiuta nessuno a capire cosa ha sbagliato.
+  if (/^\s*(https?|webcal):\/\/\S+\s*$/i.test(testo || '')) {
+    return {
+      turni: [],
+      ignorati: [],
+      errore: "Questo è l'indirizzo del calendario, non il suo contenuto. "
+        + "Serve il testo che quell'indirizzo restituisce: nell'app Comandi, "
+        + '«Ottieni contenuto di URL» e poi «Copia negli appunti».',
+    };
+  }
+
   if (!testo || !/BEGIN:VEVENT/i.test(testo)) {
     return { turni: [], ignorati: [], errore: 'Non sembra un calendario: manca almeno un evento.' };
   }
