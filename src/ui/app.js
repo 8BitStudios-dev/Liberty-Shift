@@ -15,7 +15,7 @@ import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
 import { scaricaCalendario } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
-import { campoPortachiavi, nomeUtente } from './components.js';
+import { campoPortachiavi, nomeUtente, chipsOrariTipici } from './components.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -413,6 +413,26 @@ const AZIONI = {
     render();
   },
   'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },
+
+  /**
+   * Un'ora fra quelle frequenti riempie inizio e fine insieme.
+   *
+   * La fine si può correggere subito dopo: la scorciatoia propone il turno
+   * più probabile, non impone il solo ammesso. L'evento `input` viene emesso
+   * a mano perché sono i campi a essere letti, dalla nota qui e dalla bozza
+   * nel wizard, e riempirli da codice non lo fa scattare da solo.
+   */
+  'orario-tipico': (_, el) => {
+    const dentro = el.closest('.sheet-backdrop') || app;
+    const start = dentro.querySelector('[data-campo="start"]');
+    const end = dentro.querySelector('[data-campo="end"]');
+    if (!start || !end) return;
+    start.value = el.dataset.inizio;
+    end.value = el.dataset.fine;
+    el.parentElement.querySelectorAll('.chip')
+      .forEach((c) => c.classList.toggle('attivo', c === el));
+    [start, end].forEach((i) => i.dispatchEvent(new Event('input', { bubbles: true })));
+  },
   flessibile: (e) => { F.draft.flessibile = e.target.checked; },
   'evita-chiusura': (e) => { F.draft.cerco.evitaChiusura = e.target.checked; },
   priorita: (e) => { F.draft.usaPriorita = e.target.checked; },
@@ -689,9 +709,12 @@ const AZIONI = {
         <button class="chip ${!s || s.tipo === 'WORK' ? 'attivo' : ''}" data-tipo="WORK">Turno</button>
         <button class="chip ${s?.tipo === 'OFF' ? 'attivo' : ''}" data-tipo="OFF">OFF</button>
       </div>
-      <div class="campi-orario" data-orari ${raw(s?.tipo === 'OFF' ? 'hidden' : '')}>
-        <label>Dalle <input type="time" data-campo="start" value="${s?.start || '10:00'}"></label>
-        <label>Alle <input type="time" data-campo="end" value="${s?.end || '19:00'}"></label>
+      <div data-orari ${raw(s?.tipo === 'OFF' ? 'hidden' : '')}>
+        ${raw(chipsOrariTipici(s?.start || ''))}
+        <div class="campi-orario">
+          <label>Dalle <input type="time" data-campo="start" value="${s?.start || '10:00'}"></label>
+          <label>Alle <input type="time" data-campo="end" value="${s?.end || '19:00'}"></label>
+        </div>
       </div>
       <p class="testo-tenue" data-nota-turno></p>`, {
       azioni: `<button class="btn primario largo" data-act="salva-turno" data-data="${data}">Salva</button>

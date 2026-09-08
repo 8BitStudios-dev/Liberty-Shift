@@ -96,6 +96,24 @@ export const RULES = {
    */
   pausa: { oltreOre: 6, minuti: 60 },
 
+  /**
+   * Gli orari che ricorrono davvero nel piano turni dello store.
+   *
+   * Non sono una regola: altri orari sono ammessi e capitano. Servono a non
+   * far digitare due volte le stesse cifre su una tastiera del telefono, che
+   * è il momento in cui inserire i turni a mano smette di valerne la pena.
+   *
+   * Le nove ore di presenza di un Full Time sono le stesse della pausa qui
+   * sopra: otto pagate più un'ora che non lo è. Da lì escono gli orari veri
+   * (8–17, 9:30–18:30, 10–19, 11–20, 12–21), e si vede che le dodici sono
+   * l'ultima partenza possibile prima dell'ultima uscita. Gli inizi più tardi
+   * sono di chi fa cinque o sei ore.
+   */
+  turniTipici: {
+    inizi: ['08:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
+    presenza: { FT: 9, PT: 6 },
+  },
+
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
   // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
   // è il monte ore settimanale, che sta sull'utente.

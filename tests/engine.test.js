@@ -133,13 +133,16 @@ test('Lorenzo e Martina sono il match perfetto del capitolo 11', () => {
   assert.equal(martina.tipo, 'MATCH');
   assert.ok(martina.reasons.length >= 2);
   // Entrambi i lati sono soddisfatti al 100%. Da lì si tolgono i due
-  // adattamenti di contratto, uno per parte, e si aggiunge una preferenza
-  // soddisfatta: Martina riceve 15:00–21:00, una chiusura, e le preferisce.
-  // Lorenzo riceve 09:00–18:00, che con le soglie vere è un'apertura e non
-  // una mattina, quindi la sua preferenza non scatta.
+  // adattamenti di contratto, uno per parte, e si aggiungono le preferenze
+  // soddisfatte: Martina riceve 15:00–21:00, una chiusura, e le preferisce;
+  // Lorenzo riceve 09:30–18:30, che è una mattina, e preferisce le mattine.
+  //
+  // Il secondo bonus è arrivato quando i turni della demo sono passati agli
+  // orari veri dello store: con le 09:00 di prima quel turno cadeva
+  // nell'apertura, dove la preferenza di Lorenzo non scattava.
   assert.equal(
     martina.score,
-    100 - 2 * RULES.adattamentoPenalty + RULES.preferenzaBonus,
+    100 - 2 * RULES.adattamentoPenalty + 2 * RULES.preferenzaBonus,
   );
 });
 

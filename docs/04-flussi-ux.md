@@ -172,6 +172,32 @@ Profilo, in una sezione con due strade in ordine di comodità:
 2. **Inserisci manualmente i turni**, che apre il giorno di oggi nel calendario
    delle due settimane, cioè lo stesso posto dove si correggono.
 
+### Gli orari che ricorrono davvero
+Sopra i due campi dell'orario c'è una riga di scorciatoie con le partenze
+frequenti dello store: **8:00, 9:30, 10:00, 11:00, 12:00, 13:00, 14:00,
+15:00**. Toccarne una riempie inizio e fine insieme, e la fine resta
+modificabile: sono le partenze comuni, non le uniche ammesse.
+
+La fine si deduce dal contratto, e sta in `RULES.turniTipici`. Un Full Time fa
+**nove ore di presenza**, che sono le stesse otto pagate più l'ora di pausa già
+scritta in `RULES.pausa`: da lì escono gli orari veri, 8–17, 9:30–18:30, 10–19,
+11–20, 12–21. Si vede anche perché le dodici sono l'ultima partenza possibile:
+più tardi si sfonderebbe l'ultima uscita. Un Part Time ne fa sei.
+
+La proposta viene **tagliata all'ultima uscita**, e non è un dettaglio: un Full
+Time che comincia alle 15 non finisce a mezzanotte, fa un turno corto, e
+proporgli le 24:00 vorrebbe dire farglielo correggere ogni volta. Toccando le
+15:00 escono infatti 15:00–21:00, sei ore, chiusura.
+
+Le stesse scorciatoie stanno nel wizard del nuovo cambio, dove si descrive
+l'orario che si vorrebbe ricevere: è la stessa tastiera e lo stesso fastidio.
+
+Anche i turni della demo usano questi orari. Serviva a due cose: mostrare
+l'app a un collega senza che il piano turni finto suoni sbagliato, e far
+scattare le preferenze come scatterebbero davvero. Con le vecchie 09:00 il
+turno di Lorenzo cadeva nell'apertura invece che nella mattina, e la sua
+preferenza non si accendeva mai.
+
 ### I codici del gestionale
 Il calendario aziendale non scrive "riposo": scrive `SO ADO`, `ITA Time Away F
 08.00 hrs`, `ITA PH Not Wrkd`, `ITA RT - Callout` (permesso o malattia). La prima versione del lettore cercava parole

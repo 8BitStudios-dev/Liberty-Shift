@@ -12,6 +12,7 @@ import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, tra
 import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
 import {
   cardMatch, cardOpportunita, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
+  chipsOrariTipici,
 } from './components.js';
 
 export const draft = {
@@ -326,6 +327,7 @@ function campiOrarioPreciso(giorno) {
       <span>Nessuno di questi, scrivo io l'orario</span>
     </label>
     ${raw(draft.orarioManuale || !turni.length ? `
+      ${chipsOrariTipici(draft.cerco.start)}
       <div class="campi-orario">
         <label>Dalle <input type="time" data-campo="start" value="${draft.cerco.start}"></label>
         <label>Alle <input type="time" data-campo="end" value="${draft.cerco.end}"></label>

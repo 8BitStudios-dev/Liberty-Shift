@@ -685,6 +685,24 @@ const RULES = {
    */
   pausa: { oltreOre: 6, minuti: 60 },
 
+  /**
+   * Gli orari che ricorrono davvero nel piano turni dello store.
+   *
+   * Non sono una regola: altri orari sono ammessi e capitano. Servono a non
+   * far digitare due volte le stesse cifre su una tastiera del telefono, che
+   * è il momento in cui inserire i turni a mano smette di valerne la pena.
+   *
+   * Le nove ore di presenza di un Full Time sono le stesse della pausa qui
+   * sopra: otto pagate più un'ora che non lo è. Da lì escono gli orari veri
+   * (8–17, 9:30–18:30, 10–19, 11–20, 12–21), e si vede che le dodici sono
+   * l'ultima partenza possibile prima dell'ultima uscita. Gli inizi più tardi
+   * sono di chi fa cinque o sei ore.
+   */
+  turniTipici: {
+    inizi: ['08:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
+    presenza: { FT: 9, PT: 6 },
+  },
+
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
   // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
   // è il monte ore settimanale, che sta sull'utente.
@@ -977,6 +995,23 @@ function fuoriFascia(shift) {
     || minutes(shift.end) > minutes(RULES.store.ultimaUscita);
 }
 
+/**
+ * L'orario di fine che ci si aspetta, partendo da un'ora e da un contratto.
+ *
+ * Serve alle scorciatoie: si tocca "10:00" e la fine si compila da sola,
+ * restando modificabile. Il taglio all'ultima uscita non è un dettaglio: un
+ * Full Time che comincia alle 15 non finisce a mezzanotte, fa un turno corto,
+ * e proporgli le 24:00 vorrebbe dire farglielo correggere ogni volta.
+ */
+function fineTipica(inizio, contratto) {
+  const ore = RULES.turniTipici.presenza[contratto] ?? RULES.turniTipici.presenza.PT;
+  const fine = Math.min(
+    minutes(inizio) + ore * 60,
+    minutes(RULES.store.ultimaUscita),
+  );
+  return `${String(Math.floor(fine / 60)).padStart(2, '0')}:${String(fine % 60).padStart(2, '0')}`;
+}
+
 function shiftLabel(shift) {
   if (!shift) return '—';
   if (shift.tipo === 'OFF') return 'OFF';
@@ -1254,7 +1289,7 @@ function applicaPreferenze(user, shift) {
   };
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, shiftLabel, wantLabel, concorda, contractOf, oreDelContratto, oreAutomatiche, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
+return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, fineTipica, shiftLabel, wantLabel, concorda, contractOf, oreDelContratto, oreAutomatiche, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
 })();
 
 // ---- src/core/engine.js
@@ -2821,33 +2856,33 @@ const PERSONE = [
     id: 'u_lorenzo', cognome: 'Bandini', genere: 'M', oreSettimanali: 40, nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', admin: true,
     preferenze: { preferisceMattine: true, evitaChiusure: true, evitaNotti: true },
     disponibilita: [true, false, true, true, false, true, false],
-    settimana: W([['11:00', '20:00'], o, ['09:00', '18:00'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
+    settimana: W([['11:00', '20:00'], o, ['09:30', '18:30'], o, ['10:00', '19:00'], ['12:00', '21:00'], ['08:00', '17:00']]),
     // Cinque turni da nove ore di presenza: 40 ore pagate, pausa esclusa.
   },
   {
     id: 'u_martina', cognome: 'Rossi', genere: 'F', oreSettimanali: 30, nome: 'Martina', cognomeIniziale: 'R', contratto: 'PT', admin: false,
     preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, true, true, false, true, true],
-    settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:00', '15:00'], ['15:00', '21:00']]),
+    settimana: W([o, ['12:00', '18:00'], ['10:00', '16:00'], ['15:00', '21:00'], o, ['09:30', '15:30'], ['15:00', '21:00']]),
   },
   {
     id: 'u_luca', cognome: 'Bianchi', genere: 'M', oreSettimanali: 40, nome: 'Luca', cognomeIniziale: 'B', contratto: 'FT', admin: false,
     preferenze: { preferiscePomeriggi: true },
     disponibilita: [false, true, true, false, true, true, true],
-    settimana: W([['12:00', '21:00'], ['09:00', '18:00'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
+    settimana: W([['12:00', '21:00'], ['09:30', '18:30'], o, ['10:00', '19:00'], ['11:00', '20:00'], o, ['11:00', '20:00']]),
   },
   {
     id: 'u_giulia', cognome: 'Moretti', genere: 'F', oreSettimanali: 20, nome: 'Giulia', cognomeIniziale: 'M', contratto: 'PT', admin: false,
     preferenze: { preferisceAperture: true, evitaChiusure: true },
     disponibilita: [true, false, true, true, true, false, true],
-    settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:00', '14:00'], ['10:00', '15:00'], o]),
+    settimana: W([['15:00', '20:00'], o, ['11:00', '16:00'], o, ['09:30', '14:30'], ['10:00', '15:00'], o]),
   },
   {
     // La notte visual di giovedì scavalca la mezzanotte: 22:00 -> 06:30.
     id: 'u_marco', cognome: 'Turri', genere: 'M', oreSettimanali: 40, nome: 'Marco', cognomeIniziale: 'T', contratto: 'FT', admin: false,
     preferenze: { preferisceChiusure: true, evitaAperture: true },
     disponibilita: [true, true, false, true, true, true, true],
-    settimana: W([['09:00', '18:00'], ['12:00', '21:00'], o, ['09:00', '18:00'], o, ['22:00', '06:30'], o]),
+    settimana: W([['09:30', '18:30'], ['12:00', '21:00'], o, ['09:30', '18:30'], o, ['22:00', '06:30'], o]),
   },
   {
     id: 'u_sara', cognome: 'Pellegrini', genere: 'F', oreSettimanali: 25, nome: 'Sara', cognomeIniziale: 'P', contratto: 'PT', admin: false,
@@ -3925,9 +3960,9 @@ const M_components = (() => {
 const { html, raw, esc } = M_dom;
 const { store } = M_store;
 const {
-  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno: ruoloCore,
+  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno: ruoloCore, fineTipica,
 } = M_model;
-const { STATUS_META, TIPO_META, TIPO_CAMBIO } = M_rules;
+const { STATUS_META, TIPO_META, TIPO_CAMBIO, RULES } = M_rules;
 const { formatDay } = M_time;
 
 function nomeUtente(u) {
@@ -3955,6 +3990,26 @@ function campoPortachiavi(valore) {
     <input class="campo-portachiavi" type="text" autocomplete="username"
            name="nomeutente" value="${valore || 'Liberty Shift'}"
            readonly tabindex="-1" aria-hidden="true">`;
+}
+
+/**
+ * Le scorciatoie per gli orari che ricorrono davvero.
+ *
+ * Digitare 10:00 e 19:00 su una tastiera del telefono, quattordici giorni di
+ * fila, è il punto in cui inserire i turni a mano smette di valerne la pena.
+ * Toccando un'ora si riempiono tutti e due i campi, che restano modificabili:
+ * queste sono le partenze frequenti, non le uniche ammesse.
+ */
+function chipsOrariTipici(inizioAttuale = '') {
+  const contratto = store.me?.contratto || 'PT';
+  const chip = (h) => `
+    <button class="chip ${h === inizioAttuale ? 'attivo' : ''}" data-act="orario-tipico"
+            data-inizio="${h}" data-fine="${fineTipica(h, contratto)}">${h}</button>`;
+  return html`
+    <div class="campo">
+      <span>Inizi più comuni</span>
+      <div class="chips">${raw(RULES.turniTipici.inizi.map(chip).join(''))}</div>
+    </div>`;
 }
 
 function badgeStato(status) {
@@ -4157,7 +4212,7 @@ function cardOpportunita({ richiesta, match }) {
     </article>`;
 }
 
-return { nomeUtente, iniziali, campoPortachiavi, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, vuoto, cardOpportunita };
+return { nomeUtente, iniziali, campoPortachiavi, chipsOrariTipici, badgeStato, coppiaCedoCerco, sintesiRichiesta, ruoloNelGiorno, cardRichiesta, cardMatch, vuoto, cardOpportunita };
 })();
 
 // ---- src/ui/views.js
@@ -4870,6 +4925,7 @@ const { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, tras
 const { appleWeekKey, addDays, formatDay, todayISO } = M_time;
 const {
   cardMatch, cardOpportunita, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
+  chipsOrariTipici,
 } = M_components;
 
 const draft = {
@@ -5184,6 +5240,7 @@ function campiOrarioPreciso(giorno) {
       <span>Nessuno di questi, scrivo io l'orario</span>
     </label>
     ${raw(draft.orarioManuale || !turni.length ? `
+      ${chipsOrariTipici(draft.cerco.start)}
       <div class="campi-orario">
         <label>Dalle <input type="time" data-campo="start" value="${draft.cerco.start}"></label>
         <label>Alle <input type="time" data-campo="end" value="${draft.cerco.end}"></label>
@@ -6305,7 +6362,7 @@ const { noteLegali, VERSIONE_NOTE } = M_legale;
 const { controllaPassword } = M_accesso;
 const { scaricaCalendario } = M_supabase;
 const { serverConfigurato } = M_config;
-const { campoPortachiavi, nomeUtente } = M_components;
+const { campoPortachiavi, nomeUtente, chipsOrariTipici } = M_components;
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -6703,6 +6760,26 @@ const AZIONI = {
     render();
   },
   'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },
+
+  /**
+   * Un'ora fra quelle frequenti riempie inizio e fine insieme.
+   *
+   * La fine si può correggere subito dopo: la scorciatoia propone il turno
+   * più probabile, non impone il solo ammesso. L'evento `input` viene emesso
+   * a mano perché sono i campi a essere letti, dalla nota qui e dalla bozza
+   * nel wizard, e riempirli da codice non lo fa scattare da solo.
+   */
+  'orario-tipico': (_, el) => {
+    const dentro = el.closest('.sheet-backdrop') || app;
+    const start = dentro.querySelector('[data-campo="start"]');
+    const end = dentro.querySelector('[data-campo="end"]');
+    if (!start || !end) return;
+    start.value = el.dataset.inizio;
+    end.value = el.dataset.fine;
+    el.parentElement.querySelectorAll('.chip')
+      .forEach((c) => c.classList.toggle('attivo', c === el));
+    [start, end].forEach((i) => i.dispatchEvent(new Event('input', { bubbles: true })));
+  },
   flessibile: (e) => { F.draft.flessibile = e.target.checked; },
   'evita-chiusura': (e) => { F.draft.cerco.evitaChiusura = e.target.checked; },
   priorita: (e) => { F.draft.usaPriorita = e.target.checked; },
@@ -6979,9 +7056,12 @@ const AZIONI = {
         <button class="chip ${!s || s.tipo === 'WORK' ? 'attivo' : ''}" data-tipo="WORK">Turno</button>
         <button class="chip ${s?.tipo === 'OFF' ? 'attivo' : ''}" data-tipo="OFF">OFF</button>
       </div>
-      <div class="campi-orario" data-orari ${raw(s?.tipo === 'OFF' ? 'hidden' : '')}>
-        <label>Dalle <input type="time" data-campo="start" value="${s?.start || '10:00'}"></label>
-        <label>Alle <input type="time" data-campo="end" value="${s?.end || '19:00'}"></label>
+      <div data-orari ${raw(s?.tipo === 'OFF' ? 'hidden' : '')}>
+        ${raw(chipsOrariTipici(s?.start || ''))}
+        <div class="campi-orario">
+          <label>Dalle <input type="time" data-campo="start" value="${s?.start || '10:00'}"></label>
+          <label>Alle <input type="time" data-campo="end" value="${s?.end || '19:00'}"></label>
+        </div>
       </div>
       <p class="testo-tenue" data-nota-turno></p>`, {
       azioni: `<button class="btn primario largo" data-act="salva-turno" data-data="${data}">Salva</button>

@@ -113,6 +113,23 @@ export function fuoriFascia(shift) {
     || minutes(shift.end) > minutes(RULES.store.ultimaUscita);
 }
 
+/**
+ * L'orario di fine che ci si aspetta, partendo da un'ora e da un contratto.
+ *
+ * Serve alle scorciatoie: si tocca "10:00" e la fine si compila da sola,
+ * restando modificabile. Il taglio all'ultima uscita non è un dettaglio: un
+ * Full Time che comincia alle 15 non finisce a mezzanotte, fa un turno corto,
+ * e proporgli le 24:00 vorrebbe dire farglielo correggere ogni volta.
+ */
+export function fineTipica(inizio, contratto) {
+  const ore = RULES.turniTipici.presenza[contratto] ?? RULES.turniTipici.presenza.PT;
+  const fine = Math.min(
+    minutes(inizio) + ore * 60,
+    minutes(RULES.store.ultimaUscita),
+  );
+  return `${String(Math.floor(fine / 60)).padStart(2, '0')}:${String(fine % 60).padStart(2, '0')}`;
+}
+
 export function shiftLabel(shift) {
   if (!shift) return '—';
   if (shift.tipo === 'OFF') return 'OFF';

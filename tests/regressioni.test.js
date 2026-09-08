@@ -195,3 +195,40 @@ test('un rifiuto vero di permessi non diventa un rinnovo infinito', async () => 
   assert.ok(r.errore);
   assert.equal(viste.length, 3, 'un solo rinnovo, poi ci si arrende');
 });
+
+// --- gli orari tipici dello store -------------------------------------
+
+test('la fine si deduce dall\'inizio e dal contratto', async () => {
+  const { fineTipica } = await import('../src/core/model.js');
+  // Un Full Time fa nove ore di presenza: otto pagate più la pausa.
+  assert.equal(fineTipica('08:00', 'FT'), '17:00');
+  assert.equal(fineTipica('09:30', 'FT'), '18:30');
+  assert.equal(fineTipica('12:00', 'FT'), '21:00');
+  // Un Part Time sei.
+  assert.equal(fineTipica('10:00', 'PT'), '16:00');
+  assert.equal(fineTipica('15:00', 'PT'), '21:00');
+});
+
+test('nessun turno proposto va oltre l\'ultima uscita', async () => {
+  const { fineTipica } = await import('../src/core/model.js');
+  const { RULES } = await import('../src/core/rules.js');
+  for (const inizio of RULES.turniTipici.inizi) {
+    for (const contratto of ['FT', 'PT']) {
+      assert.ok(
+        fineTipica(inizio, contratto) <= RULES.store.ultimaUscita,
+        `${inizio} ${contratto} finisce alle ${fineTipica(inizio, contratto)}`,
+      );
+    }
+  }
+});
+
+test('gli orari della demo sono fra quelli veri dello store', async () => {
+  const { seed } = await import('../src/core/seed.js');
+  const { RULES } = await import('../src/core/rules.js');
+  const fuori = seed().shifts
+    .filter((s) => s.tipo === 'WORK' && !RULES.turniTipici.inizi.includes(s.start))
+    // La notte visual è l'eccezione dichiarata: comincia alle 22.
+    .filter((s) => s.start !== '22:00')
+    .map((s) => s.start);
+  assert.deepEqual([...new Set(fuori)], [], 'la demo si mostra ai colleghi: deve somigliare al vero');
+});
