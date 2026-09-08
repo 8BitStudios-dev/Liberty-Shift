@@ -58,9 +58,19 @@ export const collegato = () => Boolean(serverConfigurato() && leggiSessione()?.a
 
 // --------------------------------------------------------------- rete
 
-const intestazioni = (token) => ({
-  apikey: SERVER.chiaveAnon,
-  Authorization: `Bearer ${token || SERVER.chiaveAnon}`,
+/**
+ * Le Edge Functions vogliono la chiave di generazione nuova, il resto del
+ * progetto accetta ancora quella vecchia. Finché la nuova non c'è si usa
+ * comunque la vecchia: sul database funziona, sulle funzioni no, e l'errore
+ * lo dice.
+ */
+const chiavePer = (percorso) => (percorso.startsWith('/functions/')
+  ? SERVER.chiavePubblicabile || SERVER.chiaveAnon
+  : SERVER.chiaveAnon);
+
+const intestazioni = (token, percorso) => ({
+  apikey: chiavePer(percorso),
+  Authorization: `Bearer ${token || chiavePer(percorso)}`,
   'Content-Type': 'application/json',
 });
 
@@ -83,7 +93,10 @@ async function chiama(percorso, opzioni = {}, { autenticata = true } = {}) {
   try {
     risposta = await fetch(`${SERVER.url}${percorso}`, {
       ...opzioni,
-      headers: { ...intestazioni(autenticata ? sessione.access_token : null), ...(opzioni.headers || {}) },
+      headers: {
+        ...intestazioni(autenticata ? sessione.access_token : null, percorso),
+        ...(opzioni.headers || {}),
+      },
     });
   } catch {
     // Nessuna risposta affatto: rete assente, o server irraggiungibile.
@@ -109,6 +122,11 @@ function traduci(stato, corpo) {
   // giusta, e coprirla con una frase generica manda a cercare un guasto che
   // non c'è. 28000 e P0001 sono i codici delle nostre `raise`.
   if (grezzo && /^(28000|P0001)$/.test(String(corpo?.code || ''))) return grezzo;
+  // La chiave della generazione sbagliata: senza questa traduzione l'errore
+  // diventa "non hai accesso", e si va a cercare un permesso che non c'entra.
+  if (corpo?.code === 'INVALID_API_KEY') {
+    return 'Il server non riconosce la chiave dell\'app: manca la chiave pubblicabile.';
+  }
   if (stato === 401 || stato === 403) {
     // 401 e 403 qui vogliono dire quasi sempre la stessa cosa: la riga esiste
     // ma non è tua. Dirlo così evita la caccia a un guasto che non c'è.
@@ -257,7 +275,9 @@ export async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSet
  * scarica al posto suo e restituisce il testo, senza salvarlo da nessuna parte.
  */
 export async function scaricaCalendario(url) {
-  const r = await chiama('/functions/v1/calendario', {
+  // Il nome ha la maiuscola perché così è pubblicata la funzione, e gli
+  // indirizzi distinguono le maiuscole: `calendario` risponde 404.
+  const r = await chiama('/functions/v1/Calendario', {
     method: 'POST',
     body: JSON.stringify({ url }),
   });

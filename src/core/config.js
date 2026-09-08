@@ -10,6 +10,19 @@
 
 export const SERVER = {
   url: 'https://daerebtkibgmtyvznfvu.supabase.co',
+
+  /**
+   * La chiave pubblicabile, per le Edge Functions.
+   *
+   * Supabase ha due generazioni di chiavi. Database e accesso accettano ancora
+   * la `anon` qui sotto, ma le funzioni no: rispondono
+   * «The apikey header matched no key configured», che è un modo oscuro per
+   * dire "questa chiave è della generazione sbagliata". Sta in
+   * Project Settings ▸ API Keys e comincia per `sb_publishable_`.
+   *
+   * È pubblica quanto l'altra: senza una sessione non apre niente.
+   */
+  chiavePubblicabile: '',
   chiaveAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZXJlYnRraWJnbXR5dnpuZnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE4NzAsImV4cCI6MjEwNDM1Nzg3MH0.icOOSXRX6k3jYmyj66NQg_EMDs5cvvY5etzEvJ7xQfY',
 };
 

@@ -150,7 +150,7 @@ e non vede né tocca niente.
 
 ## La funzione che scarica il calendario
 
-`supabase/functions/calendario/index.ts`. Esiste per una ragione sola: il
+`supabase/functions/Calendario/index.ts`. Esiste per una ragione sola: il
 browser non può leggere l'indirizzo del calendario aziendale, perché il server
 di Apple non manda le intestazioni CORS. Senza questa funzione l'unica strada
 era chiedere a ognuno di costruirsi un comando nell'app Comandi, e la prima
@@ -167,7 +167,9 @@ indirizzo passando dal nostro server, compresi quelli interni della rete di
 Supabase, che dall'esterno non si vedono.
 
 Per pubblicarla: **Edge Functions ▸ Deploy a new function ▸ via editor**, nome
-`calendario`, incolla il contenuto del file e pubblica. Serve l'accesso di un
+`Calendario`, incolla il contenuto del file e pubblica. **La maiuscola conta**:
+gli indirizzi delle funzioni distinguono maiuscole e minuscole, e una `c`
+minuscola risponde `404 NOT_FOUND` senza spiegare perché. Serve l'accesso di un
 utente autenticato, quindi un estraneo non può usarla come proxy.
 
 ## Cosa manca per collegarlo
