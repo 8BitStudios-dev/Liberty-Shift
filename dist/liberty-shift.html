@@ -7278,7 +7278,13 @@ function render() {
     <button class="tab ${t === attivo ? 'attivo' : ''}" data-act="vai" data-to="${t.hash}">
       <span class="tab-icona">${raw(icona(t.icona))}</span><span>${t.label}</span>
     </button>`).join('');
-  tabbar.hidden = !attivo;
+  // Fisse su ogni schermata, wizard e dettagli compresi: prima sparivano
+  // appena si usciva da una delle quattro viste principali, e da un flusso
+  // (Cambio Rapido, una richiesta, le proposte...) non restava modo di
+  // saltare altrove senza tornare indietro passo per passo. L'unico caso in
+  // cui non hanno senso è la primissima apertura, prima che un profilo
+  // esista: non c'è ancora niente su cui atterrare.
+  tabbar.hidden = store.profiloDaCompletare(VERSIONE_NOTE);
 }
 
 /**
