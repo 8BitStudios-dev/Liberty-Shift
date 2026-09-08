@@ -198,28 +198,28 @@ test('un rifiuto vero di permessi non diventa un rinnovo infinito', async () => 
 
 // --- gli orari tipici dello store -------------------------------------
 
-test('la fine si deduce dall\'inizio e dal contratto', async () => {
-  const { fineTipica } = await import('../src/core/model.js');
-  // Un Full Time fa nove ore di presenza: otto pagate più la pausa.
-  assert.equal(fineTipica('08:00', 'FT'), '17:00');
-  assert.equal(fineTipica('09:30', 'FT'), '18:30');
-  assert.equal(fineTipica('12:00', 'FT'), '21:00');
-  // Un Part Time sei.
-  assert.equal(fineTipica('10:00', 'PT'), '16:00');
-  assert.equal(fineTipica('15:00', 'PT'), '21:00');
+test('la scorciatoia sposta il turno senza cambiargli la durata', async () => {
+  const { spostaTurno } = await import('../src/core/model.js');
+  // Nove ore restano nove ore: il turno slitta, non si accorcia.
+  assert.equal(spostaTurno('08:00', '10:00', '19:00'), '17:00');
+  assert.equal(spostaTurno('09:30', '10:00', '19:00'), '18:30');
+  // E cinque restano cinque, che è il punto: la durata non si deduce dal
+  // contratto, perché lo stesso Part Time fa giorni da 5, da 6 e da 8.
+  assert.equal(spostaTurno('14:00', '10:00', '15:00'), '19:00');
+  assert.equal(spostaTurno('08:00', '13:00', '21:00'), '16:00');
 });
 
-test('nessun turno proposto va oltre l\'ultima uscita', async () => {
-  const { fineTipica } = await import('../src/core/model.js');
+test('nessuna scorciatoia porta il turno oltre l\'ultima uscita', async () => {
+  const { spostaTurno } = await import('../src/core/model.js');
   const { RULES } = await import('../src/core/rules.js');
   for (const inizio of RULES.turniTipici.inizi) {
-    for (const contratto of ['FT', 'PT']) {
-      assert.ok(
-        fineTipica(inizio, contratto) <= RULES.store.ultimaUscita,
-        `${inizio} ${contratto} finisce alle ${fineTipica(inizio, contratto)}`,
-      );
-    }
+    // Nove ore dalle 15 finirebbero a mezzanotte: il taglio è l'unica
+    // eccezione alla durata conservata, perché un turno a negozio chiuso non
+    // è mai quello che si voleva.
+    const fine = spostaTurno(inizio, '10:00', '19:00');
+    assert.ok(fine <= RULES.store.ultimaUscita, `${inizio} finirebbe alle ${fine}`);
   }
+  assert.equal(spostaTurno('15:00', '10:00', '19:00'), RULES.store.ultimaUscita);
 });
 
 test('gli orari della demo sono fra quelli veri dello store', async () => {

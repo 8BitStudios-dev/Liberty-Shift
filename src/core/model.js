@@ -114,17 +114,21 @@ export function fuoriFascia(shift) {
 }
 
 /**
- * L'orario di fine che ci si aspetta, partendo da un'ora e da un contratto.
+ * Sposta un turno a un'altra ora di inizio, tenendo la stessa lunghezza.
  *
- * Serve alle scorciatoie: si tocca "10:00" e la fine si compila da sola,
- * restando modificabile. Il taglio all'ultima uscita non è un dettaglio: un
- * Full Time che comincia alle 15 non finisce a mezzanotte, fa un turno corto,
- * e proporgli le 24:00 vorrebbe dire farglielo correggere ogni volta.
+ * È quello che fanno le scorciatoie degli orari: non indovinano quanto dura
+ * un turno, perché non è deducibile — gli stessi Part Time hanno giorni da
+ * cinque ore, da sei e da otto. Spostano e basta, e la durata resta quella
+ * che c'era, che di solito è giusta perché i turni si inseriscono a raffica e
+ * di fila somigliano l'uno all'altro.
+ *
+ * Il taglio all'ultima uscita è l'unica eccezione alla lunghezza conservata:
+ * un turno che finisce a negozio chiuso non è mai quello che si voleva.
  */
-export function fineTipica(inizio, contratto) {
-  const ore = RULES.turniTipici.presenza[contratto] ?? RULES.turniTipici.presenza.PT;
+export function spostaTurno(nuovoInizio, start, end) {
+  const durata = Math.max(0, minutes(end) - minutes(start));
   const fine = Math.min(
-    minutes(inizio) + ore * 60,
+    minutes(nuovoInizio) + durata,
     minutes(RULES.store.ultimaUscita),
   );
   return `${String(Math.floor(fine / 60)).padStart(2, '0')}:${String(fine % 60).padStart(2, '0')}`;

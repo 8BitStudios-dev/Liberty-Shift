@@ -103,15 +103,18 @@ export const RULES = {
    * far digitare due volte le stesse cifre su una tastiera del telefono, che
    * è il momento in cui inserire i turni a mano smette di valerne la pena.
    *
-   * Le nove ore di presenza di un Full Time sono le stesse della pausa qui
-   * sopra: otto pagate più un'ora che non lo è. Da lì escono gli orari veri
-   * (8–17, 9:30–18:30, 10–19, 11–20, 12–21), e si vede che le dodici sono
-   * l'ultima partenza possibile prima dell'ultima uscita. Gli inizi più tardi
-   * sono di chi fa cinque o sei ore.
+   * **Solo le partenze, e non le durate.** Un Full Time fa nove ore di
+   * presenza e sarebbe deducibile, ma un Part Time no: gli stessi giorni sono
+   * da cinque, da sei o da otto ore, a seconda della settimana. Una durata
+   * indovinata sarebbe sbagliata più spesso di quanto sarebbe comoda, quindi
+   * l'app non la indovina: sposta il turno tenendo la lunghezza che c'è già.
+   *
+   * Che le dodici siano l'ultima partenza di un Full Time non è una regola
+   * scritta qui, è una conseguenza: nove ore dalle 12 finiscono esattamente
+   * all'ultima uscita.
    */
   turniTipici: {
     inizi: ['08:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
-    presenza: { FT: 9, PT: 6 },
   },
 
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:

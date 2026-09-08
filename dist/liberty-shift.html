@@ -692,15 +692,18 @@ const RULES = {
    * far digitare due volte le stesse cifre su una tastiera del telefono, che
    * è il momento in cui inserire i turni a mano smette di valerne la pena.
    *
-   * Le nove ore di presenza di un Full Time sono le stesse della pausa qui
-   * sopra: otto pagate più un'ora che non lo è. Da lì escono gli orari veri
-   * (8–17, 9:30–18:30, 10–19, 11–20, 12–21), e si vede che le dodici sono
-   * l'ultima partenza possibile prima dell'ultima uscita. Gli inizi più tardi
-   * sono di chi fa cinque o sei ore.
+   * **Solo le partenze, e non le durate.** Un Full Time fa nove ore di
+   * presenza e sarebbe deducibile, ma un Part Time no: gli stessi giorni sono
+   * da cinque, da sei o da otto ore, a seconda della settimana. Una durata
+   * indovinata sarebbe sbagliata più spesso di quanto sarebbe comoda, quindi
+   * l'app non la indovina: sposta il turno tenendo la lunghezza che c'è già.
+   *
+   * Che le dodici siano l'ultima partenza di un Full Time non è una regola
+   * scritta qui, è una conseguenza: nove ore dalle 12 finiscono esattamente
+   * all'ultima uscita.
    */
   turniTipici: {
     inizi: ['08:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
-    presenza: { FT: 9, PT: 6 },
   },
 
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
@@ -996,17 +999,21 @@ function fuoriFascia(shift) {
 }
 
 /**
- * L'orario di fine che ci si aspetta, partendo da un'ora e da un contratto.
+ * Sposta un turno a un'altra ora di inizio, tenendo la stessa lunghezza.
  *
- * Serve alle scorciatoie: si tocca "10:00" e la fine si compila da sola,
- * restando modificabile. Il taglio all'ultima uscita non è un dettaglio: un
- * Full Time che comincia alle 15 non finisce a mezzanotte, fa un turno corto,
- * e proporgli le 24:00 vorrebbe dire farglielo correggere ogni volta.
+ * È quello che fanno le scorciatoie degli orari: non indovinano quanto dura
+ * un turno, perché non è deducibile — gli stessi Part Time hanno giorni da
+ * cinque ore, da sei e da otto. Spostano e basta, e la durata resta quella
+ * che c'era, che di solito è giusta perché i turni si inseriscono a raffica e
+ * di fila somigliano l'uno all'altro.
+ *
+ * Il taglio all'ultima uscita è l'unica eccezione alla lunghezza conservata:
+ * un turno che finisce a negozio chiuso non è mai quello che si voleva.
  */
-function fineTipica(inizio, contratto) {
-  const ore = RULES.turniTipici.presenza[contratto] ?? RULES.turniTipici.presenza.PT;
+function spostaTurno(nuovoInizio, start, end) {
+  const durata = Math.max(0, minutes(end) - minutes(start));
   const fine = Math.min(
-    minutes(inizio) + ore * 60,
+    minutes(nuovoInizio) + durata,
     minutes(RULES.store.ultimaUscita),
   );
   return `${String(Math.floor(fine / 60)).padStart(2, '0')}:${String(fine % 60).padStart(2, '0')}`;
@@ -1289,7 +1296,7 @@ function applicaPreferenze(user, shift) {
   };
 }
 
-return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, fineTipica, shiftLabel, wantLabel, concorda, contractOf, oreDelContratto, oreAutomatiche, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
+return { newId, isNotturno, fineMinuti, durataOre, fasceDi, inFascia, isClosing, isMorning, isPreApertura, etichettaFascia, fuoriFascia, spostaTurno, shiftLabel, wantLabel, concorda, contractOf, oreDelContratto, oreAutomatiche, trasformaTurno, turnoAdattato, oreRetribuite, oreSettimana, impattoMonteOre, isExpired, hasPriority, isOpen, ruoloNelGiorno, applicaPreferenze };
 })();
 
 // ---- src/core/engine.js
@@ -3960,7 +3967,7 @@ const M_components = (() => {
 const { html, raw, esc } = M_dom;
 const { store } = M_store;
 const {
-  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno: ruoloCore, fineTipica,
+  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno: ruoloCore,
 } = M_model;
 const { STATUS_META, TIPO_META, TIPO_CAMBIO, RULES } = M_rules;
 const { formatDay } = M_time;
@@ -3993,18 +4000,18 @@ function campoPortachiavi(valore) {
 }
 
 /**
- * Le scorciatoie per gli orari che ricorrono davvero.
+ * Le scorciatoie per gli orari di inizio che ricorrono davvero.
  *
  * Digitare 10:00 e 19:00 su una tastiera del telefono, quattordici giorni di
  * fila, è il punto in cui inserire i turni a mano smette di valerne la pena.
- * Toccando un'ora si riempiono tutti e due i campi, che restano modificabili:
- * queste sono le partenze frequenti, non le uniche ammesse.
+ * Toccando un'ora il turno si sposta lì tenendo la durata che ha: queste sono
+ * le partenze frequenti, non le uniche ammesse, e la durata non la indovina
+ * nessuno perché non è deducibile dal contratto.
  */
 function chipsOrariTipici(inizioAttuale = '') {
-  const contratto = store.me?.contratto || 'PT';
   const chip = (h) => `
-    <button class="chip ${h === inizioAttuale ? 'attivo' : ''}" data-act="orario-tipico"
-            data-inizio="${h}" data-fine="${fineTipica(h, contratto)}">${h}</button>`;
+    <button class="chip ${h === inizioAttuale ? 'attivo' : ''}"
+            data-act="orario-tipico" data-inizio="${h}">${h}</button>`;
   return html`
     <div class="campo">
       <span>Inizi più comuni</span>
@@ -6353,6 +6360,7 @@ const { formatDay, appleWeekKey } = M_time;
 const { slotSettimana } = M_engine;
 const {
   durataOre, isNotturno, fuoriFascia, etichettaFascia, oreDelContratto, oreAutomatiche,
+  spostaTurno,
 } = M_model;
 const { RULES } = M_rules;
 const { parseICS } = M_ics;
@@ -6762,20 +6770,21 @@ const AZIONI = {
   'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },
 
   /**
-   * Un'ora fra quelle frequenti riempie inizio e fine insieme.
+   * Un'ora fra quelle frequenti sposta lì il turno, con la sua durata.
    *
-   * La fine si può correggere subito dopo: la scorciatoia propone il turno
-   * più probabile, non impone il solo ammesso. L'evento `input` viene emesso
-   * a mano perché sono i campi a essere letti, dalla nota qui e dalla bozza
-   * nel wizard, e riempirli da codice non lo fa scattare da solo.
+   * La durata non si indovina: fra i Part Time gli stessi giorni sono da
+   * cinque ore, da sei o da otto. Si sposta quello che c'è, e la fine resta
+   * modificabile come prima. L'evento `input` va emesso a mano perché sono i
+   * campi a essere letti, dalla nota qui e dalla bozza nel wizard, e
+   * riempirli da codice non lo fa scattare da solo.
    */
   'orario-tipico': (_, el) => {
     const dentro = el.closest('.sheet-backdrop') || app;
     const start = dentro.querySelector('[data-campo="start"]');
     const end = dentro.querySelector('[data-campo="end"]');
     if (!start || !end) return;
+    end.value = spostaTurno(el.dataset.inizio, start.value, end.value);
     start.value = el.dataset.inizio;
-    end.value = el.dataset.fine;
     el.parentElement.querySelectorAll('.chip')
       .forEach((c) => c.classList.toggle('attivo', c === el));
     [start, end].forEach((i) => i.dispatchEvent(new Event('input', { bubbles: true })));

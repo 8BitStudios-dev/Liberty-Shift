@@ -6,6 +6,7 @@ import { formatDay, appleWeekKey } from '../core/time.js';
 import { slotSettimana } from '../core/engine.js';
 import {
   durataOre, isNotturno, fuoriFascia, etichettaFascia, oreDelContratto, oreAutomatiche,
+  spostaTurno,
 } from '../core/model.js';
 import { RULES } from '../core/rules.js';
 import { parseICS } from '../core/ics.js';
@@ -415,20 +416,21 @@ const AZIONI = {
   'orario-manuale': (e) => { F.draft.orarioManuale = e.target.checked; render(); },
 
   /**
-   * Un'ora fra quelle frequenti riempie inizio e fine insieme.
+   * Un'ora fra quelle frequenti sposta lì il turno, con la sua durata.
    *
-   * La fine si può correggere subito dopo: la scorciatoia propone il turno
-   * più probabile, non impone il solo ammesso. L'evento `input` viene emesso
-   * a mano perché sono i campi a essere letti, dalla nota qui e dalla bozza
-   * nel wizard, e riempirli da codice non lo fa scattare da solo.
+   * La durata non si indovina: fra i Part Time gli stessi giorni sono da
+   * cinque ore, da sei o da otto. Si sposta quello che c'è, e la fine resta
+   * modificabile come prima. L'evento `input` va emesso a mano perché sono i
+   * campi a essere letti, dalla nota qui e dalla bozza nel wizard, e
+   * riempirli da codice non lo fa scattare da solo.
    */
   'orario-tipico': (_, el) => {
     const dentro = el.closest('.sheet-backdrop') || app;
     const start = dentro.querySelector('[data-campo="start"]');
     const end = dentro.querySelector('[data-campo="end"]');
     if (!start || !end) return;
+    end.value = spostaTurno(el.dataset.inizio, start.value, end.value);
     start.value = el.dataset.inizio;
-    end.value = el.dataset.fine;
     el.parentElement.querySelectorAll('.chip')
       .forEach((c) => c.classList.toggle('attivo', c === el));
     [start, end].forEach((i) => i.dispatchEvent(new Event('input', { bubbles: true })));

@@ -1,7 +1,7 @@
 import { html, raw, esc } from './dom.js';
 import { store } from '../core/store.js';
 import {
-  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno as ruoloCore, fineTipica,
+  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno as ruoloCore,
 } from '../core/model.js';
 import { STATUS_META, TIPO_META, TIPO_CAMBIO, RULES } from '../core/rules.js';
 import { formatDay } from '../core/time.js';
@@ -34,18 +34,18 @@ export function campoPortachiavi(valore) {
 }
 
 /**
- * Le scorciatoie per gli orari che ricorrono davvero.
+ * Le scorciatoie per gli orari di inizio che ricorrono davvero.
  *
  * Digitare 10:00 e 19:00 su una tastiera del telefono, quattordici giorni di
  * fila, è il punto in cui inserire i turni a mano smette di valerne la pena.
- * Toccando un'ora si riempiono tutti e due i campi, che restano modificabili:
- * queste sono le partenze frequenti, non le uniche ammesse.
+ * Toccando un'ora il turno si sposta lì tenendo la durata che ha: queste sono
+ * le partenze frequenti, non le uniche ammesse, e la durata non la indovina
+ * nessuno perché non è deducibile dal contratto.
  */
 export function chipsOrariTipici(inizioAttuale = '') {
-  const contratto = store.me?.contratto || 'PT';
   const chip = (h) => `
-    <button class="chip ${h === inizioAttuale ? 'attivo' : ''}" data-act="orario-tipico"
-            data-inizio="${h}" data-fine="${fineTipica(h, contratto)}">${h}</button>`;
+    <button class="chip ${h === inizioAttuale ? 'attivo' : ''}"
+            data-act="orario-tipico" data-inizio="${h}">${h}</button>`;
   return html`
     <div class="campo">
       <span>Inizi più comuni</span>
