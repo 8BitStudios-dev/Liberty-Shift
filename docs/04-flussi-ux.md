@@ -177,10 +177,15 @@ Profilo, in una sezione con due strade in ordine di comodità:
 
 ### I codici del gestionale
 Il calendario aziendale non scrive "riposo": scrive `SO ADO`, `ITA Time Away F
-08.00 hrs`, `ITA PH Not Wrkd`. La prima versione del lettore cercava parole
+08.00 hrs`, `ITA PH Not Wrkd`, `ITA RT - Callout` (permesso o malattia). La prima versione del lettore cercava parole
 italiane e buttava via 36 giornate su 71, lasciando il calendario mezzo vuoto e
 la persona a chiedersi cosa avesse sbagliato. I codici veri stanno in
 `RULES.calendario.codiciOff`: aggiungerne uno è una riga sola.
+
+L'import non è automatico e non può esserlo: il calendario dei turni è una
+sottoscrizione, e il browser non può leggerla da solo (nessuna intestazione
+CORS dal server di Apple). Quando escono i turni nuovi si rilancia il comando e
+si reincolla; l'app sostituisce solo i giorni che il file nomina.
 
 Quando in un giorno c'è sia un riposo programmato sia un turno — capita, il
 gestionale li sovrappone — **vince il turno lavorato**: se ci sono delle ore,

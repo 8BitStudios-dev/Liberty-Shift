@@ -52,6 +52,7 @@ export const RULES = {
       /time\s*away/i,              // ferie e permessi
       /\bPH\b|public\s*holiday/i, // festivi, lavorati o no
       /not\s*wrkd|not\s*worked/i,
+      /callout/i,                  // permesso o malattia: comunque non si lavora
     ],
   },
 

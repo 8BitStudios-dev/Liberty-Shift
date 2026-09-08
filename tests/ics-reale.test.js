@@ -21,6 +21,7 @@ test('i codici del gestionale valgono come OFF', () => {
     'ITA Time Away F 08.00 hrs',
     'ITA Public Holiday Off 08.00 hrs',
     'ITA PH Not Wrkd 08.00 hrs',
+    'ITA RT - Callout',
   ]) {
     const { turni, ignorati } = parseICS(giornataIntera('20260812', titolo));
     assert.equal(turni.length, 1, `${titolo} doveva essere riconosciuto`);
