@@ -737,7 +737,7 @@ export function ilTuoMese() {
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
       const migliore = (perGiorno.get(data) || [])[0];
       return html`
-        <button class="giorno-mese ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''}
+        <button class="mese-giorno ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''}
                        ${disponibileIl(me, data) ? 'disponibile' : ''}
                        ${data.slice(0, 7) === mese ? '' : 'fuori'}"
                 data-act="giorno-profilo" data-data="${data}">
@@ -748,7 +748,7 @@ export function ilTuoMese() {
     }).join('');
 
     return html`
-      <div class="settimana-mese">
+      <div class="mese-settimana">
         <div class="riga-settimana">
           <h3>
             ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}
@@ -756,12 +756,12 @@ export function ilTuoMese() {
           </h3>
           ${raw(spiaOre(me, wk))}
         </div>
-        <div class="griglia-mese">${raw(celle)}</div>
+        <div class="mese-griglia">${raw(celle)}</div>
       </div>`;
   }).join('');
 
   return html`
-    <div class="griglia-mese intestazione">${raw(intestazione)}</div>
+    <div class="mese-griglia intestazione">${raw(intestazione)}</div>
     ${raw(righe)}`;
 }
 

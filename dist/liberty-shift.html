@@ -504,13 +504,17 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 
 /* ----------------------------------------------------------- il tuo mese */
 
-/* Le iniziali dei giorni si scrivono una volta sola in cima invece che in
-   ogni cella: su cinque settimane erano trentacinque ripetizioni. */
-.griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.griglia-mese.intestazione { margin-bottom: 3px; }
+/*
+ * I nomi cominciano tutti per `mese-` e non per `griglia-`: la griglia del
+ * tab Calendario si chiama già `.griglia-mese` e impone righe da 58px, che
+ * ereditate qui gonfiavano la riga delle iniziali a due volte e mezzo la sua
+ * altezza. Due griglie diverse non possono chiamarsi quasi uguale.
+ */
+.mese-griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.mese-griglia.intestazione { margin-bottom: 3px; }
 .dow-fisso { font-size: 9px; color: var(--testo-tenue); text-align: center; }
 
-.settimana-mese { margin-bottom: 7px; }
+.mese-settimana { margin-bottom: 7px; }
 .riga-settimana { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 /* Le date della settimana e le ore sono contorno, non contenuto: la griglia
    deve restare la cosa che si legge per prima. */
@@ -525,25 +529,25 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 }
 .spia-ore.quadra { color: var(--verde); }
 
-.giorno-mese {
+.mese-giorno {
   appearance: none; border: 1px solid var(--bordo); border-radius: 7px;
   background: var(--superficie); color: inherit; font: inherit; cursor: pointer;
   min-height: 40px; padding: 3px 1px;
   display: flex; flex-direction: column; align-items: center; gap: 0;
 }
-.giorno-mese .numero { font-size: 12px; font-weight: 700; line-height: 1.1; }
-.giorno-mese .turno { font-size: 9px; color: var(--testo-tenue); line-height: 1.25; }
-.giorno-mese .quota {
+.mese-giorno .numero { font-size: 12px; font-weight: 700; line-height: 1.1; }
+.mese-giorno .turno { font-size: 9px; color: var(--testo-tenue); line-height: 1.25; }
+.mese-giorno .quota {
   margin-top: auto; font-size: 8px; font-weight: 700;
   color: #fff; background: var(--accento); border-radius: 999px; padding: 0 3px;
 }
-.giorno-mese .quota.vuota { background: none; min-height: 10px; }
-.giorno-mese.oggi { border-color: var(--accento); background: var(--accento-tenue); }
-.giorno-mese.passato { opacity: .45; }
+.mese-giorno .quota.vuota { background: none; min-height: 10px; }
+.mese-giorno.oggi { border-color: var(--accento); background: var(--accento-tenue); }
+.mese-giorno.passato { opacity: .45; }
 /* I giorni delle settimane a cavallo del mese: ci sono perché la settimana
    Apple non si taglia a metà, ma non sono questo mese. */
-.giorno-mese.fuori { opacity: .35; }
-.giorno-mese.disponibile { box-shadow: inset 0 -3px 0 var(--arancio); }
+.mese-giorno.fuori { opacity: .35; }
+.mese-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--arancio); }
 
 .giorno-profilo .riga-turno {
   border: 1px solid var(--bordo); border-radius: 12px; background: var(--superficie);
@@ -5318,7 +5322,7 @@ function ilTuoMese() {
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
       const migliore = (perGiorno.get(data) || [])[0];
       return html`
-        <button class="giorno-mese ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''}
+        <button class="mese-giorno ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''}
                        ${disponibileIl(me, data) ? 'disponibile' : ''}
                        ${data.slice(0, 7) === mese ? '' : 'fuori'}"
                 data-act="giorno-profilo" data-data="${data}">
@@ -5329,7 +5333,7 @@ function ilTuoMese() {
     }).join('');
 
     return html`
-      <div class="settimana-mese">
+      <div class="mese-settimana">
         <div class="riga-settimana">
           <h3>
             ${formatDay(wk)} → ${formatDay(addDays(wk, 6))}
@@ -5337,12 +5341,12 @@ function ilTuoMese() {
           </h3>
           ${raw(spiaOre(me, wk))}
         </div>
-        <div class="griglia-mese">${raw(celle)}</div>
+        <div class="mese-griglia">${raw(celle)}</div>
       </div>`;
   }).join('');
 
   return html`
-    <div class="griglia-mese intestazione">${raw(intestazione)}</div>
+    <div class="mese-griglia intestazione">${raw(intestazione)}</div>
     ${raw(righe)}`;
 }
 
