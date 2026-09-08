@@ -134,6 +134,11 @@ create table if not exists public.ringraziamenti (
 --   insert into public.configurazione (chiave, valore)
 --   values ('codice_negozio', extensions.crypt('R667', extensions.gen_salt('bf')))
 --   on conflict (chiave) do update set valore = excluded.valore;
+--
+-- Va impostato **in maiuscolo**: il client normalizza quello che digita la
+-- persona (trim + maiuscolo, vedi src/core/supabase.js) prima di mandarlo
+-- qui, cosi' "r667" funziona quanto "R667". Un codice impostato minuscolo
+-- verrebbe rifiutato sempre, perche' il confronto e' byte per byte.
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -316,3 +321,44 @@ create policy "i ringraziamenti li vedono le due parti"
 drop policy if exists "si ringrazia a proprio nome" on public.ringraziamenti;
 create policy "si ringrazia a proprio nome"
   on public.ringraziamenti for insert to authenticated with check (da_user_id = auth.uid());
+
+-- ======================================================= pulizia periodica
+--
+-- Le note d'uso promettono che i cambi pubblicati non restano per sempre sul
+-- server: senza questa parte sarebbe una frase scritta e basta, non una cosa
+-- vera. Ogni notte cancella le richieste ormai chiuse o scadute e le
+-- disponibilità di settimane già passate. Le proposte se ne vanno da sole,
+-- perché la chiave esterna su `richieste` è `on delete cascade`.
+--
+-- I ringraziamenti restano: non sono un "cambio pubblicato" ma l'unica cosa
+-- che si è deciso dovesse sopravvivere al cambio stesso (vedi il commento
+-- sulla tabella), quindi la promessa delle note non li riguarda.
+--
+-- **Assunzione**: 90 giorni per le richieste chiuse o scadute, 60 per le
+-- disponibilità di settimane già passate. Punti di partenza, non un vincolo
+-- del regolamento: si cambiano qui, senza toccare il client.
+create or replace function public.pulizia_periodica() returns void
+language plpgsql set search_path = public as $$
+begin
+  delete from public.richieste
+  where stato in ('CHIUSA', 'SCADUTA')
+    and coalesce(chiusa_il, creata_il) < now() - interval '90 days';
+
+  delete from public.disponibilita
+  where settimana < (current_date - interval '60 days')::date;
+end $$;
+
+-- Solo il ruolo che possiede lo schema (e il job pianificato sotto, che gira
+-- come lui) la può eseguire: non è una funzione da esporre all'app.
+revoke all on function public.pulizia_periodica() from public;
+
+-- pg_cron è l'estensione di Supabase per i lavori pianificati: schedule() con
+-- lo stesso nome aggiorna il job invece di duplicarlo, quindi rilanciare
+-- questo script non crea copie.
+create extension if not exists pg_cron;
+
+select cron.schedule(
+  'pulizia-periodica',
+  '0 3 * * *',
+  $$ select public.pulizia_periodica(); $$
+);

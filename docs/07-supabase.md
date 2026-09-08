@@ -106,6 +106,11 @@ values ('codice_negozio', extensions.crypt('R667', extensions.gen_salt('bf')))
 on conflict (chiave) do update set valore = excluded.valore;
 ```
 
+Va impostato **in maiuscolo**: il client normalizza (trim + maiuscolo) quello
+che la persona digita prima di mandarlo, così "r667" funziona quanto "R667".
+Un codice impostato minuscolo verrebbe rifiutato sempre, perché il confronto
+con l'impronta è byte per byte.
+
 **Cosa protegge e cosa no.** Chiunque abbia il link può creare un account
 Supabase: quello resta aperto. Ma senza codice non ottiene un profilo, e senza
 profilo non vede niente — `e_membro()` è nelle policy di lettura, e le chiavi
@@ -116,6 +121,22 @@ Non protegge invece da un collega che passa il codice a qualcun altro: è un
 segreto condiviso da otto persone, quindi vale come la serratura di una porta,
 non come una cassaforte. Se un giorno gira troppo, si cambia con la riga qui
 sopra e si ridà quello nuovo.
+
+## La pulizia periodica
+
+Le note d'uso promettono che i cambi pubblicati non restano per sempre sul
+server: `pulizia_periodica()`, pianificata ogni notte con `pg_cron`, cancella
+le richieste chiuse o scadute da più di 90 giorni e le disponibilità di
+settimane passate da più di 60. Le proposte se ne vanno da sole, perché la
+chiave esterna su `richieste` è `on delete cascade`.
+
+I ringraziamenti non sono toccati: non sono un cambio pubblicato, sono l'unica
+cosa pensata per restare dopo che il cambio è fatto.
+
+I due numeri sono un punto di partenza, non una regola del regolamento: si
+cambiano nella funzione, in `supabase/schema.sql`, senza toccare il client —
+è lo stesso principio di `RULES` lato app, spostato lato server perché qui
+riguarda dati che il client non vede più una volta pubblicati.
 
 ## Gli account
 

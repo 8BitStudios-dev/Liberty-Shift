@@ -67,10 +67,14 @@ export function noteLegali({ compatte = false } = {}) {
       </table>
 
       <ul class="elenco piccolo">
-        <li>Il server è Supabase, ad accesso protetto: si legge e si scrive solo
-          da autenticati, e ognuno modifica soltanto le proprie richieste.</li>
+        <li>Il server è Supabase, ad accesso protetto e criptato: si legge e si
+          scrive solo da autenticati, e ognuno modifica soltanto le proprie
+          richieste.</li>
         <li>Niente esce di qui senza che tu lo pubblichi.</li>
         <li>Le richieste cancellate spariscono dalla bacheca.</li>
+        <li>Anche senza cancellarle a mano, le richieste chiuse o scadute e le
+          disponibilità di settimane passate vengono cancellate in automatico
+          dopo un po' di tempo.</li>
         <li>Si entra con una password personale, che non viene salvata: l'app
           conserva solo un'impronta per riconoscerla. Protegge l'app da chi
           mette le mani sul dispositivo, non i dati che ci stanno dentro.</li>
@@ -117,19 +121,35 @@ export function noteLegali({ compatte = false } = {}) {
     </div>`;
 }
 
+/**
+ * Le tre cose che vale la pena sapere, ciascuna con la sua presa visione.
+ *
+ * Una spunta sola per tre affermazioni diverse lascia passare chi ne ha letta
+ * una e immaginato le altre due. Tre spunte costringono a incrociarle davvero,
+ * una per una.
+ */
+const VOCI_ACCETTAZIONE = [
+  { titolo: 'Non è un\'app aziendale', testo: 'e non è approvata da nessuno. L\'abbiamo fatta fra colleghi.' },
+  { titolo: 'Non fa nessun cambio turno.', testo: 'Serve a mettersi d\'accordo; il cambio va poi inserito nel sistema ufficiale.' },
+  {
+    titolo: 'I tuoi turni restano su questo dispositivo.',
+    testo: 'Solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente.',
+  },
+];
+
 /** Il riquadro della prima apertura: corto, con il rimando al testo intero. */
-export function accettazioneNote() {
+export function accettazioneNote(accettate = [false, false, false]) {
+  const voci = VOCI_ACCETTAZIONE.map((v, i) => html`
+    <label class="switch">
+      <input type="checkbox" data-act="profilo-accetta-voce" data-indice="${i}"
+             ${raw(accettate[i] ? 'checked' : '')}>
+      <span><strong>${v.titolo}</strong> ${v.testo}</span>
+    </label>`).join('');
   return html`
     <div class="legale-intro">
-      <p>Prima di cominciare, tre cose che vale la pena sapere.</p>
-      <ul class="elenco">
-        <li><strong>Non è un'app aziendale</strong> e non è approvata da nessuno.
-          L'abbiamo fatta fra colleghi.</li>
-        <li><strong>Non fa nessun cambio turno.</strong> Serve a mettersi
-          d'accordo; il cambio va poi inserito nel sistema ufficiale.</li>
-        <li><strong>I tuoi turni restano su questo dispositivo.</strong> Esce di
-          qui solo quello che pubblichi, perché i colleghi possano leggerlo.</li>
-      </ul>
+      <p>Prima di cominciare, tre cose che vale la pena sapere. Spuntale una per
+        una: dicono cose diverse.</p>
+      ${raw(voci)}
       <p class="testo-tenue">
         Il testo completo sta nelle Note del Profilo.
       </p>

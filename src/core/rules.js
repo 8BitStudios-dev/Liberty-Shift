@@ -19,9 +19,12 @@ export const RULES = {
    * Le fasce con cui in store si chiamano i turni.
    *
    * Non si ricavano dagli orari del negozio: sono i confini veri, quelli che
-   * la gente usa parlando. Un turno può stare in due fasce insieme, perché
-   * due guardano l'inizio e due la fine: un 10:00–19:45 è mattina e
-   * pomeriggio, ed è giusto così.
+   * la gente usa parlando. Un turno può in teoria stare in due fasce insieme,
+   * perché due guardano l'inizio e due la fine — ma con i turni che si fanno
+   * davvero, fino a 9 ore, non succede: toccare sia la finestra di inizio di
+   * MATTINA (09:30–10:00) sia quella di fine di POMERIGGIO (19:30–20:00)
+   * richiede almeno 9h30. `fasceDi()` gestisce comunque il caso, per
+   * sicurezza, ma nella pratica un turno resta sempre in una fascia sola.
    */
   fasce: {
     APERTURA: { label: 'apertura', inizioDa: '07:30', inizioA: '09:00' },

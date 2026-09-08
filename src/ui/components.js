@@ -238,15 +238,16 @@ export function messaggioAvviso(richiesta, destinatario) {
 /**
  * L'invito per un collega che l'app non ce l'ha ancora.
  *
- * Dice le tre cose che servono a decidere se aprirlo: cos'è, come si entra, e
- * cosa succede ai propri turni. L'ultima non è cortesia: è la domanda che si
- * fa chiunque riceva il link di un'app che parla di orari di lavoro.
+ * Corto apposta: cos'è, cosa fare, il link. Il codice del negozio non ci sta
+ * dentro — è un segreto condiviso da chi è già iscritto, e scriverlo in un
+ * messaggio che gira su WhatsApp lo mette in chiaro nello stesso posto che la
+ * tabella `configurazione` esiste apposta per evitare. Chi lo riceve lo chiede
+ * a voce a chi lo ha invitato.
  */
-export function messaggioInvito(codice) {
-  return `Ciao, ti passo Liberty Shift, l'app che usiamo per i cambi turno fra noi. `
-    + `Apri il link, metti il codice del negozio ${codice || '____'} e crea il tuo profilo: `
-    + `${indirizzoApp()}\n\n`
-    + `I tuoi turni restano sul tuo telefono. In bacheca finisce solo quello che pubblichi tu.`;
+export function messaggioInvito() {
+  return `Ciao, ti passo Liberty Shift, l'app che usiamo per organizzare i cambi turno. `
+    + `Apri il link, metti il codice del negozio e crea il tuo profilo: `
+    + `${indirizzoApp()}`;
 }
 
 /** L'indirizzo di questa copia dell'app, per chi deve ancora aprirla. */

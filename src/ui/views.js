@@ -284,6 +284,7 @@ export function profilo() {
 
     <section class="sezione">
       ${raw(bottoneInbox())}
+      ${raw(rigaBacheca())}
     </section>
 
     <section class="sezione">
@@ -372,13 +373,12 @@ export function impostazioni() {
         </span>
         <span class="chevron">›</span>
       </button>
-      ${raw(rigaBacheca())}
       ${raw(store.state.profilo?.idServer ? `
         <button class="tile" data-act="invita">
           <span class="tile-icona">✉️</span>
           <span>
             <strong>Invita un collega</strong>
-            <em>Il link e le due righe da spiegare, già scritte</em>
+            <em>Il messaggio con il link, già pronto da mandare</em>
           </span>
           <span class="chevron">›</span>
         </button>` : '')}
@@ -434,7 +434,7 @@ function rigaBacheca() {
     <button class="tile" data-act="sincronizza">
       <span class="tile-icona">${inCoda ? '📤' : '🔄'}</span>
       <span>
-        <strong>Bacheca condivisa</strong>
+        <strong>Sincronizza server</strong>
         <em>${errore ? `⚠️ ${errore}` : stato}</em>
       </span>
       <span class="chevron">›</span>
@@ -502,8 +502,9 @@ function legendaFasce() {
       <summary><span>Cosa vuol dire ogni fascia</span><span class="conteggio">orari</span></summary>
       <ul class="elenco piccolo">${raw(righe)}</ul>
       <p class="testo-tenue">
-        Un turno può stare in due fasce insieme, perché due guardano l'inizio e
-        due la fine: un 10:00–19:45 è mattina e pomeriggio.
+        Due fasce guardano l'inizio e due la fine, quindi in teoria un turno
+        potrebbe stare in due insieme — ma con turni fino a 9 ore, come sono
+        davvero in negozio, non succede mai.
       </p>
       <p class="testo-tenue">
         Due preferenze opposte non possono stare accese insieme: attivandone

@@ -81,9 +81,12 @@ i confini con cui in store si chiamano i turni parlando fra colleghi. Stanno in
 | pomeriggio | finisce fra le 19:30 e le 20:00 |
 | chiusura | finisce dopo le 20:15 |
 
-Due guardano l'inizio e due la fine, quindi **un turno può stare in due fasce
-insieme**: un 10:00–19:45 è mattina e pomeriggio. `fasceDi()` restituisce una
-lista, non un valore, e chi la usa deve saperlo gestire.
+Due guardano l'inizio e due la fine, quindi **in teoria un turno potrebbe stare
+in due fasce insieme** — ma con turni fino a 9 ore, come sono davvero in
+negozio, non capita: per toccare sia l'inizio di mattina (09:30–10:00) sia la
+fine di pomeriggio (19:30–20:00) servirebbero almeno 9h30. `fasceDi()`
+restituisce comunque una lista, non un valore, perché il caso resta possibile
+sulla carta e chi la usa deve saperlo gestire.
 
 Ci sono anche turni che non stanno in nessuna fascia — un 11:00–18:00 non è
 niente di particolare — ed è corretto: nessuna preferenza li tocca.

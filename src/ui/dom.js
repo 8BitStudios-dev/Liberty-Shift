@@ -92,7 +92,43 @@ export function sheet(titolo, contenuto, { azioni = '' } = {}) {
   wrap.addEventListener('click', (e) => {
     if (e.target === wrap || e.target.closest('[data-chiudi]')) chiudi();
   });
+  trascinaPerChiudere(wrap.querySelector('.sheet'), wrap.querySelector('.sheet-grip'), chiudi);
   return { el: wrap, chiudi };
+}
+
+/**
+ * Il trascinamento verso il basso della barra in cima al foglio.
+ *
+ * Prima era solo un segno grafico: sembrava una maniglia, il gesto più
+ * naturale su un foglio a comparsa, e non faceva niente. Segue il dito
+ * mentre si trascina e, oltre una soglia, chiude come se si fosse toccata la
+ * X; sotto la soglia torna al suo posto.
+ */
+function trascinaPerChiudere(sheetEl, grip, chiudi) {
+  const SOGLIA = 90; // px di trascinamento oltre cui il rilascio chiude
+  let inizioY = null;
+
+  const sposta = (dy) => { sheetEl.style.transform = dy ? `translateY(${dy}px)` : ''; };
+
+  grip.addEventListener('pointerdown', (e) => {
+    inizioY = e.clientY;
+    grip.setPointerCapture(e.pointerId);
+    sheetEl.style.transition = 'none';
+  });
+  grip.addEventListener('pointermove', (e) => {
+    if (inizioY === null) return;
+    sposta(Math.max(0, e.clientY - inizioY));
+  });
+  const rilascia = (e) => {
+    if (inizioY === null) return;
+    const dy = Math.max(0, e.clientY - inizioY);
+    inizioY = null;
+    sheetEl.style.transition = '';
+    if (dy > SOGLIA) chiudi();
+    else sposta(0);
+  };
+  grip.addEventListener('pointerup', rilascia);
+  grip.addEventListener('pointercancel', rilascia);
 }
 
 /**

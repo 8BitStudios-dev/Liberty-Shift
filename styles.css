@@ -591,12 +591,19 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .sheet {
   width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
   background: var(--sfondo); border-radius: 20px 20px 0 0;
-  padding: 8px 16px max(env(safe-area-inset-bottom), 16px);
+  padding: 6px 16px max(env(safe-area-inset-bottom), 16px);
   transform: translateY(16px); transition: transform .22s ease;
 }
 .sheet-backdrop.aperto .sheet { transform: none; }
-.sheet-grip { width: 38px; height: 4px; border-radius: 2px; background: var(--bordo); margin: 4px auto 8px; }
-.sheet-head { display: flex; align-items: center; gap: 10px; }
+/* La zona toccabile (60x24) è più larga del segno grafico (38x4): sul
+   telefono un bersaglio di 4px di altezza non si afferra. */
+.sheet-grip {
+  width: 60px; height: 24px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; touch-action: none;
+}
+.sheet-grip::before { content: ''; width: 38px; height: 4px; border-radius: 2px; background: var(--bordo); }
+.sheet-head { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
 .sheet-head h2 { flex: 1; font-size: 17px; text-transform: none; letter-spacing: 0; color: var(--testo); margin: 0; }
 .sheet-foot { position: sticky; bottom: 0; padding-top: 10px; background: var(--sfondo); }
 

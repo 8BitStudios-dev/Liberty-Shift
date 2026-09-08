@@ -66,10 +66,12 @@ export function durataOre(shift) {
 /**
  * Le fasce a cui appartiene un turno, secondo i confini di `RULES.fasce`.
  *
- * Sono più d'una, e non è un caso limite: due fasce guardano l'inizio
- * (apertura, mattina) e due la fine (pomeriggio, chiusura), quindi un
- * 10:00–19:45 è insieme mattina e pomeriggio. Chi lo usa deve saperlo
- * gestire, invece di far finta che ce ne sia sempre una sola.
+ * Restituisce un array perché due fasce guardano l'inizio (apertura, mattina)
+ * e due la fine (pomeriggio, chiusura), e in teoria potrebbero valere
+ * entrambe. Con i turni reali, fino a 9 ore, è un caso limite che di fatto
+ * non capita — servirebbero almeno 9h30 per toccare sia mattina che
+ * pomeriggio — ma chi legge il risultato deve comunque saperlo gestire,
+ * invece di dare per scontato che ce ne sia sempre una sola.
  */
 export function fasceDi(shift) {
   if (shift?.tipo !== 'WORK') return [];
