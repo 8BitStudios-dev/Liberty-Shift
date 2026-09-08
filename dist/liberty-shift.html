@@ -595,12 +595,19 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .sheet {
   width: 100%; max-width: 560px; max-height: 88vh; overflow-y: auto;
   background: var(--sfondo); border-radius: 20px 20px 0 0;
-  padding: 8px 16px max(env(safe-area-inset-bottom), 16px);
+  padding: 6px 16px max(env(safe-area-inset-bottom), 16px);
   transform: translateY(16px); transition: transform .22s ease;
 }
 .sheet-backdrop.aperto .sheet { transform: none; }
-.sheet-grip { width: 38px; height: 4px; border-radius: 2px; background: var(--bordo); margin: 4px auto 8px; }
-.sheet-head { display: flex; align-items: center; gap: 10px; }
+/* La zona toccabile (60x24) è più larga del segno grafico (38x4): sul
+   telefono un bersaglio di 4px di altezza non si afferra. */
+.sheet-grip {
+  width: 60px; height: 24px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: center;
+  cursor: grab; touch-action: none;
+}
+.sheet-grip::before { content: ''; width: 38px; height: 4px; border-radius: 2px; background: var(--bordo); }
+.sheet-head { display: flex; align-items: center; gap: 10px; padding-top: 6px; }
 .sheet-head h2 { flex: 1; font-size: 17px; text-transform: none; letter-spacing: 0; color: var(--testo); margin: 0; }
 .sheet-foot { position: sticky; bottom: 0; padding-top: 10px; background: var(--sfondo); }
 
@@ -660,9 +667,12 @@ const RULES = {
    * Le fasce con cui in store si chiamano i turni.
    *
    * Non si ricavano dagli orari del negozio: sono i confini veri, quelli che
-   * la gente usa parlando. Un turno può stare in due fasce insieme, perché
-   * due guardano l'inizio e due la fine: un 10:00–19:45 è mattina e
-   * pomeriggio, ed è giusto così.
+   * la gente usa parlando. Un turno può in teoria stare in due fasce insieme,
+   * perché due guardano l'inizio e due la fine — ma con i turni che si fanno
+   * davvero, fino a 9 ore, non succede: toccare sia la finestra di inizio di
+   * MATTINA (09:30–10:00) sia quella di fine di POMERIGGIO (19:30–20:00)
+   * richiede almeno 9h30. `fasceDi()` gestisce comunque il caso, per
+   * sicurezza, ma nella pratica un turno resta sempre in una fascia sola.
    */
   fasce: {
     APERTURA: { label: 'apertura', inizioDa: '07:30', inizioA: '09:00' },
@@ -1025,10 +1035,12 @@ function durataOre(shift) {
 /**
  * Le fasce a cui appartiene un turno, secondo i confini di `RULES.fasce`.
  *
- * Sono più d'una, e non è un caso limite: due fasce guardano l'inizio
- * (apertura, mattina) e due la fine (pomeriggio, chiusura), quindi un
- * 10:00–19:45 è insieme mattina e pomeriggio. Chi lo usa deve saperlo
- * gestire, invece di far finta che ce ne sia sempre una sola.
+ * Restituisce un array perché due fasce guardano l'inizio (apertura, mattina)
+ * e due la fine (pomeriggio, chiusura), e in teoria potrebbero valere
+ * entrambe. Con i turni reali, fino a 9 ore, è un caso limite che di fatto
+ * non capita — servirebbero almeno 9h30 per toccare sia mattina che
+ * pomeriggio — ma chi legge il risultato deve comunque saperlo gestire,
+ * invece di dare per scontato che ce ne sia sempre una sola.
  */
 function fasceDi(shift) {
   if (shift?.tipo !== 'WORK') return [];
@@ -2546,7 +2558,10 @@ const funzione = (nome, argomenti = {}) => chiama(`/rest/v1/rpc/${nome}`, {
 /** Iscrive chi conosce il codice del negozio, e restituisce il suo profilo. */
 async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSettimanali, genere }) {
   const r = await funzione('iscrivi', {
-    codice,
+    // Il codice è impostato in maiuscolo su Supabase (vedi supabase/schema.sql):
+    // normalizzarlo qui rende "r667" equivalente a "R667" senza dover
+    // insegnare a chi digita quale maiuscola serve.
+    codice: (codice || '').trim().toUpperCase(),
     nome,
     cognome_iniziale: cognomeIniziale,
     contratto,
@@ -4309,7 +4324,43 @@ function sheet(titolo, contenuto, { azioni = '' } = {}) {
   wrap.addEventListener('click', (e) => {
     if (e.target === wrap || e.target.closest('[data-chiudi]')) chiudi();
   });
+  trascinaPerChiudere(wrap.querySelector('.sheet'), wrap.querySelector('.sheet-grip'), chiudi);
   return { el: wrap, chiudi };
+}
+
+/**
+ * Il trascinamento verso il basso della barra in cima al foglio.
+ *
+ * Prima era solo un segno grafico: sembrava una maniglia, il gesto più
+ * naturale su un foglio a comparsa, e non faceva niente. Segue il dito
+ * mentre si trascina e, oltre una soglia, chiude come se si fosse toccata la
+ * X; sotto la soglia torna al suo posto.
+ */
+function trascinaPerChiudere(sheetEl, grip, chiudi) {
+  const SOGLIA = 90; // px di trascinamento oltre cui il rilascio chiude
+  let inizioY = null;
+
+  const sposta = (dy) => { sheetEl.style.transform = dy ? `translateY(${dy}px)` : ''; };
+
+  grip.addEventListener('pointerdown', (e) => {
+    inizioY = e.clientY;
+    grip.setPointerCapture(e.pointerId);
+    sheetEl.style.transition = 'none';
+  });
+  grip.addEventListener('pointermove', (e) => {
+    if (inizioY === null) return;
+    sposta(Math.max(0, e.clientY - inizioY));
+  });
+  const rilascia = (e) => {
+    if (inizioY === null) return;
+    const dy = Math.max(0, e.clientY - inizioY);
+    inizioY = null;
+    sheetEl.style.transition = '';
+    if (dy > SOGLIA) chiudi();
+    else sposta(0);
+  };
+  grip.addEventListener('pointerup', rilascia);
+  grip.addEventListener('pointercancel', rilascia);
 }
 
 /**
@@ -4574,15 +4625,16 @@ function messaggioAvviso(richiesta, destinatario) {
 /**
  * L'invito per un collega che l'app non ce l'ha ancora.
  *
- * Dice le tre cose che servono a decidere se aprirlo: cos'è, come si entra, e
- * cosa succede ai propri turni. L'ultima non è cortesia: è la domanda che si
- * fa chiunque riceva il link di un'app che parla di orari di lavoro.
+ * Corto apposta: cos'è, cosa fare, il link. Il codice del negozio non ci sta
+ * dentro — è un segreto condiviso da chi è già iscritto, e scriverlo in un
+ * messaggio che gira su WhatsApp lo mette in chiaro nello stesso posto che la
+ * tabella `configurazione` esiste apposta per evitare. Chi lo riceve lo chiede
+ * a voce a chi lo ha invitato.
  */
-function messaggioInvito(codice) {
-  return `Ciao, ti passo Liberty Shift, l'app che usiamo per i cambi turno fra noi. `
-    + `Apri il link, metti il codice del negozio ${codice || '____'} e crea il tuo profilo: `
-    + `${indirizzoApp()}\n\n`
-    + `I tuoi turni restano sul tuo telefono. In bacheca finisce solo quello che pubblichi tu.`;
+function messaggioInvito() {
+  return `Ciao, ti passo Liberty Shift, l'app che usiamo per organizzare i cambi turno. `
+    + `Apri il link, metti il codice del negozio e crea il tuo profilo: `
+    + `${indirizzoApp()}`;
 }
 
 /** L'indirizzo di questa copia dell'app, per chi deve ancora aprirla. */
@@ -5026,7 +5078,7 @@ function impostazioni() {
           <span class="tile-icona">✉️</span>
           <span>
             <strong>Invita un collega</strong>
-            <em>Il link e le due righe da spiegare, già scritte</em>
+            <em>Il messaggio con il link, già pronto da mandare</em>
           </span>
           <span class="chevron">›</span>
         </button>` : '')}
@@ -5150,8 +5202,9 @@ function legendaFasce() {
       <summary><span>Cosa vuol dire ogni fascia</span><span class="conteggio">orari</span></summary>
       <ul class="elenco piccolo">${raw(righe)}</ul>
       <p class="testo-tenue">
-        Un turno può stare in due fasce insieme, perché due guardano l'inizio e
-        due la fine: un 10:00–19:45 è mattina e pomeriggio.
+        Due fasce guardano l'inizio e due la fine, quindi in teoria un turno
+        potrebbe stare in due insieme — ma con turni fino a 9 ore, come sono
+        davvero in negozio, non succede mai.
       </p>
       <p class="testo-tenue">
         Due preferenze opposte non possono stare accese insieme: attivandone
@@ -6296,10 +6349,14 @@ function noteLegali({ compatte = false } = {}) {
       </table>
 
       <ul class="elenco piccolo">
-        <li>Il server è Supabase, ad accesso protetto: si legge e si scrive solo
-          da autenticati, e ognuno modifica soltanto le proprie richieste.</li>
+        <li>Il server è Supabase, ad accesso protetto e criptato: si legge e si
+          scrive solo da autenticati, e ognuno modifica soltanto le proprie
+          richieste.</li>
         <li>Niente esce di qui senza che tu lo pubblichi.</li>
         <li>Le richieste cancellate spariscono dalla bacheca.</li>
+        <li>Anche senza cancellarle a mano, le richieste chiuse o scadute e le
+          disponibilità di settimane passate vengono cancellate in automatico
+          dopo un po' di tempo.</li>
         <li>Si entra con una password personale, che non viene salvata: l'app
           conserva solo un'impronta per riconoscerla. Protegge l'app da chi
           mette le mani sul dispositivo, non i dati che ci stanno dentro.</li>
@@ -6346,19 +6403,35 @@ function noteLegali({ compatte = false } = {}) {
     </div>`;
 }
 
+/**
+ * Le tre cose che vale la pena sapere, ciascuna con la sua presa visione.
+ *
+ * Una spunta sola per tre affermazioni diverse lascia passare chi ne ha letta
+ * una e immaginato le altre due. Tre spunte costringono a incrociarle davvero,
+ * una per una.
+ */
+const VOCI_ACCETTAZIONE = [
+  { titolo: 'Non è un\'app aziendale', testo: 'e non è approvata da nessuno. L\'abbiamo fatta fra colleghi.' },
+  { titolo: 'Non fa nessun cambio turno.', testo: 'Serve a mettersi d\'accordo; il cambio va poi inserito nel sistema ufficiale.' },
+  {
+    titolo: 'I tuoi turni restano su questo dispositivo.',
+    testo: 'Solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente.',
+  },
+];
+
 /** Il riquadro della prima apertura: corto, con il rimando al testo intero. */
-function accettazioneNote() {
+function accettazioneNote(accettate = [false, false, false]) {
+  const voci = VOCI_ACCETTAZIONE.map((v, i) => html`
+    <label class="switch">
+      <input type="checkbox" data-act="profilo-accetta-voce" data-indice="${i}"
+             ${raw(accettate[i] ? 'checked' : '')}>
+      <span><strong>${v.titolo}</strong> ${v.testo}</span>
+    </label>`).join('');
   return html`
     <div class="legale-intro">
-      <p>Prima di cominciare, tre cose che vale la pena sapere.</p>
-      <ul class="elenco">
-        <li><strong>Non è un'app aziendale</strong> e non è approvata da nessuno.
-          L'abbiamo fatta fra colleghi.</li>
-        <li><strong>Non fa nessun cambio turno.</strong> Serve a mettersi
-          d'accordo; il cambio va poi inserito nel sistema ufficiale.</li>
-        <li><strong>I tuoi turni restano su questo dispositivo.</strong> Esce di
-          qui solo quello che pubblichi, perché i colleghi possano leggerlo.</li>
-      </ul>
+      <p>Prima di cominciare, tre cose che vale la pena sapere. Spuntale una per
+        una: dicono cose diverse.</p>
+      ${raw(voci)}
       <p class="testo-tenue">
         Il testo completo sta nelle Note del Profilo.
       </p>
@@ -6617,6 +6690,7 @@ const bozzaProfilo = {
   password: '',
   conferma: '',
   codice: '',
+  accettazioni: [false, false, false],
   accettate: false,
   errori: [],
 };
@@ -6665,6 +6739,7 @@ function apriProfilo({ modifica = false } = {}) {
     password: '',
     conferma: '',
     codice: '',
+    accettazioni: [false, false, false],
     // In modifica le note sono già state accettate: non si richiede due volte.
     accettate: modifica,
     modifica,
@@ -6673,8 +6748,8 @@ function apriProfilo({ modifica = false } = {}) {
 }
 
 const GENERI = [
-  { key: 'F', label: 'Donna' },
-  { key: 'M', label: 'Uomo' },
+  { key: 'F', label: 'F' },
+  { key: 'M', label: 'M' },
   { key: 'X', label: 'Preferisco non dirlo' },
 ];
 
@@ -6910,20 +6985,16 @@ function passoCodice() {
 
 function passoNote() {
   const b = bozzaProfilo;
+  const tutte = b.accettazioni.every(Boolean);
   return html`
-    ${raw(accettazioneNote())}
+    ${raw(accettazioneNote(b.accettazioni))}
 
     <details class="riquadro">
       <summary><span>Note complete</span><span class="conteggio">testo integrale</span></summary>
       ${raw(noteLegali({ compatte: false }))}
     </details>
 
-    <label class="switch">
-      <input type="checkbox" data-act="profilo-accetta" ${raw(b.accettate ? 'checked' : '')}>
-      <span>Ho preso visione delle note</span>
-    </label>
-
-    <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate && !b.inCorso ? '' : 'disabled')}>
+    <button class="btn primario largo" data-act="profilo-salva" ${raw(tutte && !b.inCorso ? '' : 'disabled')}>
       ${b.inCorso ? 'Un attimo…' : 'Comincia'}
     </button>`;
 }
@@ -7254,7 +7325,12 @@ const AZIONI = {
     render();
   },
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
-  'profilo-accetta': (e) => { P.bozzaProfilo.accettate = e.target.checked; render(); },
+  'profilo-accetta-voce': (e, el) => {
+    const b = P.bozzaProfilo;
+    b.accettazioni[Number(el.dataset.indice)] = e.target.checked;
+    b.accettate = b.accettazioni.every(Boolean);
+    render();
+  },
   'profilo-indietro': () => {
     if (P.bozzaProfilo.passo > 1) { P.bozzaProfilo.passo -= 1; P.bozzaProfilo.errori = []; render(); }
     else vai('#/profilo');
@@ -7298,47 +7374,15 @@ const AZIONI = {
     vai('#/home');
   },
   /**
-   * L'invito per un collega: link, codice e le due righe da dire.
+   * L'invito per un collega: un messaggio fisso, niente da scrivere.
    *
-   * Il codice del negozio si scrive qui ogni volta e non viene conservato.
-   * Sul server c'è solo la sua impronta, e tenerne una copia in chiaro sul
-   * telefono di chi invita sarebbe l'unico posto al mondo in cui il codice
-   * sta scritto per esteso.
+   * Il codice del negozio non ci sta dentro apposta: è un segreto condiviso
+   * fra chi è già iscritto, e chi lo riceve lo chiede a voce a chi lo invita
+   * invece di trovarlo scritto in un messaggio che può girare oltre i due.
    */
-  invita: () => {
-    const w = sheet('✉️ Invita un collega', html`
-      <p class="testo-tenue">
-        Per entrare servono due cose: il link e il codice del negozio. Scrivi
-        il codice qui sotto e il messaggio si compone da solo.
-      </p>
-      <label class="campo">
-        <span>Codice del negozio</span>
-        <input type="text" class="testo" data-campo="codice-invito"
-               placeholder="RXXX" autocapitalize="characters" autocomplete="off">
-      </label>
-      <p class="testo-tenue">
-        Non lo conserviamo: sul server c'è solo la sua impronta, e questo è
-        l'unico posto in cui comparirebbe scritto per intero.
-      </p>
-      <div class="riquadro" data-anteprima-invito></div>`, {
-      azioni: '<button class="btn primario largo" data-act="manda-invito">Manda l\'invito</button>',
-    });
-
-    const campo = w.el.querySelector('[data-campo="codice-invito"]');
-    const box = w.el.querySelector('[data-anteprima-invito]');
-    const aggiorna = () => { box.textContent = messaggioInvito(campo.value.trim()); };
-    campo.addEventListener('input', aggiorna);
-    aggiorna();
-    setTimeout(() => campo.focus(), 40);
-  },
-
-  'manda-invito': async (_, el) => {
-    const wrap = el.closest('.sheet-backdrop');
-    const codice = wrap.querySelector('[data-campo="codice-invito"]').value.trim();
-    if (!codice) return toast('Scrivi il codice del negozio');
-    const esito = await condividi(messaggioInvito(codice));
+  invita: async () => {
+    const esito = await condividi(messaggioInvito());
     if (esito === 'annullato') return;
-    wrap.querySelector('[data-chiudi]').click();
     toast({
       condiviso: 'Invito mandato',
       whatsapp: 'Invito pronto su WhatsApp',

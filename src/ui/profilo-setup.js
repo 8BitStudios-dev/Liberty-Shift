@@ -25,6 +25,7 @@ export const bozzaProfilo = {
   password: '',
   conferma: '',
   codice: '',
+  accettazioni: [false, false, false],
   accettate: false,
   errori: [],
 };
@@ -73,6 +74,7 @@ export function apriProfilo({ modifica = false } = {}) {
     password: '',
     conferma: '',
     codice: '',
+    accettazioni: [false, false, false],
     // In modifica le note sono già state accettate: non si richiede due volte.
     accettate: modifica,
     modifica,
@@ -81,8 +83,8 @@ export function apriProfilo({ modifica = false } = {}) {
 }
 
 const GENERI = [
-  { key: 'F', label: 'Donna' },
-  { key: 'M', label: 'Uomo' },
+  { key: 'F', label: 'F' },
+  { key: 'M', label: 'M' },
   { key: 'X', label: 'Preferisco non dirlo' },
 ];
 
@@ -318,20 +320,16 @@ function passoCodice() {
 
 function passoNote() {
   const b = bozzaProfilo;
+  const tutte = b.accettazioni.every(Boolean);
   return html`
-    ${raw(accettazioneNote())}
+    ${raw(accettazioneNote(b.accettazioni))}
 
     <details class="riquadro">
       <summary><span>Note complete</span><span class="conteggio">testo integrale</span></summary>
       ${raw(noteLegali({ compatte: false }))}
     </details>
 
-    <label class="switch">
-      <input type="checkbox" data-act="profilo-accetta" ${raw(b.accettate ? 'checked' : '')}>
-      <span>Ho preso visione delle note</span>
-    </label>
-
-    <button class="btn primario largo" data-act="profilo-salva" ${raw(b.accettate && !b.inCorso ? '' : 'disabled')}>
+    <button class="btn primario largo" data-act="profilo-salva" ${raw(tutte && !b.inCorso ? '' : 'disabled')}>
       ${b.inCorso ? 'Un attimo…' : 'Comincia'}
     </button>`;
 }

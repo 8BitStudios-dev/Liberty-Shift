@@ -319,7 +319,12 @@ const AZIONI = {
     render();
   },
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
-  'profilo-accetta': (e) => { P.bozzaProfilo.accettate = e.target.checked; render(); },
+  'profilo-accetta-voce': (e, el) => {
+    const b = P.bozzaProfilo;
+    b.accettazioni[Number(el.dataset.indice)] = e.target.checked;
+    b.accettate = b.accettazioni.every(Boolean);
+    render();
+  },
   'profilo-indietro': () => {
     if (P.bozzaProfilo.passo > 1) { P.bozzaProfilo.passo -= 1; P.bozzaProfilo.errori = []; render(); }
     else vai('#/profilo');
@@ -363,47 +368,15 @@ const AZIONI = {
     vai('#/home');
   },
   /**
-   * L'invito per un collega: link, codice e le due righe da dire.
+   * L'invito per un collega: un messaggio fisso, niente da scrivere.
    *
-   * Il codice del negozio si scrive qui ogni volta e non viene conservato.
-   * Sul server c'è solo la sua impronta, e tenerne una copia in chiaro sul
-   * telefono di chi invita sarebbe l'unico posto al mondo in cui il codice
-   * sta scritto per esteso.
+   * Il codice del negozio non ci sta dentro apposta: è un segreto condiviso
+   * fra chi è già iscritto, e chi lo riceve lo chiede a voce a chi lo invita
+   * invece di trovarlo scritto in un messaggio che può girare oltre i due.
    */
-  invita: () => {
-    const w = sheet('✉️ Invita un collega', html`
-      <p class="testo-tenue">
-        Per entrare servono due cose: il link e il codice del negozio. Scrivi
-        il codice qui sotto e il messaggio si compone da solo.
-      </p>
-      <label class="campo">
-        <span>Codice del negozio</span>
-        <input type="text" class="testo" data-campo="codice-invito"
-               placeholder="RXXX" autocapitalize="characters" autocomplete="off">
-      </label>
-      <p class="testo-tenue">
-        Non lo conserviamo: sul server c'è solo la sua impronta, e questo è
-        l'unico posto in cui comparirebbe scritto per intero.
-      </p>
-      <div class="riquadro" data-anteprima-invito></div>`, {
-      azioni: '<button class="btn primario largo" data-act="manda-invito">Manda l\'invito</button>',
-    });
-
-    const campo = w.el.querySelector('[data-campo="codice-invito"]');
-    const box = w.el.querySelector('[data-anteprima-invito]');
-    const aggiorna = () => { box.textContent = messaggioInvito(campo.value.trim()); };
-    campo.addEventListener('input', aggiorna);
-    aggiorna();
-    setTimeout(() => campo.focus(), 40);
-  },
-
-  'manda-invito': async (_, el) => {
-    const wrap = el.closest('.sheet-backdrop');
-    const codice = wrap.querySelector('[data-campo="codice-invito"]').value.trim();
-    if (!codice) return toast('Scrivi il codice del negozio');
-    const esito = await condividi(messaggioInvito(codice));
+  invita: async () => {
+    const esito = await condividi(messaggioInvito());
     if (esito === 'annullato') return;
-    wrap.querySelector('[data-chiudi]').click();
     toast({
       condiviso: 'Invito mandato',
       whatsapp: 'Invito pronto su WhatsApp',

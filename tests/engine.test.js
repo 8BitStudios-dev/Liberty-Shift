@@ -562,7 +562,9 @@ test('le fasce hanno i confini veri dello store, e possono sovrapporsi', () => {
   assert.deepEqual(f('12:00', '21:00'), ['CHIUSURA']);   // finisce dopo le 20:15
   assert.deepEqual(f('12:00', '20:10'), []);             // finisce prima della soglia
   assert.deepEqual(f('22:00', '06:30'), ['NOTTE']);
-  // Due fasce insieme: una guarda l'inizio, l'altra la fine.
+  // Due fasce insieme: una guarda l'inizio, l'altra la fine. Con un turno
+  // reale (fino a 9 ore) non capita mai — qui serve a verificare che
+  // fasceDi() gestisca comunque il caso, non che sia frequente.
   assert.deepEqual(f('10:00', '19:45'), ['MATTINA', 'POMERIGGIO']);
 });
 

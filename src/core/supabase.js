@@ -283,7 +283,10 @@ export const funzione = (nome, argomenti = {}) => chiama(`/rest/v1/rpc/${nome}`,
 /** Iscrive chi conosce il codice del negozio, e restituisce il suo profilo. */
 export async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSettimanali, genere }) {
   const r = await funzione('iscrivi', {
-    codice,
+    // Il codice è impostato in maiuscolo su Supabase (vedi supabase/schema.sql):
+    // normalizzarlo qui rende "r667" equivalente a "R667" senza dover
+    // insegnare a chi digita quale maiuscola serve.
+    codice: (codice || '').trim().toUpperCase(),
     nome,
     cognome_iniziale: cognomeIniziale,
     contratto,
