@@ -164,7 +164,7 @@ export function cardMatch(match, opzioni = {}) {
         ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
       </div>
       ${raw(opzioni.mioCedo
-    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · ${esc(shiftLabel(opzioni.mioCedo))}</div>`
+    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · <strong>${esc(match.adattatoControparte?.trasformato ? `${match.adattatoControparte.start}–${match.adattatoControparte.end}` : shiftLabel(opzioni.mioCedo))}</strong>${match.adattatoControparte?.trasformato ? ` <span class="tag">${esc(shiftLabel(opzioni.mioCedo))} adattato al contratto di ${esc(u?.nome)}</span>` : ''}</div>`
     : '')}
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
@@ -198,9 +198,21 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
         ${fuori ? `Scrivi a ${u.nome}` : `Avvisa ${u?.nome}`}
       </button>`;
   }
+  // Un cambio orario non può pubblicarsi senza dire un orario: "qualsiasi
+  // turno" per un cambio orario non dice niente (R5). Il Cambio Rapido non fa
+  // scegliere niente all'utente, quindi si pubblica l'orario preciso del
+  // match trovato — quello che la persona vedrebbe comunque nella scheda.
+  let start = '';
+  let end = '';
+  if (match.cambio === TIPO_CAMBIO.ORARIO) {
+    const turno = store.shift(match.shiftOffertoId);
+    start = match.adattato?.trasformato ? match.adattato.start : turno?.start;
+    end = match.adattato?.trasformato ? match.adattato.end : turno?.end;
+  }
   return html`
     <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}"
-            data-data="${match.data}" data-cambio="${match.cambio}">
+            data-data="${match.data}" data-cambio="${match.cambio}"
+            data-start="${start}" data-end="${end}">
       ${fuori ? `Pubblica e scrivi a ${u.nome}` : `Pubblica e avvisa ${u?.nome}`}
     </button>`;
 }

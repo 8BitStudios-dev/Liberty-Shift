@@ -236,6 +236,28 @@ test('il match spiega l\'adattamento invece di limitarsi a segnalarlo', () => {
   assert.equal(martina.adattato.trasformato, true);
 });
 
+test('il match porta anche l\'orario adattato per la controparte, non solo per chi guarda', () => {
+  // Bug reale: la scheda mostrava sempre il turno grezzo di chi cede come
+  // "quello che prende l'altro", anche quando per lui viene adattato a
+  // un'altra durata — due orari diversi finivano per sembrare identici.
+  const s = seed();
+  const byId = Object.fromEntries(s.shifts.map((x) => [x.id, x]));
+  const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+  const mioCedo = byId[richiesta.cedo.shiftId];
+  const martina = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
+  const suo = byId[martina.shiftOffertoId];
+
+  assert.ok(martina.adattatoControparte);
+  assert.equal(martina.adattatoControparte.trasformato, trasformaTurno(mioCedo, suo).trasformato);
+  if (martina.adattatoControparte.trasformato) {
+    // L'orario che riceverebbe Martina non è il turno grezzo di Lorenzo:
+    // è adattato alle ore che Martina lascia, quindi differisce dall'originale.
+    const invariato = martina.adattatoControparte.start === mioCedo.start
+      && martina.adattatoControparte.end === mioCedo.end;
+    assert.ok(!invariato);
+  }
+});
+
 test('nessun match con se stessi', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
@@ -331,6 +353,38 @@ test('il Cambio rapido trova match senza fare domande, di entrambi i tipi', () =
     if (m.cambio === TIPO_CAMBIO.ORARIO) assert.equal(m.data, turno.data);
     else assert.notEqual(m.data, turno.data);
   }
+});
+
+test('un match di Cambio rapido "orario" si può ripubblicare con l\'orario preciso trovato', () => {
+  // Bug reale: "Pubblica e avvisa" ripubblicava una fascia ORARIO senza
+  // limiti (entroLe e dalleOre vuoti), che validateRequest rifiuta sempre
+  // (R5: una fascia vuota non dice niente). Il fix pubblica l'orario preciso
+  // del match invece di una fascia vuota, e deve passare la validazione.
+  const s = seed();
+  const rif = s.requests.find((r) => r.tipo === TIPO_CAMBIO.ORARIO);
+  const turno = s.shifts.find((x) => x.id === rif.cedo.shiftId);
+  const match = cambioRapido(turno.id, s).find((m) => m.cambio === TIPO_CAMBIO.ORARIO);
+  assert.ok(match, 'serve almeno un match orario per verificare il fix');
+
+  const offerto = s.shifts.find((x) => x.id === match.shiftOffertoId);
+  const start = match.adattato?.trasformato ? match.adattato.start : offerto.start;
+  const end = match.adattato?.trasformato ? match.adattato.end : offerto.end;
+
+  const richiesta = (cerco) => ({
+    userId: turno.userId, tipo: TIPO_CAMBIO.ORARIO, cedo: { shiftId: turno.id },
+    cerco: { giorni: [match.data], ...cerco },
+  });
+
+  const errori = validateRequest(richiesta({ mode: WANT_MODE.SPECIFIC, start, end }), { [turno.id]: turno });
+  assert.deepEqual(errori, []);
+
+  // La fascia vuota che si usava prima del fix, invece, resta un errore:
+  // è la garanzia che il test avrebbe intercettato la regressione.
+  const erroriVecchi = validateRequest(
+    richiesta({ mode: WANT_MODE.RANGE, entroLe: '', dalleOre: '' }),
+    { [turno.id]: turno },
+  );
+  assert.ok(erroriVecchi.some((e) => e.includes('almeno un limite orario')));
 });
 
 test('nel cambio OFF il rapido non propone giorni in cui lavori già', () => {

@@ -1628,6 +1628,10 @@ function matchOrario(request, ctx) {
       shiftOffertoId: suo.id,
       data: giorno,
       adattato: trasformaTurno(suo, mioCedo),
+      // Quello che riceverebbe l'altra parte, non il turno com'è: senza
+      // questo la scheda mostrava a entrambi lo stesso orario grezzo, come
+      // se lo scambio non cambiasse niente.
+      adattatoControparte: trasformaTurno(mioCedo, suo),
       prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
       reasons: [...reasons, ...v.reasons],
       avvisi: v.avvisi,
@@ -1711,6 +1715,7 @@ function matchOff(request, ctx) {
         shiftOffertoId: suo.id,
         data: giorno,
         adattato: trasformaTurno(suo, mioCedo),
+        adattatoControparte: trasformaTurno(mioCedo, suo),
         prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
         reasons: [...reasons, ...v.reasons],
         avvisi: v.avvisi,
@@ -4449,7 +4454,7 @@ function cardMatch(match, opzioni = {}) {
         ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
       </div>
       ${raw(opzioni.mioCedo
-    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · ${esc(shiftLabel(opzioni.mioCedo))}</div>`
+    ? `<div class="turno-ceduto">e ${esc(u?.nome)} prende il tuo <strong>${esc(formatDay(opzioni.mioCedo.data))}</strong> · <strong>${esc(match.adattatoControparte?.trasformato ? `${match.adattatoControparte.start}–${match.adattatoControparte.end}` : shiftLabel(opzioni.mioCedo))}</strong>${match.adattatoControparte?.trasformato ? ` <span class="tag">${esc(shiftLabel(opzioni.mioCedo))} adattato al contratto di ${esc(u?.nome)}</span>` : ''}</div>`
     : '')}
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
@@ -4483,9 +4488,21 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
         ${fuori ? `Scrivi a ${u.nome}` : `Avvisa ${u?.nome}`}
       </button>`;
   }
+  // Un cambio orario non può pubblicarsi senza dire un orario: "qualsiasi
+  // turno" per un cambio orario non dice niente (R5). Il Cambio Rapido non fa
+  // scegliere niente all'utente, quindi si pubblica l'orario preciso del
+  // match trovato — quello che la persona vedrebbe comunque nella scheda.
+  let start = '';
+  let end = '';
+  if (match.cambio === TIPO_CAMBIO.ORARIO) {
+    const turno = store.shift(match.shiftOffertoId);
+    start = match.adattato?.trasformato ? match.adattato.start : turno?.start;
+    end = match.adattato?.trasformato ? match.adattato.end : turno?.end;
+  }
   return html`
     <button class="btn primario" data-act="pubblica-avvisa" data-user="${match.userId}"
-            data-data="${match.data}" data-cambio="${match.cambio}">
+            data-data="${match.data}" data-cambio="${match.cambio}"
+            data-start="${start}" data-end="${end}">
       ${fuori ? `Pubblica e scrivi a ${u.nome}` : `Pubblica e avvisa ${u?.nome}`}
     </button>`;
 }
@@ -7334,12 +7351,17 @@ const AZIONI = {
   // giorno che il motore ha trovato, poi si avvisa la persona.
   'pubblica-avvisa': (_, el) => {
     const me = store.me;
+    const orario = el.dataset.cambio === 'ORARIO';
     const { errori, richiesta } = store.creaRichiesta({
       cedo: { shiftId: F.rapido.shiftId, flessibile: false },
       tipo: el.dataset.cambio,
       cerco: {
         giorni: [el.dataset.data],
-        mode: el.dataset.cambio === 'ORARIO' ? 'RANGE' : 'ANY',
+        // Un cambio orario non può restare senza orario (R5): si pubblica
+        // l'orario preciso del match, non una fascia vuota.
+        mode: orario ? 'SPECIFIC' : 'ANY',
+        start: orario ? el.dataset.start : '',
+        end: orario ? el.dataset.end : '',
         entroLe: '', dalleOre: '',
         evitaChiusura: Boolean(me.preferenze?.evitaChiusure),
         note: '',
