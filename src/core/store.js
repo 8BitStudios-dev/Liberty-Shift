@@ -14,6 +14,7 @@ import {
   scaricaCalendario, cambiaPasswordServer,
 } from './supabase.js';
 import { parseICS } from './ics.js';
+import { daRiempire, rotazioneVuota } from './rotazione.js';
 import {
   sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato,
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
@@ -211,6 +212,46 @@ export const store = {
     }
     this.commit();
     return { aggiunti, aggiornati, bloccati };
+  },
+
+  /**
+   * La rotazione delle settimane di chi lavora ad A, B, C.
+   *
+   * Sta sulla persona e resta su questo dispositivo: è una previsione dei
+   * propri turni, cioè esattamente la cosa che le note d'uso promettono di
+   * non far uscire dal telefono.
+   */
+  salvaRotazione(rotazione) {
+    this.me.rotazione = rotazione;
+    this.commit();
+  },
+
+  dimenticaRotazione() {
+    delete this.me.rotazione;
+    this.commit();
+  },
+
+  /**
+   * Riempie il calendario in avanti con la rotazione.
+   *
+   * Solo i giorni vuoti: dove un turno c'è già, vince quello. Il calendario
+   * aziendale è la verità, e una previsione che copre un turno vero è una
+   * bugia che si scopre in negozio.
+   */
+  applicaRotazione({ settimane = 12 } = {}) {
+    const me = this.me;
+    if (!me.rotazione || rotazioneVuota(me.rotazione)) return { errore: 'Nessuna rotazione impostata.' };
+
+    const nuovi = daRiempire(me.rotazione, this.state.shifts, {
+      userId: me.id, oggi: todayISO(), settimane,
+    });
+    for (const t of nuovi) {
+      this.state.shifts.push({
+        id: newId('sh'), userId: me.id, data: t.data, tipo: t.tipo, start: t.start, end: t.end,
+      });
+    }
+    this.commit();
+    return { aggiunti: nuovi.length };
   },
 
   eliminaTurno(id) {

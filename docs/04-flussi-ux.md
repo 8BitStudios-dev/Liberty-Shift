@@ -202,6 +202,40 @@ scattare le preferenze come scatterebbero davvero. Con le vecchie 09:00 il
 turno di Lorenzo cadeva nell'apertura invece che nella mattina, e la sua
 preferenza non si accendeva mai.
 
+### La rotazione: A, B, C, e poi da capo
+Diversi Part Time non hanno una settimana tipo, ne hanno tre o quattro che si
+ripetono in ordine. Chi lavora così, senza il calendario collegato, reinserisce
+le stesse giornate ogni mese.
+
+Nel Profilo, sotto le altre due strade, c'è **Rotazione settimanale**. Non
+chiede di compilare ventuno campi: le settimane uno le ha già inserite, o
+importate, quindi si dichiara solo **quante sono** e l'app prende quelle che
+partono da questo sabato. Da lì sa che settimana è oggi (A, B o C) e sa
+calcolare qualunque settimana futura o passata.
+
+Sta sotto le altre due voci perché è la terza: prima si inseriscono le
+settimane, in un modo o nell'altro, e solo dopo ha senso dire che si ripetono.
+Metterla in cima avrebbe chiesto di descrivere una rotazione a chi non ha
+ancora messo dentro un turno.
+
+Il riepilogo mostra le settimane **come sono state capite**, giorno per giorno.
+Non è un vezzo: una rotazione presa dalla settimana sbagliata riempie mesi di
+turni plausibili e falsi, e quello è l'unico momento in cui ci si può
+accorgere.
+
+Due regole tengono in piedi la cosa:
+
+- **riempie solo i giorni vuoti.** Dove un turno c'è già vince quello: il
+  calendario dei turni resta la verità, e una previsione che copre un turno
+  vero è una bugia che si scopre in negozio;
+- **un giorno senza turno resta vuoto, non diventa un OFF.** Un OFF dichiarato
+  ti fa comparire fra chi può prendere un turno, e non è una cosa da far dire a
+  una previsione.
+
+La rotazione resta su questo dispositivo e non va sul server: è una previsione
+dei propri turni, cioè esattamente quello che le note d'uso promettono di non
+far uscire dal telefono.
+
 ### I codici del gestionale
 Il calendario aziendale non scrive "riposo": scrive `SO ADO`, `ITA Time Away F
 08.00 hrs`, `ITA PH Not Wrkd`, `ITA RT - Callout` (permesso o malattia). La prima versione del lettore cercava parole

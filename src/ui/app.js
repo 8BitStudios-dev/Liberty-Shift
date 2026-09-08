@@ -2,13 +2,14 @@ import { html, raw, on, toast, sheet, condividi } from './dom.js';
 import { store } from '../core/store.js';
 import * as V from './views.js';
 import * as F from './flows.js';
-import { formatDay, appleWeekKey } from '../core/time.js';
+import { formatDay, appleWeekKey, todayISO } from '../core/time.js';
 import { slotSettimana } from '../core/engine.js';
 import {
   durataOre, isNotturno, fuoriFascia, etichettaFascia, oreDelContratto, oreAutomatiche,
   spostaTurno,
 } from '../core/model.js';
 import { RULES } from '../core/rules.js';
+import { rotazioneDaCalendario, rotazioneVuota } from '../core/rotazione.js';
 import { parseICS } from '../core/ics.js';
 import * as P from './profilo-setup.js';
 import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
@@ -695,6 +696,79 @@ const AZIONI = {
     if (esito.saltato) return toast('Non sei collegato al negozio');
     if (esito.errore) return toast(esito.errore);
     toast(esito.inviate ? `${esito.inviate} inviate, bacheca aggiornata` : 'Bacheca aggiornata');
+  },
+
+  /**
+   * La rotazione delle settimane.
+   *
+   * Non c'è un modulo da riempire: le settimane uno le ha già inserite, o
+   * importate, e dichiarare che quelle si ripetono costa un tocco invece di
+   * ventuno campi. Se poi la rotazione cambia, si correggono le settimane nel
+   * calendario e la si ridichiara.
+   */
+  rotazione: () => {
+    const me = store.me;
+    const r = me.rotazione;
+    const attiva = r && !rotazioneVuota(r);
+
+    const w = sheet('🔁 Rotazione settimanale', html`
+      ${raw(attiva ? V.riepilogoRotazione() : '')}
+      <p class="testo-tenue">
+        Se le tue settimane si ripetono sempre uguali, dichiara quante sono:
+        l'app prende quelle che partono da questo sabato e le usa per riempire
+        i mesi avanti.
+      </p>
+      <div class="campo">
+        <span>Quante settimane si ripetono</span>
+        <div class="chips">
+          ${raw([2, 3, 4, 5].map((n) => `
+            <button class="chip ${r?.settimane?.length === n ? 'attivo' : ''}"
+                    data-act="rotazione-quante" data-n="${n}">${n}</button>`).join(''))}
+        </div>
+      </div>
+      <p class="testo-tenue">
+        Riempie solo i giorni ancora vuoti. Dove un turno c'è già vince quello:
+        il calendario dei turni resta la verità, e una previsione che copre un
+        turno vero è una bugia che si scopre in negozio.
+      </p>
+      ${raw(attiva ? '<button class="link-btn" data-act="rotazione-dimentica">Dimentica la rotazione</button>' : '')}`, {
+      azioni: attiva
+        ? '<button class="btn primario largo" data-act="rotazione-applica">Riempi i prossimi 3 mesi</button>'
+        : '',
+    });
+    return w;
+  },
+
+  'rotazione-quante': (_, el) => {
+    const quante = Number(el.dataset.n);
+    const rotazione = rotazioneDaCalendario(store.state.shifts, {
+      userId: store.state.currentUserId,
+      dalla: todayISO(),
+      quante,
+    });
+    if (rotazioneVuota(rotazione)) {
+      return toast(`Nelle prossime ${quante} settimane non c'è nessun turno da cui partire`);
+    }
+    store.salvaRotazione(rotazione);
+    chiudiSheet();
+    AZIONI.rotazione();
+    render();
+  },
+
+  'rotazione-applica': async () => {
+    const esito = store.applicaRotazione({ settimane: 13 });
+    chiudiSheet();
+    render();
+    toast(esito.errore || (esito.aggiunti
+      ? `${esito.aggiunti} turni previsti aggiunti`
+      : 'Nessun giorno vuoto da riempire'));
+  },
+
+  'rotazione-dimentica': () => {
+    store.dimenticaRotazione();
+    chiudiSheet();
+    render();
+    toast('Rotazione dimenticata. I turni già inseriti restano.');
   },
 
   /** Riscarica subito dall'indirizzo salvato, senza aspettare le sei ore. */

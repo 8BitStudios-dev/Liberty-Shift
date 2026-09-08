@@ -9,6 +9,7 @@ import {
   slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
 } from '../core/engine.js';
 import { RULES, PREFERENZE, TIPO_CAMBIO } from '../core/rules.js';
+import { letteraDi, rotazioneVuota } from '../core/rotazione.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
 } from '../core/time.js';
@@ -523,6 +524,58 @@ function sezioneTurni() {
       <span>
         <strong>Inserisci manualmente i turni</strong>
         <em>Giorno per giorno, dal calendario del mese qui sotto</em>
+      </span>
+      <span class="chevron">›</span>
+    </button>
+
+    ${raw(rigaRotazione())}`;
+}
+
+/**
+ * Le settimane della rotazione, come sono state capite.
+ *
+ * Va mostrato quello che l'app ha letto, non solo quante settimane sono: una
+ * rotazione presa dalla settimana sbagliata riempie mesi di turni plausibili
+ * e falsi, e l'unico momento in cui ci si può accorgere è questo.
+ */
+export function riepilogoRotazione() {
+  const r = store.me.rotazione;
+  const questa = letteraDi(r, appleWeekKey(todayISO()));
+  const righe = r.settimane.map((s) => {
+    const celle = s.giorni.map((g, i) => html`
+      <span class="giorno-rot ${g ? '' : 'libero'}">
+        <span class="dow">${GIORNI[weekday(addDays(r.ancora, i))]}</span>
+        <span>${g ? g.start : 'OFF'}</span>
+      </span>`).join('');
+    return html`
+      <div class="settimana-rot">
+        <h3>Settimana ${s.nome}${s.nome === questa ? ' · questa' : ''}</h3>
+        <div class="griglia-rot">${raw(celle)}</div>
+      </div>`;
+  }).join('');
+  return html`${raw(righe)}`;
+}
+
+/**
+ * La rotazione: A, B, C e poi da capo.
+ *
+ * Sta sotto le altre due strade perché è la terza: prima si inseriscono le
+ * settimane, in un modo o nell'altro, e solo dopo ha senso dire che si
+ * ripetono. Metterla in cima avrebbe chiesto di descrivere una rotazione a chi
+ * non ha ancora messo dentro un turno.
+ */
+function rigaRotazione() {
+  const r = store.me.rotazione;
+  const attiva = r && !rotazioneVuota(r);
+  const lettera = attiva ? letteraDi(r, appleWeekKey(todayISO())) : null;
+  return html`
+    <button class="tile" data-act="rotazione">
+      <span class="tile-icona">🔁</span>
+      <span>
+        <strong>Rotazione settimanale</strong>
+        <em>${attiva
+    ? `${r.settimane.length} settimane · questa è la ${lettera}`
+    : 'Se le tue settimane si ripetono ad A, B, C'}</em>
       </span>
       <span class="chevron">›</span>
     </button>`;

@@ -606,3 +606,16 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ------------------------------------------------ rotazione settimanale */
+
+.settimana-rot { margin-bottom: 12px; }
+.settimana-rot h3 { margin: 0 0 5px; font-size: 13px; color: var(--testo-tenue); font-weight: 600; }
+.griglia-rot { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.giorno-rot {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  border: 1px solid var(--bordo); border-radius: 8px; background: var(--superficie);
+  padding: 5px 1px; font-size: 11px; font-weight: 600;
+}
+.giorno-rot .dow { font-size: 9px; font-weight: 400; color: var(--testo-tenue); }
+.giorno-rot.libero { background: var(--superficie-2); color: var(--testo-tenue); font-weight: 400; }
