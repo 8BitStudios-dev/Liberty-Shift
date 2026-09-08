@@ -3,6 +3,14 @@
 Quattro tab (Home, Calendario, Bacheca, Profilo) più i flussi che si aprono
 sopra. Routing a hash, quindi ogni schermata ha un indirizzo condivisibile.
 
+La barra delle quattro tab resta fissa in fondo su **ogni** schermata, flussi
+e dettagli compresi: da un Cambio Rapido o dal dettaglio di una richiesta si
+salta altrove senza dover tornare indietro passo per passo. Nessuna delle
+quattro risulta "attiva" quando si è dentro un flusso, perché non è detto da
+quale delle quattro ci si sia entrati. L'unica eccezione è la primissima
+apertura, prima che un profilo esista: lì la barra non ha ancora niente su
+cui atterrare.
+
 | Rotta | Schermata |
 |---|---|
 | `#/home` | panoramica e azioni |
