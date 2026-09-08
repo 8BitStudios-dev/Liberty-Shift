@@ -207,6 +207,11 @@ p { margin: 8px 0; }
 .coppia .orario { font-size: 13px; color: var(--testo-tenue); }
 .coppia .freccia { align-self: center; color: var(--testo-tenue); font-size: 18px; }
 .coppia .nota { font-size: 12px; color: var(--testo-tenue); font-style: italic; }
+.coppia.compatta { padding: 8px; }
+.coppia.compatta .tipo-cambio { margin-bottom: 6px; }
+.coppia.compatta strong { font-size: 13px; }
+.coppia.compatta .orario { font-size: 12px; }
+.coppia.compatta .nota { display: none; }
 
 .nota-utente { font-size: 14px; color: var(--testo-tenue); font-style: italic; margin: 10px 0 0; }
 
