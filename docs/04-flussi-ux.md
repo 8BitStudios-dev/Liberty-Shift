@@ -291,12 +291,20 @@ attenzione a quello che invece si guarda ogni giorno. Il ritorno dalle note
 riporta lì, non al Profilo.
 
 ## La guida
-Ogni sezione ha una scheda che si apre **da sola la prima volta** che ci si
-entra, e si riapre dal **?** nella testata. Non spiega dove sono i pulsanti,
-spiega le regole: una riga per concetto, e un esempio dove la regola da sola non
-basta. "Chi prende un turno fa le ore di quello che lascia" non si capisce
-finché non diventa "Giulia prende un 12:00–21:00 e, siccome chiude, esce con
-lui: farà 16:00–21:00".
+Sette schede, una per schermata: Home, Cambio rapido, Aiuta un collega, Nuovo
+cambio, Calendario, Bacheca, Profilo. Si aprono **da sole la prima volta** che
+ci si entra e si riaprono dal **?** nella testata.
+
+La regola di scrittura è una: **frasi corte, e solo quello che serve per usare
+la schermata che si ha davanti.** La prima versione spiegava bene e leggeva
+male — paragrafi da quattro righe, che chi ha già capito salta e chi non ha
+capito abbandona. Ora ogni scheda sta in mezzo schermo, e dove la regola da
+sola non basta c'è un esempio con orari veri: "Giulia prende un 12:00–21:00 e,
+siccome chiude, esce con lui: farà 16:00–21:00".
+
+Le tre schede dei flussi sono arrivate dopo, e mancavano proprio dove servono:
+Cambio rapido, Aiuta un collega e Nuovo cambio sono le schermate in cui si
+decide qualcosa, non quelle in cui si guarda.
 
 Quali schede sono già state viste sta in `localStorage`, non nello stato: è una
 cosa di questo browser, non un dato dell'app.

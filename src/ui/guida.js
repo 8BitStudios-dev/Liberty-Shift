@@ -1,47 +1,114 @@
 // La guida: una scheda per sezione, che compare la prima volta che ci si
 // entra e poi si riapre dal punto interrogativo nella testata.
 //
-// Regola di scrittura: una riga per concetto, e un esempio dove la regola da
-// sola non basta. Un esempio con un orario preciso vale tre righe di
-// spiegazione, e si legge in metà tempo.
+// Regola di scrittura, e vale per tutte: **frasi corte, e solo quello che
+// serve per usare la schermata che si ha davanti.** Le spiegazioni lunghe le
+// legge chi ha già capito; chi non ha capito le salta. Un esempio con un
+// orario vero vale tre righe di teoria.
 
 import { html, raw } from './dom.js';
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-export const VERSIONE_GUIDA = '4';
+export const VERSIONE_GUIDA = '5';
 
 export const GUIDE = {
   home: {
     titolo: 'La Home',
     icona: '🏠',
     corpo: () => html`
-      <p>Tre strade, in ordine di quanto lavoro ti risparmiano.</p>
+      <p>Da qui parti, in tre modi.</p>
 
       <h3>⚡ Cambio rapido</h3>
-      <p>
-        Scegli un tuo turno e vedi subito chi può prenderlo. Nessuna domanda:
-        l'app prova sia lo scambio di orario sia quello di giornata.
-      </p>
-      <p class="esempio">
-        Giovedì fai 12:00–21:00 e vuoi staccare prima. Tocchi giovedì e vedi
-        Martina, che quel giorno fa 09:00–15:00 e cerca un turno più tardi.
-      </p>
+      <p>Scegli un tuo turno, vedi chi può prenderlo. Nessuna domanda.</p>
 
       <h3>🤝 Aiuta un collega</h3>
-      <p>
-        Il contrario: le richieste che <em>tu</em> puoi risolvere. La percentuale
-        dice quanto lo scambio funziona per entrambi — il tuo turno rispetto a
-        quello che cercano, e il loro rispetto a quello che cerchi tu.
-      </p>
+      <p>Il contrario: chi ha bisogno di un turno che tu hai.</p>
 
       <h3>＋ Nuovo cambio</h3>
       <p>Quando vuoi decidere tu le condizioni.</p>
 
       <h3>I tuoi cambi</h3>
-      <p>In cima: richieste aperte e proposte. Pallino rosso = aspettano te.</p>
+      <p>In cima. Il pallino rosso vuol dire che aspettano una tua risposta.</p>
+
       <p class="testo-tenue">
-        La ⭐ in alto è la priorità del mese: mette una richiesta in cima alla
-        bacheca per 48 ore. Dà visibilità, non precedenza.
+        La ⭐ in alto è la priorità: una al mese, mette la tua richiesta in cima
+        alla bacheca per 48 ore.
+      </p>`,
+  },
+
+  rapido: {
+    titolo: 'Cambio rapido',
+    icona: '⚡',
+    corpo: () => html`
+      <p>Il modo più veloce per liberarti un turno.</p>
+
+      <p>Scegli il turno in alto. Sotto compare chi può prenderlo, in due gruppi:</p>
+      <ul class="elenco piccolo">
+        <li><strong>Cambio orario</strong> — restate nello stesso giorno e vi
+          scambiate l'orario;</li>
+        <li><strong>Cambio OFF</strong> — ti prendono la giornata, e tu lavori
+          in un giorno in cui sei a casa.</li>
+      </ul>
+
+      <p class="esempio">
+        Giovedì fai 12:00–21:00 e vuoi staccare prima. Tocchi giovedì e trovi
+        Martina, che quel giorno fa 09:00–15:00 e cerca un turno più tardi.
+      </p>
+
+      <p>
+        Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Se non
+        compare nessuno, nessuno di compatibile c'è ancora: pubblica la
+        richiesta con <strong>Nuovo cambio</strong> e resta in bacheca.
+      </p>`,
+  },
+
+  aiuta: {
+    titolo: 'Aiuta un collega',
+    icona: '🤝',
+    corpo: () => html`
+      <p>Le richieste che i tuoi turni possono risolvere. Solo quelle.</p>
+
+      <p>
+        Per ognuna vedi <strong>cosa faresti tu</strong> e cosa farebbe l'altra
+        persona, già con gli orari giusti. La percentuale dice quanto lo scambio
+        combacia per tutti e due.
+      </p>
+
+      <p class="esempio">
+        Luca vuole libero venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
+        lavori: siete la risposta l'uno dell'altro.
+      </p>
+
+      <p class="testo-tenue">
+        Se è vuota non è un errore: vuol dire che oggi nessuna richiesta torna
+        con i turni che hai. Aggiorna i turni dal Profilo e ricontrolla.
+      </p>`,
+  },
+
+  nuovo: {
+    titolo: 'Nuovo cambio',
+    icona: '＋',
+    corpo: () => html`
+      <p>Tre passi, e la prima domanda decide tutto.</p>
+
+      <h3>🕐 Cambio orario</h3>
+      <p>
+        Stesso giorno, orario diverso. Serve un collega che quel giorno
+        <strong>lavori</strong>: vi scambiate gli orari.
+      </p>
+      <p class="esempio">«Mercoledì faccio 12:00–21:00, cerco un turno che finisca prima.»</p>
+
+      <h3>📅 Cambio OFF</h3>
+      <p>
+        Vuoi libero un giorno intero. In cambio offri un giorno in cui sei a
+        casa, e prendi il turno di chi ti libera.
+      </p>
+      <p class="esempio">«Voglio libero sabato, in cambio lavoro lunedì.»</p>
+
+      <p class="testo-tenue">
+        Compaiono solo i giorni della stessa settimana: da sabato a venerdì,
+        come le settimane dei turni. Una volta pubblicata la richiesta non si
+        modifica, si cancella e si rifà.
       </p>`,
   },
 
@@ -49,16 +116,9 @@ export const GUIDE = {
     titolo: 'Il Calendario',
     icona: '📅',
     corpo: () => html`
-      <p>Il mese di tutti: dove c'è movimento e su quali giorni.</p>
+      <p>Dove c'è movimento, giorno per giorno.</p>
 
-      <h3>Parte dal sabato</h3>
-      <p>
-        La settimana va da sabato a venerdì, e uno scambio di giornate deve
-        restare dentro la stessa settimana. Così ogni riga <em>è</em> una
-        settimana: due giorni scambiabili stanno sempre sulla stessa riga.
-      </p>
-
-      <h3>Le barre sotto i giorni</h3>
+      <h3>Le barre sotto i numeri</h3>
       <ul class="elenco piccolo">
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
           rossa: qualcuno vuole liberarsi;</li>
@@ -68,18 +128,16 @@ export const GUIDE = {
       </ul>
 
       <h3>Aprendo un giorno</h3>
-      <p>
-        Due blocchi, <strong>Cercano</strong> e <strong>Offrono</strong>. Ogni
-        richiesta è scritta dal punto di vista di quel giorno.
-      </p>
+      <p>Due blocchi: <strong>Cercano</strong> e <strong>Offrono</strong>.</p>
       <p class="esempio">
-        Marco vuole libero sabato 12 e offre lunedì 14 o mercoledì 16. Sul 12
-        leggi «vuole libero questo giorno», sul 16 «offre di lavorare questo
-        giorno». Stessa richiesta, due facce.
+        Marco vuole libero sabato 12 e offre lunedì 14. Sul 12 leggi «vuole
+        libero questo giorno», sul 14 «offre di lavorare questo giorno».
       </p>
+
       <p class="testo-tenue">
-        «Al momento non puoi cambiare» in rosso vuol dire che con i tuoi turni
-        non c'è modo di rispondere. Aprendo la richiesta scopri perché.
+        La settimana parte dal sabato, come i turni: due giorni scambiabili
+        stanno sempre sulla stessa riga. «Al momento non puoi cambiare» in rosso
+        vuol dire che con i tuoi turni non c'è modo di rispondere.
       </p>`,
   },
 
@@ -87,28 +145,19 @@ export const GUIDE = {
     titolo: 'La Bacheca',
     icona: '📋',
     corpo: () => html`
-      <p>Tutte le richieste aperte. Le prioritarie in cima, poi le più recenti.</p>
+      <p>Tutte le richieste aperte. Le prioritarie in cima.</p>
 
-      <h3>🕐 Cambio orario</h3>
-      <p>
-        Stesso giorno, orario diverso. Servono due persone <em>entrambe</em> in
-        turno: nessuno deve essere libero. È il caso più frequente.
-      </p>
-      <p class="esempio">«Lascio mercoledì 12:00–21:00, cerco un turno che finisca prima.»</p>
+      <p>Ogni riga dice chi è e cosa cerca. Toccala per orari, note e proposte.</p>
 
-      <h3>📅 Cambio OFF</h3>
-      <p>
-        Due giornate che si scambiano davvero: vuoi libero un giorno in cui
-        lavori e ne offri uno in cui sei a casa.
-      </p>
-      <p class="esempio">
-        «Cerco OFF sabato 12, offro lunedì 14.» Chi risponde deve essere
-        <strong>libero sabato</strong> e <strong>lavorare lunedì</strong>. Dopo,
-        ciascuno ha il turno dell'altro.
-      </p>
+      <ul class="elenco piccolo">
+        <li><strong>🕐 orario</strong> — stesso giorno, orario diverso;</li>
+        <li><strong>📅 OFF</strong> — una giornata intera scambiata con un'altra.</li>
+      </ul>
 
       <p class="testo-tenue">
-        Ogni richiesta è due righe. Toccandola si aprono orari, note e proposte.
+        I filtri in alto servono quando le richieste sono tante: se devi
+        liberarti un giorno guardi gli OFF, se devi spostare un orario guardi
+        gli orari.
       </p>`,
   },
 
@@ -118,43 +167,31 @@ export const GUIDE = {
     corpo: () => html`
       <h3>Le tue due settimane</h3>
       <p>
-        Sabato → venerdì, per due settimane. In ogni casella il tuo turno e, se
-        c'è, quanto funziona il miglior scambio che potresti risolvere quel
-        giorno.
+        Il tuo turno giorno per giorno. Tocca un giorno per correggerlo o per
+        vedere chi puoi aiutare.
       </p>
       <p class="testo-tenue">
         L'interruttore «disponibile a scambiare» ti fa comparire fra i match di
-        chi cerca, anche senza pubblicare niente. Senza un segnale non compari
-        mai: nessuno viene proposto a sua insaputa.
+        chi cerca, anche senza pubblicare niente.
       </p>
 
       <h3>I tuoi turni</h3>
-      <p>
-        Da un calendario .ics, oppure a mano giorno per giorno. Il calendario
-        resta sul tuo dispositivo.
-      </p>
+      <p>Dal calendario dei turni, o a mano. Restano su questo telefono.</p>
 
       <h3>Preferenze</h3>
       <ul class="elenco piccolo">
-        <li><strong>Da evitare</strong>: quei turni spariscono dai risultati.</li>
+        <li><strong>Da evitare</strong>: quei turni non ti vengono proposti;</li>
         <li><strong>Preferiti</strong>: salgono di qualche punto, nient'altro.</li>
       </ul>
 
-      <h3>Contratto</h3>
+      <h3>Le ore</h3>
       <p>
-        Puoi scambiare con chiunque, anche con l'altro contratto. Le tue ore non
-        cambiano mai: <strong>chi prende un turno fa le ore di quello che
-        lascia</strong>.
+        <strong>Chi prende un turno fa le ore di quello che lascia.</strong> Puoi
+        scambiare con chiunque, le tue ore non cambiano.
       </p>
       <p class="esempio">
         Giulia quel giorno farebbe 5 ore e prende un 12:00–21:00. Il turno
-        chiude, quindi esce all'ora di chiusura: farà <strong>16:00–21:00</strong>.
-        Se il turno fosse stato 09:00–18:00, che apre, sarebbe entrata alle 9:
-        <strong>09:00–14:00</strong>.
-      </p>
-      <p class="testo-tenue">
-        Le ore del contratto sono al netto della pausa: cinque turni da nove ore
-        fanno quaranta ore.
+        chiude, quindi esce all'ora di chiusura: farà 16:00–21:00.
       </p>`,
   },
 };

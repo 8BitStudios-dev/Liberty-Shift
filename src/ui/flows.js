@@ -113,6 +113,7 @@ function testataRapido() {
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
       <h1>⚡ Cambio rapido</h1>
+      <button class="icon-btn" data-act="guida" data-sezione="rapido" title="Come funziona">?</button>
     </header>`;
 }
 
@@ -123,6 +124,7 @@ export function scelta() {
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
       <h1>Nuovo cambio</h1>
+      <button class="icon-btn" data-act="guida" data-sezione="nuovo" title="Come funziona">?</button>
     </header>
     <p class="occhiello">Che tipo di cambio ti serve?</p>
 
@@ -369,6 +371,7 @@ function barra(titolo, passo) {
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/home">✕</button>
       <h1>${titolo}</h1>
+      <button class="icon-btn" data-act="guida" data-sezione="nuovo" title="Come funziona">?</button>
       <span class="passo">${passo}/3</span>
     </header>
     <div class="progresso"><i style="width:${(passo / 3) * 100}%"></i></div>`;
@@ -711,6 +714,7 @@ export function aiuta() {
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
       <h1>Aiuta un collega</h1>
+      <button class="icon-btn" data-act="guida" data-sezione="aiuta" title="Come funziona">?</button>
     </header>
     <p class="occhiello">
       Richieste aperte che i tuoi turni possono risolvere davvero. Le altre non
