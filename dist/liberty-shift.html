@@ -16,6 +16,9 @@
   --accento-tenue: #e8f0ff;
   --rosso: #e0454b;
   --verde: #1f9d55;
+  /* La disponibilità dichiarata: si vede senza gridare, e non si confonde
+     col verde di "offre" nelle barre del calendario. */
+  --arancio: #d97008;
   --giallo: #d99b0a;
   --oro: #c8890a;
   --raggio: 16px;
@@ -37,6 +40,7 @@
     --accento-tenue: #16233c;
     --rosso: #ff6b70;
     --verde: #45c281;
+    --arancio: #ffa64d;
     --giallo: #e8b53c;
     --oro: #e8b53c;
     --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
@@ -54,6 +58,7 @@
   --accento-tenue: #16233c;
   --rosso: #ff6b70;
   --verde: #45c281;
+  --arancio: #ffa64d;
   --giallo: #e8b53c;
   --oro: #e8b53c;
   --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
@@ -241,8 +246,15 @@ p { margin: 8px 0; }
 .tile > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
 .tile em { font-style: normal; color: var(--testo-tenue); font-size: 13px; }
 .tile-icona { font-size: 24px; }
-.tile.cambio-rapido { background: linear-gradient(135deg, var(--accento) 0%, #6b46ff 100%); color: #fff; border: 0; }
-.tile.cambio-rapido em, .tile.cambio-rapido .chevron { color: rgba(255, 255, 255, .8); }
+/* Il Cambio rapido resta la prima cosa che si vede, ma senza gridare: era un
+   rettangolo pieno di colore in cima a una schermata per il resto chiara, e
+   attirava l'occhio anche quando si stava cercando altro. */
+.tile.cambio-rapido {
+  background: var(--accento-tenue);
+  border: 1px solid color-mix(in srgb, var(--accento) 35%, transparent);
+}
+.tile.cambio-rapido strong { color: var(--accento); }
+.tile.cambio-rapido .tile-icona { opacity: .9; }
 .tile.scelta { padding: 18px; }
 .tile.scelta.rosso { border-left: 4px solid var(--rosso); }
 .tile.scelta.verde { border-left: 4px solid var(--verde); }
@@ -490,29 +502,45 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .accordo { background: color-mix(in srgb, var(--verde) 12%, transparent); border-radius: 12px; padding: 12px; margin-top: 10px; }
 .accettazioni { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 
-/* ------------------------------------------------ le tue due settimane */
+/* ----------------------------------------------------------- il tuo mese */
 
-.settimana-due { margin-bottom: 16px; }
-.settimana-due h3 { margin: 0 0 6px; font-size: 13px; color: var(--testo-tenue); font-weight: 600; }
-.griglia-due { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+/* Le iniziali dei giorni si scrivono una volta sola in cima invece che in
+   ogni cella: su cinque settimane erano trentacinque ripetizioni. */
+.griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.griglia-mese.intestazione { margin-bottom: 4px; }
+.dow-fisso { font-size: 10px; color: var(--testo-tenue); text-align: center; }
 
-.giorno-due {
-  appearance: none; border: 1px solid var(--bordo); border-radius: 10px;
+.settimana-mese { margin-bottom: 10px; }
+.riga-settimana { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.riga-settimana h3 { margin: 0 0 4px; font-size: 12px; color: var(--testo-tenue); font-weight: 600; }
+
+/* Le ore della settimana contro il contratto: senza spunta quando non
+   tornano, così l'occhio va alle settimane da sistemare. */
+.spia-ore {
+  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--testo-tenue);
+}
+.spia-ore.quadra { color: var(--verde); }
+
+.giorno-mese {
+  appearance: none; border: 1px solid var(--bordo); border-radius: 8px;
   background: var(--superficie); color: inherit; font: inherit; cursor: pointer;
-  min-height: 72px; padding: 6px 2px;
-  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  min-height: 50px; padding: 4px 1px;
+  display: flex; flex-direction: column; align-items: center; gap: 0;
 }
-.giorno-due .dow { font-size: 10px; color: var(--testo-tenue); }
-.giorno-due .numero { font-size: 15px; font-weight: 700; line-height: 1.1; }
-.giorno-due .turno { font-size: 10px; color: var(--testo-tenue); }
-.giorno-due .quota {
-  margin-top: auto; font-size: 10px; font-weight: 700;
-  color: #fff; background: var(--accento); border-radius: 999px; padding: 1px 5px;
+.giorno-mese .numero { font-size: 13px; font-weight: 700; line-height: 1.15; }
+.giorno-mese .turno { font-size: 9px; color: var(--testo-tenue); line-height: 1.3; }
+.giorno-mese .quota {
+  margin-top: auto; font-size: 9px; font-weight: 700;
+  color: #fff; background: var(--accento); border-radius: 999px; padding: 0 4px;
 }
-.giorno-due .quota.vuota { background: none; min-height: 14px; }
-.giorno-due.oggi { border-color: var(--accento); background: var(--accento-tenue); }
-.giorno-due.passato { opacity: .45; }
-.giorno-due.disponibile { box-shadow: inset 0 -3px 0 var(--verde); }
+.giorno-mese .quota.vuota { background: none; min-height: 12px; }
+.giorno-mese.oggi { border-color: var(--accento); background: var(--accento-tenue); }
+.giorno-mese.passato { opacity: .45; }
+/* I giorni delle settimane a cavallo del mese: ci sono perché la settimana
+   Apple non si taglia a metà, ma non sono questo mese. */
+.giorno-mese.fuori { opacity: .35; }
+.giorno-mese.disponibile { box-shadow: inset 0 -3px 0 var(--arancio); }
 
 .giorno-profilo .riga-turno {
   border: 1px solid var(--bordo); border-radius: 12px; background: var(--superficie);
@@ -4630,15 +4658,10 @@ function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>Le tue due settimane</h2>
+      <h2>Il tuo mese</h2>
+      ${raw(ilTuoMese())}
       <p class="testo-tenue">
-        Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
-      </p>
-      ${raw(dueSettimane())}
-      <p class="testo-tenue">
-        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore
-        pagate, il contratto ne prevede ${me.oreSettimanali}. La pausa pranzo non
-        è conteggiata: cinque turni da nove ore fanno quaranta ore.
+        Tocca un giorno per dare disponibilità al cambio e vedere chi puoi aiutare.
       </p>
     </section>
 
@@ -4666,9 +4689,9 @@ function profilo() {
     <section class="sezione">
       <h2>Demo</h2>
       <p class="testo-tenue">
-        In questa versione di prova il server non è ancora collegato: tutto sta
-        nel browser e le persone sono inventate. Cambia persona per vedere lo
-        stesso scambio dall'altro lato.
+        Le persone inventate servono a far vedere l'app quando la bacheca vera
+        è ancora vuota. Cambia persona per guardare lo stesso scambio
+        dall'altro lato; da Impostazioni si nascondono tutte in un tocco.
       </p>
       <select data-act="cambia-utente" class="select">
         ${store.state.users.map((u) => raw(
@@ -4873,7 +4896,7 @@ function sezioneTurni() {
       <span class="tile-icona">✍️</span>
       <span>
         <strong>Inserisci manualmente i turni</strong>
-        <em>Giorno per giorno, dal calendario delle due settimane qui sotto</em>
+        <em>Giorno per giorno, dal calendario del mese qui sotto</em>
       </span>
       <span class="chevron">›</span>
     </button>`;
@@ -4976,15 +4999,26 @@ function listaRingraziamenti() {
 }
 
 /**
- * Le prossime due settimane Apple, sabato → venerdì. È il posto unico dove
- * si inseriscono i turni e si scopre chi ha bisogno di te: prima erano tre
- * schermate diverse, e la disponibilità era una griglia di ✅ che nessuno
- * avrebbe aggiornato ogni settimana.
+ * Il mese, settimana per settimana.
+ *
+ * È il posto unico dove si inseriscono i turni e si scopre chi ha bisogno di
+ * te: prima erano tre schermate diverse, e la disponibilità era una griglia
+ * di ✅ che nessuno avrebbe aggiornato ogni settimana.
+ *
+ * Due settimane bastavano a inserire i turni, non a farsi un'idea: i turni
+ * escono a blocchi e la domanda vera è "come sto messo questo mese". La
+ * divisione resta quella Apple, dal sabato al venerdì, perché è quella con
+ * cui si conta il monte ore e quella che si vede sul piano turni.
+ *
+ * Le settimane sono quelle che toccano il mese di oggi, quindi la prima
+ * comincia a fine mese scorso e l'ultima finisce nel prossimo: tagliarle a
+ * metà per far quadrare il bordo del mese avrebbe spezzato l'unica riga su
+ * cui il monte ore ha senso.
  */
-function dueSettimane() {
+function ilTuoMese() {
   const me = store.me;
   const oggi = todayISO();
-  const prima = appleWeekKey(oggi);
+  const mese = oggi.slice(0, 7);
 
   // Una volta sola per tutta la griglia: il motore è lo stesso che usano i match.
   const opportunita = opportunitaPerMe(me.id, store.state);
@@ -4995,29 +5029,62 @@ function dueSettimane() {
     }
   }
 
-  return [prima, addDays(prima, 7)].map((wk) => {
+  const settimane = [];
+  for (let wk = appleWeekKey(`${mese}-01`); wk.slice(0, 7) <= mese; wk = addDays(wk, 7)) {
+    settimane.push(wk);
+    if (settimane.length > 6) break;
+  }
+
+  const intestazione = Array.from({ length: 7 }, (_, i) => html`
+    <span class="dow-fisso">${GIORNI[weekday(addDays(settimane[0], i))]}</span>`).join('');
+
+  const righe = settimane.map((wk) => {
     const celle = Array.from({ length: 7 }, (_, i) => {
       const data = addDays(wk, i);
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
-      const mie = perGiorno.get(data) || [];
-      const migliore = mie[0];
-      const disponibile = disponibileIl(me, data);
+      const migliore = (perGiorno.get(data) || [])[0];
       return html`
-        <button class="giorno-due ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''} ${disponibile ? 'disponibile' : ''}"
+        <button class="giorno-mese ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''}
+                       ${disponibileIl(me, data) ? 'disponibile' : ''}
+                       ${data.slice(0, 7) === mese ? '' : 'fuori'}"
                 data-act="giorno-profilo" data-data="${data}">
-          <span class="dow">${GIORNI[weekday(data)]}</span>
           <span class="numero">${toDate(data).getUTCDate()}</span>
-          <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '—'}</span>
+          <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '·'}</span>
           ${raw(migliore ? `<span class="quota">${migliore.match.score}%</span>` : '<span class="quota vuota"></span>')}
         </button>`;
     }).join('');
 
     return html`
-      <div class="settimana-due">
-        <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
-        <div class="griglia-due">${raw(celle)}</div>
+      <div class="settimana-mese">
+        <div class="riga-settimana">
+          <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
+          ${raw(spiaOre(me, wk))}
+        </div>
+        <div class="griglia-mese">${raw(celle)}</div>
       </div>`;
   }).join('');
+
+  return html`
+    <div class="griglia-mese intestazione">${raw(intestazione)}</div>
+    ${raw(righe)}`;
+}
+
+/**
+ * Le ore della settimana contro quelle del contratto, in due cifre.
+ *
+ * Al posto della frase che spiegava la pausa pranzo: quella spiegazione la
+ * si legge una volta e poi ingombra. Qui resta il solo dato che si guarda
+ * davvero — tornano o non tornano — e il segno di spunta compare solo quando
+ * tornano, così l'occhio cerca le settimane senza spunta.
+ */
+function spiaOre(me, settimana) {
+  const fatte = oreSettimana(me.id, settimana, store.state.shifts);
+  const attese = me.oreSettimanali;
+  const quadra = fatte === attese;
+  return html`
+    <span class="spia-ore ${quadra ? 'quadra' : ''}" title="Ore pagate, pausa esclusa">
+      ${raw(quadra ? '✓ ' : '')}${fatte}/${attese}
+    </span>`;
 }
 
 /** Il dettaglio di un giorno: il tuo turno, e chi puoi aiutare. */
@@ -5059,7 +5126,7 @@ function dettaglioGiornoProfilo(data) {
     </div>`;
 }
 
-return { home, calendario, dettaglioGiorno, bacheca, profilo, impostazioni, listaRingraziamenti, dueSettimane, dettaglioGiornoProfilo };
+return { home, calendario, dettaglioGiorno, bacheca, profilo, impostazioni, listaRingraziamenti, ilTuoMese, dettaglioGiornoProfilo };
 })();
 
 // ---- src/ui/flows.js
@@ -5956,7 +6023,7 @@ const M_guida = (() => {
 const { html, raw } = M_dom;
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-const VERSIONE_GUIDA = '5';
+const VERSIONE_GUIDA = '6';
 
 const GUIDE = {
   home: {
@@ -6112,14 +6179,19 @@ const GUIDE = {
     titolo: 'Il Profilo',
     icona: '👤',
     corpo: () => html`
-      <h3>Le tue due settimane</h3>
+      <h3>Il tuo mese</h3>
       <p>
-        Il tuo turno giorno per giorno. Tocca un giorno per correggerlo o per
-        vedere chi puoi aiutare.
+        Il tuo turno giorno per giorno. Tocca un giorno per correggerlo, per
+        darti disponibile al cambio o per vedere chi puoi aiutare.
       </p>
       <p class="testo-tenue">
-        L'interruttore «disponibile a scambiare» ti fa comparire fra i match di
-        chi cerca, anche senza pubblicare niente.
+        Il bordo arancione sotto una giornata vuol dire che ti sei dichiarato
+        disponibile: da lì compari fra i match di chi cerca, anche senza aver
+        pubblicato niente.
+      </p>
+      <p class="testo-tenue">
+        Accanto a ogni settimana ci sono le ore che hai inserito e quelle del
+        contratto. La spunta compare solo quando tornano.
       </p>
 
       <h3>I tuoi turni</h3>

@@ -8,7 +8,7 @@ sopra. Routing a hash, quindi ogni schermata ha un indirizzo condivisibile.
 | `#/home` | panoramica e azioni |
 | `#/calendario?mese=YYYY-MM` | mese, con dettaglio giorno in sheet |
 | `#/bacheca?filtro=TUTTI\|CEDO\|CERCO\|OFF` | richieste degli altri |
-| `#/profilo` | le tue due settimane, preferenze, contratto |
+| `#/profilo` | il tuo mese, preferenze, contratto |
 | `#/rapido` | "Cosa vuoi fare?" |
 | `#/nuovo` | wizard in 3 passi |
 | `#/match?id=` | risultati del matching |
@@ -170,7 +170,7 @@ Profilo, in una sezione con due strade in ordine di comodità:
 
    Incollare il contenuto continua a funzionare, per chi ce l'ha già.
 2. **Inserisci manualmente i turni**, che apre il giorno di oggi nel calendario
-   delle due settimane, cioè lo stesso posto dove si correggono.
+   del mese, cioè lo stesso posto dove si correggono.
 
 ### Gli orari che ricorrono davvero
 Sopra i due campi dell'orario c'è una riga di scorciatoie con le partenze
@@ -252,7 +252,7 @@ I riquadri aperti restano aperti dopo una modifica. È stato della finestra, non
 dei dati, e vive in `riquadriAperti` dentro `dom.js`.
 
 ## L'ordine del Profilo
-Dall'alto: le proposte ricevute, poi **le tue due settimane** — è la cosa che si
+Dall'alto: le proposte ricevute, poi **il tuo mese** — è la cosa che si
 guarda ogni giorno, e stava sotto due sezioni di configurazione — poi i turni,
 le preferenze, la priorità, il contratto.
 
@@ -260,12 +260,28 @@ I ringraziamenti non sono più una sezione a metà pagina, che senza
 ringraziamenti occupava spazio per dire che non ce n'erano: sono un contatore in
 alto a destra, 💛 con il numero, e la lista si apre toccandolo.
 
-## Il Profilo: le tue due settimane
+## Il Profilo: il tuo mese
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
 ✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.
-Ora sono una griglia sola, sabato → venerdì per due settimane, dove ogni cella
-mostra il tuo turno di quel giorno e, se c'è, la **percentuale del miglior
-cambio che potresti risolvere**.
+Ora sono una griglia sola, dove ogni cella mostra il tuo turno di quel giorno
+e, se c'è, la **percentuale del miglior cambio che potresti risolvere**.
+
+Le settimane sono cinque e non due: due bastavano a inserire i turni, non a
+farsi un'idea, e la domanda vera è "come sto messo questo mese". La divisione
+resta quella Apple, dal sabato al venerdì, perché è quella con cui si conta il
+monte ore. Le righe a cavallo del mese restano intere, con i giorni dell'altro
+mese sbiaditi: tagliarle per far quadrare il bordo avrebbe spezzato l'unica
+riga su cui il monte ore ha senso.
+
+Accanto a ogni settimana ci sono le ore inserite contro quelle del contratto,
+`40/40`, con la spunta solo quando tornano. Ha preso il posto della frase che
+spiegava la pausa pranzo: quella la si legge una volta e poi ingombra, mentre
+il dato che si guarda davvero è se le ore quadrano. Senza spunta l'occhio va da
+solo alle settimane da sistemare.
+
+Il bordo sotto una giornata è **arancione** e non verde: il verde nelle barre
+del calendario vuol già dire "offre", e due verdi con due significati diversi
+nella stessa app sono un verde di troppo.
 
 Toccando un giorno si apre tutto quello che riguarda quella data:
 

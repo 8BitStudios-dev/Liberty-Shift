@@ -9,7 +9,7 @@
 import { html, raw } from './dom.js';
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
-export const VERSIONE_GUIDA = '5';
+export const VERSIONE_GUIDA = '6';
 
 export const GUIDE = {
   home: {
@@ -165,14 +165,19 @@ export const GUIDE = {
     titolo: 'Il Profilo',
     icona: '👤',
     corpo: () => html`
-      <h3>Le tue due settimane</h3>
+      <h3>Il tuo mese</h3>
       <p>
-        Il tuo turno giorno per giorno. Tocca un giorno per correggerlo o per
-        vedere chi puoi aiutare.
+        Il tuo turno giorno per giorno. Tocca un giorno per correggerlo, per
+        darti disponibile al cambio o per vedere chi puoi aiutare.
       </p>
       <p class="testo-tenue">
-        L'interruttore «disponibile a scambiare» ti fa comparire fra i match di
-        chi cerca, anche senza pubblicare niente.
+        Il bordo arancione sotto una giornata vuol dire che ti sei dichiarato
+        disponibile: da lì compari fra i match di chi cerca, anche senza aver
+        pubblicato niente.
+      </p>
+      <p class="testo-tenue">
+        Accanto a ogni settimana ci sono le ore che hai inserito e quelle del
+        contratto. La spunta compare solo quando tornano.
       </p>
 
       <h3>I tuoi turni</h3>

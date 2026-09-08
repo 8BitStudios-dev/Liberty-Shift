@@ -284,15 +284,10 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>Le tue due settimane</h2>
+      <h2>Il tuo mese</h2>
+      ${raw(ilTuoMese())}
       <p class="testo-tenue">
-        Tocca un giorno per inserire il turno e vedere chi, quel giorno, sta cercando un cambio che tu puoi risolvere.
-      </p>
-      ${raw(dueSettimane())}
-      <p class="testo-tenue">
-        Questa settimana sei a ${oreSettimana(me.id, settimana, store.state.shifts)} ore
-        pagate, il contratto ne prevede ${me.oreSettimanali}. La pausa pranzo non
-        è conteggiata: cinque turni da nove ore fanno quaranta ore.
+        Tocca un giorno per dare disponibilità al cambio e vedere chi puoi aiutare.
       </p>
     </section>
 
@@ -320,9 +315,9 @@ export function profilo() {
     <section class="sezione">
       <h2>Demo</h2>
       <p class="testo-tenue">
-        In questa versione di prova il server non è ancora collegato: tutto sta
-        nel browser e le persone sono inventate. Cambia persona per vedere lo
-        stesso scambio dall'altro lato.
+        Le persone inventate servono a far vedere l'app quando la bacheca vera
+        è ancora vuota. Cambia persona per guardare lo stesso scambio
+        dall'altro lato; da Impostazioni si nascondono tutte in un tocco.
       </p>
       <select data-act="cambia-utente" class="select">
         ${store.state.users.map((u) => raw(
@@ -527,7 +522,7 @@ function sezioneTurni() {
       <span class="tile-icona">✍️</span>
       <span>
         <strong>Inserisci manualmente i turni</strong>
-        <em>Giorno per giorno, dal calendario delle due settimane qui sotto</em>
+        <em>Giorno per giorno, dal calendario del mese qui sotto</em>
       </span>
       <span class="chevron">›</span>
     </button>`;
@@ -630,15 +625,26 @@ export function listaRingraziamenti() {
 }
 
 /**
- * Le prossime due settimane Apple, sabato → venerdì. È il posto unico dove
- * si inseriscono i turni e si scopre chi ha bisogno di te: prima erano tre
- * schermate diverse, e la disponibilità era una griglia di ✅ che nessuno
- * avrebbe aggiornato ogni settimana.
+ * Il mese, settimana per settimana.
+ *
+ * È il posto unico dove si inseriscono i turni e si scopre chi ha bisogno di
+ * te: prima erano tre schermate diverse, e la disponibilità era una griglia
+ * di ✅ che nessuno avrebbe aggiornato ogni settimana.
+ *
+ * Due settimane bastavano a inserire i turni, non a farsi un'idea: i turni
+ * escono a blocchi e la domanda vera è "come sto messo questo mese". La
+ * divisione resta quella Apple, dal sabato al venerdì, perché è quella con
+ * cui si conta il monte ore e quella che si vede sul piano turni.
+ *
+ * Le settimane sono quelle che toccano il mese di oggi, quindi la prima
+ * comincia a fine mese scorso e l'ultima finisce nel prossimo: tagliarle a
+ * metà per far quadrare il bordo del mese avrebbe spezzato l'unica riga su
+ * cui il monte ore ha senso.
  */
-export function dueSettimane() {
+export function ilTuoMese() {
   const me = store.me;
   const oggi = todayISO();
-  const prima = appleWeekKey(oggi);
+  const mese = oggi.slice(0, 7);
 
   // Una volta sola per tutta la griglia: il motore è lo stesso che usano i match.
   const opportunita = opportunitaPerMe(me.id, store.state);
@@ -649,29 +655,62 @@ export function dueSettimane() {
     }
   }
 
-  return [prima, addDays(prima, 7)].map((wk) => {
+  const settimane = [];
+  for (let wk = appleWeekKey(`${mese}-01`); wk.slice(0, 7) <= mese; wk = addDays(wk, 7)) {
+    settimane.push(wk);
+    if (settimane.length > 6) break;
+  }
+
+  const intestazione = Array.from({ length: 7 }, (_, i) => html`
+    <span class="dow-fisso">${GIORNI[weekday(addDays(settimane[0], i))]}</span>`).join('');
+
+  const righe = settimane.map((wk) => {
     const celle = Array.from({ length: 7 }, (_, i) => {
       const data = addDays(wk, i);
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
-      const mie = perGiorno.get(data) || [];
-      const migliore = mie[0];
-      const disponibile = disponibileIl(me, data);
+      const migliore = (perGiorno.get(data) || [])[0];
       return html`
-        <button class="giorno-due ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''} ${disponibile ? 'disponibile' : ''}"
+        <button class="giorno-mese ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''}
+                       ${disponibileIl(me, data) ? 'disponibile' : ''}
+                       ${data.slice(0, 7) === mese ? '' : 'fuori'}"
                 data-act="giorno-profilo" data-data="${data}">
-          <span class="dow">${GIORNI[weekday(data)]}</span>
           <span class="numero">${toDate(data).getUTCDate()}</span>
-          <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '—'}</span>
+          <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '·'}</span>
           ${raw(migliore ? `<span class="quota">${migliore.match.score}%</span>` : '<span class="quota vuota"></span>')}
         </button>`;
     }).join('');
 
     return html`
-      <div class="settimana-due">
-        <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
-        <div class="griglia-due">${raw(celle)}</div>
+      <div class="settimana-mese">
+        <div class="riga-settimana">
+          <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>
+          ${raw(spiaOre(me, wk))}
+        </div>
+        <div class="griglia-mese">${raw(celle)}</div>
       </div>`;
   }).join('');
+
+  return html`
+    <div class="griglia-mese intestazione">${raw(intestazione)}</div>
+    ${raw(righe)}`;
+}
+
+/**
+ * Le ore della settimana contro quelle del contratto, in due cifre.
+ *
+ * Al posto della frase che spiegava la pausa pranzo: quella spiegazione la
+ * si legge una volta e poi ingombra. Qui resta il solo dato che si guarda
+ * davvero — tornano o non tornano — e il segno di spunta compare solo quando
+ * tornano, così l'occhio cerca le settimane senza spunta.
+ */
+function spiaOre(me, settimana) {
+  const fatte = oreSettimana(me.id, settimana, store.state.shifts);
+  const attese = me.oreSettimanali;
+  const quadra = fatte === attese;
+  return html`
+    <span class="spia-ore ${quadra ? 'quadra' : ''}" title="Ore pagate, pausa esclusa">
+      ${raw(quadra ? '✓ ' : '')}${fatte}/${attese}
+    </span>`;
 }
 
 /** Il dettaglio di un giorno: il tuo turno, e chi puoi aiutare. */
