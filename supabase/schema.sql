@@ -323,16 +323,22 @@ create policy "ognuno modifica il proprio profilo"
 -- `admin`, `super_admin` e `attivo` comprese: da sola non impedirebbe un
 -- giorno a un client di promuoversi da solo, o di riattivarsi dopo essere
 -- stato disattivato. Il trigger chiude quel varco riscrivendo le tre colonne
--- al valore che avevano prima di ogni update fatto da un ruolo che non sia
--- `service_role` (la dashboard e le funzioni server-side, cioè
--- `Amministrazione`, lo sono; il client con la chiave `anon`/`authenticated`
--- non lo è mai).
+-- al valore che avevano prima di ogni update fatto da chi arriva con la
+-- chiave `anon`/`authenticated` (cioè il client dell'app, sempre autenticato
+-- come `authenticated` anche quando la persona è iscritta).
+--
+-- **Non** `auth.role() is distinct from 'service_role'`: da SQL Editor
+-- (o dalla dashboard) `auth.role()` è `null`, perché non c'è nessun JWT di
+-- mezzo — e `null is distinct from 'service_role'` è vero, quindi quella
+-- versione bloccava anche l'unico posto da cui si dovrebbe poter scrivere
+-- queste colonne a mano. La versione giusta guarda solo i due ruoli da
+-- bloccare davvero, e lascia passare tutto il resto (SQL Editor compreso).
 drop function if exists public.blocca_auto_admin() cascade;
 
 create or replace function public.blocca_scritture_privilegiate() returns trigger
 language plpgsql as $$
 begin
-  if auth.role() is distinct from 'service_role' then
+  if auth.role() in ('anon', 'authenticated') then
     new.admin := old.admin;
     new.super_admin := old.super_admin;
     new.attivo := old.attivo;

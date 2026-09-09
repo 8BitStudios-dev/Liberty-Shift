@@ -146,10 +146,21 @@ SuperAdmin, vedi sotto). Il motivo non è solo di comodo: la policy
 `"ognuno modifica il proprio profilo"` lascia scrivere qualsiasi colonna
 della propria riga, `admin` compresa, quindi da sola non impedirebbe a un
 domani client di promuoversi da solo. A chiuderlo davvero è il trigger
-`blocca_scritture_privilegiate`: prima di ogni update su `profili`, se chi
-scrive non è `service_role` (cioè non è la dashboard o una funzione
-server-side), le colonne `admin`, `super_admin` e `attivo` tornano al valore
-che avevano prima, qualunque cosa il client abbia provato a scriverci.
+`blocca_scritture_privilegiate`: quando chi scrive arriva con la chiave
+`anon`/`authenticated` (cioè il client dell'app), le colonne `admin`,
+`super_admin` e `attivo` tornano al valore che avevano prima, qualunque cosa
+il client abbia provato a scriverci. Da SQL Editor o dalla funzione
+`Amministrazione` (che scrive con `service_role`) il trigger non tocca
+niente: sono gli unici due posti da cui quelle colonne si scrivono davvero.
+
+**Una versione precedente controllava il ruolo sbagliato** (`auth.role() is
+distinct from 'service_role'` invece di `auth.role() in ('anon',
+'authenticated')`): da SQL Editor `auth.role()` è `null`, perché non c'è
+nessun JWT di mezzo, e `null is distinct from 'service_role'` è vero — quindi
+bloccava anche l'unico posto da cui si dovrebbe poter scrivere queste colonne
+a mano. Un `update ... set super_admin = true` tornava "0 rows updated" senza
+nessun errore a spiegare perché. Se hai rilanciato lo schema prima di questo
+fix e una promozione non ha avuto effetto, riprova adesso.
 
 **Le policy che aprono le due porte che servono davvero:**
 
