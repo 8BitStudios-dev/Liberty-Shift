@@ -282,13 +282,6 @@ export function profilo() {
       <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}${me.superAdmin ? ' · SuperAdmin' : ''}</p>
     </header>
 
-    ${raw(me.admin || me.superAdmin ? `
-    <section class="sezione">
-      <h2>Amministrazione</h2>
-      ${me.admin ? '<button class="btn secondario largo" data-act="vai" data-to="#/statistiche">🛡️ Statistiche</button>' : ''}
-      ${me.superAdmin ? '<button class="btn secondario largo" data-act="vai" data-to="#/iscritti">👑 Gestisci iscritti</button>' : ''}
-    </section>` : '')}
-
     <section class="sezione">
       ${raw(rigaInAlto())}
     </section>
@@ -336,7 +329,16 @@ export function profilo() {
       </select>
       <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
       <button class="btn pericolo largo" data-act="esci">Esci</button>
-    </section>`;
+    </section>
+
+    ${raw(me.admin || me.superAdmin ? `
+    <section class="sezione">
+      <details class="riquadro">
+        <summary><span>🛡️ Amministrazione</span></summary>
+        ${me.admin ? '<button class="btn secondario largo" data-act="vai" data-to="#/statistiche">Statistiche</button>' : ''}
+        ${me.superAdmin ? '<button class="btn secondario largo" data-act="vai" data-to="#/iscritti">Gestisci iscritti</button>' : ''}
+      </details>
+    </section>` : '')}`;
 }
 
 /**
