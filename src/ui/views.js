@@ -282,6 +282,12 @@ export function profilo() {
       <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
     </header>
 
+    ${raw(me.admin ? `
+    <section class="sezione">
+      <h2>Amministrazione</h2>
+      <button class="btn secondario largo" data-act="vai" data-to="#/statistiche">🛡️ Statistiche</button>
+    </section>` : '')}
+
     <section class="sezione">
       ${raw(rigaInAlto())}
     </section>

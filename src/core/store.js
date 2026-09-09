@@ -25,6 +25,38 @@ import {
 // turni e le richieste già inseriti su un telefono sparirebbero.
 const CHIAVE = 'cambio-turno:v1';
 
+/** Motore comune di `adminChiudiRichiesta`/`adminRimuoviRichiesta`: cambia solo lo stato finale. */
+function azioneAdmin(store, id, motivo, status) {
+  if (!store.me.admin) return { errori: ['Solo un admin può farlo.'] };
+  const testo = (motivo || '').trim();
+  if (!testo) return { errori: ['Serve un motivo: chi ha pubblicato la richiesta deve saperlo.'] };
+
+  const r = store.request(id);
+  if (!r) return { errori: ['Richiesta non trovata.'] };
+
+  const me = store.state.currentUserId;
+  r.status = status;
+  r.chiusaIl = new Date().toISOString();
+  r.chiusaDaAdmin = me;
+  r.motivoAdmin = testo;
+  store.state.proposals
+    .filter((p) => p.requestId === id && p.status !== 'RIFIUTATA')
+    .forEach((p) => {
+      p.status = 'RIFIUTATA';
+      store.rispecchiaProposta(p, { stato: 'RIFIUTATA' });
+    });
+  store.rispecchiaRichiesta(r);
+
+  if (r.userId !== me) {
+    const verbo = status === STATUS.RIMOSSA ? 'rimosso' : 'chiuso';
+    store.notifica(r.userId, `${store.user(me).nome} (admin) ha ${verbo} la tua richiesta: "${testo}"`);
+  }
+
+  store.commit();
+  store.spingi();
+  return { ok: true };
+}
+
 export const store = {
   state: null,
   listeners: new Set(),
@@ -312,7 +344,12 @@ export const store = {
     if (!r?.daServer || !sulServer(this.state)) return;
     accoda(this.state, 'richiesta.aggiorna', {
       id: r.id,
-      patch: { stato: r.status, chiusa_il: r.chiusaIl || null },
+      patch: {
+        stato: r.status,
+        chiusa_il: r.chiusaIl || null,
+        chiusa_da_admin: r.chiusaDaAdmin ? serverDi(this.state, r.chiusaDaAdmin) : null,
+        admin_motivo: r.motivoAdmin || null,
+      },
     });
   },
 
@@ -336,6 +373,24 @@ export const store = {
     this.rispecchiaRichiesta(r);
     this.commit();
     this.spingi();
+  },
+
+  /**
+   * Chiudere è amministrazione ordinaria: una richiesta risolta altrove, o
+   * che non ha più senso restare in bacheca. Rimuovere è più pesante — pensato
+   * per un contenuto sbagliato o fuori posto — e per questo resta uno stato a
+   * sé (`STATUS.RIMOSSA`), invece di confondersi con una chiusura normale.
+   *
+   * In entrambi i casi il motivo non è facoltativo: è di qualcun altro che
+   * l'admin sta chiudendo la richiesta, e sparirebbe dalla bacheca senza
+   * spiegazione se non fosse obbligatorio dirla.
+   */
+  adminChiudiRichiesta(id, motivo) {
+    return azioneAdmin(this, id, motivo, STATUS.CHIUSA);
+  },
+
+  adminRimuoviRichiesta(id, motivo) {
+    return azioneAdmin(this, id, motivo, STATUS.RIMOSSA);
   },
 
   proponiScambio({ requestId, shiftOffertoId, messaggio }) {

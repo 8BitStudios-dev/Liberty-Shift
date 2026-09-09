@@ -197,6 +197,7 @@ export const STATUS = {
   ACCORDO: 'ACCORDO',
   CHIUSA: 'CHIUSA',
   SCADUTA: 'SCADUTA',
+  RIMOSSA: 'RIMOSSA',
 };
 
 export const STATUS_META = {
@@ -206,6 +207,7 @@ export const STATUS_META = {
   ACCORDO: { dot: '🟢', label: 'Accordo raggiunto' },
   CHIUSA: { dot: '⚫', label: 'Chiusa' },
   SCADUTA: { dot: '⚫', label: 'Scaduta' },
+  RIMOSSA: { dot: '🚫', label: 'Rimossa da un admin' },
 };
 
 /**

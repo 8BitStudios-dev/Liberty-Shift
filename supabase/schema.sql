@@ -43,7 +43,7 @@ create table if not exists public.richieste (
   autore_id       uuid not null references public.profili(id) on delete cascade,
   tipo            text not null check (tipo in ('ORARIO', 'OFF')),
   stato           text not null default 'APERTA'
-                    check (stato in ('APERTA', 'PROPOSTA', 'IN_ATTESA', 'ACCORDO', 'CHIUSA', 'SCADUTA')),
+                    check (stato in ('APERTA', 'PROPOSTA', 'IN_ATTESA', 'ACCORDO', 'CHIUSA', 'SCADUTA', 'RIMOSSA')),
   priorita_fino_a timestamptz,
   cedo_data       date not null,
   cedo_start      time,
@@ -53,10 +53,19 @@ create table if not exists public.richieste (
   cerco           jsonb not null default '{}'::jsonb,
   creata_il       timestamptz not null default now(),
   chiusa_il       timestamptz,
+  -- Chi l'ha chiusa d'ufficio o rimossa, se non è stata l'autrice o l'autore
+  -- stesso: un admin che agisce sulla richiesta di qualcun altro. Il motivo
+  -- non è mai facoltativo in quel caso, perché la richiesta sparisce dalla
+  -- bacheca di chi l'ha pubblicata senza che sia stata lei a chiuderla.
+  chiusa_da_admin uuid references public.profili(id),
+  admin_motivo    text,
   -- Un turno lavorato ha due orari o nessuno: un turno con solo l'inizio è
   -- un dato rotto, e il posto per fermarlo è qui, non nella UI.
   constraint orari_coerenti check (
     (cedo_start is null and cedo_end is null) or (cedo_start is not null and cedo_end is not null)
+  ),
+  constraint motivo_admin_obbligatorio check (
+    chiusa_da_admin is null or coalesce(length(trim(admin_motivo)), 0) > 0
   )
 );
 
@@ -218,6 +227,23 @@ $$;
 revoke all on function public.e_membro() from public;
 grant execute on function public.e_membro() to authenticated;
 
+/**
+ * Sei uno dei 3-4 admin del negozio?
+ *
+ * Nessuno si nomina admin da solo: il campo si imposta a mano dall'SQL Editor
+ * (`update profili set admin = true where id = '...'`), mai dall'app. Il
+ * trigger `blocca_auto_admin` più sotto è la seconda gamba dello stesso
+ * vincolo: anche se un giorno l'app cominciasse a scrivere su `profili`,
+ * quella colonna resterebbe fuori portata.
+ */
+create or replace function public.e_admin() returns boolean
+language sql security definer stable set search_path = public as $$
+  select coalesce((select admin from public.profili where id = auth.uid()), false);
+$$;
+
+revoke all on function public.e_admin() from public;
+grant execute on function public.e_admin() to authenticated;
+
 -- ============================================================== sicurezza
 --
 -- Row Level Security su tutte le tabelle. Senza, la chiave pubblica dell'app
@@ -254,6 +280,26 @@ create policy "ognuno modifica il proprio profilo"
   on public.profili for update to authenticated
   using (id = auth.uid()) with check (id = auth.uid());
 
+-- La policy sopra lascia scrivere qualsiasi colonna della propria riga,
+-- `admin` compresa: da sola non impedirebbe un giorno a un client di
+-- promuoversi da solo. Il trigger chiude quel varco riscrivendo `admin` al
+-- valore che aveva prima di ogni update fatto da un ruolo che non sia
+-- `service_role` (la dashboard e le funzioni server-side lo sono, il client
+-- con la chiave `anon`/`authenticated` non lo è mai).
+create or replace function public.blocca_auto_admin() returns trigger
+language plpgsql as $$
+begin
+  if auth.role() is distinct from 'service_role' then
+    new.admin := old.admin;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists blocca_auto_admin on public.profili;
+create trigger blocca_auto_admin
+  before update on public.profili
+  for each row execute function public.blocca_auto_admin();
+
 -- richieste ---------------------------------------------------------------
 drop policy if exists "la bacheca la leggono gli iscritti" on public.richieste;
 create policy "la bacheca la leggono gli iscritti"
@@ -282,6 +328,15 @@ drop policy if exists "si cancella solo la propria richiesta" on public.richiest
 create policy "si cancella solo la propria richiesta"
   on public.richieste for delete to authenticated using (autore_id = auth.uid());
 
+-- Un admin chiude o rimuove la richiesta di chiunque (`RULES` e la UI la
+-- limitano al cambio di stato, mai a toccare cedo/cerco): la policy resta
+-- larga apposta, la disciplina sta nel client e nel vincolo che il motivo non
+-- sia vuoto quando chiusa_da_admin è valorizzato.
+drop policy if exists "un admin chiude o rimuove qualsiasi richiesta" on public.richieste;
+create policy "un admin chiude o rimuove qualsiasi richiesta"
+  on public.richieste for update to authenticated
+  using (public.e_admin()) with check (public.e_admin());
+
 -- proposte ----------------------------------------------------------------
 drop policy if exists "una proposta la vedono le due parti" on public.proposte;
 create policy "una proposta la vedono le due parti"
@@ -301,6 +356,14 @@ create policy "una proposta la aggiornano le due parti"
 drop policy if exists "si ritira solo la propria proposta" on public.proposte;
 create policy "si ritira solo la propria proposta"
   on public.proposte for delete to authenticated using (da_user_id = auth.uid());
+
+-- Quando un admin chiude o rimuove una richiesta, le proposte ancora aperte
+-- su di essa vanno rifiutate: nessuna delle due parti è detta a farlo, quindi
+-- serve la stessa porta usata sulle richieste.
+drop policy if exists "un admin aggiorna qualsiasi proposta" on public.proposte;
+create policy "un admin aggiorna qualsiasi proposta"
+  on public.proposte for update to authenticated
+  using (public.e_admin()) with check (public.e_admin());
 
 -- disponibilità -----------------------------------------------------------
 drop policy if exists "le disponibilita' le leggono gli iscritti" on public.disponibilita;
@@ -341,7 +404,7 @@ create or replace function public.pulizia_periodica() returns void
 language plpgsql set search_path = public as $$
 begin
   delete from public.richieste
-  where stato in ('CHIUSA', 'SCADUTA')
+  where stato in ('CHIUSA', 'SCADUTA', 'RIMOSSA')
     and coalesce(chiusa_il, creata_il) < now() - interval '90 days';
 
   delete from public.disponibilita

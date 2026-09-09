@@ -141,6 +141,7 @@ function render() {
     nuovo: F.nuovo,
     match: F.match,
     richiesta: F.dettaglio,
+    statistiche: F.statistiche,
     setup: P.schermataProfilo,
     impostazioni: V.impostazioni,
     legale: () => html`
@@ -596,6 +597,36 @@ const AZIONI = {
     store.cancellaRichiesta(el.dataset.id);
     toast('Richiesta cancellata');
     vai('#/home');
+  },
+
+  'chiedi-chiudi-admin': (_, el) => {
+    const w = sheet('🛡️ Chiudi (admin)', F.formMotivoAdmin(el.dataset.id, 'chiudi'), {
+      azioni: '<button class="btn primario largo" data-act="conferma-chiudi-admin">Chiudi la richiesta</button>',
+    });
+    w.el.dataset.richiesta = el.dataset.id;
+  },
+
+  'chiedi-rimuovi-admin': (_, el) => {
+    const w = sheet('🛡️ Rimuovi (admin)', F.formMotivoAdmin(el.dataset.id, 'rimuovi'), {
+      azioni: '<button class="btn pericolo largo" data-act="conferma-rimuovi-admin">Rimuovi la richiesta</button>',
+    });
+    w.el.dataset.richiesta = el.dataset.id;
+  },
+
+  'conferma-chiudi-admin': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const { errori } = store.adminChiudiRichiesta(wrap.dataset.richiesta, wrap.querySelector('[data-campo="motivo"]').value);
+    wrap.querySelector('[data-chiudi]').click();
+    toast(errori ? errori[0] : 'Richiesta chiusa');
+    if (!errori) vai('#/bacheca'); else render();
+  },
+
+  'conferma-rimuovi-admin': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const { errori } = store.adminRimuoviRichiesta(wrap.dataset.richiesta, wrap.querySelector('[data-campo="motivo"]').value);
+    wrap.querySelector('[data-chiudi]').click();
+    toast(errori ? errori[0] : 'Richiesta rimossa');
+    if (!errori) vai('#/bacheca'); else render();
   },
 
   // Serve il render: attivare una preferenza ne spegne un'altra, e senza
