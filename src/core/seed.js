@@ -94,6 +94,10 @@ export function seed() {
       genere: p.genere || 'X',
       oreSettimanali: p.oreSettimanali,
       admin: p.admin,
+      // Solo nella demo: sul server è un'unica riga impostata da SQL Editor,
+      // mai un campo che nasce con la persona.
+      superAdmin: p.id === 'u_lorenzo',
+      attivo: true,
       preferenze: p.preferenze,
       disponibilita: Object.fromEntries(SETTIMANE.map((w) => [w, [...p.disponibilita]])),
       prioritaUsata: {},

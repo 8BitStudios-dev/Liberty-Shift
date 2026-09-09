@@ -11,9 +11,25 @@ globalThis.localStorage = {
   setItem(k, v) { this._dati.set(k, String(v)); },
   removeItem(k) { this._dati.delete(k); },
 };
+// Serve solo alle azioni del SuperAdmin, che passano da una Edge Function:
+// senza una sessione `chiama()` si ferma prima ancora di provare la rete.
+localStorage.setItem('liberty-shift:sessione-server', JSON.stringify({
+  access_token: 'buono', refresh_token: 'buono', user: { id: 'srv-lorenzo' },
+}));
 
 const { store } = await import('../src/core/store.js');
 const { cambiPerPersona, andamentoMensile, richiesteAperte } = await import('../src/core/statistiche.js');
+
+/** Un collega vero, come se fosse già sceso dal server. */
+function collegaVero(patch = {}) {
+  return {
+    id: 'srv-anna', nome: 'Anna', cognome: '', cognomeIniziale: 'V',
+    contratto: 'PT', genere: 'F', oreSettimanali: 25,
+    admin: false, superAdmin: false, attivo: true, daServer: true,
+    preferenze: {}, disponibilita: {}, prioritaUsata: {},
+    ...patch,
+  };
+}
 
 test('un admin chiude la richiesta di un altro, con motivo', () => {
   store.reset();
@@ -101,4 +117,71 @@ test('richiesteAperte esclude quello che un admin ha chiuso o rimosso', () => {
   const dopo = richiesteAperte(store.state);
   assert.equal(dopo.length, primaCount - 2);
   assert.ok(!dopo.some((r) => r.id === 'rq_martina_1' || r.id === 'rq_luca_1'));
+});
+
+// ---------------------------------------------------------- SuperAdmin
+
+test('il SuperAdmin promuove un collega vero ad admin', async () => {
+  store.reset();
+  store.me.superAdmin = true;
+  store.state.users.push(collegaVero());
+  globalThis.fetch = async (url) => {
+    assert.ok(String(url).includes('/functions/v1/Amministrazione'));
+    return { ok: true, status: 200, text: async () => JSON.stringify({ ok: true }) };
+  };
+
+  const { ok } = await store.promuoviAdmin('srv-anna');
+  assert.equal(ok, true);
+  assert.equal(store.user('srv-anna').admin, true);
+});
+
+test('il SuperAdmin disattiva e poi riattiva un profilo', async () => {
+  store.reset();
+  store.me.superAdmin = true;
+  store.state.users.push(collegaVero());
+  globalThis.fetch = async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ ok: true }) });
+
+  await store.disattivaProfilo('srv-anna');
+  assert.equal(store.user('srv-anna').attivo, false);
+
+  await store.riattivaProfilo('srv-anna');
+  assert.equal(store.user('srv-anna').attivo, true);
+});
+
+test('chi non è SuperAdmin non può promuovere nessuno', async () => {
+  store.reset();
+  store.me.superAdmin = false; // u_lorenzo è SuperAdmin nella demo: qui si nega di proposito
+  store.state.users.push(collegaVero());
+  const { errori } = await store.promuoviAdmin('srv-anna');
+  assert.ok(errori?.length);
+  assert.equal(store.user('srv-anna').admin, false);
+});
+
+test('il SuperAdmin non può agire su sé stesso', async () => {
+  store.reset();
+  store.me.superAdmin = true;
+  const { errori } = await store.disattivaProfilo(store.state.currentUserId);
+  assert.ok(errori?.length);
+  assert.equal(store.me.attivo, true);
+});
+
+test('una persona della demo non è gestibile: non è su Supabase', async () => {
+  store.reset();
+  store.me.superAdmin = true;
+  const { errori } = await store.promuoviAdmin('u_martina');
+  assert.ok(errori?.length);
+  assert.equal(store.user('u_martina').admin, false);
+});
+
+test('un rifiuto della funzione lato server non promuove comunque nessuno', async () => {
+  store.reset();
+  store.me.superAdmin = true;
+  store.state.users.push(collegaVero());
+  globalThis.fetch = async () => ({
+    ok: true, status: 200, text: async () => JSON.stringify({ errore: 'Solo il SuperAdmin può farlo.' }),
+  });
+
+  const { errori } = await store.promuoviAdmin('srv-anna');
+  assert.ok(errori?.length);
+  assert.equal(store.user('srv-anna').admin, false);
 });

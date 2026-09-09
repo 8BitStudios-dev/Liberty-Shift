@@ -324,3 +324,19 @@ export async function scaricaCalendario(url) {
   if (!r.dati?.ics) return { dati: null, errore: r.dati?.errore || 'Risposta vuota dal server.' };
   return { dati: r.dati.ics, errore: null };
 }
+
+/**
+ * Le azioni riservate al SuperAdmin: promuovere/retrocedere un admin,
+ * disattivare/riattivare un profilo. Passano dalla funzione `Amministrazione`
+ * perché sono le uniche scritture che il trigger `blocca_scritture_privilegiate`
+ * rifiuta a chiunque non sia `service_role`, e quella chiave vive solo lì.
+ */
+export async function amministra(azione, id) {
+  const r = await chiama('/functions/v1/Amministrazione', {
+    method: 'POST',
+    body: JSON.stringify({ azione, id }),
+  });
+  if (r.errore) return { errore: r.errore };
+  if (!r.dati?.ok) return { errore: r.dati?.errore || 'Risposta vuota dal server.' };
+  return { errore: null };
+}

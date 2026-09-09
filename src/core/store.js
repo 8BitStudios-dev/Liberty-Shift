@@ -11,7 +11,7 @@ import { seed } from './seed.js';
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
-  scaricaCalendario, cambiaPasswordServer,
+  scaricaCalendario, cambiaPasswordServer, amministra,
 } from './supabase.js';
 import { parseICS } from './ics.js';
 import { daRiempire, rotazioneVuota } from './rotazione.js';
@@ -391,6 +391,35 @@ export const store = {
 
   adminRimuoviRichiesta(id, motivo) {
     return azioneAdmin(this, id, motivo, STATUS.RIMOSSA);
+  },
+
+  /**
+   * Le azioni del SuperAdmin: promuovere/retrocedere un admin, disattivare o
+   * riattivare un profilo. Passano dalla funzione `Amministrazione` perché
+   * scrivono colonne (`admin`, `attivo`) che il client non può toccare da
+   * solo — vedi il trigger `blocca_scritture_privilegiate` in schema.sql.
+   *
+   * Funzionano solo su un collega vero (`daServer`): un profilo nato solo
+   * qui, come le persone della demo, non esiste su Supabase e non ha niente
+   * da promuovere o disattivare.
+   */
+  async promuoviAdmin(userId) { return this.azioneSuperAdmin('promuovi', userId, { admin: true }); },
+  async retrocediAdmin(userId) { return this.azioneSuperAdmin('retrocedi', userId, { admin: false }); },
+  async disattivaProfilo(userId) { return this.azioneSuperAdmin('disattiva', userId, { attivo: false }); },
+  async riattivaProfilo(userId) { return this.azioneSuperAdmin('riattiva', userId, { attivo: true }); },
+
+  async azioneSuperAdmin(azione, userId, patch) {
+    if (!this.me.superAdmin) return { errori: ['Solo il SuperAdmin può farlo.'] };
+    if (userId === this.state.currentUserId) return { errori: ['Non puoi farlo su te stesso.'] };
+    const u = this.user(userId);
+    if (!u?.daServer) return { errori: ['Questa persona non è su Supabase.'] };
+
+    const { errore } = await amministra(azione, u.id);
+    if (errore) return { errori: [errore] };
+
+    Object.assign(u, patch);
+    this.commit();
+    return { ok: true };
   },
 
   proponiScambio({ requestId, shiftOffertoId, messaggio }) {

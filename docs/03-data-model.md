@@ -20,7 +20,9 @@ User ──< Shift
 | `nome`, `cognomeIniziale` | string | nella UI non compare mai il cognome intero |
 | `contratto` | `'FT' \| 'PT'` | etichetta |
 | `oreSettimanali` | 20, 25, 30 o 40 | monte ore, guida l'avviso su R17 |
-| `admin` | bool | |
+| `admin` | bool | può chiudere/rimuovere la richiesta di chiunque e vedere le statistiche |
+| `superAdmin` | bool | una sola persona per store; promuove/retrocede gli admin e disattiva un profilo |
+| `attivo` | bool | disattivato = fuori dal negozio, reversibile; non è una cancellazione |
 | `preferenze` | `{ preferisceMattina, evitaChiusure, disponibileWeekend }` | pesano sul punteggio |
 | `disponibilita` | `{ [weekKey]: bool[7] }` | slot 0 = sabato |
 | `prioritaUsata` | `{ 'YYYY-MM': n }` | credito consumato per mese |
