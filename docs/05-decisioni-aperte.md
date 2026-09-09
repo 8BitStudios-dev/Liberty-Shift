@@ -179,12 +179,28 @@ Due regole fissate insieme a questa:
   sparire dalla propria bacheca per mano di qualcun altro: deve sapere perché,
   sempre. Lo schema lo impone anche lato server (`motivo_admin_obbligatorio`).
 
-Gli admin (3-4 per store) si scelgono da Supabase, non dall'app: `update
-profili set admin = true where id = '...'`, come il codice del negozio. Non
-c'è un'interfaccia apposta di proposito — un admin che potesse promuovere o
-retrocedere altri admin dall'app potrebbe anche farlo a sé stesso, ed è
-proprio quello che un trigger lato server (`blocca_auto_admin`, vedi
-`07-supabase.md`) impedisce comunque, per sicurezza in più.
+Un admin non può promuoversi né promuovere altri admin da solo — quello resta
+un potere di una sola persona, vedi il punto 5 qui sotto — ed è comunque
+protetto anche lato server da un trigger (`blocca_scritture_privilegiate`,
+vedi `07-supabase.md`), per sicurezza in più.
+
+### 5. SuperAdmin — deciso e costruito
+Una persona sola per store (impostata da SQL Editor, `update profili set
+super_admin = true where id = '...'`, mai un ruolo che si passa dall'app) può
+promuovere o retrocedere gli admin e disattivare/riattivare un profilo,
+direttamente dall'interfaccia (`#/iscritti`). È la differenza con l'admin
+normale: l'admin agisce sulle richieste, il SuperAdmin sulle persone.
+
+Perché una sola persona e non un ruolo assegnabile: un SuperAdmin che potesse
+nominarne un altro potrebbe passarlo a chiunque, e allora il vincolo "solo da
+SQL Editor" non varrebbe più niente. Restarne uno solo è la scelta che rende
+il resto vero.
+
+Disattivare un profilo non lo cancella: perde l'accesso da subito (vedi
+`e_membro()` in `07-supabase.md`), ma i suoi dati restano — reversibile con
+un tocco. Cancellarlo per sempre non è previsto: le sue richieste passate
+cascherebbero via con lui, portandosi dietro pezzi di statistiche di altre
+persone.
 
 ## Rinviabili
 

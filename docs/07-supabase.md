@@ -138,14 +138,15 @@ qualcuno: quella porta resta chiusa, RLS compresa.
 update public.profili set admin = true where id = '<uuid della persona>';
 ```
 
-Non esiste apposta un'interfaccia per farlo dall'app. Il motivo non è solo di
-comodo: la policy `"ognuno modifica il proprio profilo"` lascia scrivere
-qualsiasi colonna della propria riga, `admin` compresa, quindi da sola non
-impedirebbe a un domani client di promuoversi da solo. A chiuderlo davvero è
-il trigger `blocca_auto_admin`: prima di ogni update su `profili`, se chi
+Non esiste apposta un'interfaccia per farlo dall'app (a meno di essere il
+SuperAdmin, vedi sotto). Il motivo non è solo di comodo: la policy
+`"ognuno modifica il proprio profilo"` lascia scrivere qualsiasi colonna
+della propria riga, `admin` compresa, quindi da sola non impedirebbe a un
+domani client di promuoversi da solo. A chiuderlo davvero è il trigger
+`blocca_scritture_privilegiate`: prima di ogni update su `profili`, se chi
 scrive non è `service_role` (cioè non è la dashboard o una funzione
-server-side), la colonna `admin` torna al valore che aveva prima,
-qualunque cosa il client abbia provato a scriverci.
+server-side), le colonne `admin`, `super_admin` e `attivo` tornano al valore
+che avevano prima, qualunque cosa il client abbia provato a scriverci.
 
 **Le policy che aprono le due porte che servono davvero:**
 
@@ -168,7 +169,45 @@ Rimuovere una richiesta non è la stessa cosa di chiuderla: ha un suo stato
 resta l'amministrazione ordinaria. La pulizia periodica tratta le righe
 `RIMOSSA` come le altre chiuse: sparite dopo 90 giorni, non prima.
 
-## La pulizia periodica
+## I permessi del SuperAdmin
+
+Una sola persona per store, e a differenza dell'admin **può agire dall'app**:
+promuovere o retrocedere un admin, disattivare o riattivare il profilo di un
+collega. `#/iscritti` in app, riservato a chi ha `super_admin: true`.
+
+**Si diventa SuperAdmin solo da SQL Editor, e resta un ruolo, non un
+account diverso:**
+
+```sql
+update public.profili set super_admin = true where id = '<uuid della persona>';
+```
+
+Nessuna interfaccia per farlo dall'app, nemmeno per il SuperAdmin stesso: un
+SuperAdmin che potesse nominarne un altro potrebbe passare il ruolo a
+chiunque, che è esattamente il problema che l'unicità del ruolo vuole
+evitare. Se un giorno serve cambiarlo, si torna qui.
+
+**Come fa, se il client non può scrivere `admin`/`attivo` da solo?** Passa
+dalla funzione `supabase/functions/Amministrazione`, che è l'unico posto
+dove vive la chiave `service_role` per queste due colonne (mai nel browser,
+come `Calendario` per il calendario). La funzione:
+
+1. legge chi ha chiamato dal token che il gateway ha già verificato (lo
+   stesso principio di fiducia di `Calendario`);
+2. verifica che quella persona abbia `super_admin = true` — con la chiave
+   `service_role`, quindi bypassando RLS, perché è lei stessa a doverlo
+   controllare prima di agire;
+3. rifiuta di agire su chi ha chiamato (niente auto-promozioni né
+   auto-disattivazioni per errore: il pannello serve per gli altri);
+4. scrive la colonna giusta con `service_role`, l'unica chiave che il
+   trigger lascia passare.
+
+**Disattivare non è cancellare.** Un profilo disattivato (`attivo = false`)
+perde l'accesso — `e_membro()` lo richiede esplicitamente, quindi ogni
+lettura gli si chiude in faccia come a un estraneo senza codice — ma resta
+nel database: le sue richieste passate continuano a comparire nelle
+statistiche di chi le guarda. È reversibile con un tocco (`riattiva`), a
+differenza di cancellare l'account per sempre, che qui non è previsto.
 
 Le note d'uso promettono che i cambi pubblicati non restano per sempre sul
 server: `pulizia_periodica()`, pianificata ogni notte con `pg_cron`, cancella
@@ -245,6 +284,14 @@ Per pubblicarla: **Edge Functions ▸ Deploy a new function ▸ via editor**, no
 gli indirizzi delle funzioni distinguono maiuscole e minuscole, e una `c`
 minuscola risponde `404 NOT_FOUND` senza spiegare perché. Serve l'accesso di un
 utente autenticato, quindi un estraneo non può usarla come proxy.
+
+**`supabase/functions/Amministrazione/index.ts`** si pubblica nello stesso
+modo, stessa maiuscola nel nome. Non chiede nessuna chiave da impostare a
+mano: `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` sono già nell'ambiente di
+ogni Edge Function del progetto, messe lì da Supabase stesso. È proprio
+perché vivono solo lì, mai nel codice o nel repository, che questa funzione
+può usare `service_role` in sicurezza — a differenza di `Calendario`, che non
+ne ha bisogno perché non scrive niente.
 
 ## La sessione che scade mentre l'app è aperta
 

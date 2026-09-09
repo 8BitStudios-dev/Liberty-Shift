@@ -142,6 +142,7 @@ function render() {
     match: F.match,
     richiesta: F.dettaglio,
     statistiche: F.statistiche,
+    iscritti: F.gestioneIscritti,
     setup: P.schermataProfilo,
     impostazioni: V.impostazioni,
     legale: () => html`
@@ -627,6 +628,33 @@ const AZIONI = {
     wrap.querySelector('[data-chiudi]').click();
     toast(errori ? errori[0] : 'Richiesta rimossa');
     if (!errori) vai('#/bacheca'); else render();
+  },
+
+  'promuovi-admin': async (_, el) => {
+    if (!confirm('Rendere questa persona admin?')) return;
+    const { errori } = await store.promuoviAdmin(el.dataset.id);
+    toast(errori ? errori[0] : 'Fatto: ora è admin');
+    render();
+  },
+
+  'retrocedi-admin': async (_, el) => {
+    if (!confirm('Togliere i permessi da admin?')) return;
+    const { errori } = await store.retrocediAdmin(el.dataset.id);
+    toast(errori ? errori[0] : 'Fatto: non è più admin');
+    render();
+  },
+
+  'disattiva-profilo': async (_, el) => {
+    if (!confirm('Disattivare questo profilo? Perde l\'accesso, ma resta reversibile.')) return;
+    const { errori } = await store.disattivaProfilo(el.dataset.id);
+    toast(errori ? errori[0] : 'Profilo disattivato');
+    render();
+  },
+
+  'riattiva-profilo': async (_, el) => {
+    const { errori } = await store.riattivaProfilo(el.dataset.id);
+    toast(errori ? errori[0] : 'Profilo riattivato');
+    render();
   },
 
   // Serve il render: attivare una preferenza ne spegne un'altra, e senza

@@ -675,3 +675,5 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .barra-mese.pubblicate { background: var(--giallo); }
 .barra-mese.chiuse { background: var(--testo-tenue); }
 .etichetta-mese { font-size: 10px; color: var(--testo-tenue); }
+
+.riga-iscritto.disattivato { opacity: .55; }

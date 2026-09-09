@@ -57,6 +57,8 @@ function utenteDaRiga(r) {
     genere: r.genere || 'X',
     oreSettimanali: r.ore_settimanali,
     admin: Boolean(r.admin),
+    superAdmin: Boolean(r.super_admin),
+    attivo: r.attivo !== false,
     preferenze: {},
     disponibilita: {},
     prioritaUsata: {},

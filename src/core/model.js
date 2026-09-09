@@ -10,6 +10,8 @@ import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
  *   id, nome, cognomeIniziale, contratto: 'FT'|'PT',
  *   oreSettimanali: 40 se FT, 20|25|30 se PT (RULES.contracts),
  *   admin: bool,
+ *   superAdmin: bool,      // una sola persona per store, impostata da SQL
+ *   attivo: bool,          // disattivato = fuori dal negozio, reversibile
  *   genere: 'F'|'M'|'X',   // X = non specificato: si usano forme neutre
  *   preferenze: { evita*, preferisce* },
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },

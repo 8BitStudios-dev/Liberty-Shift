@@ -282,10 +282,11 @@ export function profilo() {
       <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
     </header>
 
-    ${raw(me.admin ? `
+    ${raw(me.admin || me.superAdmin ? `
     <section class="sezione">
       <h2>Amministrazione</h2>
-      <button class="btn secondario largo" data-act="vai" data-to="#/statistiche">🛡️ Statistiche</button>
+      ${me.admin ? '<button class="btn secondario largo" data-act="vai" data-to="#/statistiche">🛡️ Statistiche</button>' : ''}
+      ${me.superAdmin ? '<button class="btn secondario largo" data-act="vai" data-to="#/iscritti">👑 Gestisci iscritti</button>' : ''}
     </section>` : '')}
 
     <section class="sezione">

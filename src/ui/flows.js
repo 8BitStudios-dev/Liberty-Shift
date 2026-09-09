@@ -806,3 +806,49 @@ export function statistiche() {
     ? aperte.map((r) => cardRichiesta(r)).join('')
     : vuoto('Bacheca vuota', 'Nessuna richiesta aperta al momento.'))}`;
 }
+
+// -------------------------------------------------------- GESTIONE ISCRITTI
+
+/**
+ * Solo per il SuperAdmin. Chi non è ancora sceso dal server (le persone
+ * della demo, `!daServer`) non compare: non esistono su Supabase, non c'è
+ * niente da promuovere o disattivare.
+ */
+export function gestioneIscritti() {
+  if (!store.me.superAdmin) return vuoto('Sezione riservata', 'Solo il SuperAdmin può gestire gli iscritti.');
+
+  const me = store.state.currentUserId;
+  const iscritti = store.state.users.filter((u) => u.daServer && u.id !== me);
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>Gestisci iscritti</h1>
+    </header>
+    ${raw(iscritti.length ? '' : vuoto(
+    'Ancora nessuno',
+    'I colleghi compariranno qui non appena si saranno iscritti con il codice del negozio.',
+  ))}
+    ${raw(iscritti.map((u) => html`
+      <article class="card riga-iscritto ${u.attivo ? '' : 'disattivato'}">
+        <header class="card-head">
+          <span class="avatar">${iniziali(u)}</span>
+          <div>
+            <strong>${nomeUtente(u)}</strong>
+            <div class="meta">
+              ${RULES.contracts[u.contratto].label}
+              ${u.admin ? ' · admin' : ''}
+              ${u.attivo ? '' : ' · disattivato'}
+            </div>
+          </div>
+        </header>
+        <div class="barra-azioni">
+          ${u.admin
+    ? `<button class="btn secondario" data-act="retrocedi-admin" data-id="${u.id}">Togli admin</button>`
+    : `<button class="btn secondario" data-act="promuovi-admin" data-id="${u.id}">Rendi admin</button>`}
+          ${u.attivo
+    ? `<button class="btn pericolo" data-act="disattiva-profilo" data-id="${u.id}">Disattiva</button>`
+    : `<button class="btn primario" data-act="riattiva-profilo" data-id="${u.id}">Riattiva</button>`}
+        </div>
+      </article>`).join(''))}`;
+}

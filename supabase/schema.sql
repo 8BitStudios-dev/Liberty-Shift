@@ -26,6 +26,15 @@ create table if not exists public.profili (
   ore_settimanali smallint not null check (ore_settimanali in (20, 25, 30, 40)),
   genere          text not null default 'X' check (genere in ('F', 'M', 'X')),
   admin           boolean not null default false,
+  -- Un'unica persona per store, impostata a mano da SQL Editor come il
+  -- codice del negozio: può promuovere o retrocedere gli admin e
+  -- disattivare un profilo dall'app, tramite la funzione `Amministrazione`.
+  super_admin     boolean not null default false,
+  -- Disattivato è reversibile e non è una cancellazione: perde l'accesso
+  -- (vedi `e_membro()`) ma le sue richieste passate restano nelle
+  -- statistiche di chi le ha viste. Cancellare l'account per sempre è
+  -- un'altra cosa, e questa colonna non la fa.
+  attivo          boolean not null default true,
   creato_il       timestamptz not null default now()
 );
 
@@ -221,7 +230,10 @@ grant execute on function public.iscrivi(text, text, text, text, smallint, text)
  */
 create or replace function public.e_membro() returns boolean
 language sql security definer stable set search_path = public as $$
-  select exists (select 1 from public.profili where id = auth.uid());
+  -- `attivo` conta quanto l'esistenza della riga: un profilo disattivato dal
+  -- SuperAdmin perde l'accesso esattamente come un estraneo senza codice,
+  -- perché ogni policy di lettura passa da qui.
+  select exists (select 1 from public.profili where id = auth.uid() and attivo);
 $$;
 
 revoke all on function public.e_membro() from public;
@@ -231,14 +243,15 @@ grant execute on function public.e_membro() to authenticated;
  * Sei uno dei 3-4 admin del negozio?
  *
  * Nessuno si nomina admin da solo: il campo si imposta a mano dall'SQL Editor
- * (`update profili set admin = true where id = '...'`), mai dall'app. Il
- * trigger `blocca_auto_admin` più sotto è la seconda gamba dello stesso
+ * (`update profili set admin = true where id = '...'`) o dalla funzione
+ * `Amministrazione`, mai da un client autenticato normale. Il trigger
+ * `blocca_scritture_privilegiate` più sotto è la seconda gamba dello stesso
  * vincolo: anche se un giorno l'app cominciasse a scrivere su `profili`,
  * quella colonna resterebbe fuori portata.
  */
 create or replace function public.e_admin() returns boolean
 language sql security definer stable set search_path = public as $$
-  select coalesce((select admin from public.profili where id = auth.uid()), false);
+  select coalesce((select admin and attivo from public.profili where id = auth.uid()), false);
 $$;
 
 revoke all on function public.e_admin() from public;
@@ -281,24 +294,31 @@ create policy "ognuno modifica il proprio profilo"
   using (id = auth.uid()) with check (id = auth.uid());
 
 -- La policy sopra lascia scrivere qualsiasi colonna della propria riga,
--- `admin` compresa: da sola non impedirebbe un giorno a un client di
--- promuoversi da solo. Il trigger chiude quel varco riscrivendo `admin` al
--- valore che aveva prima di ogni update fatto da un ruolo che non sia
--- `service_role` (la dashboard e le funzioni server-side lo sono, il client
--- con la chiave `anon`/`authenticated` non lo è mai).
-create or replace function public.blocca_auto_admin() returns trigger
+-- `admin`, `super_admin` e `attivo` comprese: da sola non impedirebbe un
+-- giorno a un client di promuoversi da solo, o di riattivarsi dopo essere
+-- stato disattivato. Il trigger chiude quel varco riscrivendo le tre colonne
+-- al valore che avevano prima di ogni update fatto da un ruolo che non sia
+-- `service_role` (la dashboard e le funzioni server-side, cioè
+-- `Amministrazione`, lo sono; il client con la chiave `anon`/`authenticated`
+-- non lo è mai).
+drop function if exists public.blocca_auto_admin() cascade;
+
+create or replace function public.blocca_scritture_privilegiate() returns trigger
 language plpgsql as $$
 begin
   if auth.role() is distinct from 'service_role' then
     new.admin := old.admin;
+    new.super_admin := old.super_admin;
+    new.attivo := old.attivo;
   end if;
   return new;
 end $$;
 
 drop trigger if exists blocca_auto_admin on public.profili;
-create trigger blocca_auto_admin
+drop trigger if exists blocca_scritture_privilegiate on public.profili;
+create trigger blocca_scritture_privilegiate
   before update on public.profili
-  for each row execute function public.blocca_auto_admin();
+  for each row execute function public.blocca_scritture_privilegiate();
 
 -- richieste ---------------------------------------------------------------
 drop policy if exists "la bacheca la leggono gli iscritti" on public.richieste;
