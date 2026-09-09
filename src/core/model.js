@@ -28,7 +28,9 @@ import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
  *     giorni: ['YYYY-MM-DD'],   // ORARIO: solo il giorno del turno ceduto
  *                               // OFF: i giorni che offro, in cui sono libero
  *     mode, start, end, entroLe, dalleOre, evitaChiusura, note
- *   }
+ *   },
+ *   chiusaDaAdmin: userId | null,   // chi l'ha chiusa o rimossa, se non l'autore
+ *   motivoAdmin: string             // perché, sempre presente quando chiusaDaAdmin c'è
  * }
  *
  * Proposal

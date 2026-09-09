@@ -63,6 +63,13 @@ scavalca la mezzanotte, e `isNotturno()` lo riconosce. Stessa logica per
 | `cedo` | `{ shiftId, flessibile }` | il turno che lasci, sempre un turno vero |
 | `cerco` | `{ giorni[], mode, start, end, entroLe, dalleOre, evitaChiusura, note }` | |
 
+`chiusaDaAdmin` e `motivoAdmin` compaiono solo quando un admin ha chiuso o
+rimosso la richiesta di qualcun altro (`store.adminChiudiRichiesta`,
+`store.adminRimuoviRichiesta`, vedi `05-decisioni-aperte.md`): il motivo non è
+mai vuoto in quel caso, imposto anche dallo schema del server. Una rimozione
+non è una chiusura come le altre: ha un suo `status` (`RIMOSSA`), perché è
+pensata per un contenuto sbagliato, non per amministrazione ordinaria.
+
 `cerco.giorni` è il campo che tiene insieme i due tipi:
 
 - **cambio orario**: contiene solo il giorno del turno ceduto. Il lato che conta

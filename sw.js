@@ -23,6 +23,7 @@ const ASSET = [
   './src/core/rotazione.js',
   './src/core/accesso.js',
   './src/core/seed.js',
+  './src/core/statistiche.js',
   './src/core/store.js',
   './src/ui/dom.js',
   './src/ui/components.js',

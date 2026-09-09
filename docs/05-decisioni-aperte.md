@@ -56,16 +56,24 @@ una chiusura, un 12:00–21:00 sì. Se nello store "chiusura" vuol dire invece
 
 ## Ancora aperti
 
-### 1. Il calendario sottoscrivibile
+### 1. Il calendario sottoscrivibile — costruito, non ancora aperto
 I turni arrivano su un calendario a cui ci si iscrive. Il lettore del formato
-(ICS) è scritto e coperto da test: oggi il testo si incolla, e questo funziona
-senza server e senza far uscire niente dal telefono.
+(ICS) è scritto e coperto da test, e da lì si può far arrivare il testo in due
+modi: incollato a mano, oppure scaricato da solo.
 
-Il passo successivo — **scaricare da solo** il calendario e tenersi aggiornato —
-richiede due cose che sono la stessa domanda: un pezzo di server (una pagina web
-non può leggere un indirizzo esterno da sola) e il via libera del capitolo 27,
-perché a quel punto i turni passerebbero da un sistema aziendale a uno che non
-lo è. Vale la pena chiarire il secondo punto prima di costruire il primo.
+Il secondo modo **è costruito e collaudato**: `supabase/functions/Calendario`
+scarica il calendario aziendale al posto del browser (Apple non manda le
+intestazioni CORS che servirebbero per farlo direttamente), solo da domini
+Apple/iCloud/Google/Outlook e solo per chi è già autenticato. `store.js`
+salva l'indirizzo sul telefono e lo riscarica da solo al più ogni sei ore.
+Provato contro un calendario vero il 7 settembre 2026 (29 KB, 64 turni letti).
+Vedi `docs/07-supabase.md`.
+
+Costruirlo non chiudeva la domanda del capitolo 27, la spostava solo più
+avanti: adesso che il pezzo di server esiste, resta comunque da chiarire prima
+di darlo ai colleghi, perché a quel punto un server esterno legge un
+calendario aziendale, e quello non è più solo "i miei orari" — vedi il punto 2
+qui sotto.
 
 ### 2. È lecito farlo? Cosa dice la Business Conduct Policy
 Letta la *Business Conduct — Il nostro modo di operare* di Apple, edizione
@@ -134,9 +142,9 @@ in chat, ricade nel divieto di condivisione della pag. 12 o è autorizzabile?*
    *Non* per la regola sugli NDA con le terze parti: quella riguarda le
    informazioni riservate di Apple, e i turni non lo sono.
 3. **Il download automatico dal calendario sottoscritto** è un caso diverso e
-   più delicato: lì un server esterno leggerebbe un calendario aziendale, e il
-   contenuto di quel calendario non è più solo "i miei orari". Il lettore ICS
-   resta utile perché funziona senza far uscire niente dal telefono.
+   più delicato: un server esterno legge un calendario aziendale, e il
+   contenuto di quel calendario non è più solo "i miei orari". È già costruito
+   (punto 1 qui sopra), ma la domanda su chi può usarlo resta la stessa.
 4. **L'uso dell'AI** per costruirlo ha una policy dedicata: *Policy sull'uso
    individuale dell'AI*, citata a pag. 7 e in fondo al documento. Vale la pena
    leggerla, visto come è stata scritta questa app.
@@ -153,17 +161,36 @@ Le assunzioni implementate: rinnovo il primo del mese, credito consumato
 all'uso, niente rimborso se cancelli. Da confermare, in particolare cosa
 succede se la richiesta si chiude dopo due ore invece che dopo 48.
 
-### 4. Permessi dell'Admin
-Nel prototipo l'admin è solo un campo. Va definito cosa può fare davvero:
-rimuovere una richiesta, chiuderne una d'ufficio, vedere le statistiche.
-Il confine è chiaro: mai accettare al posto di qualcuno.
+### 4. Permessi dell'Admin — deciso e costruito
+Un admin può chiudere o rimuovere la richiesta di chiunque (`store.adminChiudiRichiesta`,
+`store.adminRimuoviRichiesta`) e vedere le statistiche (`#/statistiche`, solo
+per chi ha `admin: true`). Il confine resta quello di prima: mai accettare al
+posto di qualcuno, e infatti non esiste nessuna azione admin sulle proposte se
+non il rifiuto automatico di quelle ancora aperte quando la richiesta viene
+chiusa o rimossa.
+
+Due regole fissate insieme a questa:
+
+- **Chiudere e rimuovere sono due cose diverse.** Chiudere è amministrazione
+  ordinaria (una richiesta risolta altrove, o scaduta di fatto); rimuovere è
+  pensato per un contenuto sbagliato o fuori posto, e resta un suo stato
+  (`RIMOSSA`) invece di confondersi con una chiusura normale.
+- **Il motivo non è mai facoltativo.** Chi ha pubblicato la richiesta la vede
+  sparire dalla propria bacheca per mano di qualcun altro: deve sapere perché,
+  sempre. Lo schema lo impone anche lato server (`motivo_admin_obbligatorio`).
+
+Gli admin (3-4 per store) si scelgono da Supabase, non dall'app: `update
+profili set admin = true where id = '...'`, come il codice del negozio. Non
+c'è un'interfaccia apposta di proposito — un admin che potesse promuovere o
+retrocedere altri admin dall'app potrebbe anche farlo a sé stesso, ed è
+proprio quello che un trigger lato server (`blocca_auto_admin`, vedi
+`07-supabase.md`) impedisce comunque, per sicurezza in più.
 
 ## Rinviabili
 
 - Copia di una settimana di turni sull'altra: sarà la prima cosa che chiederanno
   tutti dopo aver inserito i turni a mano due volte.
 - Scambi a tre.
-- Statistiche e storico.
 - Filtro "per me" in bacheca.
 
 ## Nota tecnica: notifiche push su iPhone

@@ -47,7 +47,10 @@ Le regole, in italiano:
   l'unica cosa davvero privata fra due colleghi, insieme al messaggio che si
   scambiano;
 - nessuno può scrivere una riga a nome di un altro: ogni `insert` verifica che
-  l'autore sia chi sta scrivendo.
+  l'autore sia chi sta scrivendo;
+- un admin fa eccezione su una cosa sola: chiude o rimuove la richiesta di
+  chiunque (e le proposte legate). Non tocca nient'altro, e non può diventare
+  admin da solo — vedi *I permessi dell'Admin* più sotto.
 
 ## Procedura
 
@@ -121,6 +124,49 @@ Non protegge invece da un collega che passa il codice a qualcun altro: è un
 segreto condiviso da otto persone, quindi vale come la serratura di una porta,
 non come una cassaforte. Se un giorno gira troppo, si cambia con la riga qui
 sopra e si ridà quello nuovo.
+
+## I permessi dell'Admin
+
+3-4 persone per store hanno `admin: true` sul proprio profilo, e possono
+chiudere o rimuovere la richiesta di chiunque, oltre a vedere le statistiche
+(`#/statistiche` in app). Non possono accettare una proposta al posto di
+qualcuno: quella porta resta chiusa, RLS compresa.
+
+**Si diventa admin da SQL Editor, mai dall'app:**
+
+```sql
+update public.profili set admin = true where id = '<uuid della persona>';
+```
+
+Non esiste apposta un'interfaccia per farlo dall'app. Il motivo non è solo di
+comodo: la policy `"ognuno modifica il proprio profilo"` lascia scrivere
+qualsiasi colonna della propria riga, `admin` compresa, quindi da sola non
+impedirebbe a un domani client di promuoversi da solo. A chiuderlo davvero è
+il trigger `blocca_auto_admin`: prima di ogni update su `profili`, se chi
+scrive non è `service_role` (cioè non è la dashboard o una funzione
+server-side), la colonna `admin` torna al valore che aveva prima,
+qualunque cosa il client abbia provato a scriverci.
+
+**Le policy che aprono le due porte che servono davvero:**
+
+- `"un admin chiude o rimuove qualsiasi richiesta"` su `richieste`: un
+  `update` è ammesso a chi ha `admin = true` (funzione `e_admin()`, la stessa
+  idea di `e_membro()` ma sul campo booleano invece che sull'esistenza della
+  riga), su qualunque riga, non solo la propria.
+- `"un admin aggiorna qualsiasi proposta"` su `proposte`, per lo stesso
+  motivo: chiudere una richiesta rifiuta le proposte ancora aperte su di essa,
+  e chi lo fa non è mai una delle due parti coinvolte.
+
+**Due colonne in più su `richieste`**: `chiusa_da_admin` (chi, se non
+l'autore) e `admin_motivo` (perché). Un vincolo (`motivo_admin_obbligatorio`)
+impedisce di valorizzare la prima lasciando vuota la seconda: la richiesta
+sparisce dalla bacheca di chi l'ha pubblicata per mano di qualcun altro, e
+deve sempre sapere perché.
+
+Rimuovere una richiesta non è la stessa cosa di chiuderla: ha un suo stato
+(`RIMOSSA`), pensato per un contenuto sbagliato o fuori posto, mentre `CHIUSA`
+resta l'amministrazione ordinaria. La pulizia periodica tratta le righe
+`RIMOSSA` come le altre chiuse: sparite dopo 90 giorni, non prima.
 
 ## La pulizia periodica
 

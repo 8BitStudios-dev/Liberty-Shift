@@ -75,6 +75,8 @@ function richiestaDaRiga(state, r) {
     cedo: { shiftId: null, flessibile: Boolean(r.cedo_flessibile) },
     cerco: { ...(r.cerco || {}), giorni: r.cerco_giorni || [] },
     chiusaIl: r.chiusa_il,
+    chiusaDaAdmin: r.chiusa_da_admin ? localeDi(state, r.chiusa_da_admin) : null,
+    motivoAdmin: r.admin_motivo || '',
     avvisati: [],
     turnoCeduto: { data: r.cedo_data, start: ora(r.cedo_start), end: ora(r.cedo_end) },
   };

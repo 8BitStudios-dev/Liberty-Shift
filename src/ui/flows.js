@@ -10,8 +10,9 @@ import {
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } from '../core/model.js';
 import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
+import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
-  cardMatch, cardOpportunita, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
+  cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
   chipsOrariTipici,
 } from './components.js';
 
@@ -456,14 +457,14 @@ export function dettaglio(params) {
   }).join('');
 
   const hoGiaProposto = proposte.some((p) => p.daUserId === me);
-  const accordoRaggiunto = r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA;
+  const chiusaOAccordo = [STATUS.ACCORDO, STATUS.CHIUSA, STATUS.RIMOSSA].includes(r.status);
   const azioneAutore = mio
-    ? (accordoRaggiunto ? '' : html`
+    ? (chiusaOAccordo ? '' : html`
       <div class="barra-azioni">
         <button class="btn secondario" data-act="vai" data-to="#/match?id=${r.id}">Rivedi i match</button>
         <button class="btn pericolo" data-act="cancella" data-id="${r.id}">Cancella richiesta</button>
       </div>`)
-    : r.status === STATUS.ACCORDO || r.status === STATUS.CHIUSA || hoGiaProposto
+    : chiusaOAccordo || hoGiaProposto
       ? ''
       : turniOfferibili(r).length
         ? html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`
@@ -471,6 +472,17 @@ export function dettaglio(params) {
         // dire perché non c'è: prima spariva e basta.
         : html`<p class="non-puoi">al momento non puoi cambiare</p>
           <p class="testo-tenue nota-non-puoi">${motivoNonOfferibile(r)}</p>`;
+
+  // Un admin può chiudere o rimuovere qualsiasi richiesta ancora viva, anche
+  // la propria: non è un'azione che si nega a sé stessi. Su una già chiusa non
+  // c'è più niente da fare, ed è già scritto perché lo è.
+  const azioniAdmin = store.me.admin && !chiusaOAccordo
+    ? html`
+      <div class="barra-azioni">
+        <button class="btn secondario" data-act="chiedi-chiudi-admin" data-id="${r.id}">🛡️ Chiudi (admin)</button>
+        <button class="btn pericolo" data-act="chiedi-rimuovi-admin" data-id="${r.id}">🛡️ Rimuovi (admin)</button>
+      </div>`
+    : '';
 
   return html`
     <header class="testata">
@@ -488,9 +500,26 @@ export function dettaglio(params) {
       ${raw(coppiaCedoCerco(r))}
       ${raw(r.cerco.note ? `<p class="nota-utente">“${r.cerco.note}”</p>` : '')}
       <div class="meta">${raw(badgeStato(r.status))} · pubblicata ${formatDay(r.createdAt.slice(0, 10))}</div>
+      ${raw(r.chiusaDaAdmin
+    ? `<p class="avviso">🛡️ ${r.status === STATUS.RIMOSSA ? 'Rimossa' : 'Chiusa'} da un admin: “${r.motivoAdmin}”</p>`
+    : '')}
     </article>
     ${raw(blocchiProposte)}
-    ${raw(azioneAutore)}`;
+    ${raw(azioneAutore)}
+    ${raw(azioniAdmin)}`;
+}
+
+/** Il motivo per cui un admin chiude o rimuove la richiesta di qualcun altro: mai facoltativo. */
+export function formMotivoAdmin(requestId, azione) {
+  const r = store.request(requestId);
+  const autore = store.user(r?.userId);
+  const verbo = azione === 'rimuovi' ? 'rimuovendo' : 'chiudendo';
+  return html`
+    <p>Stai ${verbo} la richiesta di <strong>${nomeUtente(autore)}</strong>.</p>
+    <label class="campo">
+      <span>Perché? Lo leggerà nella sua richiesta.</span>
+      <textarea data-campo="motivo" rows="3" placeholder="Es. il cambio è già stato fatto fuori dall'app"></textarea>
+    </label>`;
 }
 
 /**
@@ -729,4 +758,51 @@ export function aiuta() {
       'Nessuna richiesta aperta torna con i turni che hai in calendario. Se il calendario non è aggiornato, il posto per farlo è il Profilo.',
       '<button class="btn primario" data-act="vai" data-to="#/profilo">Aggiorna i turni</button>',
     ))}`;
+}
+
+// ---------------------------------------------------------- STATISTICHE
+
+/**
+ * Solo per i 3-4 admin del negozio. Non è un cruscotto con tutto quello che
+ * si potrebbe misurare: tre domande, quelle a cui serve davvero rispondere —
+ * chi usa lo strumento, se lo usa sempre di più o di meno, e cosa c'è ancora
+ * da smaltire in bacheca.
+ */
+export function statistiche() {
+  if (!store.me.admin) return vuoto('Sezione riservata', 'Solo un admin può vedere le statistiche.');
+
+  const perPersona = cambiPerPersona(store.state);
+  const mesi = andamentoMensile(store.state);
+  const massimo = Math.max(1, ...mesi.map((m) => Math.max(m.pubblicate, m.chiuse)));
+  const aperte = richiesteAperte(store.state);
+
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>Statistiche</h1>
+    </header>
+
+    <h2 class="titolo-gruppo">Cambi conclusi per persona</h2>
+    ${raw(perPersona.length ? `<ul class="elenco-persone">${perPersona.map((p) => {
+    const u = store.user(p.userId);
+    return `<li><span class="avatar piccolo">${iniziali(u)}</span><span>${nomeUtente(u)}</span><strong>${p.conclusi}</strong></li>`;
+  }).join('')}</ul>` : vuoto('Ancora nessuno', 'Nessuno scambio ha ancora raggiunto un accordo.'))}
+
+    <h2 class="titolo-gruppo">Andamento mensile</h2>
+    <div class="grafico-mensile">
+      ${raw(mesi.map((m) => `
+        <div class="colonna-mese">
+          <div class="colonna-barre">
+            <span class="barra-mese pubblicate" style="height:${(m.pubblicate / massimo) * 100}%" title="${m.pubblicate} pubblicate"></span>
+            <span class="barra-mese chiuse" style="height:${(m.chiuse / massimo) * 100}%" title="${m.chiuse} chiuse"></span>
+          </div>
+          <span class="etichetta-mese">${m.mese.slice(5)}</span>
+        </div>`).join(''))}
+    </div>
+    <p class="testo-tenue"><span class="tag">🟡 pubblicate</span> <span class="tag">⚫ chiuse</span> per mese di creazione o chiusura.</p>
+
+    <h2 class="titolo-gruppo">Richieste aperte in bacheca (${aperte.length})</h2>
+    ${raw(aperte.length
+    ? aperte.map((r) => cardRichiesta(r)).join('')
+    : vuoto('Bacheca vuota', 'Nessuna richiesta aperta al momento.'))}`;
 }
