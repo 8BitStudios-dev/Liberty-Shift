@@ -74,6 +74,12 @@ body {
   max-width: 560px;
   margin: 0 auto;
   padding: max(env(safe-area-inset-top), 12px) 16px calc(var(--tab-h) + 32px);
+  /* Senza un'altezza minima, una schermata corta (Calendario, appena aperta,
+     ha meno contenuto di Home) lascia la pagina più bassa del viewport: su
+     iOS questo cambia se Safari mostra o nasconde la sua barra, ed è quello
+     che faceva "saltare" la tabbar fissa passando da una scheda all'altra. */
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 h1 { font-size: 26px; margin: 0; letter-spacing: -.02em; }
@@ -140,6 +146,9 @@ p { margin: 8px 0; }
   font-size: 18px; color: var(--testo); cursor: pointer;
   border: 1px solid var(--bordo);
 }
+/* Le frecce di mese: si toccano più spesso di un'icona qualunque, e un
+   pollice le trova più facilmente se sono un po' più grandi delle altre. */
+.icon-btn.grande { width: 44px; height: 44px; font-size: 24px; }
 .link-btn { appearance: none; border: 0; background: none; color: var(--accento); font: inherit; cursor: pointer; padding: 0; }
 .link { color: var(--accento); font-weight: 600; font-size: 14px; }
 
@@ -292,21 +301,24 @@ p { margin: 8px 0; }
 
 /* --------------------------------------------------------- calendario */
 
-.griglia-intestazione, .griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.griglia-mese { grid-auto-rows: minmax(58px, auto); margin-bottom: 4px; }
-.griglia-intestazione { color: var(--testo-tenue); font-size: 12px; text-align: center; margin-bottom: 6px; }
+.griglia-intestazione, .griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+/* Righe più alte dei 58px di partenza: sotto la legenda restava sempre un
+   bordo di schermo vuoto, e un mese che riempie lo spazio si legge meglio
+   col pollice sopra ogni giorno. */
+.griglia-mese { grid-auto-rows: minmax(74px, auto); margin-bottom: 4px; }
+.griglia-intestazione { color: var(--testo-tenue); font-size: 13px; text-align: center; margin-bottom: 8px; }
 
 .giorno {
   /* min-height invece di aspect-ratio: in griglia l'aspect-ratio può far
      debordare la cella oltre la riga e coprire quello che viene dopo. */
-  min-height: 58px; border: 1px solid var(--bordo); border-radius: 10px;
+  min-height: 74px; border: 1px solid var(--bordo); border-radius: 12px;
   background: var(--superficie); color: inherit; font: inherit;
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding: 5px 2px; gap: 1px; cursor: pointer; position: relative;
+  padding: 8px 2px; gap: 2px; cursor: pointer; position: relative;
 }
 .giorno.vuota { border: 0; background: none; }
-.giorno .numero { font-size: 14px; font-weight: 600; }
-.giorno .mio-turno { font-size: 9px; color: var(--testo-tenue); }
+.giorno .numero { font-size: 16px; font-weight: 600; }
+.giorno .mio-turno { font-size: 10px; color: var(--testo-tenue); }
 .giorno .indicatori { display: flex; align-items: center; gap: 2px; margin-top: auto; }
 .giorno.oggi { border-color: var(--accento); background: var(--accento-tenue); }
 .giorno small { font-size: 9px; color: var(--testo-tenue); }

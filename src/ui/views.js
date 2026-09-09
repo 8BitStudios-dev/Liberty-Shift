@@ -180,9 +180,9 @@ export function calendario(params) {
 
   return html`
     <header class="testata">
-      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}">‹</button>
+      <button class="icon-btn grande" data-act="vai" data-to="#/calendario?mese=${prev}">‹</button>
       <h1>${MESI[m - 1]} ${anno}</h1>
-      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
+      <button class="icon-btn grande" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
       <button class="icon-btn" data-act="guida" data-sezione="calendario" title="Come funziona">?</button>
     </header>
     <div class="griglia-intestazione">
