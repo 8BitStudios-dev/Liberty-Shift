@@ -6,12 +6,13 @@
 // una cache-first pura, pubblicare una correzione non sarebbe servito a niente
 // finché qualcuno non svuotava il browser — e nessuno lo fa.
 
-const CACHE = 'liberty-shift-v1';
+const CACHE = 'liberty-shift-v2';
 
 const ASSET = [
   './',
   './index.html',
   './styles.css',
+  './redesign.css',
   './src/core/rules.js',
   './src/core/time.js',
   './src/core/model.js',
@@ -26,6 +27,7 @@ const ASSET = [
   './src/core/statistiche.js',
   './src/core/store.js',
   './src/ui/dom.js',
+  './src/ui/icone.js',
   './src/ui/components.js',
   './src/ui/views.js',
   './src/ui/flows.js',

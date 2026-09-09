@@ -26,6 +26,7 @@ const MODULI = [
   'src/core/statistiche.js',
   'src/core/store.js',
   'src/ui/dom.js',
+  'src/ui/icone.js',
   'src/ui/components.js',
   'src/ui/views.js',
   'src/ui/flows.js',

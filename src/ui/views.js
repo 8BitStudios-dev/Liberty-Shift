@@ -4,6 +4,7 @@ import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
   ruoloNelGiorno,
 } from './components.js';
+import { icona } from './icone.js';
 import {
   hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
 } from '../core/model.js';
@@ -40,7 +41,7 @@ export function home() {
         // di Giulia" quando Giulia ha già accettato manda a cercare un
         // problema che non c'è.
         const titolo = accordo
-          ? '🟢 Scambio concordato'
+          ? 'Scambio concordato'
           : inAttesaDiMe ? 'Ti aspetta una risposta' : `In attesa di ${nomeUtente(altro)}`;
         return html`
           <div class="riga-cambio" data-act="apri-richiesta" data-id="${r?.id}">
@@ -56,7 +57,7 @@ export function home() {
         <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
           <span class="pallino"></span>
           <div>
-            <strong>${hasPriority(r) ? '⭐ ' : ''}Cedi ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
+            <strong>${raw(hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '')}Cedi ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
             <div class="meta">${raw(badgeStato(r.status))}</div>
           </div>
           <span class="chevron">›</span>
@@ -77,7 +78,7 @@ export function home() {
         </div>
         <span class="hero-azioni">
           ${raw(credito > 0 ? `
-            <button class="priorita-chip" data-act="spiega-priorita">⭐ ${credito}</button>` : '')}
+            <button class="priorita-chip" data-act="spiega-priorita">${icona('priorita', { px: 15 })} ${credito}</button>` : '')}
           <button class="icon-btn" data-act="guida" data-sezione="home" title="Come funziona">?</button>
         </span>
       </div>
@@ -93,14 +94,14 @@ export function home() {
 
     <section class="sezione">
       <button class="tile cambio-rapido" data-act="vai" data-to="#/rapido">
-        <span class="tile-icona">⚡</span>
+        <span class="tile-icona">${raw(icona('rapido'))}</span>
         <span>
           <strong>Cambio rapido</strong>
         </span>
         <span class="chevron">›</span>
       </button>
       <button class="tile" data-act="vai" data-to="#/aiuta">
-        <span class="tile-icona">🤝</span>
+        <span class="tile-icona">${raw(icona('aiuta'))}</span>
         <span>
           <strong>Aiuta un collega</strong>
           <em>${aiutabili
@@ -110,7 +111,7 @@ export function home() {
         <span class="chevron">›</span>
       </button>
       <button class="tile" data-act="vai" data-to="#/nuovo">
-        <span class="tile-icona">＋</span>
+        <span class="tile-icona">${raw(icona('nuovo'))}</span>
         <span>
           <strong>Nuovo cambio</strong>
           <em>Scegli tu il giorno e l'orario che cerchi</em>
@@ -239,10 +240,10 @@ export function dettaglioGiorno(data) {
 // -------------------------------------------------------------- BACHECA
 
 const FILTRI = {
-  TUTTI: { label: 'Tutti', test: () => true },
-  ORARIO: { label: '🕐 Orario', test: (r) => r.tipo === TIPO_CAMBIO.ORARIO },
-  OFF: { label: '📅 OFF', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
-  PRIORITA: { label: '⭐ Priorità', test: (r) => hasPriority(r) },
+  TUTTI: { label: 'Tutti', icona: null, test: () => true },
+  ORARIO: { label: 'Orario', icona: 'orario', test: (r) => r.tipo === TIPO_CAMBIO.ORARIO },
+  OFF: { label: 'OFF', icona: 'calendario', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
+  PRIORITA: { label: 'Priorità', icona: 'priorita', test: (r) => hasPriority(r) },
 };
 
 export function bacheca(params) {
@@ -258,7 +259,7 @@ export function bacheca(params) {
     </header>
     <div class="chips">
       ${Object.entries(FILTRI).map(([k, v]) => raw(
-    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.label}</button>`,
+    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 15 }) : ''}${v.label}</button>`,
   ))}
     </div>
     ${raw(lista.length
@@ -276,15 +277,14 @@ export function profilo() {
   return html`
     <header class="hero compatta">
       <button class="icon-btn guida-profilo" data-act="guida" data-sezione="profilo" title="Come funziona">?</button>
-      ${raw(chipRingraziamenti())}
+      <span class="azioni-profilo">
+        ${raw(bottoneSync())}
+        ${raw(chipRingraziamenti())}
+      </span>
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
       <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}${me.superAdmin ? ' · SuperAdmin' : ''}</p>
     </header>
-
-    <section class="sezione">
-      ${raw(rigaInAlto())}
-    </section>
 
     <section class="sezione">
       <h2>Il tuo mese</h2>
@@ -310,7 +310,7 @@ export function profilo() {
     </section>
 
     <button class="riga-impostazioni" data-act="vai" data-to="#/impostazioni">
-      <span class="ingranaggio">⚙︎</span>
+      <span class="ingranaggio">${raw(icona('impostazioni'))}</span>
       <span>Impostazioni</span>
       <span class="chevron">›</span>
     </button>
@@ -358,7 +358,7 @@ export function impostazioni() {
 
     <section class="sezione">
       <button class="tile" data-act="modifica-profilo">
-        <span class="tile-icona">✏️</span>
+        <span class="tile-icona">${raw(icona('scrivi'))}</span>
         <span>
           <strong>Modifica profilo</strong>
           <em>${nomeUtente(me)} · ${RULES.contracts[me.contratto].label} · ${me.oreSettimanali} ore</em>
@@ -366,7 +366,7 @@ export function impostazioni() {
         <span class="chevron">›</span>
       </button>
       <button class="tile" data-act="cambia-password">
-        <span class="tile-icona">🔒</span>
+        <span class="tile-icona">${raw(icona('impostazioni'))}</span>
         <span>
           <strong>Cambia password</strong>
           <em>Serve quella attuale</em>
@@ -374,7 +374,7 @@ export function impostazioni() {
         <span class="chevron">›</span>
       </button>
       <button class="tile" data-act="vai" data-to="#/legale">
-        <span class="tile-icona">📄</span>
+        <span class="tile-icona">${raw(icona('legale'))}</span>
         <span>
           <strong>Note legali e limiti d'uso</strong>
           <em>Cosa fa questa app, cosa non fa, e su cosa si basa</em>
@@ -383,7 +383,7 @@ export function impostazioni() {
       </button>
       ${raw(store.state.profilo?.idServer ? `
         <button class="tile" data-act="invita">
-          <span class="tile-icona">✉️</span>
+          <span class="tile-icona">${raw(icona('invita'))}</span>
           <span>
             <strong>Invita un collega</strong>
             <em>Il messaggio con il link, già pronto da mandare</em>
@@ -408,7 +408,7 @@ function rigaDemo() {
     : (store.state.demoNascosta?.users || []).length;
   return html`
     <label class="tile switch-tile">
-      <span class="tile-icona">🎭</span>
+      <span class="tile-icona">${raw(icona('profilo'))}</span>
       <span>
         <strong>Persone di esempio</strong>
         <em>${visibile
@@ -420,38 +420,22 @@ function rigaDemo() {
 }
 
 /**
- * Il tasto di sincronizzazione col server, piccolo apposta.
+ * Il tasto di sincronizzazione col server, un tondo nella testata.
  *
  * Compare solo a chi è iscritto al negozio sul server. È un'azione, non
  * un'informazione: il numero di colleghi collegati o le cose in coda
- * stavano meglio nella riga estesa che aveva prima, ma qui il tasto deve
- * stare a fianco di "Proposte ricevute" senza rubargli spazio. Quello che
- * conta davvero — un invio fallito — resta visibile come pallino rosso
+ * stavano meglio nella riga estesa che aveva prima. Quello che conta
+ * davvero — un invio fallito — resta visibile come pallino rosso
  * sull'icona, non sparisce e basta.
  */
-function rigaBacheca() {
+function bottoneSync() {
   if (!store.state.profilo?.idServer) return '';
-  const inCoda = (store.state.coda || []).length;
   const errore = store.state.ultimoErroreServer;
-
   return html`
-    <button class="tile-sync" data-act="sincronizza" aria-label="Sincronizza server">
-      <span class="tile-sync-icona">
-        ${inCoda ? '📤' : '🔄'}
-        ${raw(errore ? '<span class="pallino urgente"></span>' : '')}
-      </span>
-      <span class="tile-sync-testo">Sincronizza<br>server</span>
+    <button class="icon-btn" data-act="sincronizza" aria-label="Sincronizza col negozio">
+      ${raw(icona('aggiorna', { px: 20 }))}
+      ${raw(errore ? '<span class="pallino urgente"></span>' : '')}
     </button>`;
-}
-
-/**
- * La riga in cima al Profilo: sincronizza (se c'è un server) a sinistra,
- * proposte ricevute a destra. Senza server la seconda resta larga intera,
- * perché una colonna vuota al posto del tasto sarebbe solo spazio sprecato.
- */
-function rigaInAlto() {
-  const sync = rigaBacheca();
-  return sync ? `<div class="riga-doppia">${sync}${bottoneInbox()}</div>` : bottoneInbox();
 }
 
 /**
@@ -536,7 +520,7 @@ function sezioneTurni() {
     ${raw(rigaAggiornaCalendario())}
 
     <button class="tile" data-act="importa">
-      <span class="tile-icona">📥</span>
+      <span class="tile-icona">${raw(icona('importa'))}</span>
       <span>
         <strong>Importa da calendario</strong>
         <em>Dal calendario dei turni sottoscritto: l'app legge orari, riposi e ferie</em>
@@ -545,7 +529,7 @@ function sezioneTurni() {
     </button>
 
     <button class="tile" data-act="giorno-profilo" data-data="${todayISO()}">
-      <span class="tile-icona">✍️</span>
+      <span class="tile-icona">${raw(icona('scrivi'))}</span>
       <span>
         <strong>Inserisci manualmente i turni</strong>
         <em>Giorno per giorno, dal calendario del mese qui sotto</em>
@@ -598,7 +582,7 @@ function rigaRotazione() {
   const lettera = attiva ? letteraDi(r, appleWeekKey(todayISO())) : null;
   return html`
     <button class="tile" data-act="rotazione">
-      <span class="tile-icona">🔁</span>
+      <span class="tile-icona">${raw(icona('rotazione'))}</span>
       <span>
         <strong>Rotazione settimanale</strong>
         <em>${attiva
@@ -622,7 +606,7 @@ function rigaAggiornaCalendario() {
   if (!p?.calendarioUrl) return '';
   return html`
     <button class="tile" data-act="aggiorna-calendario">
-      <span class="tile-icona">🔄</span>
+      <span class="tile-icona">${raw(icona('aggiorna'))}</span>
       <span>
         <strong>Aggiorna turni dal calendario</strong>
         <em>${p.calendarioAggiornatoIl
@@ -644,23 +628,6 @@ function quandoFa(iso) {
   return giorni === 1 ? 'ieri' : `${giorni} giorni fa`;
 }
 
-/** Il tasto per le proposte, con quante ne aspettano una risposta. */
-function bottoneInbox() {
-  const voci = store.inbox();
-  const daFare = voci.filter((v) => v.aspettaMe || v.daRingraziare).length;
-  return html`
-    <button class="tile" data-act="vai" data-to="#/inbox">
-      <span class="tile-icona">📬</span>
-      <span>
-        <strong>Proposte ricevute</strong>
-        <em>${voci.length
-    ? `${voci.length} in corso${daFare ? `, ${daFare} aspetta${daFare === 1 ? '' : 'no'} te` : ''}`
-    : 'Nessuna proposta al momento'}</em>
-      </span>
-      ${raw(daFare ? `<span class="badge-conta">${daFare}</span>` : '<span class="chevron">›</span>')}
-    </button>`;
-}
-
 /**
  * I ringraziamenti in alto a destra, come un contatore.
  *
@@ -673,7 +640,7 @@ function chipRingraziamenti() {
   if (!quanti) return '';
   return html`
     <button class="grazie-chip" data-act="vedi-grazie" title="Ringraziamenti ricevuti">
-      💛 ${quanti}
+      ${raw(icona('grazie', { px: 15 }))} ${quanti}
     </button>`;
 }
 
@@ -698,7 +665,7 @@ export function listaRingraziamenti() {
           <strong>${g.testo || 'Grazie!'}</strong>
           <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
         </div>
-        <span class="cuore">💛</span>
+        <span class="cuore">${raw(icona('grazie', { px: 15 }))}</span>
       </div>`;
   }).join('');
 
