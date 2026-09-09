@@ -139,6 +139,12 @@ p { margin: 8px 0; }
 .btn.secondario { background: var(--superficie); border: 1px solid var(--bordo); }
 .btn.pericolo { background: transparent; color: var(--rosso); border: 1px solid var(--bordo); }
 .btn.largo { display: block; width: 100%; margin-top: 12px; }
+/* Un'azione secondaria, tipo le due mosse dell'admin dentro il dettaglio di
+   una richiesta: contano meno di "Accetta"/"Proponi", e non devono pesare
+   sulla riga come se fossero il tasto principale della schermata. */
+.btn.piccolo { padding: 7px 12px; font-size: 13px; border-radius: 10px; }
+.barra-azioni.compatta { justify-content: flex-end; }
+.barra-azioni.compatta .btn { flex: 0 0 auto; }
 
 .icon-btn {
   appearance: none; border: 0; background: var(--superficie);

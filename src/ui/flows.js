@@ -478,9 +478,9 @@ export function dettaglio(params) {
   // c'è più niente da fare, ed è già scritto perché lo è.
   const azioniAdmin = store.me.admin && !chiusaOAccordo
     ? html`
-      <div class="barra-azioni">
-        <button class="btn secondario" data-act="chiedi-chiudi-admin" data-id="${r.id}">🛡️ Chiudi (admin)</button>
-        <button class="btn pericolo" data-act="chiedi-rimuovi-admin" data-id="${r.id}">🛡️ Rimuovi (admin)</button>
+      <div class="barra-azioni compatta">
+        <button class="btn secondario piccolo" data-act="chiedi-chiudi-admin" data-id="${r.id}">🛡️ Chiudi</button>
+        <button class="btn pericolo piccolo" data-act="chiedi-rimuovi-admin" data-id="${r.id}">🛡️ Rimuovi</button>
       </div>`
     : '';
 
