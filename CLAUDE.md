@@ -73,6 +73,13 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   colonna che non c'è. Vanno scritti anche come `alter table ... add column
   if not exists` (e un `drop constraint if exists` + `add constraint` per i
   vincoli), fuori dal blocco `create table`.
+- **Da SQL Editor `auth.role()` è `null`, non `'service_role'`.** Un trigger
+  scritto come `if auth.role() is distinct from 'service_role'` blocca anche
+  SQL Editor stesso, non solo il client dell'app: `null is distinct from
+  'service_role'` è vero. Un `update` da SQL Editor torna "0 rows updated"
+  senza nessun errore. La forma giusta elenca i ruoli da bloccare davvero
+  (`auth.role() in ('anon', 'authenticated')`), e lascia passare tutto il
+  resto.
 
 ## Documentazione
 
