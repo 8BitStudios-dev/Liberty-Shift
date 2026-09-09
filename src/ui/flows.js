@@ -818,7 +818,10 @@ export function gestioneIscritti() {
   if (!store.me.superAdmin) return vuoto('Sezione riservata', 'Solo il SuperAdmin può gestire gli iscritti.');
 
   const me = store.state.currentUserId;
-  const iscritti = store.state.users.filter((u) => u.daServer && u.id !== me);
+  const iscritti = store.state.users
+    .filter((u) => u.daServer && u.id !== me)
+    .sort((a, b) => nomeUtente(a).localeCompare(nomeUtente(b)));
+  const numeroAdmin = iscritti.filter((u) => u.admin).length;
 
   return html`
     <header class="testata">
@@ -829,8 +832,15 @@ export function gestioneIscritti() {
     'Ancora nessuno',
     'I colleghi compariranno qui non appena si saranno iscritti con il codice del negozio.',
   ))}
-    ${raw(iscritti.map((u) => html`
-      <article class="card riga-iscritto ${u.attivo ? '' : 'disattivato'}">
+    ${raw(iscritti.length ? html`
+      <p class="occhiello">${iscritti.length} iscritti, ${numeroAdmin} admin.</p>
+      <label class="campo">
+        <input type="search" class="testo" data-campo="cerca-iscritto"
+               placeholder="Cerca per nome…" autocomplete="off">
+      </label>` : '')}
+    <div id="lista-iscritti">
+      ${raw(iscritti.map((u) => html`
+      <article class="card riga-iscritto ${u.attivo ? '' : 'disattivato'}" data-nome="${nomeUtente(u).toLowerCase()}">
         <header class="card-head">
           <span class="avatar">${iniziali(u)}</span>
           <div>
@@ -843,12 +853,13 @@ export function gestioneIscritti() {
           </div>
         </header>
         <div class="barra-azioni">
-          ${u.admin
+          ${raw(u.admin
     ? `<button class="btn secondario" data-act="retrocedi-admin" data-id="${u.id}">Togli admin</button>`
-    : `<button class="btn secondario" data-act="promuovi-admin" data-id="${u.id}">Rendi admin</button>`}
-          ${u.attivo
+    : `<button class="btn secondario" data-act="promuovi-admin" data-id="${u.id}">Rendi admin</button>`)}
+          ${raw(u.attivo
     ? `<button class="btn pericolo" data-act="disattiva-profilo" data-id="${u.id}">Disattiva</button>`
-    : `<button class="btn primario" data-act="riattiva-profilo" data-id="${u.id}">Riattiva</button>`}
+    : `<button class="btn primario" data-act="riattiva-profilo" data-id="${u.id}">Riattiva</button>`)}
         </div>
-      </article>`).join(''))}`;
+      </article>`).join(''))}
+    </div>`;
 }

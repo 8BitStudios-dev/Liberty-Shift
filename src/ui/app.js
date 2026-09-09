@@ -1024,6 +1024,14 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave === 'password-conferma') { P.bozzaProfilo.conferma = el.value; return; }
   if (chiave === 'codice') { P.bozzaProfilo.codice = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
+  // Con 90+ iscritti un rerender a ogni lettera sposterebbe il cursore come
+  // sopra: si nasconde e mostra direttamente le card già disegnate.
+  if (chiave === 'cerca-iscritto') {
+    const query = el.value.trim().toLowerCase();
+    document.querySelectorAll('#lista-iscritti .riga-iscritto').forEach((card) => {
+      card.hidden = Boolean(query) && !card.dataset.nome.includes(query);
+    });
+  }
 });
 
 /*
