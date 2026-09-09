@@ -58,8 +58,11 @@ Le regole, in italiano:
    Regione Europa (Frankfurt o Ireland): i dati sono di persone che lavorano
    qui. Segna la password del database, serve solo a te.
 2. **SQL Editor** → *New query* → incolla `supabase/schema.sql` → *Run*. Si può
-   rilanciare senza danni: ogni oggetto è creato "if not exists" e le policy
-   vengono ricreate.
+   rilanciare senza danni ogni volta che cambia: funzioni, trigger e policy si
+   ricreano da soli, e le colonne/vincoli nuovi su tabelle già esistenti
+   arrivano dalle `alter table` esplicite dentro il file, non dal solo `create
+   table if not exists` (che su una tabella già lì non fa niente — vedi
+   `CLAUDE.md`).
 3. **Verifica che RLS sia davvero attiva**, invece di fidarsi:
    ```sql
    select tablename, rowsecurity
