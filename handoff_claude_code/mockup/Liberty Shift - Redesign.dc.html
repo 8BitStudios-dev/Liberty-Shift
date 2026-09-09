@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><style>body{margin:0;background:#e8ebf0;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif;color:#0f1720}a{color:#2f7bf6}a:hover{color:#1c62d6}</style></helmet>
+
+<div style="padding:44px 48px 60px;display:flex;flex-direction:column;gap:34px">
+
+  <div style="max-width:760px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:11px">
+      <span style="width:32px;height:32px;background:url('public/icons/marchio.png') center/contain no-repeat;flex:0 0 auto"></span>
+      <span style="font-size:13px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;background:linear-gradient(118deg,#2f7bf6,#34b98a);-webkit-background-clip:text;background-clip:text;color:transparent">Liberty Shift</span>
+    </div>
+    <h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-.03em">Redesign — stesse sezioni, altra leggibilità</h1>
+    <p style="margin:0;font-size:16px;line-height:1.55;color:#56626f;text-wrap:pretty">Struttura, pulsanti e flussi restano quelli che ci sono. Cambiano tre cose: il colore diventa semantico (<strong style="color:#2f7bf6">blu = il turno che cedi</strong>, <strong style="color:#0e8f5f">verde = il turno che prendi</strong>), i riquadri diventano elenchi su una superficie sola, e i testi secondari salgono da 13/10px a 14/12px. Il rosso torna a significare solo errore.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:14px;max-width:900px">
+    <div style="background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);display:flex;flex-direction:column;gap:12px;min-width:280px;flex:1">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#56626f">Palette</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:44px;height:44px;border-radius:11px;background:#2f7bf6"></span><span style="font:600 10.5px ui-monospace,Menlo,monospace;color:#56626f">cedo</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:44px;height:44px;border-radius:11px;background:#109c68"></span><span style="font:600 10.5px ui-monospace,Menlo,monospace;color:#56626f">prendo</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:44px;height:44px;border-radius:11px;background:linear-gradient(118deg,#2f7bf6,#34b98a)"></span><span style="font:600 10.5px ui-monospace,Menlo,monospace;color:#56626f">marchio</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:44px;height:44px;border-radius:11px;background:#a97a06"></span><span style="font:600 10.5px ui-monospace,Menlo,monospace;color:#56626f">priorità</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:44px;height:44px;border-radius:11px;background:#d23b45"></span><span style="font:600 10.5px ui-monospace,Menlo,monospace;color:#56626f">errore</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:44px;height:44px;border-radius:11px;background:#f2f5f9;border:1px solid #e4e8ef"></span><span style="font:600 10.5px ui-monospace,Menlo,monospace;color:#56626f">sfondo</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:center"><span style="width:44px;height:44px;border-radius:11px;background:#0d1421"></span><span style="font:600 10.5px ui-monospace,Menlo,monospace;color:#56626f">scuro</span></div>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:16px;padding:16px 18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);display:flex;flex-direction:column;gap:8px;min-width:260px;flex:1">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#56626f">Scala</div>
+      <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:34px;font-weight:700;letter-spacing:-.03em">34</span><span style="font-size:14px;color:#56626f">nome in Home</span></div>
+      <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:16px;font-weight:650">16</span><span style="font-size:14px;color:#56626f">titoli di riga e di sezione</span></div>
+      <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:14px">14</span><span style="font-size:14px;color:#56626f">sintesi, meta, legende <span style="color:#a97a06">(era 13)</span></span></div>
+      <div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:12px">12</span><span style="font-size:14px;color:#56626f">turno in cella, pill <span style="color:#a97a06">(era 9-10)</span></span></div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:20px">
+      <div style="display:flex;align-items:baseline;gap:9px"><a href="#1a" style="font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#0f1720;color:#fff;border-radius:5px;text-decoration:none">1a</a><span style="font-size:13px;color:#56626f">Home</span></div>
+      <div style="width:390px;background:#f2f5f9;border:9px solid #10151d;border-radius:44px;overflow:hidden;box-shadow:0 26px 60px -20px rgba(15,23,42,.45)">
+        <div style="display:flex;flex-direction:column;min-height:800px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:700"><span>9:41</span><span style="display:flex;gap:5px;align-items:center"><span style="width:16px;height:9px;border-radius:2px;background:#0f1720"></span><span style="width:22px;height:10px;border-radius:3px;border:1.5px solid #0f1720"></span></span></div>
+
+          <div style="padding:14px 18px 0;flex:1">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+              <span style="width:28px;height:28px;background:url('public/icons/marchio.png') center/contain no-repeat;flex:0 0 auto"></span>
+              <span style="font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:linear-gradient(118deg,#2f7bf6,#34b98a);-webkit-background-clip:text;background-clip:text;color:transparent">Liberty Shift</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div>
+                <p style="margin:0;font-size:15px;color:#56626f">Buongiorno</p>
+                <h1 style="margin:0;font-size:34px;font-weight:700;letter-spacing:-.03em">Lorenzo</h1>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+                <span style="font-size:14px;font-weight:700;color:#a97a06;border:1px solid #a97a06;border-radius:999px;padding:7px 13px;white-space:nowrap;flex:0 0 auto;display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none" style="display:block;flex:0 0 auto"><path d="M12 3.3l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.7l6-.9z"/></svg>1</span>
+                <span style="width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;font-size:19px;color:#56626f">?</span>
+              </div>
+            </div>
+            <p style="margin:4px 0 0;font-size:15px;color:#56626f">Hai ancora una priorità disponibile questo mese · dura 48h</p>
+
+            <div style="margin:28px 0">
+              <h2 style="margin:0 0 12px;font-size:16px;font-weight:650;letter-spacing:-.01em">I tuoi cambi</h2>
+              <div style="background:#fff;border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);overflow:hidden">
+                <div style="display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid #edf0f5">
+                  <span style="width:10px;height:10px;border-radius:50%;background:#109c68;flex:0 0 auto"></span>
+                  <div style="flex:1;min-width:0"><strong style="font-size:16px">Scambio concordato</strong><div style="font-size:14px;color:#56626f">Scambio con Giulia M.</div></div>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid #edf0f5">
+                  <span style="width:10px;height:10px;border-radius:50%;background:#d23b45;box-shadow:0 0 0 4px rgba(210,59,69,.18);flex:0 0 auto"></span>
+                  <div style="flex:1;min-width:0"><strong style="font-size:16px">Ti aspetta una risposta</strong><div style="font-size:14px;color:#56626f">Scambio con Marco B.</div></div>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:16px">
+                  <span style="width:10px;height:10px;border-radius:50%;background:#2f7bf6;flex:0 0 auto"></span>
+                  <div style="flex:1;min-width:0"><strong style="font-size:16px;display:inline-flex;align-items:center;gap:6px"><span style="color:#a97a06"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" style="display:block;flex:0 0 auto"><path d="M12 3.3l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.7l6-.9z"/></svg></span>Cedi mar 15 set</strong><div style="font-size:14px;color:#56626f">In bacheca · 2 proposte</div></div>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin:28px 0;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:linear-gradient(118deg,rgba(47,123,246,.10),rgba(52,185,138,.12));box-shadow:0 1px 2px rgba(15,23,42,.04)">
+                <span style="width:42px;height:42px;border-radius:13px;background:linear-gradient(118deg,#2f7bf6,#34b98a);display:grid;place-items:center;flex:0 0 auto;color:#fff"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z"/></svg></span>
+                <strong style="flex:1;font-size:17px;color:#1a5fd0">Cambio rapido</strong>
+                <span style="color:#1a5fd0;font-size:19px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14)">
+                <span style="flex:0 0 auto;color:#2f7bf6"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="9.3" cy="8.6" r="3.2"/><path d="M3.6 19.6c.8-3 2.9-4.7 5.7-4.7s4.9 1.7 5.7 4.7"/><path d="M16.3 5.8a3.2 3.2 0 0 1 0 5.7M18 14.9c1.9.8 3.1 2.4 3.5 4.7"/></svg></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Aiuta un collega</strong><span style="font-size:14px;color:#56626f">3 richieste che puoi risolvere</span></span>
+                <span style="color:#56626f;font-size:19px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14)">
+                <span style="flex:0 0 auto;color:#2f7bf6"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="12" r="8.6"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Nuovo cambio</strong><span style="font-size:14px;color:#56626f">Scegli tu il giorno e l'orario che cerchi</span></span>
+                <span style="color:#56626f;font-size:19px">›</span>
+              </div>
+            </div>
+
+            <div style="margin:28px 0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+                <h2 style="margin:0;font-size:16px;font-weight:650;letter-spacing:-.01em">Ultime richieste</h2>
+                <span style="font-size:15px;font-weight:600;color:#2f7bf6">Vedi tutto</span>
+              </div>
+              <div style="background:#fff;border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);overflow:hidden">
+                <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #2f7bf6,inset 0 -1px 0 #edf0f5">
+                  <span style="width:34px;height:34px;border-radius:50%;background:#e9f1fe;color:#2f7bf6;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">GM</span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px">Giulia M.<span style="font-size:12px;font-weight:600;color:#56626f;background:#eaeef4;border-radius:7px;padding:2px 8px;white-space:nowrap;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/></svg>cede</span></span>
+                    <span style="font-size:14px;color:#56626f">mar 15 set · cede 08:00–17:00 · cerca pomeriggio</span>
+                  </span>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #109c68,inset 0 -1px 0 #edf0f5">
+                  <span style="width:34px;height:34px;border-radius:50%;background:#e4f6ee;color:#0e8f5f;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">MB</span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px">Marco B.<span style="font-size:12px;font-weight:600;color:#56626f;background:#eaeef4;border-radius:7px;padding:2px 8px;white-space:nowrap;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>offre</span></span>
+                    <span style="font-size:14px;color:#56626f">cerca OFF sab 19 set · offre dom 20 o lun 21</span>
+                  </span>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #a97a06">
+                  <span style="width:34px;height:34px;border-radius:50%;background:#e9f1fe;color:#2f7bf6;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">SR</span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-size:16px;font-weight:600;display:flex;align-items:center;gap:8px"><span style="color:#a97a06;display:flex"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" style="display:block;flex:0 0 auto"><path d="M12 3.3l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.7l6-.9z"/></svg></span>Sara R.<span style="font-size:12px;font-weight:600;color:#56626f;background:#eaeef4;border-radius:7px;padding:2px 8px;white-space:nowrap;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;gap:5px"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/></svg>cede</span></span>
+                    <span style="font-size:14px;color:#56626f">gio 17 set · cede 13:00–22:00 · cerca mattina</span>
+                    <span style="font-size:13px;color:#d23b45">al momento non puoi cambiare</span>
+                  </span>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:space-around;padding:9px 0 14px;background:rgba(255,255,255,.9);border-top:1px solid #edf0f5;backdrop-filter:blur(18px)"><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#2f7bf6;font-weight:600;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 10.6 12 4l8.5 6.6V20H3.5z"/><path d="M9.5 20v-5.5h5V20"/></svg>Home</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>Calendario</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/></svg>Bacheca</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 13.5 6 5.5h12l2.5 8v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/></svg>Proposte<span style="position:absolute;top:2px;right:8px;min-width:19px;height:19px;border-radius:999px;background:#d23b45;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px">2</span></span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/></svg>Profilo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:20px">
+      <div style="display:flex;align-items:baseline;gap:9px"><a href="#1b" style="font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#0f1720;color:#fff;border-radius:5px;text-decoration:none">1b</a><span style="font-size:13px;color:#56626f">Bacheca — elenco unico invece di card impilate</span></div>
+      <div style="width:390px;background:#f2f5f9;border:9px solid #10151d;border-radius:44px;overflow:hidden;box-shadow:0 26px 60px -20px rgba(15,23,42,.45)">
+        <div style="display:flex;flex-direction:column;min-height:800px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:700"><span>9:41</span><span style="display:flex;gap:5px;align-items:center"><span style="width:16px;height:9px;border-radius:2px;background:#0f1720"></span><span style="width:22px;height:10px;border-radius:3px;border:1.5px solid #0f1720"></span></span></div>
+          <div style="padding:6px 18px 0;flex:1">
+            <div style="display:flex;align-items:center;gap:10px;padding:14px 0 12px">
+              <h1 style="flex:1;margin:0;font-size:24px;font-weight:700;letter-spacing:-.025em">Bacheca</h1>
+              <span style="width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;font-size:19px;color:#56626f">?</span>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px">
+              <span style="font-size:14.5px;padding:9px 16px;border-radius:999px;background:#2f7bf6;color:#fff;font-weight:600">Tutti</span>
+              <span style="font-size:14.5px;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid #e4e8ef;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/></svg>Orario</span>
+              <span style="font-size:14.5px;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid #e4e8ef;display:inline-flex;align-items:center;gap:7px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>OFF</span>
+              <span style="font-size:14.5px;padding:9px 16px;border-radius:999px;background:#fff;border:1px solid #e4e8ef;display:inline-flex;align-items:center;gap:7px;color:#a97a06"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none" style="display:block;flex:0 0 auto"><path d="M12 3.3l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.7l6-.9z"/></svg><span style="color:#0f1720">Priorità</span></span>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#56626f;margin:0 0 4px"><span style="width:14px;height:3px;border-radius:2px;background:#2f7bf6"></span>Cercano · 2</div>
+            <p style="margin:0 0 10px;font-size:14px;color:#56626f">Vogliono lasciare il loro turno. Se tu sei libero, puoi prenderlo.</p>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);overflow:hidden;margin-bottom:22px">
+              <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #2f7bf6,inset 0 -1px 0 #edf0f5">
+                <span style="width:34px;height:34px;border-radius:50%;background:#e9f1fe;color:#2f7bf6;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">GM</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Giulia M.</span><span style="font-size:14px;color:#56626f">mar 15 set · cede 08:00–17:00</span></span>
+                <span style="color:#56626f;font-size:19px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #a97a06">
+                <span style="width:34px;height:34px;border-radius:50%;background:#e9f1fe;color:#2f7bf6;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">SR</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600;display:inline-flex;align-items:center;gap:6px"><span style="color:#a97a06;display:flex"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="none" style="display:block;flex:0 0 auto"><path d="M12 3.3l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.7l6-.9z"/></svg></span>Sara R.</span><span style="font-size:14px;color:#56626f">gio 17 set · cede 13:00–22:00</span></span>
+                <span style="color:#56626f;font-size:19px">›</span>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#56626f;margin:0 0 4px"><span style="width:14px;height:3px;border-radius:2px;background:#109c68"></span>Offrono · 3</div>
+            <p style="margin:0 0 10px;font-size:14px;color:#56626f">Turni e giornate messi a disposizione: qui si prende.</p>
+            <div style="background:#fff;border-radius:18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);overflow:hidden">
+              <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #109c68,inset 0 -1px 0 #edf0f5">
+                <span style="width:34px;height:34px;border-radius:50%;background:#e4f6ee;color:#0e8f5f;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">MB</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Marco B.</span><span style="font-size:14px;color:#56626f">offre dom 20 set · 10:00–19:00</span></span>
+                <span style="color:#56626f;font-size:19px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #109c68,inset 0 -1px 0 #edf0f5">
+                <span style="width:34px;height:34px;border-radius:50%;background:#e4f6ee;color:#0e8f5f;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">AF</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Andrea F.</span><span style="font-size:14px;color:#56626f">offre lun 21 set · 09:00–18:00</span></span>
+                <span style="color:#56626f;font-size:19px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #109c68">
+                <span style="width:34px;height:34px;border-radius:50%;background:#e4f6ee;color:#0e8f5f;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">CP</span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Chiara P.</span><span style="font-size:14px;color:#56626f">offre mer 23 set · 14:00–22:00</span></span>
+                <span style="color:#56626f;font-size:19px">›</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-around;padding:9px 0 14px;background:rgba(255,255,255,.9);border-top:1px solid #edf0f5;backdrop-filter:blur(18px)"><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 10.6 12 4l8.5 6.6V20H3.5z"/><path d="M9.5 20v-5.5h5V20"/></svg>Home</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>Calendario</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#2f7bf6;font-weight:600;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/></svg>Bacheca</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 13.5 6 5.5h12l2.5 8v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/></svg>Proposte<span style="position:absolute;top:2px;right:8px;min-width:19px;height:19px;border-radius:999px;background:#d23b45;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px">2</span></span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/></svg>Profilo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1c" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:20px">
+      <div style="display:flex;align-items:baseline;gap:9px"><a href="#1c" style="font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#0f1720;color:#fff;border-radius:5px;text-decoration:none">1c</a><span style="font-size:13px;color:#56626f">Dettaglio — blu cedi / verde prendi</span></div>
+      <div style="width:390px;background:#f2f5f9;border:9px solid #10151d;border-radius:44px;overflow:hidden;box-shadow:0 26px 60px -20px rgba(15,23,42,.45)">
+        <div style="display:flex;flex-direction:column;min-height:800px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:700"><span>9:41</span><span style="display:flex;gap:5px;align-items:center"><span style="width:16px;height:9px;border-radius:2px;background:#0f1720"></span><span style="width:22px;height:10px;border-radius:3px;border:1.5px solid #0f1720"></span></span></div>
+          <div style="padding:6px 18px 0;flex:1">
+            <div style="display:flex;align-items:center;gap:10px;padding:14px 0 12px">
+              <span style="width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;font-size:19px;color:#56626f">‹</span>
+              <h1 style="flex:1;margin:0;font-size:22px;font-weight:700;text-align:center;letter-spacing:-.02em">Richiesta</h1>
+              <span style="width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;font-size:19px;color:#56626f">?</span>
+            </div>
+
+            <div style="background:#fff;border-radius:18px;padding:18px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);border-left:4px solid #109c68">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+                <span style="width:40px;height:40px;border-radius:50%;background:#e9f1fe;color:#2f7bf6;display:grid;place-items:center;font-weight:700;font-size:15px">GM</span>
+                <div style="flex:1;min-width:0"><strong style="font-size:16px">Giulia M.</strong><div style="font-size:14px;color:#56626f">Full Time · 40 ore</div></div>
+                <span style="font-weight:700;font-size:18px;color:#109c68;font-variant-numeric:tabular-nums">92%</span>
+              </div>
+              <div style="font-size:12px;font-weight:700;letter-spacing:.03em;color:#56626f;margin-bottom:8px;display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/></svg>CAMBIO ORARIO · stesso giorno</div>
+              <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;padding:14px;border-radius:13px;background:#eaeef4">
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <span style="font-size:12px;font-weight:700;letter-spacing:.05em;color:#2f7bf6">LASCIA</span>
+                  <strong style="font-size:16px">mar 15 set</strong>
+                  <span style="font-size:14px;color:#56626f">08:00–17:00</span>
+                </div>
+                <div style="align-self:center;color:#56626f;display:flex"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/></svg></div>
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <span style="font-size:12px;font-weight:700;letter-spacing:.05em;color:#109c68">CERCA</span>
+                  <strong style="font-size:16px">stesso giorno</strong>
+                  <span style="font-size:14px;color:#56626f">pomeriggio</span>
+                </div>
+              </div>
+              <p style="margin:12px 0 0;font-size:15px;color:#56626f;font-style:italic">“Ho una visita la mattina, cambio volentieri con chiunque.”</p>
+              <div style="display:grid;gap:0;margin:14px 0 12px">
+                <div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:9px 0;border-bottom:1px solid #edf0f5"><span style="color:#56626f">Tu faresti</span><strong>mar 15 · 08:00–17:00</strong></div>
+                <div style="display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:9px 0"><span style="color:#56626f">Giulia farebbe</span><strong>mar 15 · 13:00–22:00</strong></div>
+              </div>
+              <ul style="margin:0 0 14px;padding-left:20px;font-size:14px;line-height:1.55;color:#56626f">
+                <li>Stessa settimana Apple: il monte ore non cambia.</li>
+                <li>Sei disponibile martedì e il turno rientra nel tuo contratto.</li>
+                <li>Nessuna delle tue preferenze viene toccata.</li>
+              </ul>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <span style="display:block;text-align:center;padding:15px 20px;border-radius:13px;background:linear-gradient(118deg,#2f7bf6,#34b98a);color:#fff;font-weight:650;font-size:16px;box-shadow:0 6px 16px -6px rgba(47,123,246,.7)">Proponi lo scambio</span>
+                <span style="display:block;text-align:center;padding:15px 20px;border-radius:13px;background:#fff;border:1px solid #e4e8ef;font-weight:650;font-size:16px">Scrivi a Giulia</span>
+              </div>
+            </div>
+
+            <div style="background:#fff;border-radius:18px;padding:18px;margin-top:14px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);border-left:4px solid #a97a06">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+                <span style="width:40px;height:40px;border-radius:50%;background:#e9f1fe;color:#2f7bf6;display:grid;place-items:center;font-weight:700;font-size:15px">MB</span>
+                <div style="flex:1;min-width:0"><strong style="font-size:16px">Marco B.</strong><div style="font-size:14px;color:#56626f">Part Time · 24 ore</div></div>
+                <span style="font-weight:700;font-size:18px;color:#a97a06;font-variant-numeric:tabular-nums">61%</span>
+              </div>
+              <div style="font-size:15px;color:#0f1720">Potenziale · dal calendario</div>
+              <div style="font-size:14px;color:#a97a06;margin-top:8px;display:flex;align-items:flex-start;gap:7px"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M12 4.6 21 19.6H3z"/><path d="M12 10v4M12 16.6h.01"/></svg><span>La settimana andrebbe a 26 ore su 24.</span></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-around;padding:9px 0 14px;background:rgba(255,255,255,.9);border-top:1px solid #edf0f5;backdrop-filter:blur(18px)"><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 10.6 12 4l8.5 6.6V20H3.5z"/><path d="M9.5 20v-5.5h5V20"/></svg>Home</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>Calendario</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#2f7bf6;font-weight:600;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/></svg>Bacheca</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 13.5 6 5.5h12l2.5 8v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/></svg>Proposte<span style="position:absolute;top:2px;right:8px;min-width:19px;height:19px;border-radius:999px;background:#d23b45;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px">2</span></span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/></svg>Profilo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1d" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:20px">
+      <div style="display:flex;align-items:baseline;gap:9px"><a href="#1d" style="font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#0f1720;color:#fff;border-radius:5px;text-decoration:none">1d</a><span style="font-size:13px;color:#56626f">Calendario — celle 80px, turno a 12px</span></div>
+      <div style="width:390px;background:#f2f5f9;border:9px solid #10151d;border-radius:44px;overflow:hidden;box-shadow:0 26px 60px -20px rgba(15,23,42,.45)">
+        <div style="display:flex;flex-direction:column;min-height:800px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:700"><span>9:41</span><span style="display:flex;gap:5px;align-items:center"><span style="width:16px;height:9px;border-radius:2px;background:#0f1720"></span><span style="width:22px;height:10px;border-radius:3px;border:1.5px solid #0f1720"></span></span></div>
+          <div style="padding:6px 18px 0;flex:1">
+            <div style="display:flex;align-items:center;gap:10px;padding:14px 0 12px">
+              <span style="width:46px;height:46px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;font-size:25px;color:#56626f">‹</span>
+              <h1 style="flex:1;margin:0;font-size:22px;font-weight:700;text-align:center;letter-spacing:-.02em">Settembre 2026</h1>
+              <span style="width:46px;height:46px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;font-size:25px;color:#56626f">›</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px;font-size:13px;color:#56626f;text-align:center;margin-bottom:8px"><span>S</span><span>D</span><span>L</span><span>M</span><span>M</span><span>G</span><span>V</span></div>
+            <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px">
+              <div></div><div></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">1</span><span style="font-size:12px;color:#56626f">09:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">2</span><span style="font-size:12px;color:#56626f">09:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">3</span><span style="font-size:12px;color:#56626f">OFF</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">4</span><span style="font-size:12px;color:#56626f">13:00</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#2f7bf6"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">5</span><span style="font-size:12px;color:#56626f">13:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">6</span><span style="font-size:12px;color:#56626f">OFF</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">7</span><span style="font-size:12px;color:#56626f">08:00</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#109c68"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">8</span><span style="font-size:12px;color:#56626f">08:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">9</span><span style="font-size:12px;color:#56626f">10:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">10</span><span style="font-size:12px;color:#56626f">10:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">11</span><span style="font-size:12px;color:#56626f">OFF</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#2f7bf6"></i><i style="flex:1;border-radius:2px;background:#109c68"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">12</span><span style="font-size:12px;color:#56626f">14:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #2f7bf6;background:#e9f1fe;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:700;color:#1a5fd0">13</span><span style="font-size:12px;color:#1a5fd0">14:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">14</span><span style="font-size:12px;color:#56626f">OFF</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #a97a06;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">15</span><span style="font-size:12px;color:#56626f">08:00</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#2f7bf6"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">16</span><span style="font-size:12px;color:#56626f">08:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">17</span><span style="font-size:12px;color:#56626f">13:00</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#2f7bf6"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">18</span><span style="font-size:12px;color:#56626f">OFF</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">19</span><span style="font-size:12px;color:#56626f">10:00</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#2f7bf6"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">20</span><span style="font-size:12px;color:#56626f">OFF</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#109c68"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">21</span><span style="font-size:12px;color:#56626f">09:00</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#109c68"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">22</span><span style="font-size:12px;color:#56626f">09:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">23</span><span style="font-size:12px;color:#56626f">14:00</span><span style="display:flex;gap:2px;width:66%;height:4px;margin-top:auto"><i style="flex:1;border-radius:2px;background:#109c68"></i></span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">24</span><span style="font-size:12px;color:#56626f">14:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">25</span><span style="font-size:12px;color:#56626f">OFF</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">26</span><span style="font-size:12px;color:#56626f">08:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">27</span><span style="font-size:12px;color:#56626f">08:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">28</span><span style="font-size:12px;color:#56626f">13:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">29</span><span style="font-size:12px;color:#56626f">13:00</span></div>
+              <div style="min-height:80px;border-radius:13px;border:1px solid #edf0f5;background:#fff;display:flex;flex-direction:column;align-items:center;padding:8px 2px;gap:3px"><span style="font-size:17px;font-weight:600">30</span><span style="font-size:12px;color:#56626f">OFF</span></div>
+            </div>
+            <p style="margin-top:14px;font-size:14px;color:#56626f;line-height:2">
+              <span style="display:inline-flex;width:16px;height:4px;vertical-align:middle;margin-right:5px"><i style="flex:1;border-radius:2px;background:#2f7bf6;display:block;width:100%"></i></span>qualcuno cede ·
+              <span style="display:inline-flex;width:16px;height:4px;vertical-align:middle;margin:0 5px"><i style="flex:1;border-radius:2px;background:#109c68;display:block;width:100%"></i></span>qualcuno offre · bordo oro: priorità. Ogni riga è una settimana Apple, da sabato a venerdì.
+            </p>
+          </div>
+          <div style="display:flex;justify-content:space-around;padding:9px 0 14px;background:rgba(255,255,255,.9);border-top:1px solid #edf0f5;backdrop-filter:blur(18px)"><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 10.6 12 4l8.5 6.6V20H3.5z"/><path d="M9.5 20v-5.5h5V20"/></svg>Home</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#2f7bf6;font-weight:600;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>Calendario</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/></svg>Bacheca</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 13.5 6 5.5h12l2.5 8v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/></svg>Proposte<span style="position:absolute;top:2px;right:8px;min-width:19px;height:19px;border-radius:999px;background:#d23b45;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px">2</span></span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/></svg>Profilo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1e" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:20px">
+      <div style="display:flex;align-items:baseline;gap:9px"><a href="#1e" style="font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#0f1720;color:#fff;border-radius:5px;text-decoration:none">1e</a><span style="font-size:13px;color:#56626f">Profilo — il mese leggibile</span></div>
+      <div style="width:390px;background:#f2f5f9;border:9px solid #10151d;border-radius:44px;overflow:hidden;box-shadow:0 26px 60px -20px rgba(15,23,42,.45)">
+        <div style="display:flex;flex-direction:column;min-height:800px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:700"><span>9:41</span><span style="display:flex;gap:5px;align-items:center"><span style="width:16px;height:9px;border-radius:2px;background:#0f1720"></span><span style="width:22px;height:10px;border-radius:3px;border:1.5px solid #0f1720"></span></span></div>
+          <div style="padding:6px 18px 0;flex:1">
+            <div style="position:relative;text-align:center;padding:24px 0 4px">
+              <span style="position:absolute;top:12px;left:0;width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;font-size:19px;color:#56626f">?</span>
+              <span style="position:absolute;top:12px;right:0;display:flex;align-items:center;gap:8px"><span style="width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #e4e8ef;display:grid;place-items:center;color:#56626f"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M20.2 12a8.2 8.2 0 1 1-2.7-6.1"/><path d="M20.2 4.2v5.6h-5.4"/></svg></span><span style="font-size:14px;font-weight:700;border:1px solid #e4e8ef;background:#fff;border-radius:999px;padding:7px 13px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px"><span style="color:#d23b45;display:flex"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none" style="display:block;flex:0 0 auto"><path d="M12 20.4c-.4 0-7.6-4.6-7.6-9.6a4.1 4.1 0 0 1 7.6-2.2 4.1 4.1 0 0 1 7.6 2.2c0 5-7.2 9.6-7.6 9.6z"/></svg></span>3</span></span>
+              <span style="width:76px;height:76px;border-radius:50%;background:linear-gradient(118deg,#e9f1fe,#e4f6ee);color:#1a5fd0;display:grid;place-items:center;font-weight:700;font-size:25px;margin:0 auto 12px">LB</span>
+              <h1 style="margin:0;font-size:26px;font-weight:700;letter-spacing:-.025em">Lorenzo B.</h1>
+              <p style="margin:4px 0 0;font-size:15px;color:#56626f">Full Time · 40 ore · Admin</p>
+            </div>
+
+            
+
+            <div style="margin:30px 0">
+              <h2 style="margin:0 0 12px;font-size:16px;font-weight:650;letter-spacing:-.01em">Il tuo mese</h2>
+              <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;font-size:11px;color:#56626f;text-align:center"><span>S</span><span>D</span><span>L</span><span>M</span><span>M</span><span>G</span><span>V</span></div>
+              <div style="margin-bottom:9px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><h3 style="margin:0 0 3px;font-size:12px;color:#56626f;font-weight:600">sab 5 set → ven 11 set <span style="font-weight:700;color:#2f7bf6">A</span></h3><span style="font-size:12px;font-weight:700;color:#109c68;font-variant-numeric:tabular-nums">✓ 40/40</span></div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;opacity:.45"><span style="font-size:13.5px;font-weight:700">5</span><span style="font-size:11px;color:#56626f">13:00</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;opacity:.45"><span style="font-size:13.5px;font-weight:700">6</span><span style="font-size:11px;color:#56626f">OFF</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;opacity:.45"><span style="font-size:13.5px;font-weight:700">7</span><span style="font-size:11px;color:#56626f">08:00</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;opacity:.45"><span style="font-size:13.5px;font-weight:700">8</span><span style="font-size:11px;color:#56626f">08:00</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;opacity:.45"><span style="font-size:13.5px;font-weight:700">9</span><span style="font-size:11px;color:#56626f">10:00</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;opacity:.45"><span style="font-size:13.5px;font-weight:700">10</span><span style="font-size:11px;color:#56626f">10:00</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;opacity:.45"><span style="font-size:13.5px;font-weight:700">11</span><span style="font-size:11px;color:#56626f">OFF</span></span>
+                </div>
+              </div>
+              <div style="margin-bottom:9px">
+                <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px"><h3 style="margin:0 0 3px;font-size:12px;color:#56626f;font-weight:600">sab 12 set → ven 18 set <span style="font-weight:700;color:#2f7bf6">B</span> · questa</h3><span style="font-size:12px;font-weight:700;color:#56626f;font-variant-numeric:tabular-nums">32/40</span></div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px">
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px"><span style="font-size:13.5px;font-weight:700">12</span><span style="font-size:11px;color:#56626f">14:00</span></span>
+                  <span style="min-height:54px;border:1px solid #2f7bf6;border-radius:9px;background:#e9f1fe;display:flex;flex-direction:column;align-items:center;padding:5px 2px"><span style="font-size:13.5px;font-weight:700;color:#1a5fd0">13</span><span style="font-size:11px;color:#1a5fd0">14:00</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;box-shadow:inset 0 -3px 0 #b96608"><span style="font-size:13.5px;font-weight:700">14</span><span style="font-size:11px;color:#56626f">OFF</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;justify-content:space-between"><span style="font-size:13.5px;font-weight:700">15</span><span style="font-size:11px;color:#56626f">08:00</span><span style="font-size:10px;font-weight:700;color:#fff;background:#109c68;border-radius:999px;padding:1px 5px">92%</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px"><span style="font-size:13.5px;font-weight:700">16</span><span style="font-size:11px;color:#56626f">08:00</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px;justify-content:space-between"><span style="font-size:13.5px;font-weight:700">17</span><span style="font-size:11px;color:#56626f">13:00</span><span style="font-size:10px;font-weight:700;color:#fff;background:#a97a06;border-radius:999px;padding:1px 5px">61%</span></span>
+                  <span style="min-height:54px;border:1px solid #edf0f5;border-radius:9px;background:#fff;display:flex;flex-direction:column;align-items:center;padding:5px 2px"><span style="font-size:13.5px;font-weight:700">18</span><span style="font-size:11px;color:#56626f">OFF</span></span>
+                </div>
+              </div>
+              <p style="margin:10px 0 0;font-size:14px;color:#56626f">Tocca un giorno per dare disponibilità al cambio e vedere chi puoi aiutare.</p>
+            </div>
+
+            <div style="margin:30px 0">
+              <h2 style="margin:0 0 12px;font-size:16px;font-weight:650;letter-spacing:-.01em">I tuoi turni</h2>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14)">
+                  <span style="flex:0 0 auto;color:#2f7bf6"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M20.2 12a8.2 8.2 0 1 1-2.7-6.1"/><path d="M20.2 4.2v5.6h-5.4"/></svg></span>
+                  <span style="flex:1;display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Aggiorna turni dal calendario</strong><span style="font-size:14px;color:#56626f">Ultimo aggiornamento 2 ore fa</span></span>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14)">
+                  <span style="flex:0 0 auto;color:#2f7bf6"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4.6 19.4l4.2-1 9.4-9.4-3.2-3.2L5.6 15.2z"/><path d="M14.9 5.9l3.2 3.2"/></svg></span>
+                  <span style="flex:1;display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Inserisci manualmente i turni</strong><span style="font-size:14px;color:#56626f">Giorno per giorno, dal mese qui sopra</span></span>
+                  <span style="color:#56626f;font-size:19px">›</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin:30px 0">
+              <h2 style="margin:0 0 12px;font-size:16px;font-weight:650;letter-spacing:-.01em">Preferenze</h2>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14)"><strong style="font-size:16px">Turni da evitare</strong><span style="font-size:14px;color:#56626f">2 attive ›</span></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px;border-radius:18px;background:#fff;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14)"><strong style="font-size:16px">Turni preferiti</strong><span style="font-size:14px;color:#56626f">nessuna ›</span></div>
+              </div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:12px;margin:4px 0 22px;padding:16px 4px;border-top:1px solid #edf0f5;border-bottom:1px solid #edf0f5;color:#56626f;font-size:16px">
+              <span style="flex:0 0 auto"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.4"/><circle cx="9" cy="16.5" r="2.4"/></svg></span><span style="flex:1">Impostazioni</span><span style="font-size:19px">›</span>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-around;padding:9px 0 14px;background:rgba(255,255,255,.9);border-top:1px solid #edf0f5;backdrop-filter:blur(18px)"><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 10.6 12 4l8.5 6.6V20H3.5z"/><path d="M9.5 20v-5.5h5V20"/></svg>Home</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>Calendario</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/></svg>Bacheca</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#56626f;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 13.5 6 5.5h12l2.5 8v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/></svg>Proposte<span style="position:absolute;top:2px;right:8px;min-width:19px;height:19px;border-radius:999px;background:#d23b45;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px">2</span></span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#2f7bf6;font-weight:600;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/></svg>Profilo</span></div>
+        </div>
+      </div>
+    </div>
+
+    <sc-if value="{{ scuro }}" hint-placeholder-val="{{ true }}">
+    <div id="1f" style="display:flex;flex-direction:column;gap:10px;scroll-margin-top:20px">
+      <div style="display:flex;align-items:baseline;gap:9px"><a href="#1f" style="font:700 11px ui-monospace,Menlo,monospace;padding:3px 8px;background:#0f1720;color:#fff;border-radius:5px;text-decoration:none">1f</a><span style="font-size:13px;color:#56626f">Tema scuro — Home</span></div>
+      <div style="width:390px;background:#0d1421;border:9px solid #05080e;border-radius:44px;overflow:hidden;box-shadow:0 26px 60px -20px rgba(15,23,42,.5)">
+        <div style="display:flex;flex-direction:column;min-height:800px;color:#f0f4fa">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px 4px;font-size:13px;font-weight:700"><span>9:41</span><span style="display:flex;gap:5px;align-items:center"><span style="width:16px;height:9px;border-radius:2px;background:#f0f4fa"></span><span style="width:22px;height:10px;border-radius:3px;border:1.5px solid #f0f4fa"></span></span></div>
+          <div style="padding:14px 18px 0;flex:1">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:14px">
+              <span style="width:28px;height:28px;background:url('public/icons/marchio.png') center/contain no-repeat;flex:0 0 auto"></span>
+              <span style="font-size:12.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;background:linear-gradient(118deg,#62a0ff,#45d19a);-webkit-background-clip:text;background-clip:text;color:transparent">Liberty Shift</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div>
+                <p style="margin:0;font-size:15px;color:#9dabc0">Buonasera</p>
+                <h1 style="margin:0;font-size:34px;font-weight:700;letter-spacing:-.03em">Lorenzo</h1>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+                <span style="font-size:14px;font-weight:700;color:#e8c04c;border:1px solid #e8c04c;border-radius:999px;padding:7px 13px;white-space:nowrap;flex:0 0 auto;display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" stroke="none" style="display:block;flex:0 0 auto"><path d="M12 3.3l2.7 5.5 6 .9-4.3 4.2 1 6-5.4-2.8-5.4 2.8 1-6L3.3 9.7l6-.9z"/></svg>1</span>
+                <span style="width:40px;height:40px;border-radius:50%;background:#16202f;border:1px solid #26334a;display:grid;place-items:center;font-size:19px;color:#9dabc0">?</span>
+              </div>
+            </div>
+            <p style="margin:4px 0 0;font-size:15px;color:#9dabc0">Full Time · 40 ore</p>
+
+            <div style="margin:28px 0">
+              <h2 style="margin:0 0 12px;font-size:16px;font-weight:650;color:#f0f4fa;letter-spacing:-.01em">I tuoi cambi</h2>
+              <div style="background:#16202f;border:1px solid #26334a;border-radius:18px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:14px;padding:16px;border-bottom:1px solid #223047">
+                  <span style="width:10px;height:10px;border-radius:50%;background:#45d19a;flex:0 0 auto"></span>
+                  <div style="flex:1;min-width:0"><strong style="font-size:16px">Scambio concordato</strong><div style="font-size:14px;color:#9dabc0">Scambio con Giulia M.</div></div>
+                  <span style="color:#9dabc0;font-size:19px">›</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:14px;padding:16px">
+                  <span style="width:10px;height:10px;border-radius:50%;background:#ff7b80;box-shadow:0 0 0 4px rgba(255,123,128,.22);flex:0 0 auto"></span>
+                  <div style="flex:1;min-width:0"><strong style="font-size:16px">Ti aspetta una risposta</strong><div style="font-size:14px;color:#9dabc0">Scambio con Marco B.</div></div>
+                  <span style="color:#9dabc0;font-size:19px">›</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin:28px 0;display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:linear-gradient(118deg,rgba(98,160,255,.16),rgba(69,209,154,.16));border:1px solid #26334a">
+                <span style="width:42px;height:42px;border-radius:13px;background:linear-gradient(118deg,#62a0ff,#45d19a);display:grid;place-items:center;flex:0 0 auto;color:#0d1421"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z"/></svg></span>
+                <strong style="flex:1;font-size:17px;color:#a9caff">Cambio rapido</strong>
+                <span style="color:#a9caff;font-size:19px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:#16202f;border:1px solid #26334a">
+                <span style="flex:0 0 auto;color:#62a0ff"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="9.3" cy="8.6" r="3.2"/><path d="M3.6 19.6c.8-3 2.9-4.7 5.7-4.7s4.9 1.7 5.7 4.7"/><path d="M16.3 5.8a3.2 3.2 0 0 1 0 5.7M18 14.9c1.9.8 3.1 2.4 3.5 4.7"/></svg></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Aiuta un collega</strong><span style="font-size:14px;color:#9dabc0">3 richieste che puoi risolvere</span></span>
+                <span style="color:#9dabc0;font-size:19px">›</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:18px;border-radius:18px;background:#16202f;border:1px solid #26334a">
+                <span style="flex:0 0 auto;color:#62a0ff"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="12" r="8.6"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px"><strong style="font-size:16px">Nuovo cambio</strong><span style="font-size:14px;color:#9dabc0">Scegli tu il giorno e l'orario che cerchi</span></span>
+                <span style="color:#9dabc0;font-size:19px">›</span>
+              </div>
+            </div>
+
+            <div style="margin:28px 0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+                <h2 style="margin:0;font-size:16px;font-weight:650;color:#f0f4fa;letter-spacing:-.01em">Ultime richieste</h2>
+                <span style="font-size:15px;font-weight:600;color:#62a0ff">Vedi tutto</span>
+              </div>
+              <div style="background:#16202f;border:1px solid #26334a;border-radius:18px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #62a0ff,inset 0 -1px 0 #223047">
+                  <span style="width:34px;height:34px;border-radius:50%;background:#16263f;color:#62a0ff;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">GM</span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Giulia M.</span><span style="font-size:14px;color:#9dabc0">mar 15 set · cede 08:00–17:00</span></span>
+                  <span style="color:#9dabc0;font-size:19px">›</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:13px;padding:15px 16px;box-shadow:inset 3px 0 0 #45d19a">
+                  <span style="width:34px;height:34px;border-radius:50%;background:#12302a;color:#45d19a;display:grid;place-items:center;font-weight:700;font-size:13px;flex:0 0 auto">MB</span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:16px;font-weight:600">Marco B.</span><span style="font-size:14px;color:#9dabc0">cerca OFF sab 19 set · offre dom 20</span></span>
+                  <span style="color:#9dabc0;font-size:19px">›</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-around;padding:9px 0 14px;background:rgba(22,32,47,.92);border-top:1px solid #223047;backdrop-filter:blur(18px)"><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#62a0ff;font-weight:600;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 10.6 12 4l8.5 6.6V20H3.5z"/><path d="M9.5 20v-5.5h5V20"/></svg>Home</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#9dabc0;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/></svg>Calendario</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#9dabc0;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/></svg>Bacheca</span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#9dabc0;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><path d="M3.5 13.5 6 5.5h12l2.5 8v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/></svg>Proposte<span style="position:absolute;top:2px;right:8px;min-width:19px;height:19px;border-radius:999px;background:#d23b45;color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px">2</span></span><span style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 12px;font-size:11px;color:#9dabc0;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;flex:0 0 auto"><circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/></svg>Profilo</span></div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+  </div>
+
+  <sc-if value="{{ note }}" hint-placeholder-val="{{ true }}">
+  <div style="max-width:760px;background:#fff;border-radius:16px;padding:22px 24px;box-shadow:0 1px 2px rgba(15,23,42,.05),0 8px 22px -8px rgba(15,23,42,.14);display:flex;flex-direction:column;gap:14px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#56626f">Cosa cambia, riga per riga</div>
+    <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.65;color:#0f1720;display:flex;flex-direction:column;gap:8px">
+      <li><strong>Colore semantico.</strong> Blu per il turno che si cede, verde per quello che si prende — in bacheca, nel dettaglio, nelle barre del calendario e nei bordi dei gruppi. Il rosso resta solo per errori e per “ti aspetta una risposta”.</li>
+      <li><strong>Un elenco invece di tante scatole.</strong> Le righe della bacheca perdono bordo e ombra individuali e stanno su una superficie sola, separate da un filetto che parte dopo l'avatar.</li>
+      <li><strong>Più aria.</strong> Card e tile da 14 a 18px di padding, righe da 13 a 16, sezioni da 26 a 30.</li>
+      <li><strong>Testo più grande dove era piccolo.</strong> Sintesi e meta 13 → 14px; turno nella cella del mese 9 → 11px; celle del mese 40 → 54px; celle del calendario 74 → 80px.</li>
+      <li><strong>Bersagli più comodi.</strong> Tondi da 36 a 40px (frecce mese 44 → 46), chip da 8/14 a 9/16.</li>
+      <li><strong>Gradiente del marchio in due posti soli:</strong> il nome “Liberty Shift” e il pulsante principale. Steso su tutto diventava sfondo.</li>
+      <li><strong>Contrasto.</strong> Il grigio dei testi secondari da #667085 a #56626f: 4.1:1 → 6.3:1 su bianco, cioè conforme anche a 14px.</li>
+    </ul>
+    <p style="margin:0;font-size:14px;color:#56626f">Da sistemare nel codice, non nel CSS: in <code style="background:#eaeef4;border-radius:4px;padding:1px 5px;font-size:13px">components.js</code> l'etichetta di chi cede usa 🔴 — con questa palette va sostituita con 🔵.</p>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scuro&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Mockup&quot;},&quot;note&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Mockup&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      scuro: this.props.scuro ?? true,
+      note: this.props.note ?? true,
+    };
+  }
+}
+</script>
+</body>
+</html>
