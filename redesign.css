@@ -1,0 +1,355 @@
+/*
+ * Liberty Shift — foglio di redesign.
+ *
+ * Va caricato DOPO styles.css, in index.html:
+ *   <link rel="stylesheet" href="./styles.css">
+ *   <link rel="stylesheet" href="./redesign/liberty-shift-redesign.css">
+ *
+ * Non riscrive il layout: cambia solo token, dimensioni, colori e leggibilità.
+ * Le sezioni, i pulsanti e i flussi restano quelli che ci sono già.
+ *
+ * Tre decisioni, dette una volta:
+ *
+ * 1. Il colore ha un significato, non un umore. Blu = il turno che cedi,
+ *    verde = il turno che prendi. Sono i due colori del marchio, e sono
+ *    esattamente i due lati di uno scambio. Il rosso torna a fare una cosa
+ *    sola: errori. Prima "LASCIO" era rosso come un errore e "CERCO" verde
+ *    come un successo, e il colore raccontava un giudizio invece di un lato.
+ *
+ * 2. Meno riquadri. Un bordo su ogni card, dentro una lista di card, dentro
+ *    una sezione con bordo, dà cinque cornici per una informazione. Qui la
+ *    separazione la fa la superficie (bianco su grigio) più un'ombra bassa;
+ *    dentro una lista la fa un filetto, non un rettangolo per riga.
+ *
+ * 3. Più aria e testo più grande. I testi secondari salgono da 13/10px a
+ *    14/12px, le celle del calendario da 40 a 54px, i bersagli tondi da 36
+ *    a 40px. Un'app che si usa in negozio, in piedi, con una mano.
+ *
+ * Nota fuori dal CSS: in `src/ui/components.js` l'etichetta di chi cede è
+ * scritta con 🔴. Con questa palette va sostituita con 🔵 (e in `messaggio`
+ * nulla cambia): il pallino rosso contraddice il blu dell'etichetta.
+ */
+
+/* ------------------------------------------------------------ token */
+
+:root {
+  --sfondo: #f2f5f9;
+  --superficie: #ffffff;
+  --superficie-2: #eaeef4;
+  --testo: #0f1720;
+  /* #667085 su bianco sta a 4.1:1: sotto la soglia per il testo piccolo,
+     ed era proprio il testo piccolo a usarlo di più. */
+  --testo-tenue: #56626f;
+  --bordo: #e4e8ef;
+  --filetto: #edf0f5;
+  --accento: #2f7bf6;
+  --accento-tenue: #e9f1fe;
+  /* I due lati di uno scambio, dal marchio. */
+  --cedo: #2f7bf6;
+  --cedo-tenue: #e9f1fe;
+  --prendo: #109c68;
+  --prendo-tenue: #e4f6ee;
+  --marchio: linear-gradient(118deg, #2f7bf6 0%, #34b98a 100%);
+  --rosso: #d23b45;
+  --verde: #109c68;
+  --arancio: #b96608;
+  --giallo: #a97a06;
+  --oro: #a97a06;
+  --raggio: 18px;
+  --raggio-s: 13px;
+  --ombra: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 22px -8px rgba(15, 23, 42, .14);
+  --ombra-alta: 0 2px 4px rgba(15, 23, 42, .06), 0 18px 40px -14px rgba(15, 23, 42, .22);
+  --tab-h: 66px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --sfondo: #0d1421;
+    --superficie: #16202f;
+    --superficie-2: #1e2a3c;
+    --testo: #f0f4fa;
+    --testo-tenue: #9dabc0;
+    --bordo: #26334a;
+    --filetto: #223047;
+    --accento: #62a0ff;
+    --accento-tenue: #16263f;
+    --cedo: #62a0ff;
+    --cedo-tenue: #16263f;
+    --prendo: #45d19a;
+    --prendo-tenue: #12302a;
+    --rosso: #ff7b80;
+    --verde: #45d19a;
+    --arancio: #ffb066;
+    --giallo: #e8c04c;
+    --oro: #e8c04c;
+    --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 26px -10px rgba(0, 0, 0, .6);
+    --ombra-alta: 0 2px 6px rgba(0, 0, 0, .55), 0 22px 44px -16px rgba(0, 0, 0, .7);
+  }
+}
+
+:root[data-theme="dark"] {
+  --sfondo: #0d1421;
+  --superficie: #16202f;
+  --superficie-2: #1e2a3c;
+  --testo: #f0f4fa;
+  --testo-tenue: #9dabc0;
+  --bordo: #26334a;
+  --filetto: #223047;
+  --accento: #62a0ff;
+  --accento-tenue: #16263f;
+  --cedo: #62a0ff;
+  --cedo-tenue: #16263f;
+  --prendo: #45d19a;
+  --prendo-tenue: #12302a;
+  --rosso: #ff7b80;
+  --verde: #45d19a;
+  --arancio: #ffb066;
+  --giallo: #e8c04c;
+  --oro: #e8c04c;
+  --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 26px -10px rgba(0, 0, 0, .6);
+  --ombra-alta: 0 2px 6px rgba(0, 0, 0, .55), 0 22px 44px -16px rgba(0, 0, 0, .7);
+}
+
+/* -------------------------------------------------------- tipografia */
+
+#app { padding-left: 18px; padding-right: 18px; }
+
+h1 { font-size: 28px; font-weight: 700; letter-spacing: -.025em; }
+
+/* Le testate di sezione: erano maiuscoletto tenue a 15px, cioè grandi come
+   il contenuto ma più difficili da leggere. In minuscolo, in colore pieno e
+   in semibold pesano meno e si leggono meglio. */
+h2 {
+  font-size: 16px; font-weight: 650; text-transform: none;
+  letter-spacing: -.01em; color: var(--testo); margin: 0 0 12px;
+}
+h3 { font-size: 16px; margin: 20px 0 10px; }
+
+.testo-tenue, .meta, .riga-sintesi, .tile em, .coppia .orario,
+.giorno-dettaglio .testo-tenue, .legenda, .elenco.piccolo,
+.gruppo-giorno > .testo-tenue { font-size: 14px; }
+.occhiello { font-size: 16px; margin: 6px 0 18px; }
+.badge, .tag { font-size: 12.5px; }
+.perche { font-size: 14px; line-height: 1.55; }
+.perche li { margin: 5px 0; }
+
+/* ---------------------------------------------------- meno riquadri */
+
+/* Una card è già distinta dallo sfondo: il bordo in più è una cornice
+   dentro una cornice. Resta solo nel tema scuro, dove bianco su grigio
+   non esiste e serve un filo per staccare la superficie. */
+.card {
+  border: 0; padding: 18px; border-radius: var(--raggio);
+  margin-bottom: 14px; box-shadow: var(--ombra);
+}
+.tile {
+  border: 0; padding: 18px; box-shadow: var(--ombra);
+  margin-bottom: 12px; border-radius: var(--raggio);
+}
+.tile-sync { border: 0; box-shadow: var(--ombra); padding: 14px 6px; }
+.riquadro { border: 0; box-shadow: var(--ombra); padding: 0 16px; margin-bottom: 12px; }
+.riquadro > summary { padding: 16px 0; font-size: 16px; }
+.tabella-dati, .grazie { border: 0; box-shadow: var(--ombra); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .card,
+  :root:not([data-theme="light"]) .tile,
+  :root:not([data-theme="light"]) .tile-sync,
+  :root:not([data-theme="light"]) .riquadro,
+  :root:not([data-theme="light"]) .grazie { border: 1px solid var(--bordo); }
+}
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .tile,
+:root[data-theme="dark"] .tile-sync,
+:root[data-theme="dark"] .riquadro,
+:root[data-theme="dark"] .grazie { border: 1px solid var(--bordo); }
+
+/* Le righe della bacheca: un elenco, non una pila di scatole. Il filetto
+   parte dopo l'avatar, così l'occhio scende lungo i nomi. */
+.riga-richiesta {
+  border: 0; border-radius: 0; margin-bottom: 0;
+  padding: 15px 16px; gap: 13px;
+  box-shadow: inset 0 -1px 0 var(--filetto);
+}
+.riga-richiesta:last-child { box-shadow: none; }
+.gruppo-giorno .riga-richiesta:first-of-type,
+.sezione > .riga-richiesta:first-of-type { border-radius: var(--raggio) var(--raggio) 0 0; }
+.gruppo-giorno .riga-richiesta:last-of-type,
+.sezione > .riga-richiesta:last-of-type { border-radius: 0 0 var(--raggio) var(--raggio); }
+.riga-richiesta.prioritaria {
+  border: 0; box-shadow: inset 3px 0 0 var(--oro), inset 0 -1px 0 var(--filetto);
+}
+.riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cedo), inset 0 -1px 0 var(--filetto); }
+.riga-richiesta.ruolo-OFFRE { border-left: 0; box-shadow: inset 3px 0 0 var(--prendo), inset 0 -1px 0 var(--filetto); }
+.riga-titolo { font-size: 16px; gap: 8px; }
+/* La pillola del tipo sta in una riga flex accanto al nome: senza nowrap
+   si restringe e manda a capo "cede"/"offre" fuori dal suo box. */
+.tipo-pill {
+  font-size: 12px; padding: 2px 8px; border-radius: 7px;
+  white-space: nowrap; flex: 0 0 auto; align-self: center;
+}
+/* display:inline-flex, non solo white-space: dentro c'è un'icona SVG oltre
+   al numero, e senza allinearli sull'asse centrale l'SVG cade sulla
+   baseline del testo invece che al suo centro. */
+.grazie-chip, .priorita-chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+
+.lista-cambi, .lista-turni { border: 0; box-shadow: var(--ombra); }
+.riga-cambio, .riga-turno {
+  padding: 16px; gap: 14px; border-bottom: 1px solid var(--filetto);
+}
+.riga-cambio strong, .riga-turno .giorno-nome { font-size: 16px; }
+.riga-turno .turno-valore { font-size: 15px; }
+
+/* --------------------------------------------- i due lati del cambio */
+
+/* Il riquadro grigio dentro la card era un terzo livello di sfondo. Qui i
+   due lati sono due colonne, e quello che li distingue è il colore
+   dell'etichetta, che è anche il colore che il resto dell'app usa per
+   dire la stessa cosa. */
+.coppia { background: none; padding: 0; border-radius: 0; }
+.coppia .lati {
+  gap: 12px; align-items: stretch;
+  padding: 14px; border-radius: var(--raggio-s);
+  background: var(--superficie-2);
+}
+.coppia .etichetta { font-size: 12px; letter-spacing: .05em; }
+.coppia .cedo .etichetta { color: var(--cedo); }
+.coppia .cerco .etichetta { color: var(--prendo); }
+.coppia strong { font-size: 16px; }
+.coppia .nota { font-size: 13px; }
+.coppia.compatta .lati { padding: 11px; }
+.coppia.compatta strong { font-size: 14.5px; }
+.coppia.compatta .orario { font-size: 13px; }
+.coppia .freccia { color: var(--testo-tenue); font-size: 20px; }
+.tipo-cambio { font-size: 12px; letter-spacing: .03em; margin-bottom: 8px; }
+
+.scambio-secco > div { font-size: 15px; padding: 7px 0; border-bottom: 1px solid var(--filetto); }
+.scambio-secco > div:last-child { border-bottom: 0; }
+
+/* Il bordo di sinistra come indice di lato, non come decorazione. */
+.card.match.verde { border-left: 4px solid var(--prendo); }
+.card.match.giallo { border-left: 4px solid var(--giallo); }
+.card.da-fare { border-left: 4px solid var(--accento); }
+.tile.scelta.rosso { border-left: 4px solid var(--cedo); }
+.tile.scelta.verde { border-left: 4px solid var(--prendo); }
+.tile.scelta.blu { border-left: 4px solid var(--accento); }
+.gruppo-giorno.CERCA h3::before { background: var(--cedo); }
+.gruppo-giorno.OFFRE h3::before { background: var(--prendo); }
+.gruppo-giorno h3 { font-size: 14px; }
+.barre .cerca { background: var(--cedo); }
+.barre .offre { background: var(--prendo); }
+.tabella-dati th:first-child { color: var(--prendo); }
+.tabella-dati th:last-child { color: var(--cedo); }
+
+/* ------------------------------------------------- marchio e bottoni */
+
+/* Il gradiente del logo vive in due posti soli: il nome del marchio e
+   l'azione principale. Steso su tutto si sarebbe letto come sfondo. */
+.marchio-nome {
+  font-size: 12.5px;
+  background: var(--marchio);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.marchio { width: 26px; height: 26px; border-radius: 8px; }
+.marchio-riga { gap: 9px; margin-bottom: 14px; }
+
+.btn { padding: 15px 20px; border-radius: var(--raggio-s); font-size: 16px; font-weight: 650; }
+.btn.primario {
+  background: var(--marchio); color: #fff;
+  box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--accento) 70%, transparent);
+}
+.btn.secondario { border: 1px solid var(--bordo); }
+.btn.piccolo { padding: 9px 14px; font-size: 14px; }
+.btn.largo { margin-top: 14px; }
+
+/* 36px era sotto il minimo comodo per un pollice. */
+.icon-btn { width: 40px; height: 40px; font-size: 19px; }
+.icon-btn.grande { width: 46px; height: 46px; font-size: 25px; }
+.chip, .pill { font-size: 14.5px; padding: 9px 16px; }
+.chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); }
+.link, .link-btn { font-size: 15px; }
+
+.avatar { width: 40px; height: 40px; font-size: 15px; }
+.avatar.piccolo { width: 34px; height: 34px; font-size: 13px; }
+.avatar.grande { width: 76px; height: 76px; font-size: 25px; }
+.pallino { width: 10px; height: 10px; }
+
+.hero { padding: 20px 0 8px; }
+.hero h1 { font-size: 34px; }
+.hero .sottotitolo, .hero .saluto { font-size: 15px; }
+.sezione { margin: 30px 0; }
+
+/* --------------------------------------------------------- calendario */
+
+.griglia-mese { grid-auto-rows: minmax(80px, auto); gap: 7px; }
+.giorno { min-height: 80px; border-radius: var(--raggio-s); border-color: var(--filetto); }
+.giorno .numero { font-size: 17px; }
+.giorno .mio-turno { font-size: 12px; }
+.giorno.oggi { border-color: var(--accento); }
+.griglia-intestazione { font-size: 13px; }
+.barre { height: 4px; width: 66%; }
+.legenda { line-height: 2; }
+
+/* Il mese del Profilo: le celle erano 40px con il turno a 9px, cioè il
+   dato più consultato dell'app scritto nel corpo più piccolo che ha. */
+.mese-griglia { gap: 3px; }
+.mese-giorno { min-height: 54px; border-radius: 9px; border-color: var(--filetto); padding: 5px 2px; }
+.mese-giorno .numero { font-size: 13.5px; }
+.mese-giorno .turno { font-size: 11px; }
+.mese-giorno .quota { font-size: 10px; padding: 1px 5px; }
+.mese-giorno.oggi { border-color: var(--accento); }
+.dow-fisso { font-size: 11px; }
+.riga-settimana h3 { font-size: 12px; }
+.spia-ore { font-size: 12px; }
+.spia-ore.quadra { color: var(--prendo); }
+.giorno-rot { min-height: 46px; font-size: 12px; border-radius: 9px; border-color: var(--filetto); }
+.giorno-rot .dow { font-size: 11px; }
+
+/* ------------------------------------------------------------ moduli */
+
+.campo > span { font-size: 14px; margin-bottom: 7px; }
+input[type="time"], input.testo, input[type="password"], textarea, .select {
+  padding: 13px 14px; border-radius: var(--raggio-s); font-size: 16px;
+}
+.switch { padding: 14px 0; font-size: 16px; border-bottom-color: var(--filetto); }
+.switch .aiuto { font-size: 13px; }
+.errori { font-size: 15px; padding: 12px 16px; }
+.avviso { font-size: 14px; }
+
+/* ------------------------------------------------------------ tabbar */
+
+#tabbar { padding: 9px 0 max(env(safe-area-inset-bottom), 8px); border-top-color: var(--filetto); }
+/* Cinque voci al posto di quattro: lo spazio orizzontale non basta più a
+   14px di margine per voce, e "Calendario" è l'etichetta più lunga. */
+.tab { position: relative; font-size: 11px; padding: 5px 8px; gap: 4px; }
+.tab-icona { width: 24px; height: 24px; }
+/* Quante proposte aspettano una risposta, sulla voce che le contiene: è la
+   sola cosa dell'app che va saputa senza aprire niente. */
+.tab .conta {
+  position: absolute; top: 2px; right: 4px;
+  min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
+  background: var(--rosso); color: #fff;
+  font-size: 11px; font-weight: 700; display: grid; place-items: center;
+}
+
+/* -------------------------------------------------------------- vari */
+
+.vuoto { padding: 40px 22px; }
+.vuoto strong { font-size: 17px; }
+.vuoto p { font-size: 15px; }
+.non-puoi, .nota-non-puoi { font-size: 13px; }
+.sheet { border-radius: 24px 24px 0 0; padding: 6px 18px max(env(safe-area-inset-bottom), 18px); }
+.sheet-head h2 { font-size: 19px; }
+#toast { font-size: 15px; padding: 13px 20px; box-shadow: var(--ombra-alta); }
+.priorita-chip, .grazie-chip { font-size: 14px; padding: 7px 14px; }
+.elenco { font-size: 16px; }
+.elenco.piccolo { font-size: 14px; }
+
+/* Prima l'.icon-btn portava solo un glifo di testo ("?", "‹"), centrato dal
+   line-height. Con un'icona SVG dentro serve un centraggio vero. */
+.icon-btn { display: grid; place-items: center; }
+
+/* Il tondo di sincronizzazione, accanto ai ringraziamenti nella testata del
+   Profilo: prende il posto in alto a destra che prima era solo della chip. */
+.azioni-profilo { position: absolute; top: 12px; right: 0; display: flex; align-items: center; gap: 8px; }
+.azioni-profilo .grazie-chip { position: static; }

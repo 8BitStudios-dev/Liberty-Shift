@@ -5,6 +5,7 @@ import {
 } from '../core/model.js';
 import { STATUS_META, TIPO_META, TIPO_CAMBIO, RULES } from '../core/rules.js';
 import { formatDay } from '../core/time.js';
+import { icona } from './icone.js';
 
 export function nomeUtente(u) {
   return u ? `${u.nome} ${u.cognomeIniziale}.` : '—';
@@ -92,7 +93,7 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
       <div class="tipo-cambio">${meta.icona} ${meta.label}</div>
       <div class="lati">
         <div class="lato cedo">
-          <span class="etichetta">${off ? '🔴 CERCO' : '🔴 LASCIO'}</span>
+          <span class="etichetta">${off ? '🔵 CERCO' : '🔵 LASCIO'}</span>
           <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
           <span class="orario">${shiftLabel(cedo)}</span>
           ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}
@@ -147,7 +148,7 @@ export function cardRichiesta(request, giorno = null) {
       <span class="avatar piccolo">${iniziali(autore)}</span>
       <span class="riga-testo">
         <span class="riga-titolo">
-          ${prio ? '⭐ ' : ''}${nomeUtente(autore)}
+          ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${nomeUtente(autore)}
           <span class="tipo-pill">${ctx ? `${ctx.icona} ${ctx.verbo}` : `${meta.icona} ${meta.breve}`}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
@@ -221,7 +222,7 @@ export function cardMatch(match, opzioni = {}) {
       <ul class="perche">
         ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
       </ul>
-      ${raw(match.avvisi.length ? `<div class="avviso">⚠️ ${match.avvisi.join(' ')}</div>` : '')}
+      ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${match.avvisi.join(' ')}</div>` : '')}
       ${raw(azioneMatch(match, opzioni))}
     </article>`;
 }
@@ -310,7 +311,7 @@ export function indirizzoApp() {
 export function vuoto(titolo, sottotitolo, azione = '') {
   return html`
     <div class="vuoto">
-      <div class="vuoto-icona">🗓️</div>
+      <div class="vuoto-icona">${raw(icona('vuoto'))}</div>
       <strong>${titolo}</strong>
       <p>${sottotitolo}</p>
       ${raw(azione)}
@@ -338,7 +339,7 @@ export function cardOpportunita({ richiesta, match }) {
       <header class="card-head">
         <span class="avatar">${iniziali(u)}</span>
         <div>
-          <strong>${hasPriority(richiesta) ? '⭐ ' : ''}${nomeUtente(u)}</strong>
+          <strong>${raw(hasPriority(richiesta) ? `${icona('priorita', { px: 14 })} ` : '')}${nomeUtente(u)}</strong>
           <div class="meta">${u?.contratto}</div>
         </div>
         <span class="score">${match.score}%</span>
@@ -350,7 +351,7 @@ export function cardOpportunita({ richiesta, match }) {
         <div><span>${u?.nome} farebbe</span><strong>${formatDay(mioTurno?.data)} · ${perLei}</strong></div>
       </div>
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
-      ${raw(match.avvisi.length ? `<div class="avviso">⚠️ ${esc(match.avvisi.join(' '))}</div>` : '')}
+      ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
               data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}">
         Proponi lo scambio

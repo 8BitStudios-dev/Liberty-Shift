@@ -20,28 +20,12 @@ import { serverConfigurato } from '../core/config.js';
 import {
   campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito,
 } from './components.js';
+import { icona, VOCI_TABBAR } from './icone.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
 
-// Quattro icone disegnate con lo stesso tratto, invece di caratteri presi da
-// alfabeti diversi: il glifo della faccina non stava insieme agli altri.
-const ICONE = {
-  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>',
-  calendario: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  bacheca: '<path d="M4 7h16M4 12h16M4 17h10"/>',
-  profilo: '<circle cx="12" cy="8.5" r="4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>',
-};
-
-const icona = (nome) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-  stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONE[nome]}</svg>`;
-
-const TABS = [
-  { hash: '#/home', icona: 'home', label: 'Home' },
-  { hash: '#/calendario', icona: 'calendario', label: 'Calendario' },
-  { hash: '#/bacheca', icona: 'bacheca', label: 'Bacheca' },
-  { hash: '#/profilo', icona: 'profilo', label: 'Profilo' },
-];
+const TABS = VOCI_TABBAR.map((v) => ({ hash: v.rotta, icona: v.nome, label: v.label }));
 
 function parseHash() {
   const h = location.hash || '#/home';
@@ -160,9 +144,12 @@ function render() {
   if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
 
   const attivo = TABS.find((t) => t.hash === `#/${percorso}`);
+  const daFare = store.inbox().filter((v) => v.aspettaMe || v.daRingraziare).length;
   tabbar.innerHTML = TABS.map((t) => html`
     <button class="tab ${t === attivo ? 'attivo' : ''}" data-act="vai" data-to="${t.hash}">
-      <span class="tab-icona">${raw(icona(t.icona))}</span><span>${t.label}</span>
+      <span class="tab-icona">${raw(icona(t.icona, { forte: t === attivo }))}</span>
+      <span>${t.label}</span>
+      ${raw(t.hash === '#/inbox' && daFare ? `<span class="conta">${daFare}</span>` : '')}
     </button>`).join('');
   // Fisse su ogni schermata, wizard e dettagli compresi: prima sparivano
   // appena si usciva da una delle quattro viste principali, e da un flusso
@@ -404,7 +391,7 @@ const AZIONI = {
   // La guida, riaperta a mano dal punto interrogativo nella testata.
   guida: (_, el) => apriGuida(el.dataset.sezione),
 
-  'vedi-grazie': () => sheet('💛 Ringraziamenti ricevuti', V.listaRingraziamenti()),
+  'vedi-grazie': () => sheet('Ringraziamenti ricevuti', V.listaRingraziamenti()),
 
   // Il calendario del profilo: turno, disponibilità e chi puoi aiutare.
   'giorno-profilo': (_, el) => apriGiornoProfilo(el.dataset.data),
@@ -572,7 +559,7 @@ const AZIONI = {
   },
 
   'chiedi-grazie': (_, el) => {
-    const w = sheet('💛 Ringrazia', F.formGrazie(el.dataset.id), {
+    const w = sheet('Ringrazia', F.formGrazie(el.dataset.id), {
       azioni: '<button class="btn primario largo" data-act="conferma-grazie">Invia</button>',
     });
     w.el.dataset.proposta = el.dataset.id;
@@ -588,7 +575,7 @@ const AZIONI = {
     const testo = wrap.querySelector('[data-campo="grazie"]').value;
     const { errori } = store.ringrazia(wrap.dataset.proposta, testo);
     wrap.querySelector('[data-chiudi]').click();
-    toast(errori ? errori[0] : 'Grazie inviato 💛');
+    toast(errori ? errori[0] : 'Grazie inviato');
     render();
   },
   'cambio-inserito': (_, el) => { store.cambioInserito(el.dataset.id); toast('Richiesta chiusa'); vai('#/home'); },
@@ -601,14 +588,14 @@ const AZIONI = {
   },
 
   'chiedi-chiudi-admin': (_, el) => {
-    const w = sheet('🛡️ Chiudi (admin)', F.formMotivoAdmin(el.dataset.id, 'chiudi'), {
+    const w = sheet('Chiudi (admin)', F.formMotivoAdmin(el.dataset.id, 'chiudi'), {
       azioni: '<button class="btn primario largo" data-act="conferma-chiudi-admin">Chiudi la richiesta</button>',
     });
     w.el.dataset.richiesta = el.dataset.id;
   },
 
   'chiedi-rimuovi-admin': (_, el) => {
-    const w = sheet('🛡️ Rimuovi (admin)', F.formMotivoAdmin(el.dataset.id, 'rimuovi'), {
+    const w = sheet('Rimuovi (admin)', F.formMotivoAdmin(el.dataset.id, 'rimuovi'), {
       azioni: '<button class="btn pericolo largo" data-act="conferma-rimuovi-admin">Rimuovi la richiesta</button>',
     });
     w.el.dataset.richiesta = el.dataset.id;
@@ -676,7 +663,7 @@ const AZIONI = {
    * 27 dice di verificare prima. Il parser però è già quello definitivo.
    */
   importa: () => {
-    const w = sheet('📥 Importa turni', html`
+    const w = sheet('Importa turni', html`
       <p class="testo-tenue">
         Incolla l'<strong>indirizzo</strong> del calendario dei turni e tocca
         Scarica. Funziona anche incollando direttamente il contenuto, se ce
@@ -734,7 +721,7 @@ const AZIONI = {
           : serverConfigurato()
             ? ' Tocca <strong>Scarica</strong> qui sotto.'
             : ' Serve il testo che restituisce: nell\'app Comandi, «Ottieni contenuto di URL» e «Copia negli appunti».';
-        box.innerHTML = `<p class="avviso">⚠️ ${errore}${consiglio}</p>`;
+        box.innerHTML = `<p class="avviso">${errore}${consiglio}</p>`;
         return;
       }
       box.innerHTML = html`
@@ -773,7 +760,7 @@ const AZIONI = {
     el.textContent = 'Scarica';
 
     if (errore) {
-      wrap.querySelector('[data-anteprima]').innerHTML = `<p class="avviso">⚠️ ${errore}</p>`;
+      wrap.querySelector('[data-anteprima]').innerHTML = `<p class="avviso">${errore}</p>`;
       return;
     }
     store.ricordaCalendario(indirizzo);
@@ -806,7 +793,7 @@ const AZIONI = {
     const r = me.rotazione;
     const attiva = r && !rotazioneVuota(r);
 
-    const w = sheet('🔁 Rotazione settimanale', html`
+    const w = sheet('Rotazione settimanale', html`
       <p>
         Se il tuo giro è sempre lo stesso — una settimana A, poi una B, poi una
         C, e poi di nuovo la A — l'app può riempire i mesi avanti da sola.
@@ -903,7 +890,7 @@ const AZIONI = {
   },
 
   'spiega-priorita': () => {
-    sheet('⭐ Come funziona la priorità', html`
+    sheet('Come funziona la priorità', html`
       <ul class="elenco">
         <li>Hai <strong>1 priorità al mese</strong>, dura <strong>48 ore</strong>.</li>
         <li>La richiesta va in cima alla bacheca ed è evidenziata nel calendario.</li>
@@ -919,7 +906,7 @@ const AZIONI = {
     const s = store.state.shifts.find((x) => x.userId === store.state.currentUserId && x.data === data);
     const usato = s && store.state.requests.some((r) => r.cedo.shiftId === s.id && r.status !== 'CHIUSA' && r.status !== 'SCADUTA');
     const w = sheet(formatDay(data, true), html`
-      ${raw(usato ? '<p class="avviso">⚠️ Questo turno è collegato a una richiesta attiva.</p>' : '')}
+      ${raw(usato ? '<p class="avviso">Questo turno è collegato a una richiesta attiva.</p>' : '')}
       <div class="chips">
         <button class="chip ${!s || s.tipo === 'WORK' ? 'attivo' : ''}" data-tipo="WORK">Turno</button>
         <button class="chip ${s?.tipo === 'OFF' ? 'attivo' : ''}" data-tipo="OFF">OFF</button>
