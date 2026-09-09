@@ -279,7 +279,7 @@ export function profilo() {
       ${raw(chipRingraziamenti())}
       <span class="avatar grande">${iniziali(me)}</span>
       <h1>${nomeUtente(me)}</h1>
-      <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}</p>
+      <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}${me.superAdmin ? ' · SuperAdmin' : ''}</p>
     </header>
 
     ${raw(me.admin || me.superAdmin ? `
