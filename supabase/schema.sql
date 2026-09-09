@@ -1,9 +1,12 @@
 -- Liberty Shift — schema Supabase
 --
--- Da incollare nell'SQL Editor del progetto e lanciare una volta sola.
--- È scritto per essere rilanciabile: ogni oggetto è creato "if not exists" e
--- le policy vengono ricreate, così correggere una riga non obbliga a buttare
--- il database.
+-- Da incollare nell'SQL Editor del progetto e rilanciare ogni volta che
+-- cambia: funzioni, trigger e policy si ricreano da soli (drop + create), e
+-- le tabelle sono "create if not exists" per un progetto nuovo. Una colonna o
+-- un vincolo aggiunti a una tabella che esiste già, però, servono anche come
+-- `alter table` esplicita — il blocco `create table if not exists` da solo
+-- non li farebbe comparire su un database già avviato. Cercare "non tocca una
+-- tabella che esiste già" più sotto mostra dove.
 --
 -- Il criterio che decide cosa sta qui dentro è uno solo, ed è lo stesso delle
 -- note d'uso: **esce dal telefono solo quello che una persona pubblica apposta
@@ -37,6 +40,14 @@ create table if not exists public.profili (
   attivo          boolean not null default true,
   creato_il       timestamptz not null default now()
 );
+
+-- `create table if not exists` non tocca una tabella che esiste già: su un
+-- progetto avviato prima di queste due colonne, il blocco sopra non fa niente
+-- e loro restano mancanti in silenzio. Le `alter table` qui sotto sono quello
+-- che aggiorna davvero un database già in piedi; sono la parte che conta ogni
+-- volta che si aggiunge una colonna a una tabella che c'è da prima.
+alter table public.profili add column if not exists super_admin boolean not null default false;
+alter table public.profili add column if not exists attivo boolean not null default true;
 
 -- ------------------------------------------------------------ richieste
 
@@ -77,6 +88,21 @@ create table if not exists public.richieste (
     chiusa_da_admin is null or coalesce(length(trim(admin_motivo)), 0) > 0
   )
 );
+
+-- Stessa ragione delle due `alter table` su profili qui sopra: su una
+-- tabella richieste già esistente, `chiusa_da_admin`/`admin_motivo` e il
+-- vincolo aggiornato su `stato` (che ora ammette anche 'RIMOSSA') non
+-- arriverebbero mai da soli.
+alter table public.richieste add column if not exists chiusa_da_admin uuid references public.profili(id);
+alter table public.richieste add column if not exists admin_motivo text;
+
+alter table public.richieste drop constraint if exists richieste_stato_check;
+alter table public.richieste add constraint richieste_stato_check
+  check (stato in ('APERTA', 'PROPOSTA', 'IN_ATTESA', 'ACCORDO', 'CHIUSA', 'SCADUTA', 'RIMOSSA'));
+
+alter table public.richieste drop constraint if exists motivo_admin_obbligatorio;
+alter table public.richieste add constraint motivo_admin_obbligatorio
+  check (chiusa_da_admin is null or coalesce(length(trim(admin_motivo)), 0) > 0);
 
 create index if not exists richieste_giorno_idx on public.richieste (cedo_data);
 create index if not exists richieste_giorni_idx on public.richieste using gin (cerco_giorni);

@@ -67,6 +67,12 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 - **Il build controlla la sintassi del bundle** prima di scrivere `dist/`: un
   errore lì produce una pagina bianca senza niente in console, e l'unico modo
   di accorgersene sarebbe aprirla.
+- **`create table if not exists` non tocca una tabella che esiste già.** Una
+  colonna o un vincolo nuovi dentro quel blocco, in `supabase/schema.sql`,
+  spariscono in silenzio su un progetto avviato prima: nessun errore, solo la
+  colonna che non c'è. Vanno scritti anche come `alter table ... add column
+  if not exists` (e un `drop constraint if exists` + `add constraint` per i
+  vincoli), fuori dal blocco `create table`.
 
 ## Documentazione
 
