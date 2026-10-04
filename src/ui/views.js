@@ -13,6 +13,7 @@ import {
   slotSettimana, opportunitaPerMe, disponibileIl,
 } from '../core/engine.js';
 import { RULES, PREFERENZE, TIPO_CAMBIO } from '../core/rules.js';
+import { karma } from '../core/karma.js';
 import { letteraDi, rotazioneVuota } from '../core/rotazione.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
@@ -290,7 +291,6 @@ export function profilo() {
       ${raw(bollinoIo(me))}
       <span class="azioni-profilo">
         ${raw(bottoneSync())}
-        ${raw(chipRingraziamenti())}
         <button class="icon-btn" data-act="guida" data-sezione="profilo" title="Come funziona">?</button>
       </span>
     </header>
@@ -328,6 +328,10 @@ export function profilo() {
         <p class="testo-tenue">Per ${MESI[Number(monthKey(todayISO()).slice(5)) - 1].toLowerCase()}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
         ${raw(usoPriorita())}
       </div>
+    </section>
+
+    <section class="sezione">
+      ${raw(riquadroGrazie())}
     </section>
 
     <button class="riga-impostazioni" data-act="vai" data-to="#/impostazioni">
@@ -818,19 +822,34 @@ function quandoFa(iso) {
 }
 
 /**
- * I ringraziamenti in alto a destra, come un contatore.
+ * I grazie ricevuti e i traguardi, nel Profilo e solo lì.
  *
- * Erano una sezione a metà pagina che, senza ringraziamenti, occupava spazio
- * per dire che non c'era niente. Qui invece è un numero che cresce, e la
- * lista si apre toccandolo.
+ * Era un contatore in alto che a zero spariva, e così sembrava che i
+ * ringraziamenti non esistessero più. Qui c'è sempre, anche a zero, e dice
+ * come si arriva al primo. I traguardi non raggiunti mostrano a che punto sei:
+ * è l'unico modo di farli sembrare raggiungibili invece che una lista di
+ * mancanze.
  */
-function chipRingraziamenti() {
-  const quanti = store.ringraziamentiRicevuti().length;
-  if (!quanti) return '';
+function riquadroGrazie() {
+  const k = karma(store.state.ringraziamenti, store.me.id);
+  const traguardi = k.traguardi.map((t) => html`
+    <li class="traguardo ${t.raggiunto ? 'raggiunto' : ''}">
+      <span class="traguardo-segno">${raw(icona('grazie', { px: 16 }))}</span>
+      <span class="traguardo-titolo">${t.titolo}</span>
+      ${raw(t.raggiunto ? '' : `<span class="traguardo-avanzamento">${t.valore}/${t.soglia}</span>`)}
+    </li>`).join('');
   return html`
-    <button class="grazie-chip" data-act="vedi-grazie" title="Ringraziamenti ricevuti">
-      ${raw(icona('grazie', { px: 15 }))} ${quanti}
-    </button>`;
+    <div class="riquadro riquadro-fisso grazie-riquadro">
+      <div class="riquadro-testa">
+        <span class="titolo-riquadro">Grazie ricevuti ${raw(icona('grazie', { px: 16 }))}</span>
+        <span class="conteggio">${k.grazie}${k.colleghi ? ` da ${k.colleghi} ${k.colleghi === 1 ? 'collega' : 'colleghi'}` : ''}</span>
+      </div>
+      <p class="testo-tenue">${k.grazie
+    ? 'Li vedi solo tu.'
+    : 'Arrivano quando chiudi uno scambio e il collega ti ringrazia. Li vedi solo tu.'}</p>
+      <ul class="traguardi">${raw(traguardi)}</ul>
+      ${raw(k.grazie ? '<button class="btn secondario largo" data-act="vedi-grazie">Leggi i messaggi</button>' : '')}
+    </div>`;
 }
 
 /** I ringraziamenti ricevuti: l'unica cosa che resta dopo il cambio. */

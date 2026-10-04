@@ -201,6 +201,12 @@ export const GUIDE = {
         <li><strong>Preferiti</strong>: salgono di qualche punto, nient'altro.</li>
       </ul>
 
+      <h3>Grazie ricevuti</h3>
+      <p>
+        Ogni volta che chiudi uno scambio il collega può ringraziarti. I grazie
+        restano qui, con qualche traguardo da raggiungere. Li vedi solo tu.
+      </p>
+
       <h3>Le ore</h3>
       <p>
         <strong>Chi prende un turno fa le ore di quello che lascia.</strong> Puoi

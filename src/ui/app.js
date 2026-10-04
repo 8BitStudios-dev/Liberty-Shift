@@ -15,6 +15,7 @@ import * as P from './profilo-setup.js';
 import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
+import { karma, traguardiNuovi } from '../core/karma.js';
 import { scaricaCalendario, candidatiAccesso } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
 import {
@@ -51,6 +52,26 @@ function guideViste() {
   } catch {
     return { versione: VERSIONE_GUIDA, viste: [] };
   }
+}
+
+/**
+ * I traguardi già annunciati, per persona. Come la guida: una cosa di questo
+ * telefono, non un dato da sincronizzare. Su un telefono nuovo l'annuncio
+ * torna una volta, e va bene così.
+ */
+const CHIAVE_TRAGUARDI = 'cambio-turno:traguardi';
+
+function annunciaTraguardi() {
+  let visti = {};
+  try { visti = JSON.parse(localStorage.getItem(CHIAVE_TRAGUARDI) || '{}'); } catch { /* privata */ }
+  const me = store.me.id;
+  const nuovi = traguardiNuovi(karma(store.state.ringraziamenti, me), visti[me] || []);
+  if (!nuovi.length) return;
+  // Uno solo, il più alto: tre avvisi di fila per chi apre dopo mesi
+  // sarebbero rumore.
+  toast(`Nuovo traguardo: ${nuovi.at(-1).titolo}`);
+  visti[me] = [...(visti[me] || []), ...nuovi.map((t) => t.id)];
+  try { localStorage.setItem(CHIAVE_TRAGUARDI, JSON.stringify(visti)); } catch { /* privata */ }
 }
 
 function segnaGuidaVista(chiave) {
@@ -152,6 +173,7 @@ function render() {
 
   // La guida della sezione, la prima volta che ci si entra.
   if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
+  if (percorso === 'profilo') annunciaTraguardi();
 
   // Lo stato delle notifiche si scopre solo chiedendo al browser: si ridisegna
   // quando arriva, e solo se è cambiato, altrimenti sarebbe un giro infinito.

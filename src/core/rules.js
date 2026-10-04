@@ -85,6 +85,21 @@ export const RULES = {
   // di un turno trovato e basta.
   disponibilitaBonus: 10,
 
+  // Grazie ricevuti e traguardi (il "karma"). Si conta solo quello che resta:
+  // i ringraziamenti sopravvivono alla pulizia dei 90 giorni, gli scambi no.
+  // "colleghi" conta persone diverse, non grazie: premia chi aiuta tutti, non
+  // sempre lo stesso amico. Le soglie sono un punto di partenza per un
+  // negozio di una decina di persone.
+  karma: {
+    traguardi: [
+      { id: 'primo', misura: 'grazie', soglia: 1, titolo: 'Primo grazie' },
+      { id: 'colleghi-3', misura: 'colleghi', soglia: 3, titolo: '3 colleghi diversi' },
+      { id: 'grazie-10', misura: 'grazie', soglia: 10, titolo: '10 grazie' },
+      { id: 'colleghi-6', misura: 'colleghi', soglia: 6, titolo: '6 colleghi diversi' },
+      { id: 'grazie-25', misura: 'grazie', soglia: 25, titolo: '25 grazie' },
+    ],
+  },
+
   // Priorità
   priority: {
     creditsPerMonth: 1,

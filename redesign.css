@@ -1087,3 +1087,21 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .cal-turni-legenda > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .cal-turni-legenda .cal-conta { position: static; display: inline-block; }
 .cal-turni-legenda em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--verde); border: 1px dashed var(--verde); border-radius: 6px; padding: 0 5px; }
+
+/* Grazie ricevuti, nel Profilo. Il cuore raggiunto prende il colore
+   dell'icona del titolo; quelli da raggiungere sono contorni grigi con
+   l'avanzamento accanto, così si legge a che punto sei senza contare. */
+.grazie-riquadro .titolo-riquadro svg { fill: var(--rosso); stroke: var(--rosso); }
+.traguardi { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.traguardo { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--testo-tenue); min-height: 28px; }
+.traguardo-segno {
+  width: 28px; height: 28px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; border: 1.5px solid var(--linea);
+}
+.traguardo-segno svg { fill: none; stroke: var(--testo-tenue); opacity: .6; }
+.traguardo.raggiunto .traguardo-segno svg { opacity: 1; }
+.traguardo.raggiunto { color: var(--testo); font-weight: 600; }
+.traguardo.raggiunto .traguardo-segno { border-color: var(--rosso); background: color-mix(in srgb, var(--rosso) 10%, transparent); }
+.traguardo.raggiunto .traguardo-segno svg { fill: var(--rosso); stroke: var(--rosso); }
+.traguardo-avanzamento { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
+.grazie-riquadro .btn { margin-top: 12px; }

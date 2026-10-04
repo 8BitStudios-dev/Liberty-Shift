@@ -399,14 +399,27 @@ Dall'alto: le proposte ricevute, poi **il tuo mese** — è la cosa che si
 guarda ogni giorno, e stava sotto due sezioni di configurazione — poi i turni,
 le preferenze, la priorità, il contratto.
 
-I ringraziamenti non sono più una sezione a metà pagina, che senza
-ringraziamenti occupava spazio per dire che non ce n'erano: sono un contatore in
-alto a destra, 💛 con il numero, e la lista si apre toccandolo.
+I ringraziamenti hanno un riquadro loro, **Grazie ricevuti**, sotto la
+priorità. Prima erano un contatore in alto a destra che a zero spariva, e
+sembrava che non esistessero più. Il riquadro c'è sempre: a zero dice come si
+arriva al primo grazie.
+
+È il "karma" dell'app, e non è un sistema di punti: conta i grazie ricevuti,
+che esistono solo dopo uno scambio chiuso, uno per persona e per scambio, e
+sopravvivono alla pulizia dei 90 giorni. Sotto, cinque traguardi (soglie in
+`RULES.karma`): alcuni contano i grazie, altri i colleghi diversi che ti hanno
+ringraziato, per premiare chi aiuta tutti e non sempre lo stesso amico. Quelli
+non raggiunti mostrano a che punto sei. Un traguardo nuovo si annuncia una
+volta, con un avviso breve quando apri il Profilo.
+
+Lo vede solo chi lo riceve. Nessuna classifica e nessun numero sulle schede
+degli altri: in un negozio di dieci persone diventerebbe una pagella, e chi
+non può cambiare turni per motivi suoi finirebbe in fondo davanti a tutti.
 
 Lo stesso vale per chi sei. Il bollino con le iniziali, il nome grande e il
 contratto occupavano mezzo schermo sopra il calendario per dire a una persona
 il suo nome. Ora la testata è una riga sola: il bollino in alto a sinistra,
-sincronizzazione, grazie e guida a destra. Nome, contratto e ruoli si aprono
+sincronizzazione e guida a destra. Nome, contratto e ruoli si aprono
 toccando il bollino, insieme a una scorciatoia per modificare il profilo.
 
 ## Due mesi: quello del negozio e il tuo

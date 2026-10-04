@@ -24,6 +24,7 @@ const MODULI = [
   'src/core/sincronia.js',
   'src/core/rotazione.js',
   'src/core/statistiche.js',
+  'src/core/karma.js',
   'src/core/store.js',
   'src/ui/dom.js',
   'src/ui/icone.js',
