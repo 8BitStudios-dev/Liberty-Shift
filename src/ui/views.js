@@ -166,6 +166,7 @@ function legendaPersonale() {
     <ul class="legenda-mese">
       <li><span class="campione mia-richiesta"></span>una tua richiesta</li>
       <li><span class="campione disponibile"></span>sei disponibile</li>
+      <li><span class="campione riposo"></span>OFF</li>
     </ul>`;
 }
 
@@ -272,7 +273,7 @@ export function profilo() {
       </span>
     </header>
 
-    <section class="sezione">
+    <section class="sezione pannello-mio">
       <h2 class="titolo-mese">Il tuo mese</h2>
       ${raw(legendaPersonale())}
       ${raw(ilTuoMese())}
@@ -856,7 +857,7 @@ function settimaneDel(mese) {
 }
 
 /** La griglia comune ai due mesi: intestazione, una riga per settimana, la cella la decide chi chiama. */
-function grigliaMese(mese, { cella, testaSettimana }) {
+function grigliaMese(mese, { cella, testaSettimana, classe }) {
   const settimane = settimaneDel(mese);
   const intestazione = Array.from({ length: 7 }, (_, i) => html`
     <span class="dow-fisso">${GIORNI[weekday(addDays(settimane[0], i))]}</span>`).join('');
@@ -866,8 +867,10 @@ function grigliaMese(mese, { cella, testaSettimana }) {
         <div class="mese-griglia">${raw(Array.from({ length: 7 }, (_, i) => cella(addDays(wk, i))).join(''))}</div>
       </div>`).join('');
   return html`
-    <div class="mese-griglia intestazione">${raw(intestazione)}</div>
-    ${raw(righe)}`;
+    <div class="mese ${classe}">
+      <div class="mese-griglia intestazione">${raw(intestazione)}</div>
+      ${raw(righe)}
+    </div>`;
 }
 
 const classiGiorno = (data, mese, oggi) => [
@@ -903,6 +906,7 @@ export function mesePubblico(mese) {
   }
 
   return grigliaMese(mese, {
+    classe: 'mese-pubblico',
     testaSettimana: (wk) => html`<h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>`,
     cella: (data) => {
       const delGiorno = richieste.get(data) || [];
@@ -935,18 +939,21 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
   }
 
   return grigliaMese(mese, {
+    classe: 'mese-personale',
     testaSettimana: (wk) => html`
       <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))} ${raw(lettera(me, wk))}</h3>
       ${raw(spiaOre(me, wk))}`,
     cella: (data) => {
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
+      const stato = !turno ? 'senza-turno' : turno.tipo === 'OFF' ? 'riposo' : 'lavoro';
       return html`
-        <button class="mese-giorno ${classiGiorno(data, mese, oggi)}
+        <button class="mese-giorno ${stato} ${classiGiorno(data, mese, oggi)}
                        ${disponibileIl(me, data) ? 'disponibile' : ''}
                        ${mieiGiorni.has(data) ? 'mia-richiesta' : ''}"
                 data-act="giorno-profilo" data-data="${data}">
           <span class="numero">${toDate(data).getUTCDate()}</span>
-          <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '·'}</span>
+          <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '—'}</span>
+          ${raw(turno?.tipo === 'WORK' ? `<span class="fine">${turno.end}</span>` : '')}
         </button>`;
     },
   });

@@ -679,3 +679,76 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .pallino.mia { background: var(--mio); }
 .giorno-profilo .lista-cambi { margin-top: 4px; }
 .giorno-profilo .riga-cambio strong { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ============================================ due mesi, due forme
+   Il colore da solo non bastava: due griglie uguali con segni diversi si
+   leggevano come la stessa cosa. Ora si riconoscono dalla forma.
+
+   Il tuo mese (Profilo) è un'agenda: sta in un pannello suo, tinto di viola,
+   e in ogni cella il protagonista è il turno, con inizio e fine; il numero del
+   giorno è piccolo, in alto a sinistra. I riposi sono tenui, perché in
+   un'agenda conta dove lavori.
+
+   Il mese del negozio (Calendario) è un tabellone: niente pannello, sta sulla
+   pagina; il numero del giorno è grande al centro, e sotto ci sono solo i
+   segni delle richieste dei colleghi. */
+
+.pannello-mio {
+  background: var(--mio-tenue);
+  border-radius: var(--raggio);
+  padding: 18px 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--mio) 22%, transparent);
+}
+.pannello-mio .titolo-mese { color: var(--mio); margin-bottom: 12px; padding-left: 4px; }
+.pannello-mio .legenda-mese, .pannello-mio .nota-mese { padding: 0 4px; }
+
+/* --- l'agenda */
+.mese-personale .mese-giorno {
+  align-items: flex-start; justify-content: flex-start;
+  padding: 5px 6px 6px; min-height: 62px; gap: 0;
+  border-color: transparent; background: var(--superficie);
+}
+.mese-personale .mese-giorno .numero {
+  font-size: 12px; font-weight: 600; color: var(--testo-tenue); line-height: 1.2;
+}
+.mese-personale .mese-giorno .turno {
+  font-size: 15px; font-weight: 700; color: var(--testo); margin-top: 3px;
+  font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.mese-personale .mese-giorno .fine {
+  font-size: 12px; color: var(--testo-tenue); font-variant-numeric: tabular-nums;
+}
+.mese-personale .mese-giorno.riposo { background: transparent; border: 1px dashed color-mix(in srgb, var(--mio) 35%, transparent); }
+.mese-personale .mese-giorno.riposo .turno { font-size: 13px; font-weight: 600; color: var(--testo-tenue); }
+.mese-personale .mese-giorno.senza-turno { background: transparent; }
+.mese-personale .mese-giorno.senza-turno .turno { color: var(--testo-tenue); font-weight: 400; }
+.mese-personale .mese-giorno.oggi { border: 2px solid var(--mio); background: var(--superficie); }
+/* La disponibilità resta un fondo, ma dentro il pannello viola serve un
+   verde più deciso per staccarsi. */
+.mese-personale .mese-giorno.disponibile { background: var(--prendo-tenue); border-color: color-mix(in srgb, var(--prendo) 30%, transparent); }
+.mese-personale .mese-giorno.mia-richiesta::after { top: 6px; right: 6px; width: 8px; height: 8px; }
+.campione.riposo { background: transparent; border: 1px dashed color-mix(in srgb, var(--mio) 45%, transparent); }
+
+/* --- il tabellone */
+.mese-pubblico .mese-giorno { justify-content: flex-start; padding-top: 8px; }
+.mese-pubblico .mese-giorno .numero { font-size: 17px; font-weight: 700; }
+.mese-pubblico .mese-giorno.oggi { border: 2px solid var(--accento); background: var(--superficie); }
+/* Sette colonne che non si allargano mai oltre lo schermo: senza minmax(0, …)
+   un orario un po' largo spingeva la colonna e il pannello sbordava a destra. */
+.mese-griglia { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.pannello-mio { padding: 16px 8px 12px; }
+.mese-personale .mese-griglia { gap: 3px; }
+.mese-personale .mese-giorno { min-width: 0; overflow: hidden; padding: 5px 4px 6px; }
+.mese-personale .mese-giorno .turno { font-size: 13px; letter-spacing: -.01em; }
+.mese-personale .mese-giorno.riposo .turno { font-size: 12px; }
+/* Sotto i 360px (iPhone SE e simili) ogni pixel del pannello torna alle celle,
+   e gli orari stanno centrati, altrimenti "11:00" diventava "11:0". */
+@media (max-width: 359px) {
+  .pannello-mio { padding: 14px 4px 10px; }
+  .mese-personale .mese-griglia { gap: 2px; }
+  .mese-personale .mese-giorno { padding: 4px 1px 5px; align-items: center; }
+  .mese-personale .mese-giorno .turno { font-size: 12px; letter-spacing: -.02em; }
+}
+@media (max-width: 359px) {
+  .mese-personale .mese-giorno.mia-richiesta::after { top: 2px; right: 2px; width: 6px; height: 6px; }
+}

@@ -393,8 +393,17 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
   un colpo d'occhio dice su quale dei due mesi si è.
 
 Le due griglie escono dalla stessa funzione (`grigliaMese`), che decide le
-righe e lascia la cella a chi chiama: si disegnano allo stesso modo e non
-possono divergere, ma ciascuna mostra solo quello che è suo.
+righe e lascia la cella a chi chiama: le settimane sono le stesse, ma ciascuna
+mostra solo quello che è suo, e si riconoscono **dalla forma**, non solo dal
+colore. Due griglie uguali con segni diversi si leggevano come la stessa cosa.
+
+- Il tuo mese è un'**agenda**: sta in un pannello tinto di viola, e in ogni
+  cella il protagonista è il turno, con inizio e fine; il numero del giorno è
+  piccolo in alto a sinistra, i riposi hanno il bordo tratteggiato e niente
+  fondo, perché in un'agenda conta dove lavori.
+- Il mese del negozio è un **tabellone**: niente pannello, sta sulla pagina;
+  il numero del giorno è grande, e sotto ci sono solo i segni delle
+  richieste dei colleghi.
 
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
 ✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.
