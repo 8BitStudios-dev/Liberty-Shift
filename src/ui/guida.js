@@ -114,7 +114,7 @@ export const GUIDE = {
   },
 
   calendario: {
-    titolo: 'Il Calendario',
+    titolo: 'Il Calendario pubblico',
     icona: '📅',
     corpo: () => html`
       <p>Le richieste dei colleghi, giorno per giorno. Le tue sono nel Profilo.</p>
@@ -126,6 +126,7 @@ export const GUIDE = {
         <li><span class="barre in-legenda"><i class="offre"></i></span>
           verde: qualcuno offre un turno o una giornata;</li>
         <li>bordo oro: c'è una priorità;</li>
+        <li>il numero nel cerchio grigio: quante richieste toccano quel giorno, fra chi cerca e chi offre;</li>
         <li>la percentuale: c'è una richiesta che puoi risolvere, e quanto combacia.</li>
       </ul>
 

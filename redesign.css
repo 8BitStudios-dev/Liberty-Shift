@@ -875,3 +875,27 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .mese-personale .mese-giorno.oggi { border-color: var(--accento); box-shadow: inset 0 0 0 1px var(--accento); }
 .campione.riposo { background: transparent; border: 1px solid var(--linea); border-radius: 4px; }
 .campione.disponibile { border-radius: 4px; }
+
+/* Calendario pubblico: il titolo dice di chi è il mese, il mese si sfoglia
+   sotto. */
+.mese-navigazione { display: flex; align-items: center; justify-content: space-between; margin: 0 0 14px; }
+.mese-navigazione h2 { margin: 0; font-size: 19px; font-weight: 700; }
+
+/* Quante richieste toccano il giorno, fra chi cerca e chi offre: un numero
+   grigio in un cerchio leggero, in alto a destra. Dice "quanto movimento"
+   senza competere con il numero del giorno. */
+.conta-giorno {
+  position: absolute; top: 4px; right: 4px;
+  min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 600; line-height: 1; color: var(--testo-tenue);
+  border: 1px solid var(--linea); background: var(--superficie);
+}
+.conta-giorno.in-legenda { position: static; display: inline-grid; }
+@media (max-width: 359px) { .conta-giorno { top: 2px; right: 2px; min-width: 16px; height: 16px; } }
+/* Il conteggio sta sotto il numero, centrato: in alto a destra copriva le
+   cifre del giorno su ogni cella. */
+.mese-pubblico .conta-giorno { position: static; margin-top: 3px; }
+.mese-pubblico .mese-giorno { min-height: 72px; gap: 3px; }
+.mese-pubblico .mese-giorno .quota.vuota { display: none; }
+@media (max-width: 359px) { .mese-pubblico .conta-giorno { position: static; } }

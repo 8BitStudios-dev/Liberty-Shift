@@ -157,6 +157,7 @@ function legendaPubblica() {
       <li><span class="barre in-legenda"><i class="cerca"></i></span>qualcuno cerca</li>
       <li><span class="barre in-legenda"><i class="offre"></i></span>qualcuno offre</li>
       <li><span class="campione prioritaria"></span>priorità</li>
+      <li><span class="conta-giorno in-legenda">2</span>richieste del giorno</li>
       <li><span class="quota campione-quota">%</span>puoi aiutare</li>
     </ul>`;
 }
@@ -184,11 +185,14 @@ export function calendario(params) {
 
   return html`
     <header class="testata">
-      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}" aria-label="Mese prima">‹</button>
-      <h1>${MESI[m - 1]} ${anno}</h1>
-      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}" aria-label="Mese dopo">›</button>
+      <h1>Calendario pubblico</h1>
       <button class="icon-btn" data-act="guida" data-sezione="calendario" title="Come funziona">?</button>
     </header>
+    <div class="mese-navigazione">
+      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}" aria-label="Mese prima">‹</button>
+      <h2>${MESI[m - 1]} ${anno}</h2>
+      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}" aria-label="Mese dopo">›</button>
+    </div>
     ${raw(legendaPubblica())}
     ${raw(mesePubblico(mese))}
     <p class="testo-tenue nota-mese">
@@ -506,7 +510,7 @@ export function rigaModoNotifiche(stato = statoNoto()) {
         <span class="conteggio">${modo === 'compatibili' ? 'tutte le compatibili' : 'solo le personali'}</span>
       </summary>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server criptati.'))}
+      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server su una connessione cifrata.'))}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Nel calendario di questo dispositivo non ci sono turni futuri: importali dal Profilo, altrimenti non ti arriva niente.</p>'
     : '')}
@@ -917,6 +921,7 @@ export function mesePubblico(mese) {
         <button class="mese-giorno ${classiGiorno(data, mese, oggi)} ${delGiorno.some(hasPriority) ? 'prioritaria' : ''}"
                 data-act="giorno" data-data="${data}">
           <span class="numero">${toDate(data).getUTCDate()}</span>
+          ${raw(delGiorno.length ? `<span class="conta-giorno" aria-label="${delGiorno.length} richieste">${delGiorno.length}</span>` : '')}
           ${raw(migliore ? `<span class="quota">${migliore.match.score}%</span>` : '<span class="quota vuota"></span>')}
           <span class="barre">${raw(barre)}</span>
         </button>`;

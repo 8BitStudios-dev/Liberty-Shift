@@ -380,8 +380,9 @@ toccando il bollino, insieme a una scorciatoia per modificare il profilo.
 Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
 (settimane Apple, dal sabato al venerdì) e contenuti divisi senza eccezioni:
 
-- **Calendario**: il negozio. Le richieste aperte dei colleghi, mai le tue;
-  le barre di chi cerca (blu) e di chi offre (verde), il bordo oro della
+- **Calendario pubblico** (il tab): il negozio. Le richieste aperte dei
+  colleghi, mai le tue; le barre di chi cerca (blu) e di chi offre (verde),
+  in un cerchio grigio quante richieste toccano il giorno, il bordo oro della
   priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
   giorno: chi puoi aiutare, poi Cercano e Offrono.
 - **Profilo**: tu. I tuoi turni, le ore della settimana, la rotazione, il
