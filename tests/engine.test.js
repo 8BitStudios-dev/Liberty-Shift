@@ -743,3 +743,22 @@ test('i requisiti della password sono controllati prima di salvarla', () => {
   assert.match(controllaPassword('abcdef', 'abcdeg'), /non coincidono/);
   assert.equal(controllaPassword('abcdef', 'abcdef'), '');
 });
+
+test('un Full Time e un Part Time con lo stesso inizio non si scambiano turni uguali ai propri', () => {
+  const utente = (id, contratto, ore) => ({
+    id, nome: id, cognomeIniziale: 'X', contratto, genere: 'X', oreSettimanali: ore,
+    preferenze: {}, disponibilita: {}, prioritaUsata: {},
+  });
+  const turno = (id, userId, start, end) => ({ id, userId, data: '2099-10-04', tipo: 'WORK', start, end });
+  const ctx = {
+    users: [utente('omar', 'PT', 25), utente('io', 'FT', 40)],
+    shifts: [turno('s1', 'omar', '09:30', '14:30'), turno('s2', 'io', '09:30', '18:30')],
+    requests: [], proposals: [], currentUserId: 'io',
+  };
+  const richiesta = {
+    id: 'r1', userId: 'omar', status: 'APERTA', tipo: TIPO_CAMBIO.ORARIO, createdAt: new Date().toISOString(),
+    prioritaFinoA: null, cedo: { shiftId: 's1', flessibile: false },
+    cerco: { giorni: ['2099-10-04'], mode: WANT_MODE.RANGE, entroLe: '18:30', dalleOre: '' },
+  };
+  assert.deepEqual(findMatches(richiesta, ctx), []);
+});

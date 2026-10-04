@@ -233,6 +233,12 @@ function matchOrario(request, ctx) {
     // Quello che riceverei non è il turno com'è, ma con le ore del turno che
     // sto lasciando: chi cambia non cambia il proprio monte ore.
     const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo));
+
+    // Un Full Time 09:30–18:30 e un Part Time 09:30–14:30 si scambierebbero
+    // ciascuno il turno adattato alle proprie ore, cioè il proprio: dopo lo
+    // scambio nessuno ha cambiato niente. Proporlo è un'occasione finta.
+    const stesso = (a, b) => a.start === b.start && a.end === b.end;
+    if (stesso(turnoAdattato(suo, mioCedo), mioCedo) || stesso(turnoAdattato(mioCedo, suo), suo)) continue;
     if (perMe.score === 0) continue;
 
     // Ha chiesto lui stesso un cambio orario quel giorno?

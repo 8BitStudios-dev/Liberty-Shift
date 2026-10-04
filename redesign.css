@@ -440,3 +440,8 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
    cerchietto allineato al titolo e non alla riga intera. */
 .switch input[type="radio"] { align-self: flex-start; margin-top: 3px; flex: none; }
 .riquadro .avviso-box { margin: 10px 0 14px; font-size: 14px; }
+
+/* Priorità nel Profilo: stesso oro del bordo delle richieste prioritarie. */
+.titolo-priorita { color: var(--oro); display: flex; align-items: center; gap: 6px; }
+.titolo-priorita svg { fill: currentColor; stroke: currentColor; }
+.priorita-usata { color: var(--oro); font-weight: 600; }
