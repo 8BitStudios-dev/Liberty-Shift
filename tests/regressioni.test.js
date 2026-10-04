@@ -320,3 +320,37 @@ test('con una persona inventata la notifica ha ancora senso: e\' su questo telef
   assert.ok(store.state.notifications.some((n) => n.userId === altro.id));
 });
 
+
+// --- lo stesso turno promesso a due persone ----------------------------
+
+test('al primo accordo, le altre proposte con lo stesso turno decadono', () => {
+  store.reset(seed());
+  const me = store.state.currentUserId;
+  const altri = store.state.users.filter((u) => u.id !== me).slice(0, 3);
+  const mio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK');
+  const altroMio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK' && s.id !== mio.id);
+  const richiesta = (id, autore) => {
+    const cedo = store.state.shifts.find((s) => s.userId === autore.id && s.tipo === 'WORK');
+    store.state.requests.push({
+      id, userId: autore.id, createdAt: new Date().toISOString(), status: STATUS.APERTA,
+      prioritaFinoA: null, tipo: 'ORARIO', cedo: { shiftId: cedo.id, flessibile: false }, cerco: { giorni: [] },
+    });
+  };
+  const proposta = (id, requestId, autore, turno) => store.state.proposals.push({
+    id, requestId, daUserId: me, aUserId: autore.id, shiftOffertoId: turno.id, messaggio: '',
+    accettataDa: [me], status: 'IN_ATTESA', createdAt: new Date().toISOString(), cambioInserito: false,
+  });
+  richiesta('rq-a', altri[0]); richiesta('rq-b', altri[1]); richiesta('rq-c', altri[2]);
+  proposta('pr-a', 'rq-a', altri[0], mio);
+  proposta('pr-b', 'rq-b', altri[1], mio);
+  proposta('pr-c', 'rq-c', altri[2], altroMio);
+
+  store.cambiaUtente(altri[0].id);
+  store.accetta('pr-a');
+
+  const stato = (id) => store.state.proposals.find((p) => p.id === id);
+  assert.equal(stato('pr-a').status, 'ACCORDO');
+  assert.equal(stato('pr-b').status, 'RIFIUTATA', 'lo stesso turno non si promette a due persone');
+  assert.equal(stato('pr-b').motivoDecadenza, 'TURNO_IMPEGNATO');
+  assert.equal(stato('pr-c').status, 'IN_ATTESA', 'un altro turno resta in gioco');
+});

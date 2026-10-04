@@ -82,11 +82,18 @@ servirebbe solo a una persona nata qui e mai salita sul server: per lei
 l'etichetta resta "Avvisa", perché lì l'avviso arriva davvero.
 
 ## Bacheca
-Filtri: **Tutti**, **🕐 Orario**, **📅 OFF**, **⭐ Priorità**. Ora che i tipi
-sono due, filtrare per tipo è utile davvero: se cerchi di liberarti una
-giornata guardi gli OFF, se devi solo spostare un orario guardi gli orari.
+Filtri: **Tutti**, **Orario**, **OFF**. Ora che i tipi sono due, filtrare per
+tipo è utile davvero: se cerchi di liberarti una giornata guardi gli OFF, se
+devi solo spostare un orario guardi gli orari. Un filtro **Priorità** c'era e
+non serve più: le prioritarie stanno già in cima a ogni lista.
 
-Ordinamento: priorità, poi la più recente.
+Ordinamento: le prioritarie sopra, poi tutte le altre **in ordine di
+inserimento, dalla prima pubblicata** (`ordineBacheca`). Nessun altro
+criterio: chi ha chiesto prima resta prima, anche se tu non puoi
+rispondergli. Le stesse regole valgono nel giorno del Calendario; in "Aiuta un
+collega" le prioritarie stanno sopra e, a pari priorità, l'ordine è per
+percentuale. In Home, "Ultime richieste" mostra le tre più recenti, prioritarie
+prima.
 
 **Da valutare**: un filtro "per me", che mostri solo le richieste compatibili
 con i turni che hai in calendario. È la cosa che rende la bacheca utile appena
@@ -97,6 +104,26 @@ Il pulsante "Proponi uno scambio" compare **solo se hai davvero qualcosa da
 offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo. Dopo l'accordo la schermata dice una cosa sola: vai a farlo
 nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
+
+Le proposte ricevute, in Proposte, si leggono **nell'ordine in cui sono
+arrivate**: prima quella arrivata prima. Sopra restano quelle che aspettano
+una tua risposta.
+
+### Lo stesso turno a più persone
+Si può offrire lo stesso turno su più richieste, per trovare prima chi lo
+prende. **Vince il primo sì**: quando una di queste proposte diventa accordo,
+le altre in attesa con lo stesso turno decadono, e chi le aveva ricevute
+legge *"Proposta non scelta: Martina L. ha scelto un altro scambio per il turno
+di …"*. Lo stesso per l'autore della richiesta: se aveva offerto altrove il
+giorno che ora lascia, quella proposta decade. Prima nulla lo impediva, e due sì
+sulla stessa giornata facevano due accordi su un turno solo.
+
+Lo fa il server (trigger `turno_impegnato`), perché le proposte da chiudere
+sono di altre persone e chi accetta non ha il permesso di toccarle; il
+telefono di chi accetta allinea solo quello che già mostra.
+
+"Rifiutata" resta per un no detto da una persona; "non scelta" per tutto
+quello che si chiude perché un altro scambio è andato a buon fine.
 
 ### Dopo l'accordo
 

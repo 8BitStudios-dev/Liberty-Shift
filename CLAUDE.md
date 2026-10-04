@@ -94,6 +94,10 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 decisioni aperte e pubblicazione. Quando una regola cambia, cambia anche lì:
 la documentazione che mente è peggio di quella che manca.
 
+- **Il connettore Supabase va in timeout su `delete` e su `drop`.** Una
+  migrazione che li contiene non parte e non dà errore: si spezza in pezzi
+  senza quelle parole, o si incolla in SQL Editor. Dopo, si controlla sempre
+  con una query di lettura che sia passata davvero.
 - **`supabase/functions/send-push/core/` è una copia di `src/core/`.** Si
   rigenera con `npm run funzioni` e va ripubblicata la funzione, altrimenti il
   server ragiona con regole vecchie. `notifiche_preferenze` non va mai aperta

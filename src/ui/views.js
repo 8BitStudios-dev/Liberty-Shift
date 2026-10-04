@@ -20,23 +20,20 @@ import {
 
 // ---------------------------------------------------------------- HOME
 
-/**
- * L'ordine delle liste di richieste, uguale ovunque: prima le prioritarie,
- * sempre, perché la priorità è proprio la promessa di stare in cima; poi, a
- * pari priorità, quelle a cui puoi rispondere; dentro ogni gruppo le più
- * recenti. Una lista che apre con quattro righe "non fa per te" fa scorrere
- * per niente, ma una priorità che finisce in fondo non è una priorità.
- */
 /** Le occasioni di aiutare, prioritarie prima; a pari priorità resta l'ordine per percentuale. */
 export const primaLePrioritarie = (opportunita) => [
   ...opportunita.filter((o) => hasPriority(o.richiesta)),
   ...opportunita.filter((o) => !hasPriority(o.richiesta)),
 ];
 
-export const perTe = (lista) => {
-  const peso = (r) => (hasPriority(r) ? 0 : 2) + (store.possoRispondere(r) ? 0 : 1);
-  return lista.map((r, i) => ({ r, i })).sort((a, b) => peso(a.r) - peso(b.r) || a.i - b.i).map((x) => x.r);
-};
+/**
+ * L'ordine della Bacheca: le prioritarie sopra, poi tutte le altre in ordine
+ * di inserimento, dalla prima pubblicata. Nessun altro criterio: chi ha
+ * chiesto prima resta prima, anche se tu non puoi rispondergli.
+ */
+export const ordineBacheca = (lista) => [...lista].sort(
+  (a, b) => (hasPriority(b) - hasPriority(a)) || a.createdAt.localeCompare(b.createdAt),
+);
 
 export function home() {
   const me = store.me;
@@ -46,7 +43,8 @@ export function home() {
   const miei = store.state.requests.filter((r) => r.userId === me.id && isOpen(r));
   const proposte = store.propostePerMe();
   const credito = store.creditoPriorita();
-  const altrui = perTe(store.bacheca().filter((r) => r.userId !== me.id)).slice(0, 3);
+  // "Ultime richieste": le prioritarie sopra, poi le più recenti, tre in tutto.
+  const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
   const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
   const bloccoMiei = miei.length || proposte.length
@@ -230,7 +228,7 @@ const FILTRI = {
 
 export function bacheca(params) {
   const filtro = FILTRI[params.filtro] ? params.filtro : 'TUTTI';
-  const lista = perTe(store.bacheca()
+  const lista = ordineBacheca(store.bacheca()
     .filter((r) => r.userId !== store.state.currentUserId)
     .filter(FILTRI[filtro].test));
 
@@ -1016,10 +1014,10 @@ export function dettaglioGiornoPubblico(data) {
     if (!isOpen(r) || r.userId === me || giaViste.has(r.id)) return false;
     const cedo = store.shift(r.cedo.shiftId);
     return cedo?.data === data || (r.cerco.giorni || []).includes(data);
-  }).sort((a, b) => hasPriority(b) - hasPriority(a));
+  });
 
   const gruppi = GRUPPI_GIORNO.map((g) => {
-    const dentro = altre.filter((r) => ruoloNelGiorno(r, data).ruolo === g.ruolo);
+    const dentro = ordineBacheca(altre.filter((r) => ruoloNelGiorno(r, data).ruolo === g.ruolo));
     if (!dentro.length) return '';
     return html`
       <section class="gruppo-giorno ${g.ruolo}">

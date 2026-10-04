@@ -653,6 +653,54 @@ create trigger notifica_proposta
   after insert or update of stato on public.proposte
   for each row execute function public.notifica_proposta();
 
+-- ================================================== un turno, un accordo
+--
+-- Lo stesso turno si può offrire su più richieste, per trovare prima chi lo
+-- prende. Al primo accordo le altre proposte in attesa che usano quel turno
+-- decadono: quelle di chi ha proposto con lo stesso giorno, e quelle che
+-- l'autore della richiesta aveva fatto offrendo il giorno che ora lascia.
+-- Senza questo, due sì sulla stessa giornata facevano due accordi su un
+-- turno solo.
+--
+-- Lo fa il database e non il telefono: le proposte da chiudere sono spesso di
+-- altre persone, e chi accetta non ha il permesso di toccarle. Il turno sul
+-- server è la coppia (persona, giorno): ciascuno ne ha uno al giorno.
+--
+-- `motivo_decadenza` dice a `send-push` perché la proposta è chiusa: chi
+-- l'aveva ricevuta legge "Proposta non scelta", non "rifiutata".
+alter table public.proposte add column if not exists motivo_decadenza text;
+alter table public.proposte drop constraint if exists proposte_motivo_decadenza_check;
+alter table public.proposte add constraint proposte_motivo_decadenza_check
+  check (motivo_decadenza is null or motivo_decadenza = 'TURNO_IMPEGNATO');
+
+create or replace function public.turno_impegnato() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  cedo date;
+begin
+  select r.cedo_data into cedo from public.richieste r where r.id = new.richiesta_id;
+
+  update public.proposte q
+  set stato = 'RIFIUTATA', motivo_decadenza = 'TURNO_IMPEGNATO'
+  where q.id <> new.id
+    and q.richiesta_id <> new.richiesta_id
+    and q.stato = 'IN_ATTESA'
+    and (
+      (q.da_user_id = new.da_user_id and q.turno_data = new.turno_data)
+      or (q.da_user_id = new.a_user_id and q.turno_data = cedo)
+    );
+  return new;
+end $$;
+
+revoke all on function public.turno_impegnato() from public, anon, authenticated;
+
+drop trigger if exists turno_impegnato on public.proposte;
+create trigger turno_impegnato
+  after update of stato on public.proposte
+  for each row
+  when (new.stato = 'ACCORDO' and old.stato is distinct from 'ACCORDO')
+  execute function public.turno_impegnato();
+
 -- ================================================ rientrare da un dispositivo nuovo
 --
 -- L'indirizzo con cui un account entra (`nome.cognome.xxxxxx@liberty-shift.internal`)

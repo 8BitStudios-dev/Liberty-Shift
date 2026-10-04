@@ -566,6 +566,21 @@ export const store = {
       this.state.proposals
         .filter((x) => x.requestId === p.requestId && x.id !== p.id)
         .forEach((x) => this.rispecchiaProposta(x, { stato: 'RIFIUTATA' }));
+      // Un turno si scambia una volta sola. Le altre proposte in attesa che
+      // usano lo stesso turno (quello offerto da chi ha proposto, o quello che
+      // l'autore lascia) decadono: è il primo sì a vincere. Sul server lo fa
+      // il trigger `turno_impegnato`, che può toccare anche le proposte di
+      // altre persone; qui si allinea solo quello che il telefono già mostra.
+      const cedoRichiesta = r?.cedo.shiftId;
+      this.state.proposals
+        .filter((x) => x.status === 'IN_ATTESA' && x.requestId !== p.requestId
+          && ((x.daUserId === p.daUserId && x.shiftOffertoId === p.shiftOffertoId)
+            || (x.daUserId === p.aUserId && x.shiftOffertoId === cedoRichiesta)))
+        .forEach((x) => {
+          x.status = 'RIFIUTATA';
+          x.motivoDecadenza = 'TURNO_IMPEGNATO';
+          this.aggiornaStato(this.request(x.requestId));
+        });
       [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo nell\'app ufficiale.'));
     } else {
       this.notifica(p.daUserId === me ? p.aUserId : p.daUserId, `${this.user(me).nome} ha accettato il cambio.`);
@@ -663,9 +678,11 @@ export const store = {
       // da mostrare e niente da decidere: una riga a metà si limiterebbe a
       // rompere la schermata mentre la disegna.
       .filter((x) => x.richiesta && x.altro && this.shift(x.proposta.shiftOffertoId))
+      // Dentro ogni gruppo, prima quella arrivata prima: chi ha proposto per
+      // primo non deve finire sotto chi è arrivato dopo.
       .sort((a, b) => (b.aspettaMe - a.aspettaMe)
         || (b.daRingraziare - a.daRingraziare)
-        || b.proposta.createdAt.localeCompare(a.proposta.createdAt));
+        || a.proposta.createdAt.localeCompare(b.proposta.createdAt));
   },
 
   // "Cambio inserito": chiude la partita, l'app non tocca il sistema ufficiale.

@@ -82,7 +82,7 @@ function quando(giorno: string): string {
 
 type Proposta = {
   id: string; richiesta_id?: string; da_user_id: string; a_user_id: string; stato: string;
-  turno_data: string; motivo_rifiuto?: string | null;
+  turno_data: string; motivo_rifiuto?: string | null; motivo_decadenza?: string | null;
 };
 
 /**
@@ -111,6 +111,18 @@ function messaggio(
       a: record.a_user_id,
       title: 'Nuova proposta di cambio turno',
       body: `${nomi[record.da_user_id]} ti propone uno scambio per il turno di ${giorno}.`,
+    };
+  }
+  // Il turno offerto è andato a un'altra richiesta (trigger `turno_impegnato`):
+  // la proposta si chiude per chi l'aveva ricevuta, che non ha detto di no a
+  // niente. Va a lui, non a chi l'aveva fatta, e non dice "rifiutata".
+  if (type === 'UPDATE' && record.stato === 'RIFIUTATA' && old?.stato !== 'RIFIUTATA'
+    && record.motivo_decadenza === 'TURNO_IMPEGNATO') {
+    if (autore === record.a_user_id) return null;
+    return {
+      a: record.a_user_id,
+      title: 'Proposta non scelta',
+      body: `${nomi[record.da_user_id]} ha scelto un altro scambio per il turno di ${giorno}: la proposta che ti aveva fatto non è più valida.`,
     };
   }
   if (type !== 'UPDATE' || record.stato === old?.stato || autore === record.da_user_id) return null;

@@ -69,6 +69,21 @@ test('chi arriva secondo non si sente dire "ha rifiutato"', () => {
   assert.match(rifiuto.body, /Ho un impegno/);
 });
 
+test('quando il turno va a un altro scambio, chi aveva ricevuto la proposta legge "non scelta"', () => {
+  // Martina aveva offerto il suo turno a Omar e a un'altra persona: l'altra ha
+  // accettato per prima, e il trigger `turno_impegnato` chiude la proposta a
+  // Omar. La modifica la fa il database mentre accetta un terzo.
+  const p = proposta({ stato: 'RIFIUTATA', motivo_decadenza: 'TURNO_IMPEGNATO' });
+  const m = messaggio('UPDATE', p, proposta(), 'id-terzo', nomi, {});
+  assert.equal(m.a, OMAR, 'la notizia va a chi aveva ricevuto la proposta');
+  assert.equal(m.title, 'Proposta non scelta');
+  assert.match(m.body, /Martina L\. ha scelto un altro scambio/);
+  assert.doesNotMatch(m.body, /rifiutat/);
+
+  // Se a far decadere è Omar stesso (due sue richieste, una accettata), niente notifica.
+  assert.equal(messaggio('UPDATE', p, proposta(), OMAR, nomi, {}), null);
+});
+
 test('la propria azione non suona il proprio telefono', () => {
   assert.equal(messaggio('INSERT', proposta(), null, OMAR, nomi, {}), null, 'il destinatario ha fatto la modifica');
   assert.equal(messaggio('UPDATE', proposta({ stato: 'ACCORDO' }), proposta(), MARTINA, nomi, {}), null);

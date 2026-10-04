@@ -434,6 +434,16 @@ Due dispositivi, due account, il giro completo:
 | la richiesta cambia stato | `ACCORDO` anche per Bruno |
 | **estraneo registrato senza codice** | profili `[]`, bacheca `[]` |
 
+## Un turno, un accordo
+Il trigger `turno_impegnato` (in `schema.sql`) parte quando una proposta
+diventa `ACCORDO` e fa decadere le altre proposte in attesa che usano lo
+stesso turno: quelle di chi ha proposto con lo stesso giorno, e quelle che
+l'autore della richiesta aveva fatto offrendo il giorno che ora lascia. Sul
+server il turno è la coppia (persona, giorno). Le proposte chiuse così hanno
+`motivo_decadenza = 'TURNO_IMPEGNATO'`, e `send-push` manda a chi le aveva
+ricevute "Proposta non scelta". La funzione è `security definer` perché tocca
+proposte di altre persone, che chi accetta non potrebbe modificare.
+
 ## La pulizia, il promemoria e gli accordi
 
 **Chi vede una richiesta con un accordo.** La policy di lettura su `richieste`
