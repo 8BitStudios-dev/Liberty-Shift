@@ -911,3 +911,29 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .in-corso.in-legenda { position: static; }
 .giorno-profilo .riga-cambio .in-corso { flex: 0 0 auto; }
 @media (max-width: 359px) { .mese-personale .mese-giorno .in-corso { top: 2px; right: 2px; } }
+
+/* La clessidra in un bollino pieno: una clessidra verde su un giorno
+   disponibile (fondo verde chiaro) quasi spariva. Il bollino ha il colore pieno
+   e l'icona sopra in bianco (scura in tema scuro), e si stacca da ogni fondo. */
+.in-corso {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--mio); color: var(--su-pieno);
+  box-shadow: 0 0 0 2px var(--superficie);
+}
+.in-corso-accordo { background: var(--prendo); color: var(--su-pieno); }
+.in-corso svg { width: 12px; height: 12px; }
+.mese-personale .mese-giorno .in-corso { top: 3px; right: 3px; width: 18px; height: 18px; }
+.mese-personale .mese-giorno .in-corso svg { width: 11px; height: 11px; }
+.giorno-profilo .riga-cambio .in-corso { width: 26px; height: 26px; box-shadow: none; }
+.giorno-profilo .riga-cambio .in-corso svg { width: 15px; height: 15px; }
+@media (max-width: 359px) {
+  .mese-personale .mese-giorno .in-corso { top: 2px; right: 2px; width: 16px; height: 16px; }
+}
+/* Il bollino sta a cavallo dell'angolo, come quello delle notifiche: dentro la
+   cella, su uno schermo stretto, copriva il numero del giorno. */
+.mese-personale .mese-giorno { overflow: visible; }
+.mese-personale .mese-giorno .in-corso { top: -6px; right: -6px; z-index: 1; }
+@media (max-width: 359px) {
+  .mese-personale .mese-giorno .in-corso { top: -5px; right: -5px; }
+}
+.mese-personale .mese-settimana { margin-bottom: 10px; }
