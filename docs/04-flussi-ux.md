@@ -397,11 +397,12 @@ righe e lascia la cella a chi chiama: le settimane sono le stesse, ma ciascuna
 mostra solo quello che è suo, e si riconoscono **dalla forma**, non solo dal
 colore. Due griglie uguali con segni diversi si leggevano come la stessa cosa.
 
-- Il tuo mese è una **tabella**: un riquadro bianco con il bordo, celle
-  separate da linee visibili, una riga sottile per settimana con le date e
-  le ore. In ogni cella il turno, con inizio e fine, e il numero del giorno
-  piccolo in alto; i riposi sono grigi. Un pannello tinto di viola, provato
-  prima, era grande quanto mezzo schermo e pesava più del contenuto.
+- Il tuo mese è un'**agenda leggera**: ogni giorno è un riquadro piccolo con
+  angoli appena arrotondati e un filo chiaro, separato dagli altri da 3px;
+  le intestazioni sono solo testo, con le date della settimana e le ore. In
+  ogni cella il turno, con inizio e fine, e il numero del giorno piccolo in
+  alto; i riposi sono vuoti. Un pannello tinto di viola e poi una tabella con
+  le bande grigie, provati prima, pesavano più del contenuto.
 - Il mese del negozio è un **tabellone**: niente pannello, sta sulla pagina;
   il numero del giorno è grande, e sotto ci sono solo i segni delle
   richieste dei colleghi.
