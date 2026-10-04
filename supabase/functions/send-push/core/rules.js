@@ -87,16 +87,22 @@ export const RULES = {
 
   // Grazie ricevuti e traguardi (il "karma"). Si conta solo quello che resta:
   // i ringraziamenti sopravvivono alla pulizia dei 90 giorni, gli scambi no.
-  // "colleghi" conta persone diverse, non grazie: premia chi aiuta tutti, non
-  // sempre lo stesso amico. Le soglie sono un punto di partenza per un
-  // negozio di una decina di persone.
+  // Una scala sola, sui grazie: undici gradini, larghi all'inizio perché il
+  // primo traguardo arrivi presto, poi sempre più distanti. Nel Profilo si
+  // vedono quelli raggiunti e il prossimo; gli altri si scoprono strada facendo.
   karma: {
     traguardi: [
-      { id: 'primo', misura: 'grazie', soglia: 1, titolo: 'Primo grazie' },
-      { id: 'colleghi-3', misura: 'colleghi', soglia: 3, titolo: '3 colleghi diversi' },
-      { id: 'grazie-10', misura: 'grazie', soglia: 10, titolo: '10 grazie' },
-      { id: 'colleghi-6', misura: 'colleghi', soglia: 6, titolo: '6 colleghi diversi' },
-      { id: 'grazie-25', misura: 'grazie', soglia: 25, titolo: '25 grazie' },
+      { soglia: 1, titolo: 'Primo grazie' },
+      { soglia: 3, titolo: 'Mano tesa' },
+      { soglia: 5, titolo: 'Salvaturno' },
+      { soglia: 10, titolo: 'Il numero da chiamare' },
+      { soglia: 15, titolo: 'Jolly dello store' },
+      { soglia: 25, titolo: 'Colonna dello store' },
+      { soglia: 50, titolo: 'Santo patrono del sabato' },
+      { soglia: 75, titolo: 'Mago del calendario' },
+      { soglia: 100, titolo: 'Leggenda del magazzino' },
+      { soglia: 125, titolo: 'Patrimonio dello store' },
+      { soglia: 150, titolo: 'Leggenda Liberty' },
     ],
   },
 

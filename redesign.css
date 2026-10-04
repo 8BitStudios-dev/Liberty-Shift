@@ -1105,3 +1105,6 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .traguardo.raggiunto .traguardo-segno svg { fill: var(--rosso); stroke: var(--rosso); }
 .traguardo-avanzamento { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
 .grazie-riquadro .btn { margin-top: 12px; }
+.traguardo-testo { display: flex; flex-direction: column; gap: 1px; }
+.traguardo-soglia { font-size: 12px; font-weight: 400; color: var(--testo-tenue); }
+.traguardo { min-height: 36px; }

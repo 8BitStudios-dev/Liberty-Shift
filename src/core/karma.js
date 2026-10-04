@@ -12,16 +12,20 @@ import { RULES } from './rules.js';
 
 export function karma(ringraziamenti, userId) {
   const ricevuti = ringraziamenti.filter((g) => g.aUserId === userId);
-  const misure = {
-    grazie: ricevuti.length,
-    colleghi: new Set(ricevuti.map((g) => g.daUserId)).size,
-  };
+  const grazie = ricevuti.length;
   const traguardi = RULES.karma.traguardi.map((t) => ({
     ...t,
-    valore: Math.min(misure[t.misura], t.soglia),
-    raggiunto: misure[t.misura] >= t.soglia,
+    id: `grazie-${t.soglia}`,
+    raggiunto: grazie >= t.soglia,
   }));
-  return { ...misure, traguardi };
+  return {
+    grazie,
+    colleghi: new Set(ricevuti.map((g) => g.daUserId)).size,
+    traguardi,
+    // Il prossimo gradino, se ce n'è ancora uno: è l'unico non raggiunto che
+    // si mostra.
+    prossimo: traguardi.find((t) => !t.raggiunto) || null,
+  };
 }
 
 /** I traguardi raggiunti che chi guarda non ha ancora visto. */

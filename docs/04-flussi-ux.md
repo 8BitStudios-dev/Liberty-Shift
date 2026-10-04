@@ -406,11 +406,13 @@ arriva al primo grazie.
 
 È il "karma" dell'app, e non è un sistema di punti: conta i grazie ricevuti,
 che esistono solo dopo uno scambio chiuso, uno per persona e per scambio, e
-sopravvivono alla pulizia dei 90 giorni. Sotto, cinque traguardi (soglie in
-`RULES.karma`): alcuni contano i grazie, altri i colleghi diversi che ti hanno
-ringraziato, per premiare chi aiuta tutti e non sempre lo stesso amico. Quelli
-non raggiunti mostrano a che punto sei. Un traguardo nuovo si annuncia una
-volta, con un avviso breve quando apri il Profilo.
+sopravvivono alla pulizia dei 90 giorni. Sotto, i traguardi: undici gradini
+con un nome (1, 3, 5, 10, 15, 25, 50, 75, 100, 125, 150 grazie, nomi e soglie
+in `RULES.karma`), dal "Primo grazie" alla "Leggenda Liberty". Si vedono quelli
+raggiunti e il prossimo, con l'avanzamento; gli altri si scoprono strada
+facendo. Un traguardo nuovo si annuncia una volta, con un avviso breve quando
+apri il Profilo. In alto, accanto al totale, quanti colleghi diversi ti hanno
+ringraziato: è un'informazione, non ha traguardi suoi.
 
 Lo vede solo chi lo riceve. Nessuna classifica e nessun numero sulle schede
 degli altri: in un negozio di dieci persone diventerebbe una pagella, e chi

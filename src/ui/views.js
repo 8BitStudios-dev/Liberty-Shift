@@ -832,12 +832,16 @@ function quandoFa(iso) {
  */
 function riquadroGrazie() {
   const k = karma(store.state.ringraziamenti, store.me.id);
-  const traguardi = k.traguardi.map((t) => html`
+  const voce = (t) => html`
     <li class="traguardo ${t.raggiunto ? 'raggiunto' : ''}">
       <span class="traguardo-segno">${raw(icona('grazie', { px: 16 }))}</span>
-      <span class="traguardo-titolo">${t.titolo}</span>
-      ${raw(t.raggiunto ? '' : `<span class="traguardo-avanzamento">${t.valore}/${t.soglia}</span>`)}
-    </li>`).join('');
+      <span class="traguardo-testo">
+        <span class="traguardo-titolo">${t.titolo}</span>
+        <span class="traguardo-soglia">${t.soglia} grazie</span>
+      </span>
+      ${raw(t.raggiunto ? '' : `<span class="traguardo-avanzamento">${k.grazie}/${t.soglia}</span>`)}
+    </li>`;
+  const visibili = [...k.traguardi.filter((t) => t.raggiunto), ...(k.prossimo ? [k.prossimo] : [])];
   return html`
     <div class="riquadro riquadro-fisso grazie-riquadro">
       <div class="riquadro-testa">
@@ -847,7 +851,7 @@ function riquadroGrazie() {
       <p class="testo-tenue">${k.grazie
     ? 'Li vedi solo tu.'
     : 'Arrivano quando chiudi uno scambio e il collega ti ringrazia. Li vedi solo tu.'}</p>
-      <ul class="traguardi">${raw(traguardi)}</ul>
+      <ul class="traguardi">${raw(visibili.map(voce).join(''))}</ul>
       ${raw(k.grazie ? '<button class="btn secondario largo" data-act="vedi-grazie">Leggi i messaggi</button>' : '')}
     </div>`;
 }
