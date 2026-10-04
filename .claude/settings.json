@@ -23,7 +23,8 @@
       "mcp__github__pull_request_read",
       "mcp__github__actions_list",
       "mcp__github__actions_run_trigger",
-      "mcp__github__get_job_logs"
+      "mcp__github__get_job_logs",
+      "mcp__Supabase"
     ],
     "deny": [
       "Bash(git push --force *)",
