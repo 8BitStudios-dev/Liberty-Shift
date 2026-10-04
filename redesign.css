@@ -781,3 +781,60 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    fra il vuoto e i tasti di destra finiva fuori asse ("Benvenuto" e "1/5",
    "Bacheca" e "?"). */
 .testata h1:first-child { text-align: left; }
+
+/* ======================================== il tuo mese, versione tabella
+   Il pannello viola era troppo: un fondo colorato grande quanto mezzo
+   schermo. Il mese del Profilo è una tabella compatta: un riquadro bianco
+   con il bordo, celle separate da linee visibili, una riga sottile per
+   settimana con le ore. Si distingue dal tabellone del Calendario, che ha
+   celle staccate e arrotondate sullo sfondo della pagina. */
+:root { --linea: #cfd6e0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --linea: #34435c; } }
+:root[data-theme="dark"] { --linea: #34435c; }
+
+.pannello-mio { background: none; border: 0; padding: 0; }
+
+.mese-personale {
+  border: 1px solid var(--linea); border-radius: 12px; overflow: hidden;
+  background: var(--superficie);
+}
+.mese-personale .mese-griglia { gap: 0; }
+.mese-personale .mese-griglia.intestazione {
+  background: var(--superficie-2); border-bottom: 1px solid var(--linea); margin: 0;
+}
+.mese-personale .dow-fisso { padding: 6px 0; font-weight: 600; }
+.mese-personale .mese-settimana { margin: 0; }
+.mese-personale .mese-settimana + .mese-settimana .riga-settimana { border-top: 1px solid var(--linea); }
+.mese-personale .riga-settimana {
+  margin: 0; padding: 3px 8px; background: var(--superficie-2);
+  border-bottom: 1px solid var(--linea); align-items: center;
+}
+.mese-personale .riga-settimana h3 { margin: 0; font-size: 12px; }
+.mese-personale .riga-settimana .spia-ore { font-size: 12px; }
+
+.mese-personale .mese-giorno,
+.mese-personale .mese-giorno.riposo,
+.mese-personale .mese-giorno.senza-turno,
+.mese-personale .mese-giorno.disponibile,
+.mese-personale .mese-giorno.oggi {
+  border: 0; border-radius: 0; border-right: 1px solid var(--linea);
+  min-height: 50px; padding: 4px 5px 5px; box-shadow: none;
+  background: var(--superficie);
+}
+.mese-personale .mese-griglia .mese-giorno:last-child { border-right: 0; }
+.mese-personale .mese-giorno .numero { font-size: 12px; }
+.mese-personale .mese-giorno .turno { font-size: 13px; margin-top: 1px; }
+.mese-personale .mese-giorno .fine { font-size: 12px; line-height: 1.1; }
+.mese-personale .mese-giorno.riposo { background: var(--superficie-2); }
+.mese-personale .mese-giorno.riposo .turno { font-size: 12px; }
+.mese-personale .mese-giorno.disponibile { background: var(--prendo-tenue); }
+.mese-personale .mese-giorno.oggi { box-shadow: inset 0 0 0 2px var(--accento); }
+.mese-personale .mese-giorno.mia-richiesta::after { top: 5px; right: 5px; width: 7px; height: 7px; }
+.campione.riposo { border: 1px solid var(--linea); background: var(--superficie-2); }
+.campione.disponibile { border: 1px solid var(--linea); }
+.titolo-mese { color: var(--testo); }
+
+@media (max-width: 359px) {
+  .mese-personale .mese-giorno { padding: 3px 1px 4px; }
+  .mese-personale .mese-giorno .turno { font-size: 12px; }
+}

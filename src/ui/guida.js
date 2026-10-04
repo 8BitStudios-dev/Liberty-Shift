@@ -167,9 +167,8 @@ export const GUIDE = {
     corpo: () => html`
       <h3>Il tuo mese</h3>
       <p>
-        Il riquadro viola è solo tuo: i tuoi turni giorno per giorno, con inizio
-        e fine, e le ore della settimana. I giorni OFF hanno il bordo
-        tratteggiato. Il punto viola
+        È solo tuo: i tuoi turni giorno per giorno, con inizio e fine, e le
+        ore della settimana. I giorni OFF sono grigi. Il punto viola
         nell'angolo è un giorno toccato da una tua richiesta; il fondo verde,
         un giorno in cui ti sei detto disponibile a scambiare.
       </p>

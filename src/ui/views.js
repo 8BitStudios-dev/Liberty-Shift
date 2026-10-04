@@ -273,7 +273,7 @@ export function profilo() {
       </span>
     </header>
 
-    <section class="sezione pannello-mio">
+    <section class="sezione">
       <h2 class="titolo-mese">Il tuo mese</h2>
       ${raw(legendaPersonale())}
       ${raw(ilTuoMese())}
@@ -941,7 +941,7 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
   return grigliaMese(mese, {
     classe: 'mese-personale',
     testaSettimana: (wk) => html`
-      <h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))} ${raw(lettera(me, wk))}</h3>
+      <h3>${toDate(wk).getUTCDate()}/${wk.slice(5, 7)} → ${toDate(addDays(wk, 6)).getUTCDate()}/${addDays(wk, 6).slice(5, 7)} ${raw(lettera(me, wk))}</h3>
       ${raw(spiaOre(me, wk))}`,
     cella: (data) => {
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
