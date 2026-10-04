@@ -15,7 +15,7 @@ import * as P from './profilo-setup.js';
 import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
-import { scaricaCalendario } from '../core/supabase.js';
+import { scaricaCalendario, candidatiAccesso } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
 import {
   campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito,
@@ -336,7 +336,7 @@ const AZIONI = {
     if (P.bozzaProfilo.passo > 1) { P.bozzaProfilo.passo -= 1; P.bozzaProfilo.errori = []; render(); }
     else vai('#/profilo');
   },
-  'profilo-avanti': () => {
+  'profilo-avanti': async () => {
     const b = P.bozzaProfilo;
     // Si controlla un passo per volta: un errore sul contratto mentre stai
     // scrivendo il nome è solo rumore. Quale sia il passo lo sa il modulo che
@@ -346,6 +346,17 @@ const AZIONI = {
     if (mancanti.length) { b.errori = mancanti; return render(); }
     b.errori = [];
     if (b.modifica && b.passo === 2) return AZIONI['profilo-salva']();
+
+    // Chi ha cambiato dispositivo e non trova più i suoi dati si iscrive da
+    // capo senza accorgersene: è così che nome e cognome compaiono due volte
+    // fra i colleghi. Se esiste già qualcuno con questo nome lo si dice qui,
+    // prima di far compilare il resto. Un omonimo vero può proseguire.
+    if (P.passi()[b.passo - 1]?.name === 'passoChiSei' && !b.modifica && serverConfigurato()
+      && !b.omonimoConfermato) {
+      const { candidati } = await candidatiAccesso(b.nome, b.cognome);
+      if (candidati.length) { b.avvisoOmonimo = true; return render(); }
+    }
+    b.avvisoOmonimo = false;
     b.passo += 1;
     render();
   },
@@ -417,6 +428,45 @@ const AZIONI = {
     V.rimandaInvitoNotifiche();
     toast('Le trovi sempre in Impostazioni');
     render();
+  },
+
+  // Rientrare da un dispositivo vuoto: l'iscrizione e l'accesso sono due
+  // strade dalla stessa prima schermata, e si passa dall'una all'altra senza
+  // perdere quello che si è già scritto.
+  'ho-gia-account': () => {
+    P.bozzaProfilo.accedi = true;
+    P.bozzaProfilo.errori = [];
+    render();
+  },
+
+  'omonimo-conferma': () => {
+    P.bozzaProfilo.omonimoConfermato = true;
+    return AZIONI['profilo-avanti']();
+  },
+
+  'torna-iscrizione': () => {
+    P.bozzaProfilo.accedi = false;
+    P.bozzaProfilo.errori = [];
+    render();
+  },
+
+  'accedi-account': async () => {
+    const b = P.bozzaProfilo;
+    // La password si legge dal campo e non si tiene nella bozza: è l'unica
+    // cosa che qui dentro non deve restare in memoria più del necessario.
+    const password = app.querySelector('[data-campo="password-accesso"]')?.value || '';
+    const bottone = app.querySelector('[data-act="accedi-account"]');
+    if (bottone) { bottone.disabled = true; bottone.textContent = 'Un attimo…'; }
+
+    const esito = await store.accediConNome({ nome: b.nome, cognome: b.cognome, password, versioneNote: VERSIONE_NOTE });
+    if (esito.errore) {
+      b.errori = [esito.errore];
+      return render();
+    }
+    P.apriProfilo({ modifica: false });
+    toast(`Bentornato ${store.me.nome}`);
+    vai('#/home');
+    sincronizzaSilenziosa();
   },
 
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
@@ -1026,8 +1076,9 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   const chiave = el.dataset.campo;
   // I campi del profilo non passano da render(): riscrivere il DOM a ogni
   // lettera sposterebbe il cursore a fine riga sotto le dita di chi scrive.
-  if (chiave === 'nome') { P.bozzaProfilo.nome = el.value; return; }
-  if (chiave === 'cognome') { P.bozzaProfilo.cognome = el.value; return; }
+  // Cambiando nome o cognome l'avviso sull'omonimo non vale più.
+  if (chiave === 'nome') { Object.assign(P.bozzaProfilo, { nome: el.value, omonimoConfermato: false }); return; }
+  if (chiave === 'cognome') { Object.assign(P.bozzaProfilo, { cognome: el.value, omonimoConfermato: false }); return; }
   if (chiave === 'password-nuova') { P.bozzaProfilo.password = el.value; return; }
   if (chiave === 'password-conferma') { P.bozzaProfilo.conferma = el.value; return; }
   if (chiave === 'codice') { P.bozzaProfilo.codice = el.value; return; }

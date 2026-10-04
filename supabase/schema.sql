@@ -578,3 +578,39 @@ drop trigger if exists notifica_proposta on public.proposte;
 create trigger notifica_proposta
   after insert or update of stato on public.proposte
   for each row execute function public.notifica_proposta();
+
+-- ================================================ rientrare da un dispositivo nuovo
+--
+-- L'indirizzo con cui un account entra (`nome.cognome.xxxxxx@liberty-shift.internal`)
+-- ha una coda casuale e la conosce solo il telefono su cui ci si è iscritti.
+-- Cambiando dispositivo (l'app aggiunta alla Home di iPhone ha una memoria
+-- tutta sua, separata da Safari), cambiando browser o svuotando i dati del sito,
+-- l'app non sapeva più chi fosse e faceva iscrivere da capo: un secondo
+-- account per la stessa persona. Questa funzione ritrova l'indirizzo da nome e
+-- cognome, e a quel punto la password fa il resto.
+--
+-- Chiunque la può chiamare, perché serve prima di avere una sessione. Restituisce
+-- solo indirizzi interni, che non sono instradabili e non aprono niente da
+-- soli: senza la password non si entra, e a limitare i tentativi ci pensa
+-- l'accesso di Supabase. Quello che rivela è che una persona con quel nome è
+-- iscritta, che in un negozio di dieci colleghi non è un segreto.
+--
+-- Prende i nomi già ripuliti dal client (minuscoli, senza accenti, solo
+-- lettere, cifre e trattini): la ripulitura sta in un posto solo, ed è la
+-- stessa con cui l'indirizzo è stato creato.
+create or replace function public.candidati_accesso(nome_slug text, cognome_slug text)
+returns setof text
+language sql stable security definer set search_path = '' as $$
+  select u.email::text
+  from auth.users u
+  join public.profili p on p.id = u.id
+  where nome_slug ~ '^[a-z0-9-]{1,40}$'
+    and cognome_slug ~ '^[a-z0-9-]{1,60}$'
+    and p.attivo
+    and u.email like nome_slug || '.' || cognome_slug || '.%@liberty-shift.internal'
+  order by u.created_at
+  limit 5;
+$$;
+
+revoke all on function public.candidati_accesso(text, text) from public;
+grant execute on function public.candidati_accesso(text, text) to anon, authenticated;

@@ -396,3 +396,10 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .testata-profilo + .sezione { margin-top: 6px; }
 .invito-azioni { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .invito-azioni .btn { width: auto; padding: 10px 18px; }
+
+/* Gli avvisi in una colonna sola: l'avviso sull'omonimo ha due tasti, e
+   affiancati su un telefono stretto andavano a capo male. */
+.avviso-box.omonimo { display: grid; gap: 8px; margin: 14px 0; }
+.avviso-box.omonimo p { margin: 0; font-size: 15px; color: var(--testo-tenue); }
+.ho-gia-account { margin-top: 26px; text-align: center; }
+.ho-gia-account p { margin: 0 0 8px; }

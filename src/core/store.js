@@ -10,7 +10,7 @@ import { monthKey, todayISO } from './time.js';
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
-  scaricaCalendario, cambiaPasswordServer, amministra,
+  scaricaCalendario, cambiaPasswordServer, amministra, candidatiAccesso, seleziona,
 } from './supabase.js';
 import { parseICS } from './ics.js';
 import { daRiempire, rotazioneVuota } from './rotazione.js';
@@ -745,6 +745,79 @@ export const store = {
   esci() {
     chiudiSessione();
     esciDalServer();
+  },
+
+  /**
+   * Rientra da un dispositivo che non ricorda niente di te.
+   *
+   * L'app aggiunta alla Home di iPhone ha una memoria sua, separata da
+   * Safari; lo stesso vale per un altro browser, una finestra privata o un
+   * sito svuotato. Prima, lì, l'app non sapeva che esistesse già un account e
+   * faceva iscrivere da capo: ogni passaggio un duplicato, con la sua
+   * bacheca, le sue disponibilità e il suo nome doppio fra i colleghi.
+   *
+   * Si riparte da quello che il server sa, cioè nome, contratto e ruoli. I
+   * turni no: non sono mai usciti dal telefono dove sono stati inseriti, ed
+   * è la promessa delle note d'uso. Si reimportano dal calendario.
+   */
+  async accediConNome({ nome, cognome, password, versioneNote }) {
+    if (!serverConfigurato()) return { errore: 'Per rientrare da un altro dispositivo serve il server.' };
+    if (!(nome || '').trim() || !(cognome || '').trim()) {
+      return { errore: 'Scrivi nome e cognome come li hai usati per iscriverti.' };
+    }
+    if (!password) return { errore: 'Manca la password.' };
+
+    const { candidati, errore } = await candidatiAccesso(nome, cognome);
+    if (errore) return { errore };
+    if (!candidati.length) {
+      return { errore: 'Non trovo nessun account con questo nome e cognome. Controlla di averli scritti come all\'iscrizione.' };
+    }
+
+    // Più indirizzi vuol dire più iscrizioni con lo stesso nome: ci entra
+    // quello la cui password coincide, il più vecchio per primo.
+    let identificativo = null;
+    for (const indirizzo of candidati) {
+      const r = await accedi(indirizzo, password);
+      if (!r.errore) { identificativo = indirizzo; break; }
+      // Rete assente o server in difficoltà non sono una password sbagliata:
+      // insistere sugli altri indirizzi darebbe lo stesso errore, e basta.
+      if (!/Password sbagliata/.test(r.errore)) return { errore: r.errore };
+    }
+    if (!identificativo) return { errore: 'Password sbagliata.' };
+
+    const idServer = idUtenteServer();
+    const { dati, errore: erroreProfilo } = await seleziona('profili', { eq: { id: idServer } });
+    const riga = dati?.[0];
+    if (erroreProfilo || !riga) {
+      esciDalServer();
+      return { errore: erroreProfilo || 'Il tuo profilo non risulta nel negozio.' };
+    }
+
+    Object.assign(this.me, {
+      nome: riga.nome,
+      cognome: cognome.trim(),
+      cognomeIniziale: riga.cognome_iniziale,
+      contratto: riga.contratto,
+      genere: riga.genere || 'X',
+      oreSettimanali: riga.ore_settimanali,
+      admin: Boolean(riga.admin),
+      superAdmin: Boolean(riga.super_admin),
+      attivo: riga.attivo !== false,
+    });
+    const credenziali = creaCredenziali(password);
+    this.state.profilo = {
+      ...(this.state.profilo || {}),
+      completato: true,
+      // Le note le ha accettate iscrivendosi; qui lo si ricorda a chi entra.
+      noteAccettateIl: new Date().toISOString(),
+      versioneNote: versioneNote || null,
+      credenziali,
+      identificativo,
+      idServer,
+    };
+    apriSessione(credenziali);
+    this.commit();
+    return { ok: true };
   },
   /**
    * Cambio password. Serve quella attuale: se qualcuno trova il telefono

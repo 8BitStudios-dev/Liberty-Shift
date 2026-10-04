@@ -27,6 +27,9 @@ export const bozzaProfilo = {
   codice: '',
   accettazioni: [false, false, false],
   accettate: false,
+  accedi: false,
+  avvisoOmonimo: false,
+  omonimoConfermato: false,
   errori: [],
 };
 
@@ -77,6 +80,9 @@ export function apriProfilo({ modifica = false } = {}) {
     accettazioni: [false, false, false],
     // In modifica le note sono già state accettate: non si richiede due volte.
     accettate: modifica,
+    accedi: false,
+    avvisoOmonimo: false,
+    omonimoConfermato: false,
     modifica,
     errori: [],
   });
@@ -115,6 +121,7 @@ export function validaProfilo() {
 
 export function schermataProfilo() {
   const b = bozzaProfilo;
+  if (b.accedi && !b.modifica) return schermataAccedi();
   const elenco = passi();
   const totale = elenco.length;
   const passo = Math.min(b.passo, totale);
@@ -193,7 +200,14 @@ function passoChiSei() {
       </p>
     </div>
 
-    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+    ${raw(b.avvisoOmonimo ? `
+      <div class="avviso-box omonimo">
+        <strong>Esiste già un account con questo nome</strong>
+        <p>Se ti sei già iscritto, rientra: iscriverti di nuovo crea un secondo
+        account, e i colleghi ti vedrebbero due volte.</p>
+        <button class="btn primario largo" data-act="ho-gia-account">Rientra con la mia password</button>
+        <button class="btn secondario largo" data-act="omonimo-conferma">Sono un'altra persona</button>
+      </div>` : '<button class="btn primario largo" data-act="profilo-avanti">Continua</button>')}`;
 }
 
 function passoContratto() {
@@ -315,7 +329,67 @@ function passoCodice() {
              placeholder="RXXX" autocapitalize="characters" autocomplete="off" autofocus>
     </label>
 
-    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>
+
+    <div class="ho-gia-account">
+      <p class="testo-tenue">Ti sei già iscritto da un altro dispositivo?</p>
+      <button class="btn secondario largo" data-act="ho-gia-account">Ho già un account</button>
+    </div>`;
+}
+
+/**
+ * Rientrare con nome, cognome e password, da un dispositivo che non ricorda.
+ *
+ * Dall'app sulla Home di iPhone, da un altro browser o dopo aver svuotato i
+ * dati del sito questa è l'unica strada: senza, l'app non ha modo di sapere
+ * che l'account esiste già, e fa iscrivere da capo.
+ */
+function schermataAccedi() {
+  const b = bozzaProfilo;
+  return html`
+    ${raw(insegna(1))}
+    <header class="testata">
+      <button class="icon-btn" data-act="torna-iscrizione">‹</button>
+      <h1>Rientra</h1>
+    </header>
+    ${raw(b.errori.length
+    ? `<div class="errori">${b.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>`
+    : '')}
+    <p class="testo-tenue">
+      Scrivi nome e cognome come all'iscrizione, e la tua password. I turni non
+      si ripristinano: restano sul dispositivo dove li avevi inseriti, e da qui
+      si reimportano dal calendario.
+    </p>
+
+    <form data-invio="accedi-account">
+      ${raw(campoPortachiavi(nomePerIlPortachiavi(b)))}
+
+      <label class="campo">
+        <span>Nome</span>
+        <input type="text" class="testo" data-campo="nome" value="${b.nome}"
+               placeholder="Nome" autocomplete="given-name">
+      </label>
+
+      <label class="campo">
+        <span>Cognome</span>
+        <input type="text" class="testo" data-campo="cognome" value="${b.cognome}"
+               placeholder="Cognome" autocomplete="family-name">
+      </label>
+
+      <label class="campo">
+        <span>Password</span>
+        <input type="password" class="testo" data-campo="password-accesso"
+               autocomplete="current-password">
+      </label>
+
+      <p class="testo-tenue">
+        Entrando confermi di aver letto le note d'uso, che hai già accettato
+        iscrivendoti. Password dimenticata? Chiedi a chi gestisce l'app di
+        reimpostarla.
+      </p>
+
+      <button type="submit" class="btn primario largo" data-act="accedi-account">Entra</button>
+    </form>`;
 }
 
 function passoNote() {

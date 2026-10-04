@@ -29,11 +29,22 @@ const CHIAVE_SESSIONE = 'liberty-shift:sessione-server';
  * rifiuta con `email_address_invalid`, e non c'è modo di aggirarlo.
  */
 export function identificativoInterno(nome, cognome, seme = '') {
-  const pulisci = (s) => (s || '')
+  const coda = seme || Math.random().toString(36).slice(2, 8);
+  return `${slug(nome)}.${slug(cognome)}.${coda}@liberty-shift.internal`;
+}
+
+/**
+ * Un nome ridotto a lettere, cifre e trattini.
+ *
+ * Sta fuori da `identificativoInterno` perché la stessa ripulitura serve due
+ * volte: quando l'indirizzo viene creato e quando, da un dispositivo nuovo, lo
+ * si va a cercare. Se le due versioni divergessero, "José Müller" si
+ * iscriverebbe con un indirizzo che poi non ritrova più.
+ */
+export function slug(s) {
+  return (s || '')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // via gli accenti
     .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  const coda = seme || Math.random().toString(36).slice(2, 8);
-  return `${pulisci(nome)}.${pulisci(cognome)}.${coda}@liberty-shift.internal`;
 }
 
 // ------------------------------------------------------------- sessione
@@ -279,10 +290,27 @@ export const elimina = (tabella, opzioni) => chiama(`/rest/v1/${tabella}${query(
  * segreto: l'iscrizione, che verifica il codice del negozio dentro il
  * database invece che nel browser, dove sarebbe leggibile da chiunque.
  */
-export const funzione = (nome, argomenti = {}) => chiama(`/rest/v1/rpc/${nome}`, {
+export const funzione = (nome, argomenti = {}, { autenticata = true } = {}) => chiama(`/rest/v1/rpc/${nome}`, {
   method: 'POST',
   body: JSON.stringify(argomenti),
-});
+}, { autenticata });
+
+/**
+ * Gli indirizzi interni che corrispondono a un nome e a un cognome.
+ *
+ * Serve a rientrare da un dispositivo che non ricorda niente: l'indirizzo con
+ * cui si entra ha una coda casuale, e senza questa ricerca esisterebbe solo
+ * sul telefono dell'iscrizione. Si chiama senza sessione, perché è proprio
+ * quello che manca. Più di un indirizzo vuol dire più iscrizioni con lo stesso
+ * nome: la password dice quale.
+ */
+export async function candidatiAccesso(nome, cognome) {
+  const r = await funzione('candidati_accesso', {
+    nome_slug: slug(nome), cognome_slug: slug(cognome),
+  }, { autenticata: false });
+  if (r.errore) return { candidati: [], errore: r.errore };
+  return { candidati: Array.isArray(r.dati) ? r.dati : [], errore: null };
+}
 
 /** Iscrive chi conosce il codice del negozio, e restituisce il suo profilo. */
 export async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSettimanali, genere }) {

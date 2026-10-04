@@ -249,6 +249,18 @@ instradabile: lì non arriva posta nemmeno per sbaglio. Il `.local` scelto
 all'inizio è stato abbandonato per forza, non per gusto — Supabase lo rifiuta
 con `email_address_invalid`.
 
+**Ritrovare l'indirizzo.** La coda casuale la conosce solo il dispositivo
+dell'iscrizione, e un dispositivo nuovo non ce l'ha. La funzione
+`candidati_accesso(nome_slug, cognome_slug)` la ritrova: si chiama senza
+sessione (è proprio quella che manca), accetta solo nomi già ripuliti
+(`[a-z0-9-]`, quindi niente caratteri jolly) e restituisce al massimo cinque
+indirizzi, dei soli profili attivi. Rivela che una persona con quel nome è
+iscritta, che in un negozio di dieci colleghi non è un segreto; senza la
+password non si entra, e i tentativi li limita l'accesso di Supabase. La
+ripulitura dei nomi è la stessa dell'iscrizione (`slug()` in
+`src/core/supabase.js`): se divergessero, "José" si iscriverebbe con un
+indirizzo che poi non ritrova.
+
 Cambio password: passa da `PUT /auth/v1/user`, e in app viene rifiutato senza
 rete. La password che conta all'ingresso è quella dell'account, quindi
 cambiarne solo l'impronta locale lasciava la persona con la password nuova

@@ -400,6 +400,28 @@ aperti in locale, e avrebbe reso l'app inutilizzabile fuori da https per una
 sicurezza che comunque, girando tutta nel browser, non c'è. Con il server la
 password resterà la stessa per chi la usa, ma a verificarla sarà Supabase.
 
+### Rientrare da un dispositivo nuovo
+
+La porta qui sopra funziona solo sul dispositivo che si ricorda di te: la
+chiave per entrare (l'indirizzo interno dell'account, con la sua coda casuale)
+sta nella memoria locale. Ma la memoria locale non è una sola. L'app aggiunta
+alla Home di iPhone ne ha una tutta sua, separata da Safari; un altro browser,
+una finestra privata o un sito svuotato ripartono da zero. Lì l'app non sapeva
+che l'account esistesse, e faceva iscrivere da capo: un secondo account, e il
+nome doppio fra i colleghi.
+
+Il primo schermo ha ora **Ho già un account**: nome, cognome e password, come
+all'iscrizione. Il database ritrova l'indirizzo da nome e cognome
+(`candidati_accesso`), e se ce ne sono due con lo stesso nome entra quello la
+cui password coincide. Tornano sul telefono nome, contratto, ore e ruoli, che
+il server conosce. **I turni no**: non sono mai usciti dal dispositivo dove
+sono stati inseriti, ed è la promessa delle note d'uso. Si reimportano dal
+calendario.
+
+Chi si iscrive con un nome già presente vede un avviso prima di compilare il
+resto (*Esiste già un account con questo nome*), con due strade: rientrare, o
+proseguire se è davvero un omonimo.
+
 **Password dimenticata**: la reimposta chi gestisce l'app, su richiesta della
 persona. Finché il server non c'è, però, l'unica strada resta "Ricomincia da
 capo" nella schermata di accesso, che cancella i dati di quel dispositivo — e la
