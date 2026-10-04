@@ -51,6 +51,13 @@ export const GUIDE = {
           in un giorno in cui sei a casa.</li>
       </ul>
 
+      <p>
+        Il bollino verde su un giorno dice quanti colleghi vanno bene: i turni
+        senza bollino, per ora, non hanno nessuno. I giorni <strong>OFF</strong>
+        tratteggiati sono giorni in cui non lavori ma un collega lascia un turno
+        che potresti prendere tu.
+      </p>
+
       <p class="esempio">
         Giovedì fai 12:00–21:00 e vuoi staccare prima. Tocchi giovedì e trovi
         Martina, che quel giorno fa 09:00–15:00 e cerca un turno più tardi.

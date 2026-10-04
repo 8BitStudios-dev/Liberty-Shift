@@ -543,7 +543,8 @@ const AZIONI = {
     render();
   },
 
-  'rapido-turno': (_, el) => { F.rapido.shiftId = el.dataset.id; render(); },
+  'rapido-turno': (_, el) => { F.rapido.shiftId = el.dataset.id; F.rapido.giorno = null; render(); },
+  'rapido-giorno': (_, el) => { F.rapido.giorno = el.dataset.giorno; render(); },
 
   // Chi ha solo una disponibilità non ha una richiesta su cui proporre:
   // si avvisa, e sarà lui a rispondere.

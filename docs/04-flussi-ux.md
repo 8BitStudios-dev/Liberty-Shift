@@ -31,6 +31,12 @@ giornata e chi può prendersi la giornata intera. Il motore prova entrambe le
 strade e tutti i giorni in cui sei libero. È il principio UX numero 4 preso
 alla lettera.
 
+I turni stanno in un calendario di settimane Apple. Su ogni turno un bollino
+verde dice quanti colleghi vanno bene; un turno senza nessuno resta toccabile
+ma spento. Compaiono anche i giorni in cui non lavori ma un collega lascia un
+turno che potresti prendere tu (bordo tratteggiato, scritta OFF): toccandoli
+si vedono quelle richieste, le stesse di Aiuta un collega per quel giorno.
+
 **Nuovo cambio** parte dalla domanda che conta: *cambio orario o cambio OFF?*
 Le due porte portano a wizard diversi, perché le informazioni necessarie sono
 diverse.

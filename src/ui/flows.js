@@ -49,33 +49,56 @@ export function resetDraft(tipo = null) {
 
 // ------------------------------------------------------- CAMBIO RAPIDO
 
-export const rapido = { shiftId: null };
+export const rapido = { shiftId: null, giorno: null };
 
 /**
  * Un tocco e vedi chi può prenderti il turno. Nessuna domanda: il motore
  * prova sia il cambio orario nella stessa giornata sia il cambio OFF su
  * tutti i giorni in cui sei libero, e mette insieme i risultati.
+ *
+ * Nel calendario ci sono anche i giorni liberi in cui un collega lascia un
+ * turno che potresti prendere tu: è lo stesso scambio visto dall'altra parte,
+ * e nasconderlo solo perché quel giorno non lavori faceva perdere l'occasione.
  */
 export function vistaRapida() {
-  const miei = store.shiftsOf(store.state.currentUserId, { soloFuturi: true })
+  const me = store.state.currentUserId;
+  const miei = store.shiftsOf(me, { soloFuturi: true })
     .filter((s) => s.tipo === 'WORK');
+  const perGiorno = occasioniNeiGiorniLiberi(me, miei);
 
-  if (!miei.length) {
+  if (!miei.length && !perGiorno.size) {
     return html`
       ${raw(testataRapido())}
       ${raw(vuoto('Nessun turno da lasciare', 'Aggiungi i tuoi turni e torna qui.',
     '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}`;
   }
 
-  if (!rapido.shiftId || !miei.some((s) => s.id === rapido.shiftId)) {
-    rapido.shiftId = miei[0].id;
+  // Un giorno libero scelto resta scelto finché ha ancora richieste; se no si
+  // torna al primo turno, come prima.
+  if (rapido.giorno && !perGiorno.has(rapido.giorno)) rapido.giorno = null;
+  if (!rapido.giorno && (!rapido.shiftId || !miei.some((s) => s.id === rapido.shiftId))) {
+    if (miei.length) rapido.shiftId = miei[0].id;
+    else rapido.giorno = [...perGiorno.keys()].sort()[0];
   }
+
+  const conteggi = new Map(miei.map((s) => [s.id, cambioRapido(s.id, store.state).length]));
+  const sceltaTurno = calendarioTurni(miei, perGiorno, conteggi);
+
+  if (rapido.giorno) {
+    const lista = perGiorno.get(rapido.giorno);
+    return html`
+      ${raw(testataRapido())}
+      <p class="occhiello">Quale turno vuoi lasciare?</p>
+      ${raw(sceltaTurno)}
+      <h2 class="titolo-gruppo">${raw(iconaTipo(TIPO_CAMBIO.OFF, 17))} Puoi prendere un turno (${lista.length})</h2>
+      <p class="testo-tenue">${formatDay(rapido.giorno)} non lavori: prendi il turno di un collega e in cambio gli lasci uno dei tuoi.</p>
+      ${raw(primaLePrioritarie(lista).map((o) => cardOpportunita(o)).join(''))}`;
+  }
+
   const cedo = store.shift(rapido.shiftId);
   const risultati = cambioRapido(rapido.shiftId, store.state);
   const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
   const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
-
-  const sceltaTurno = calendarioTurni(miei, rapido.shiftId);
 
   const gruppo = (titolo, sottotitolo, lista) => (lista.length ? html`
     <h2 class="titolo-gruppo">${raw(titolo)}</h2>
@@ -107,6 +130,23 @@ export function vistaRapida() {
 }
 
 /**
+ * Le richieste dei colleghi che lasciano un turno in un giorno in cui tu non
+ * lavori. Le regole restano tutte nel motore (opportunitaPerMe): qui si
+ * guarda solo in che giorno cadono.
+ */
+function occasioniNeiGiorniLiberi(me, miei) {
+  const lavoro = new Set(miei.map((s) => s.data));
+  const oggi = todayISO();
+  const perGiorno = new Map();
+  for (const o of opportunitaPerMe(me, store.state)) {
+    const giorno = store.shift(o.richiesta.cedo.shiftId)?.data;
+    if (!giorno || giorno < oggi || lavoro.has(giorno)) continue;
+    perGiorno.set(giorno, [...(perGiorno.get(giorno) || []), o]);
+  }
+  return perGiorno;
+}
+
+/**
  * I turni che puoi lasciare, messi come in un calendario: una riga per
  * settimana Apple, sette colonne dal sabato al venerdì.
  *
@@ -114,26 +154,41 @@ export function vistaRapida() {
  * turni facevano mezzo schermo e non si capiva in che settimana cadessero.
  * Nella griglia i giorni senza turno restano vuoti, e la forma della
  * settimana si vede da sola.
+ *
+ * Il bollino dice quanti colleghi vanno bene: senza, bisognava toccare un
+ * giorno alla volta per scoprire che non c'era nessuno.
  */
-function calendarioTurni(miei, scelto) {
-  const settimane = [...new Set(miei.map((s) => appleWeekKey(s.data)))].sort();
+function calendarioTurni(miei, perGiorno, conteggi) {
+  const date = [...miei.map((s) => s.data), ...perGiorno.keys()];
+  const settimane = [...new Set(date.map((d) => appleWeekKey(d)))].sort();
   const perData = new Map(miei.map((s) => [s.data, s]));
+  const bollino = (n) => (n ? `<i class="cal-conta">${n}</i>` : '');
   const intestazione = Array.from({ length: 7 }, (_, i) => `<span>${formatDay(addDays(settimane[0], i)).slice(0, 3)}</span>`).join('');
   const righe = settimane.map((wk) => Array.from({ length: 7 }, (_, i) => {
     const data = addDays(wk, i);
     const s = perData.get(data);
     const numero = Number(data.slice(8));
+    const occasioni = perGiorno.get(data);
+    if (occasioni) {
+      return html`
+        <button class="cal-turno libero ${rapido.giorno === data ? 'attivo' : ''}" data-act="rapido-giorno" data-giorno="${data}"
+                aria-label="${formatDay(data)}, non lavori: ${occasioni.length} ${occasioni.length === 1 ? 'richiesta' : 'richieste'} da prendere">
+          ${raw(bollino(occasioni.length))}<b>${numero}</b><em>OFF</em>
+        </button>`;
+    }
     if (!s) return `<span class="cal-turno vuoto"><b>${numero}</b></span>`;
+    const n = conteggi.get(s.id);
     return html`
-      <button class="cal-turno ${s.id === scelto ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}"
-              aria-label="${formatDay(s.data)} ${shiftLabel(s)}">
-        <b>${numero}</b><em>${s.start}</em>
+      <button class="cal-turno ${n ? '' : 'nessuno'} ${!rapido.giorno && s.id === rapido.shiftId ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}"
+              aria-label="${formatDay(s.data)} ${shiftLabel(s)}: ${n ? `${n} ${n === 1 ? 'collega' : 'colleghi'}` : 'nessuno per ora'}">
+        ${raw(bollino(n))}<b>${numero}</b><em>${s.start}</em>
       </button>`;
   }).join('')).join('');
   return `
     <div class="cal-turni">
       <div class="cal-turni-testa">${intestazione}</div>
       <div class="cal-turni-griglia">${righe}</div>
+      <p class="cal-turni-legenda"><span><i class="cal-conta">2</i> colleghi compatibili</span><span><em>OFF</em> un turno da prendere</span></p>
     </div>`;
 }
 
