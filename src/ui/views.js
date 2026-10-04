@@ -468,7 +468,7 @@ export function impostazioni() {
 }
 
 /**
- * Quali richieste ti avvisano: solo le proposte dirette, o anche quelle
+ * Gestione notifiche: solo le proposte dirette, o anche quelle
  * compatibili con i tuoi turni.
  *
  * Compare solo a notifiche accese: scegliere cosa ricevere quando non se ne
@@ -481,7 +481,7 @@ export function rigaModoNotifiche(stato = statoNoto()) {
     return html`
       <div class="riquadro riquadro-fisso">
         <div class="riquadro-testa">
-          <span class="titolo-riquadro">Quali richieste ti avvisano</span>
+          <span class="titolo-riquadro">Gestione notifiche</span>
         </div>
         <p class="testo-tenue">Solo le personali o tutte quelle che i tuoi turni possono soddisfare: si sceglie dopo aver attivato le notifiche.</p>
         <button class="btn primario largo" data-act="attiva-notifiche">Attiva le notifiche</button>
@@ -502,11 +502,11 @@ export function rigaModoNotifiche(stato = statoNoto()) {
   return html`
     <details class="riquadro" data-riquadro="modo-notifiche" ${raw(riquadriAperti.has('modo-notifiche') ? 'open' : '')}>
       <summary>
-        <span>Quali richieste ti avvisano</span>
+        <span>Gestione notifiche</span>
         <span class="conteggio">${modo === 'compatibili' ? 'tutte le compatibili' : 'solo le personali'}</span>
       </summary>
-      ${raw(opzione('dirette', 'Solo le richieste personali', 'Ti avviso quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server.'))}
+      ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
+      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server.'))}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Nel calendario di questo dispositivo non ci sono turni futuri: importali dal Profilo, altrimenti non ti arriva niente.</p>'
     : '')}
