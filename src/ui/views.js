@@ -329,9 +329,14 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <h2 class="titolo-priorita">${raw(icona('priorita', { px: 18 }))} Priorità</h2>
-      <p>${credito} di ${RULES.priority.creditsPerMonth} disponibile per ${MESI[Number(monthKey(todayISO()).slice(5)) - 1].toLowerCase()}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
-      ${raw(usoPriorita())}
+      <div class="riquadro riquadro-fisso">
+        <div class="riquadro-testa">
+          <span class="titolo-riquadro">Priorità ${raw(icona('priorita', { px: 16 }))}</span>
+          <span class="conteggio">${credito} di ${RULES.priority.creditsPerMonth} disponibile</span>
+        </div>
+        <p class="testo-tenue">Per ${MESI[Number(monthKey(todayISO()).slice(5)) - 1].toLowerCase()}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
+        ${raw(usoPriorita())}
+      </div>
     </section>
 
     <button class="riga-impostazioni" data-act="vai" data-to="#/impostazioni">

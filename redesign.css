@@ -441,10 +441,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .switch input[type="radio"] { align-self: flex-start; margin-top: 3px; flex: none; }
 .riquadro .avviso-box { margin: 10px 0 14px; font-size: 14px; }
 
-/* Priorità nel Profilo: stesso oro del bordo delle richieste prioritarie. */
-.titolo-priorita { color: var(--oro); display: flex; align-items: center; gap: 6px; }
-.titolo-priorita svg { fill: currentColor; stroke: currentColor; }
-.priorita-usata { color: var(--oro); font-weight: 600; }
+
 
 /* Profilo, passata di respiro. Il bollino è la firma della pagina: più grande
    e con aria sopra, il pannello scende di conseguenza. */
@@ -461,3 +458,27 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .riquadro.turni .tile-sync {
   border: 0; box-shadow: none; margin: 0; background: var(--superficie-2);
 }
+
+/* Profilo, passata di coerenza.
+   1. Tutti i riquadri hanno la stessa testa: titolo a 17px in semibold, e a
+      destra una riga di riepilogo. Si capisce cosa contengono senza aprirli.
+   2. I titoli dentro i riquadri sono grassetto normale, non maiuscolo largo:
+      su un telefono le maiuscole spaziate affaticano e sanno di modulo.
+   3. Il giallo vale una cosa sola, la priorità: sta solo sulla stella. */
+.riquadro > summary,
+.riquadro-testa {
+  font-size: 17px; font-weight: 600; padding: 17px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.riquadro-fisso { padding-bottom: 14px; }
+.riquadro-fisso .testo-tenue { margin: 0; }
+.titolo-riquadro { display: inline-flex; align-items: center; gap: 6px; }
+.titolo-riquadro svg { fill: var(--oro); stroke: var(--oro); }
+.riquadro-testa .conteggio { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--testo-tenue); }
+.priorita-usata { margin: 6px 0 0; font-weight: 600; }
+
+.pref-titolo {
+  margin: 22px 0 6px; font-size: 15px; font-weight: 700;
+  text-transform: none; letter-spacing: 0; color: var(--testo);
+}
+.riquadro-testa { padding-bottom: 6px; }
