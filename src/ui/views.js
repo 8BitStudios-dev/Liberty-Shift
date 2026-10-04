@@ -88,6 +88,8 @@ export function home() {
     : `<p class="sottotitolo">${RULES.contracts[me.contratto].label}</p>`)}
     </header>
 
+    ${raw(invitoNotifiche())}
+
     <section class="sezione">
       <h2>I tuoi cambi</h2>
       <div class="lista-cambi">${raw(bloccoMiei)}</div>
@@ -276,15 +278,13 @@ export function profilo() {
   const credito = store.creditoPriorita();
 
   return html`
-    <header class="hero compatta">
-      <button class="icon-btn guida-profilo" data-act="guida" data-sezione="profilo" title="Come funziona">?</button>
+    <header class="testata-profilo">
+      ${raw(bollinoIo(me))}
       <span class="azioni-profilo">
         ${raw(bottoneSync())}
         ${raw(chipRingraziamenti())}
+        <button class="icon-btn" data-act="guida" data-sezione="profilo" title="Come funziona">?</button>
       </span>
-      <span class="avatar grande">${iniziali(me)}</span>
-      <h1>${nomeUtente(me)}</h1>
-      <p class="sottotitolo">${RULES.contracts[me.contratto].label}${me.admin ? ' · Admin' : ''}${me.superAdmin ? ' · SuperAdmin' : ''}</p>
     </header>
 
     <section class="sezione">
@@ -328,6 +328,92 @@ export function profilo() {
         ${me.superAdmin ? '<button class="btn secondario largo" data-act="vai" data-to="#/iscritti">Gestisci iscritti</button>' : ''}
       </details>
     </section>` : '')}`;
+}
+
+/**
+ * L'invito ad accendere le notifiche, in Home e ben visibile.
+ *
+ * Nelle Impostazioni da solo non lo trovava nessuno, e una notifica che
+ * nessuno accende non serve: senza, chi riceve una proposta se ne accorge
+ * solo quando riapre l'app, magari il giorno dopo il turno. Il tasto chiede
+ * il permesso direttamente, nello stesso tocco. "Non ora" lo nasconde per una
+ * settimana, non per sempre: chi ha detto non ora non ha detto mai.
+ */
+function invitoNotifiche() {
+  const stato = statoNoto();
+  if (invitoRimandato()) return '';
+  if (stato === STATO.DA_ATTIVARE) {
+    return html`
+      <section class="invito-notifiche">
+        <span class="invito-icona">${raw(icona('notifiche', { px: 24 }))}</span>
+        <div>
+          <strong>Attiva le notifiche</strong>
+          <p>Ti avvisiamo quando arriva una proposta e quando ti rispondono, anche ad app chiusa.</p>
+          <div class="invito-azioni">
+            <button class="btn primario" data-act="attiva-notifiche">Attiva</button>
+            <button class="btn secondario" data-act="invito-notifiche-dopo">Non ora</button>
+          </div>
+        </div>
+      </section>`;
+  }
+  if (stato === STATO.DA_INSTALLARE) {
+    return html`
+      <section class="invito-notifiche">
+        <span class="invito-icona">${raw(icona('notifiche', { px: 24 }))}</span>
+        <div>
+          <strong>Ricevi le notifiche su iPhone</strong>
+          <p>Su iPhone arrivano solo all'app sulla schermata Home. Tre passi:</p>
+          <ol class="invito-passi">
+            <li>Tocca <span class="icona-in-riga">${raw(icona('condividi', { px: 17 }))}</span> <b>Condividi</b> qui in Safari</li>
+            <li>Scegli <b>Aggiungi alla schermata Home</b></li>
+            <li>Apri Liberty Shift dall'icona e tocca <b>Attiva</b></li>
+          </ol>
+          <div class="invito-azioni">
+            <button class="btn secondario" data-act="invito-notifiche-dopo">Non ora</button>
+          </div>
+        </div>
+      </section>`;
+  }
+  return '';
+}
+
+// Su questo browser e basta, come la guida: non è un dato dell'app.
+const CHIAVE_INVITO = 'cambio-turno:invito-notifiche';
+const SETTIMANA_MS = 7 * 24 * 3600 * 1000;
+
+function invitoRimandato() {
+  try {
+    const quando = Number(localStorage.getItem(CHIAVE_INVITO) || 0);
+    return Date.now() - quando < SETTIMANA_MS;
+  } catch {
+    return false;
+  }
+}
+
+export function rimandaInvitoNotifiche() {
+  try { localStorage.setItem(CHIAVE_INVITO, String(Date.now())); } catch { /* finestra privata */ }
+}
+
+/**
+ * Il bollino con le iniziali, in alto a sinistra nel Profilo.
+ *
+ * Nome e ruolo prima occupavano mezzo schermo sopra il calendario, per dire a
+ * una persona chi è. Restano a un tocco, per i giorni in cui serve
+ * controllare con che contratto ci si è iscritti. Non si ricorda aperto:
+ * ridisegnando la pagina si richiude, come un menu.
+ */
+function bollinoIo(me) {
+  const ruoli = [me.admin && 'Admin', me.superAdmin && 'SuperAdmin'].filter(Boolean).join(' · ');
+  return html`
+    <details class="io">
+      <summary class="avatar io-bollino" aria-label="Il tuo profilo">${iniziali(me)}</summary>
+      <div class="io-pannello">
+        <strong>${nomeUtente(me)}</strong>
+        <span>${RULES.contracts[me.contratto].label} · ${me.oreSettimanali} ore</span>
+        ${raw(ruoli ? html`<span>${ruoli}</span>` : '')}
+        <button class="link-btn" data-act="modifica-profilo">Modifica profilo</button>
+      </div>
+    </details>`;
 }
 
 /**

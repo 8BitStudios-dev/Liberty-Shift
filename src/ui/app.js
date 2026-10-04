@@ -148,10 +148,10 @@ function render() {
 
   // Lo stato delle notifiche si scopre solo chiedendo al browser: si ridisegna
   // quando arriva, e solo se è cambiato, altrimenti sarebbe un giro infinito.
-  if (percorso === 'impostazioni') {
+  if (percorso === 'impostazioni' || percorso === 'home') {
     const prima = statoNoto();
     statoNotifiche(store.state).then((ora) => {
-      if (ora !== prima && parseHash().percorso === 'impostazioni') render();
+      if (ora !== prima && parseHash().percorso === percorso) render();
     });
   }
 
@@ -401,6 +401,21 @@ const AZIONI = {
     else if (stato === STATO.ATTIVE) toast('Notifiche attive');
     else if (stato === STATO.BLOCCATE) toast('Le hai bloccate: si riattivano dalle impostazioni del telefono');
     else if (!accendi) toast('Notifiche spente su questo dispositivo');
+    render();
+  },
+
+  // Dal riquadro in Home: stesso percorso dell'interruttore, stesso tocco.
+  'attiva-notifiche': async () => {
+    const { stato, errore } = await attivaNotifiche(store.state);
+    if (errore) toast(errore);
+    else if (stato === STATO.ATTIVE) toast('Notifiche attive');
+    else if (stato === STATO.BLOCCATE) toast('Le hai bloccate: si riattivano dalle impostazioni del telefono');
+    render();
+  },
+
+  'invito-notifiche-dopo': () => {
+    V.rimandaInvitoNotifiche();
+    toast('Le trovi sempre in Impostazioni');
     render();
   },
 

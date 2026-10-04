@@ -107,3 +107,17 @@ test('le Impostazioni di un iscritto si disegnano senza oggetti stampati come te
   assert.doesNotMatch(pagina, /\[object Object\]/);
   assert.match(pagina, /Invita un collega/);
 });
+
+test('il Profilo apre con il calendario: nome e ruolo stanno dietro il bollino', async () => {
+  const { store } = await import('../src/core/store.js');
+  const { profilo } = await import('../src/ui/views.js');
+  store.reset();
+  Object.assign(store.me, { nome: 'Marco', cognomeIniziale: 'C', superAdmin: true, admin: true });
+  const pagina = profilo();
+  const testata = pagina.slice(0, pagina.indexOf('</header>'));
+  assert.doesNotMatch(testata, /<h1>/, 'il nome grande sopra il calendario era quello che occupava mezzo schermo');
+  // Nome e ruoli ci sono ancora, ma dentro il pannello che si apre col tocco.
+  const pannello = testata.slice(testata.indexOf('io-pannello'));
+  assert.match(pannello, /Marco C\./);
+  assert.match(pannello, /SuperAdmin/);
+});

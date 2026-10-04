@@ -329,6 +329,12 @@ I ringraziamenti non sono più una sezione a metà pagina, che senza
 ringraziamenti occupava spazio per dire che non ce n'erano: sono un contatore in
 alto a destra, 💛 con il numero, e la lista si apre toccandolo.
 
+Lo stesso vale per chi sei. Il bollino con le iniziali, il nome grande e il
+contratto occupavano mezzo schermo sopra il calendario per dire a una persona
+il suo nome. Ora la testata è una riga sola: il bollino in alto a sinistra,
+sincronizzazione, grazie e guida a destra. Nome, contratto e ruoli si aprono
+toccando il bollino, insieme a una scorciatoia per modificare il profilo.
+
 ## Il Profilo: il tuo mese
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
 ✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.
@@ -456,6 +462,15 @@ fondo al Profilo, con l'ingranaggio e senza riquadro. Sono cose che si toccano
 tre volte in tutto, e da riquadri grandi quanto quelli dei turni rubavano
 attenzione a quello che invece si guarda ogni giorno. Il ritorno dalle note
 riporta lì, non al Profilo.
+
+Qui c'è anche il riquadro **Notifiche**, con una frase diversa per ogni stato
+(da attivare, attive, bloccate dal browser, non supportate, iPhone da
+Safari). Da solo però non lo trovava nessuno: per questo in Home, sotto il
+saluto, c'è un invito colorato con il tasto **Attiva**, che chiede il permesso
+nello stesso tocco. Su iPhone da Safari l'invito mostra i tre passi per
+aggiungere l'app alla schermata Home. "Non ora" lo nasconde per una
+settimana; sparisce da solo quando le notifiche sono attive, bloccate o non
+supportate.
 
 ## La guida
 Sette schede, una per schermata: Home, Cambio rapido, Aiuta un collega, Nuovo
