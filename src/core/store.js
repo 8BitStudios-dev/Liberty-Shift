@@ -272,6 +272,38 @@ export const store = {
     if (giorniMancanti === undefined || giorniMancanti > RULES.promemoriaAccordo.giorniPrima) return null;
     return { giorno, quando: ['oggi', 'domani', 'dopodomani'][giorniMancanti] ?? formatDay(giorno) };
   },
+  /**
+   * I giorni toccati dai tuoi scambi ancora in corso, da oggi in avanti.
+   *
+   * `richiesta`: una tua richiesta aperta, o una proposta che hai fatto e che
+   * aspetta risposta. `accordo`: uno scambio concordato, che resta tale fino
+   * al giorno stesso anche dopo "Cambio inserito", perché la conferma vera
+   * arriva da UKG e il calendario dei turni la mostra solo più tardi. Senza
+   * questo segno, fra l'accordo e l'approvazione il giorno sembrava fermo.
+   *
+   * Uno scambio tocca il giorno che la richiesta lascia e quello del turno
+   * offerto: nel cambio orario coincidono, nel cambio OFF sono due.
+   */
+  giorniInCorso(userId = this.state.currentUserId, oggi = todayISO()) {
+    const giorni = new Map();
+    const segna = (data, stato) => {
+      if (!data || data < oggi) return;
+      if (giorni.get(data) !== 'accordo') giorni.set(data, stato);
+    };
+    for (const r of this.state.requests) {
+      if (r.userId !== userId || !isOpen(r)) continue;
+      segna(this.shift(r.cedo.shiftId)?.data, 'richiesta');
+      for (const g of r.cerco.giorni || []) segna(g, 'richiesta');
+    }
+    for (const p of this.state.proposals) {
+      if (p.daUserId !== userId && p.aUserId !== userId) continue;
+      const r = this.request(p.requestId);
+      const giorniScambio = [this.shift(p.shiftOffertoId)?.data, r && this.shift(r.cedo.shiftId)?.data];
+      if (p.status === 'ACCORDO') giorniScambio.forEach((d) => segna(d, 'accordo'));
+      else if (p.status === 'IN_ATTESA' && p.daUserId === userId) giorniScambio.forEach((d) => segna(d, 'richiesta'));
+    }
+    return giorni;
+  },
   creditoPriorita(userId = this.state.currentUserId) {
     const u = this.user(userId);
     const usati = u.prioritaUsata?.[monthKey(todayISO())] || 0;

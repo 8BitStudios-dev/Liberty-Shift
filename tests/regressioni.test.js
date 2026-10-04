@@ -354,3 +354,29 @@ test('al primo accordo, le altre proposte con lo stesso turno decadono', () => {
   assert.equal(stato('pr-b').motivoDecadenza, 'TURNO_IMPEGNATO');
   assert.equal(stato('pr-c').status, 'IN_ATTESA', 'un altro turno resta in gioco');
 });
+
+// --- i giorni che aspettano UKG ----------------------------------------
+
+test('i giorni di uno scambio restano segnati dall\'accordo fino al giorno stesso', () => {
+  store.reset(seed());
+  const me = store.state.currentUserId;
+  const altro = store.state.users.find((u) => u.id !== me);
+  const oggi = '2026-10-04';
+  const turno = (id, userId, data) => store.state.shifts.push({ id, userId, data, tipo: 'WORK', start: '09:30', end: '18:30' });
+  turno('t-suo', altro.id, '2026-10-10');
+  turno('t-mio', me, '2026-10-12');
+  turno('t-passato', me, '2026-10-01');
+  store.state.requests.push({
+    id: 'rq-x', userId: altro.id, createdAt: '2026-10-01T10:00:00Z', status: STATUS.ACCORDO,
+    prioritaFinoA: null, tipo: 'OFF', cedo: { shiftId: 't-suo', flessibile: false }, cerco: { giorni: ['2026-10-12'] },
+  });
+  store.state.proposals.push({
+    id: 'pr-x', requestId: 'rq-x', daUserId: me, aUserId: altro.id, shiftOffertoId: 't-mio', messaggio: '',
+    accettataDa: [me, altro.id], status: 'ACCORDO', createdAt: '2026-10-02T10:00:00Z', cambioInserito: true,
+  });
+
+  const giorni = store.giorniInCorso(me, oggi);
+  assert.equal(giorni.get('2026-10-10'), 'accordo', 'il giorno che ricevi');
+  assert.equal(giorni.get('2026-10-12'), 'accordo', 'il giorno che lasci, anche dopo "Cambio inserito"');
+  assert.equal(giorni.has('2026-10-01'), false, 'i giorni passati non si segnano');
+});

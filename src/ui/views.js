@@ -171,7 +171,8 @@ function legendaPubblica() {
 function legendaPersonale() {
   return `
     <ul class="legenda-mese">
-      <li><span class="campione mia-richiesta"></span>una tua richiesta</li>
+      <li><span class="in-corso in-corso-richiesta in-legenda">${icona('clessidra', { px: 14 })}</span>richiesta in corso</li>
+      <li><span class="in-corso in-corso-accordo in-legenda">${icona('clessidra', { px: 14 })}</span>accordo, da confermare in UKG</li>
       <li><span class="campione disponibile"></span>sei disponibile</li>
       <li><span class="campione riposo"></span>OFF</li>
     </ul>`;
@@ -942,11 +943,7 @@ export function mesePubblico(mese) {
 export function ilTuoMese(mese = todayISO().slice(0, 7)) {
   const me = store.me;
   const oggi = todayISO();
-  const mieiGiorni = new Set();
-  for (const r of store.state.requests.filter((x) => isOpen(x) && x.userId === me.id)) {
-    const cedo = store.shift(r.cedo.shiftId);
-    for (const d of [cedo?.data, ...(r.cerco.giorni || [])]) if (d) mieiGiorni.add(d);
-  }
+  const inCorso = store.giorniInCorso(me.id, oggi);
 
   return grigliaMese(mese, {
     classe: 'mese-personale',
@@ -958,9 +955,9 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
       const stato = !turno ? 'senza-turno' : turno.tipo === 'OFF' ? 'riposo' : 'lavoro';
       return html`
         <button class="mese-giorno ${stato} ${classiGiorno(data, mese, oggi)}
-                       ${disponibileIl(me, data) ? 'disponibile' : ''}
-                       ${mieiGiorni.has(data) ? 'mia-richiesta' : ''}"
+                       ${disponibileIl(me, data) ? 'disponibile' : ''}"
                 data-act="giorno-profilo" data-data="${data}">
+          ${raw(inCorso.has(data) ? `<span class="in-corso in-corso-${inCorso.get(data)}" aria-label="${inCorso.get(data) === 'accordo' ? 'scambio concordato, da confermare in UKG' : 'scambio in corso'}">${icona('clessidra', { px: 13, forte: true })}</span>` : '')}
           <span class="numero">${toDate(data).getUTCDate()}</span>
           <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '—'}</span>
           ${raw(turno?.tipo === 'WORK' ? `<span class="fine">${turno.end}</span>` : '')}
@@ -1052,11 +1049,29 @@ function rigaMiaRichiesta(r) {
     : `Lasci ${shiftLabel(cedo)} · cerchi ${wantLabel(r.cerco)}`;
   return html`
     <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
-      <span class="pallino mia"></span>
+      <span class="in-corso in-corso-richiesta">${raw(icona('clessidra', { px: 16, forte: true }))}</span>
       <div>
         <strong>${raw(iconaTipo(r.tipo))} ${r.tipo === TIPO_CAMBIO.OFF ? 'Cambio OFF' : 'Cambio orario'}</strong>
         <div class="meta">${cosa}</div>
         <div class="meta">${raw(badgeStato(r.status))}</div>
+      </div>
+      <span class="chevron">›</span>
+    </div>`;
+}
+
+/** Uno scambio del giorno: concordato (e quindi da confermare in UKG) o proposto da te. */
+function rigaScambio(p) {
+  const me = store.state.currentUserId;
+  const altro = store.user(p.daUserId === me ? p.aUserId : p.daUserId);
+  const accordo = p.status === 'ACCORDO';
+  return html`
+    <div class="riga-cambio" data-act="apri-richiesta" data-id="${p.requestId}">
+      <span class="in-corso ${accordo ? 'in-corso-accordo' : 'in-corso-richiesta'}">${raw(icona('clessidra', { px: 16, forte: true }))}</span>
+      <div>
+        <strong>${accordo ? `Scambio concordato con ${nomeUtente(altro)}` : `Hai proposto uno scambio a ${nomeUtente(altro)}`}</strong>
+        <div class="meta">${accordo
+    ? (p.cambioInserito ? 'Inserito in UKG: in attesa che lo approvi.' : 'Da inserire in UKG, poi si aspetta l\'approvazione.')
+    : 'In attesa della sua risposta.'}</div>
       </div>
       <span class="chevron">›</span>
     </div>`;
@@ -1074,6 +1089,15 @@ export function dettaglioGiornoProfilo(data) {
     if (!isOpen(r) || r.userId !== me.id) return false;
     const cedo = store.shift(r.cedo.shiftId);
     return cedo?.data === data || (r.cerco.giorni || []).includes(data);
+  });
+  // Gli scambi di quel giorno che non sono una tua richiesta aperta: gli
+  // accordi (anche dopo "Cambio inserito", finché UKG non li mostra) e le
+  // proposte che hai fatto tu e che aspettano risposta.
+  const scambi = store.state.proposals.filter((p) => {
+    if (p.daUserId !== me.id && p.aUserId !== me.id) return false;
+    if (!(p.status === 'ACCORDO' || (p.status === 'IN_ATTESA' && p.daUserId === me.id))) return false;
+    const r = store.request(p.requestId);
+    return [store.shift(p.shiftOffertoId)?.data, r && store.shift(r.cedo.shiftId)?.data].includes(data);
   });
 
   return html`
@@ -1097,5 +1121,9 @@ export function dettaglioGiornoProfilo(data) {
       ${raw(mieRichieste.length ? html`
         <h3>${mieRichieste.length === 1 ? 'La tua richiesta' : 'Le tue richieste'}</h3>
         <div class="lista-cambi">${raw(mieRichieste.map((r) => rigaMiaRichiesta(r)).join(''))}</div>` : '')}
+
+      ${raw(scambi.length ? html`
+        <h3>${scambi.length === 1 ? 'Uno scambio in corso' : 'Scambi in corso'}</h3>
+        <div class="lista-cambi">${raw(scambi.map((p) => rigaScambio(p)).join(''))}</div>` : '')}
     </div>`;
 }

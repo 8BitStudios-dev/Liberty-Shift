@@ -901,3 +901,13 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 @media (max-width: 359px) { .mese-pubblico .conta-giorno { position: static; } }
 /* "Il tuo calendario" è il titolo della pagina: un gradino sopra le altre testate. */
 .titolo-mese { font-size: 28px; letter-spacing: -.025em; }
+
+/* La clessidra degli scambi in corso, nell'angolo del giorno. Viola: una tua
+   richiesta o proposta che aspetta. Verde: accordo fatto, da confermare in
+   UKG. Fra l'accordo e l'approvazione il giorno non sembra più fermo. */
+.in-corso { display: inline-grid; place-items: center; color: var(--mio); }
+.in-corso-accordo { color: var(--prendo); }
+.mese-personale .mese-giorno .in-corso { position: absolute; top: 4px; right: 4px; }
+.in-corso.in-legenda { position: static; }
+.giorno-profilo .riga-cambio .in-corso { flex: 0 0 auto; }
+@media (max-width: 359px) { .mese-personale .mese-giorno .in-corso { top: 2px; right: 2px; } }

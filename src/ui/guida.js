@@ -169,9 +169,11 @@ export const GUIDE = {
       <h3>Il tuo calendario</h3>
       <p>
         È solo tuo: i tuoi turni giorno per giorno, con inizio e fine, e le
-        ore della settimana. I giorni OFF sono vuoti, senza fondo. Il punto viola
-        nell'angolo è un giorno toccato da una tua richiesta; il fondo verde,
-        un giorno in cui ti sei detto disponibile a scambiare.
+        ore della settimana. I giorni OFF sono vuoti, senza fondo. La clessidra
+        nell'angolo dice che su quel giorno c'è uno scambio in corso: viola se
+        è una tua richiesta o proposta che aspetta, verde se l'accordo è fatto
+        e va confermato in UKG. Il fondo verde è un giorno in cui ti sei detto
+        disponibile a scambiare.
       </p>
       <p class="testo-tenue">
         Tocca un giorno per correggere il turno, darti disponibile o vedere le

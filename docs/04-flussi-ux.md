@@ -413,8 +413,13 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
   priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
   giorno: chi puoi aiutare, poi Cercano e Offrono.
 - **Profilo**: tu. I tuoi turni, le ore della settimana, la rotazione, il
-  fondo verde dei giorni in cui sei disponibile e un punto viola sui giorni
-  toccati da una tua richiesta aperta. Toccando un giorno: il turno, la
+  fondo verde dei giorni in cui sei disponibile e una **clessidra** sui giorni
+  toccati da uno scambio in corso: viola per una tua richiesta aperta o una
+  proposta che hai fatto e aspetta risposta, verde per un accordo fatto e da
+  confermare in UKG. La clessidra verde resta fino al giorno stesso, anche
+  dopo "Cambio inserito": l'approvazione arriva da UKG, e senza un segno fra
+  l'accordo e il nuovo calendario dei turni il giorno sembrava fermo
+  (`giorniInCorso` nello store). Toccando un giorno: il turno, la
   disponibilità e le tue richieste, dette in seconda persona ("Lasci…,
   cerchi…"). Niente dei colleghi: né barre, né percentuali, né rimandi.
   Il viola è il colore delle tue richieste e il Calendario non lo usa, così
