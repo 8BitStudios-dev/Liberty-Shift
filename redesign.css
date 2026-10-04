@@ -426,3 +426,12 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
   padding: 9px 12px; border-radius: 10px; background: var(--superficie-2); font-size: 15px;
 }
 .pref-fasce li span { color: var(--testo-tenue); font-size: 14px; text-align: right; }
+
+/* Il promemoria di un accordo non ancora inserito: una riga che si nota senza
+   gridare, con l'orologio nel colore dell'accento. */
+.promemoria {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--accento);
+}
+.promemoria .icona-in-riga { margin-top: 2px; flex: none; }
+.accordo .promemoria { margin: 8px 0 12px; }

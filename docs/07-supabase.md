@@ -42,7 +42,9 @@ Le regole, in italiano:
 - si legge solo da autenticati, mai da anonimi;
 - i profili sono leggibili da tutti gli iscritti, perché servono i nomi;
 - richieste e disponibilità sono una bacheca: le legge chi è entrato, le
-  modifica chi le ha scritte;
+  modifica chi le ha scritte. **Eccezione:** una richiesta su cui c'è un
+  accordo la vedono solo le due persone e gli admin (`vedi_richiesta()`, vedi
+  *La pulizia, il promemoria e gli accordi*);
 - **una proposta la vedono le due persone che riguarda, e nessun altro.** È
   l'unica cosa davvero privata fra due colleghi, insieme al messaggio che si
   scambiano;
@@ -224,10 +226,18 @@ statistiche di chi le guarda. È reversibile con un tocco (`riattiva`), a
 differenza di cancellare l'account per sempre, che qui non è previsto.
 
 Le note d'uso promettono che i cambi pubblicati non restano per sempre sul
-server: `pulizia_periodica()`, pianificata ogni notte con `pg_cron`, cancella
-le richieste chiuse o scadute da più di 90 giorni e le disponibilità di
-settimane passate da più di 60. Le proposte se ne vanno da sole, perché la
-chiave esterna su `richieste` è `on delete cascade`.
+server: `pulizia_periodica()`, pianificata ogni notte alle 03:00 UTC con
+`pg_cron`, fa tre cose, in quest'ordine:
+
+1. cancella le richieste ancora aperte ma scadute (il giorno ceduto è passato,
+   o lo sono tutti i giorni cercati: la stessa regola di `isExpired`);
+2. chiude da sola le richieste con accordo il cui ultimo giorno è passato, e
+   segna la proposta come "cambio inserito" così sparisce dalla posta;
+3. toglie le richieste chiuse o rimosse da più di 90 giorni e le disponibilità
+   di settimane passate da più di 60.
+
+Le proposte se ne vanno da sole con la richiesta, perché la chiave esterna su
+`richieste` è `on delete cascade`.
 
 I ringraziamenti non sono toccati: non sono un cambio pubblicato, sono l'unica
 cosa pensata per restare dopo che il cambio è fatto.
@@ -422,6 +432,28 @@ Due dispositivi, due account, il giro completo:
 | Anna accetta | `ACCORDO` da entrambe le parti |
 | la richiesta cambia stato | `ACCORDO` anche per Bruno |
 | **estraneo registrato senza codice** | profili `[]`, bacheca `[]` |
+
+## La pulizia, il promemoria e gli accordi
+
+**Chi vede una richiesta con un accordo.** La policy di lettura su `richieste`
+passa da `vedi_richiesta(id, autore_id)`: se esiste una proposta in `ACCORDO`,
+la richiesta la vedono l'autore, chi ha fatto quella proposta e gli admin.
+La funzione è `security definer` perché deve guardare le proposte di tutti, e
+la policy sulle proposte ne mostra a ciascuno solo due. Decide dalla proposta
+in `ACCORDO` e non dallo stato della richiesta: dopo "Cambio inserito" la
+richiesta è `CHIUSA`, ma l'accordo che c'è stato non è diventato pubblico.
+
+**Il promemoria.** `promemoria_accordi()` gira ogni mattina alle 08:00 UTC (le
+9 o le 10 a Roma). Per ogni accordo non ancora inserito il cui prossimo giorno
+cade entro due giorni chiama `send-push` due volte, una per persona, e segna
+`promemoria_il` perché non parta una seconda volta. Senza il segreto
+`push_webhook` in Vault non fa niente, e non segna niente.
+
+**Perché la pulizia si lancia a mano.** `schema.sql` si rilancia da SQL Editor
+(vedi *Procedura*). Il connettore con cui lavora Claude Code chiede una
+conferma interattiva per ogni testo che contenga `delete`, e in una sessione
+non interattiva non può comparire: la funzione `pulizia_periodica()` quindi
+non si può aggiornare da lì, e va incollata da SQL Editor.
 
 ## Le notifiche push
 

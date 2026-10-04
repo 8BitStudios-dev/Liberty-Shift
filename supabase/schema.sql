@@ -129,9 +129,15 @@ create table if not exists public.proposte (
   motivo_rifiuto   text,
   cambio_inserito  boolean not null default false,
   creata_il        timestamptz not null default now(),
+  promemoria_il    timestamptz,
   -- Una proposta per persona per richiesta: riproporre si fa cancellando.
   unique (richiesta_id, da_user_id)
 );
+
+-- `promemoria_il` ricorda quando è partito il promemoria "hai inserito il
+-- cambio?", che parte una volta sola per accordo. Nata dopo la tabella: su un
+-- database già in piedi la porta questo alter table, non il create qui sopra.
+alter table public.proposte add column if not exists promemoria_il timestamptz;
 
 create index if not exists proposte_richiesta_idx on public.proposte (richiesta_id);
 
@@ -353,9 +359,39 @@ create trigger blocca_scritture_privilegiate
   for each row execute function public.blocca_scritture_privilegiate();
 
 -- richieste ---------------------------------------------------------------
+-- Una richiesta su cui c'è un accordo riguarda due persone e basta: la vedono
+-- loro, e gli admin. A tutti gli altri sparisce, anche dall'API: finché
+-- restava leggibile, nascondere la bacheca dall'app non nascondeva niente a
+-- chi sa chiamare il server.
+--
+-- La funzione è `security definer` perché deve guardare le proposte di tutti
+-- per sapere se un accordo c'è, e la policy sulle proposte ne mostra a
+-- ciascuno solo due. Decide in base alla proposta in ACCORDO e non allo stato
+-- della richiesta: dopo "Cambio inserito" la richiesta è CHIUSA, ma l'accordo
+-- che c'è stato non è diventato pubblico.
+create or replace function public.vedi_richiesta(rid uuid, autore uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select public.e_membro() and (
+    autore = (select auth.uid())
+    or public.e_admin()
+    or not exists (
+      select 1 from public.proposte p where p.richiesta_id = rid and p.stato = 'ACCORDO'
+    )
+    or exists (
+      select 1 from public.proposte p
+      where p.richiesta_id = rid and p.stato = 'ACCORDO'
+        and (select auth.uid()) in (p.da_user_id, p.a_user_id)
+    )
+  );
+$$;
+
+revoke all on function public.vedi_richiesta(uuid, uuid) from public, anon;
+grant execute on function public.vedi_richiesta(uuid, uuid) to authenticated;
+
 drop policy if exists "la bacheca la leggono gli iscritti" on public.richieste;
-create policy "la bacheca la leggono gli iscritti"
-  on public.richieste for select to authenticated using (public.e_membro());
+drop policy if exists "la bacheca la leggono gli iscritti, tranne gli accordi" on public.richieste;
+create policy "la bacheca la leggono gli iscritti, tranne gli accordi"
+  on public.richieste for select to authenticated using (public.vedi_richiesta(id, autore_id));
 
 drop policy if exists "si pubblica solo a proprio nome" on public.richieste;
 create policy "si pubblica solo a proprio nome"
@@ -441,20 +477,55 @@ create policy "si ringrazia a proprio nome"
 --
 -- Le note d'uso promettono che i cambi pubblicati non restano per sempre sul
 -- server: senza questa parte sarebbe una frase scritta e basta, non una cosa
--- vera. Ogni notte cancella le richieste ormai chiuse o scadute e le
--- disponibilità di settimane già passate. Le proposte se ne vanno da sole,
--- perché la chiave esterna su `richieste` è `on delete cascade`.
+-- vera. Ogni notte, alle 03:00 UTC:
 --
--- I ringraziamenti restano: non sono un "cambio pubblicato" ma l'unica cosa
--- che si è deciso dovesse sopravvivere al cambio stesso (vedi il commento
--- sulla tabella), quindi la promessa delle note non li riguarda.
+--  1. cancella le richieste ancora aperte ma scadute. Le scadenze il telefono
+--     le calcola da sé ma sul server lo stato non cambia mai, quindi senza
+--     questo passo restavano "aperte" per sempre. La regola è quella di
+--     `isExpired` in src/core/model.js: il giorno ceduto è passato, oppure
+--     sono passati tutti i giorni che si cercavano.
+--  2. chiude da sola la richiesta con accordo il cui ultimo giorno è passato.
+--     In uno scambio di giornate sono due, e conta il più lontano. Se nessuno
+--     preme "Cambio inserito" non resta in sospeso per sempre; la proposta
+--     passa a "cambio inserito" così da sparire dalla posta di entrambi.
+--  3. toglie le richieste chiuse o rimosse da più di 90 giorni e le
+--     disponibilità di settimane passate da più di 60.
 --
--- **Assunzione**: 90 giorni per le richieste chiuse o scadute, 60 per le
--- disponibilità di settimane già passate. Punti di partenza, non un vincolo
--- del regolamento: si cambiano qui, senza toccare il client.
+-- Le proposte se ne vanno da sole con la richiesta, perché la chiave esterna
+-- su `richieste` è `on delete cascade`. I ringraziamenti restano: non sono un
+-- "cambio pubblicato" ma l'unica cosa che si è deciso dovesse sopravvivere al
+-- cambio stesso (vedi il commento sulla tabella).
+--
+-- **Assunzione**: 90 e 60 giorni sono punti di partenza, non un vincolo del
+-- regolamento; si cambiano qui, senza toccare il client. Le date sono quelle
+-- di Roma: alle 03:00 UTC è già l'alba italiana, e "oggi" è lo stesso giorno.
 create or replace function public.pulizia_periodica() returns void
 language plpgsql set search_path = public as $$
+declare
+  oggi   date := (now() at time zone 'Europe/Rome')::date;
+  chiuse uuid[];
 begin
+  delete from public.richieste
+  where stato in ('APERTA', 'PROPOSTA', 'IN_ATTESA')
+    and (
+      cedo_data < oggi
+      or (cardinality(cerco_giorni) > 0
+          and not exists (select 1 from unnest(cerco_giorni) g where g >= oggi))
+    );
+
+  select coalesce(array_agg(q.id), '{}') into chiuse
+  from public.richieste q
+  where q.stato = 'ACCORDO'
+    and greatest(
+      q.cedo_data,
+      coalesce((select max(p.turno_data) from public.proposte p
+                where p.richiesta_id = q.id and p.stato = 'ACCORDO'), q.cedo_data)
+    ) < oggi;
+
+  update public.richieste set stato = 'CHIUSA', chiusa_il = now() where id = any(chiuse);
+  update public.proposte set cambio_inserito = true
+  where richiesta_id = any(chiuse) and stato = 'ACCORDO';
+
   delete from public.richieste
   where stato in ('CHIUSA', 'SCADUTA', 'RIMOSSA')
     and coalesce(chiusa_il, creata_il) < now() - interval '90 days';
@@ -614,3 +685,75 @@ $$;
 
 revoke all on function public.candidati_accesso(text, text) from public;
 grant execute on function public.candidati_accesso(text, text) to anon, authenticated;
+
+-- ============================================================ promemoria accordi
+--
+-- Un accordo non finisce quando due colleghi si dicono sì: finisce quando uno
+-- dei due inserisce il cambio nell'app ufficiale, e questa app non può farlo al
+-- posto loro. Due giorni prima del prossimo giorno coinvolto, a chi non ha
+-- ancora premuto "Cambio inserito" arriva una notifica con la domanda: una
+-- sola volta, perché `promemoria_il` ricorda che è partita.
+--
+-- Conta il prossimo giorno **ancora da venire**, non il primo in assoluto: in
+-- uno scambio di giornate una può essere già passata, e ricordare qualcosa di
+-- già successo non serve a niente.
+--
+-- **Assunzione**: due giorni di anticipo. Non so quanto preavviso chieda il
+-- gestionale ufficiale; se serve di più basta cambiare il numero qui sotto.
+-- Chi concorda un cambio a meno di due giorni dalla data riceve il promemoria
+-- la mattina dopo: meglio uno in più che nessuno.
+--
+-- Una notifica per ciascuna delle due persone, perché ciascuna legge il nome
+-- dell'altra: la funzione `send-push` la compone per destinatario.
+create or replace function public.promemoria_accordi() returns void
+language plpgsql security definer set search_path = '' as $$
+declare
+  oggi     date := (now() at time zone 'Europe/Rome')::date;
+  segreto  text;
+  r        record;
+  persona  uuid;
+begin
+  select decrypted_secret into segreto from vault.decrypted_secrets where name = 'push_webhook';
+  -- Senza segreto le notifiche non sono configurate: niente da fare, e nemmeno
+  -- da segnare, così quando lo saranno i promemoria partiranno.
+  if segreto is null then
+    return;
+  end if;
+
+  for r in
+    select p.*, d.prossimo
+    from public.proposte p
+    join public.richieste q on q.id = p.richiesta_id
+    cross join lateral (
+      select min(x) as prossimo from unnest(array[q.cedo_data, p.turno_data]) x where x >= oggi
+    ) d
+    where p.stato = 'ACCORDO'
+      and not p.cambio_inserito
+      and p.promemoria_il is null
+      and d.prossimo is not null
+      and d.prossimo <= oggi + 2
+  loop
+    foreach persona in array array[r.da_user_id, r.a_user_id] loop
+      begin
+        perform net.http_post(
+          url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
+          body := jsonb_build_object(
+            'type', 'PROMEMORIA',
+            'record', to_jsonb(r) - 'prossimo',
+            'giorno', r.prossimo,
+            'destinatario', persona
+          ),
+          headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+        );
+      exception when others then
+        raise warning 'promemoria_accordi: %', sqlerrm;
+      end;
+    end loop;
+    update public.proposte set promemoria_il = now() where id = r.id;
+  end loop;
+end $$;
+
+revoke all on function public.promemoria_accordi() from public, anon, authenticated;
+
+-- Ogni mattina alle 08:00 UTC, cioè le 9 o le 10 a Roma.
+select cron.schedule('promemoria-accordi', '0 8 * * *', $$ select public.promemoria_accordi(); $$);

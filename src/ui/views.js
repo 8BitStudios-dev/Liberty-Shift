@@ -2,7 +2,7 @@ import { html, raw, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno,
+  ruoloNelGiorno, testoPromemoria,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
@@ -50,6 +50,7 @@ export function home() {
             <div>
               <strong>${titolo}</strong>
               <div class="meta">Scambio con ${nomeUtente(altro)}</div>
+              ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             </div>
             <span class="chevron">›</span>
           </div>`;

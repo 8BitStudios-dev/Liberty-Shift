@@ -2,9 +2,12 @@
 //
 // La chiama il database, non l'app: il trigger `notifica_proposta` (vedi
 // supabase/schema.sql) parte quando una proposta nasce o si chiude, e passa
-// qui la riga. Per questo si pubblica senza verifica del JWT: a proteggerla è
-// il segreto nell'intestazione `x-webhook-secret`, che conoscono solo il
-// trigger e questa funzione.
+// qui la riga. Con lo stesso percorso arriva il promemoria di un accordo
+// ancora da inserire (`promemoria_accordi`, ogni mattina).
+//
+// Si pubblica senza verifica del JWT: a proteggerla è il segreto
+// nell'intestazione `x-webhook-secret`, che conoscono solo il database e
+// questa funzione.
 //
 // I segreti stanno in Vault e si leggono con `service_role` dalla funzione
 // `segreti_push()`. Impostarli è un'operazione da SQL Editor: niente
@@ -58,8 +61,20 @@ const formatData = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString(
 
 const nomeBreve = (p?: { nome: string; cognome_iniziale: string }) => (p ? `${p.nome} ${p.cognome_iniziale}.` : 'Un collega');
 
+/** Oggi a Roma, come `YYYY-MM-DD`: il server gira in UTC, e dopo mezzanotte italiana il giorno cambia. */
+const oggiARoma = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+
+/** "oggi", "domani", "dopodomani", altrimenti la data per esteso. */
+function quando(giorno: string): string {
+  const differenza = Math.round((Date.parse(`${giorno}T12:00:00Z`) - Date.parse(`${oggiARoma()}T12:00:00Z`)) / 86400000);
+  if (differenza === 0) return 'oggi';
+  if (differenza === 1) return 'domani';
+  if (differenza === 2) return 'dopodomani';
+  return formatData(giorno);
+}
+
 type Proposta = {
-  id: string; da_user_id: string; a_user_id: string; stato: string;
+  id: string; richiesta_id?: string; da_user_id: string; a_user_id: string; stato: string;
   turno_data: string; motivo_rifiuto?: string | null;
 };
 
@@ -67,8 +82,22 @@ type Proposta = {
  * Chi avvisare e con che parole. Nessuno se chi ha fatto la modifica è
  * proprio la persona da avvisare: la tua azione non ti deve suonare il telefono.
  */
-function messaggio(type: string, record: Proposta, old: Proposta | null, autore: string | null, nomi: Record<string, string>) {
+function messaggio(
+  type: string, record: Proposta, old: Proposta | null, autore: string | null,
+  nomi: Record<string, string>, extra: { destinatario?: string; giorno?: string; altraScelta?: boolean } = {},
+) {
   const giorno = formatData(record.turno_data);
+  if (type === 'PROMEMORIA') {
+    // Il promemoria è scritto per chi lo riceve: ciascuno legge il nome dell'altro.
+    const io = extra.destinatario;
+    if (!io || !extra.giorno || ![record.da_user_id, record.a_user_id].includes(io)) return null;
+    const altro = io === record.da_user_id ? record.a_user_id : record.da_user_id;
+    return {
+      a: io,
+      title: 'Hai inserito il cambio?',
+      body: `Scambio con ${nomi[altro]} ${quando(extra.giorno)} (${formatData(extra.giorno)}): l'hai già inserito nell'app ufficiale?`,
+    };
+  }
   if (type === 'INSERT') {
     if (autore === record.a_user_id) return null;
     return {
@@ -91,12 +120,18 @@ function messaggio(type: string, record: Proposta, old: Proposta | null, autore:
     // può dire chi è stato.
     const dallaPersona = autore === record.a_user_id;
     const motivo = dallaPersona && record.motivo_rifiuto ? ` "${record.motivo_rifiuto}"` : '';
+    // Quando la richiesta ha trovato un accordo con un altro, le proposte
+    // rimaste decadono dallo stesso telefono e con la stessa firma di un
+    // rifiuto: dire "ha rifiutato" a chi è solo arrivato secondo sarebbe un
+    // modo sgarbato di dargli una notizia che non è questa.
     return {
       a: record.da_user_id,
-      title: 'Proposta rifiutata',
-      body: dallaPersona
-        ? `${nomi[record.a_user_id]} ha rifiutato lo scambio del ${giorno}.${motivo}`
-        : `La tua proposta per il turno di ${giorno} non è più valida.`,
+      title: extra.altraScelta ? 'Proposta non scelta' : 'Proposta rifiutata',
+      body: extra.altraScelta
+        ? `${nomi[record.a_user_id]} ha scelto un'altra proposta per il turno di ${giorno}.`
+        : dallaPersona
+          ? `${nomi[record.a_user_id]} ha rifiutato lo scambio del ${giorno}.${motivo}`
+          : `La tua proposta per il turno di ${giorno} non è più valida.`,
     };
   }
   return null;
@@ -111,7 +146,7 @@ Deno.serve(async (req) => {
   if (!s) return json({ errore: 'Segreti delle notifiche non configurati.' }, 500);
   if (req.headers.get('x-webhook-secret') !== s.push_webhook) return json({ errore: 'non autorizzato' }, 401);
 
-  const { type, record, old_record, autore } = await req.json();
+  const { type, record, old_record, autore, destinatario, giorno } = await req.json();
   if (!record?.da_user_id || !record?.a_user_id) return json({ inviate: 0, motivo: 'riga incompleta' });
 
   const profili = await leggi(
@@ -121,7 +156,11 @@ Deno.serve(async (req) => {
     [record.da_user_id, record.a_user_id].map((id) => [id, nomeBreve(profili.find((p: { id: string }) => p.id === id))]),
   );
 
-  const m = messaggio(type, record, old_record, autore || null, nomi);
+  const altraScelta = type === 'UPDATE' && record.stato === 'RIFIUTATA' && record.richiesta_id
+    ? (await leggi(`proposte?richiesta_id=eq.${record.richiesta_id}&stato=eq.ACCORDO&select=id`)).length > 0
+    : false;
+
+  const m = messaggio(type, record, old_record, autore || null, nomi, { destinatario, giorno, altraScelta });
   if (!m) return json({ inviate: 0, motivo: 'niente da notificare' });
   // Un profilo disattivato non è più nel negozio: niente notifiche.
   if (profili.find((p: { id: string; attivo: boolean }) => p.id === m.a)?.attivo === false) {

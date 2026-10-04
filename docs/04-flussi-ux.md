@@ -98,6 +98,38 @@ offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo. Dopo l'accordo la schermata dice una cosa sola: vai a farlo
 nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 
+### Dopo l'accordo
+
+**La richiesta diventa riservata.** Un accordo riguarda due persone: la
+vedono loro e gli admin, a tutti gli altri sparisce. Non solo dalla bacheca
+dell'app: dal server, così chi chiama l'API direttamente non la trova. Resta
+nascosta anche dopo "Cambio inserito". Le altre proposte arrivate sulla stessa
+richiesta decadono, e chi le aveva fatte riceve "Proposta non scelta", non
+"rifiutata": non gli ha detto di no nessuno, è arrivato secondo.
+
+**Il promemoria.** Un accordo finisce quando uno dei due inserisce il cambio
+nell'app ufficiale, e l'app non può farlo al posto loro. Due giorni prima del
+prossimo giorno coinvolto, a chi non ha ancora premuto "Cambio inserito" arriva
+una notifica: *"Scambio con Omar R. domani (lun 5 ott): l'hai già inserito
+nell'app ufficiale?"*, una volta sola e scritta per chi la riceve. Chi non ha le
+notifiche accese trova la stessa domanda (*«Domani: l'hai già inserito…?»*),
+con l'orologio, sulla riga in Home e nella scheda in Proposte. In uno scambio di giornate conta il prossimo giorno
+**ancora da venire**: ricordare quello già passato non serve a niente. I due
+giorni sono un'assunzione (`RULES.promemoriaAccordo`, e lo stesso numero in
+`promemoria_accordi()` sul server): non so quanto preavviso chieda il gestionale.
+
+**La chiusura da sola.** Passato l'ultimo giorno dello scambio (in uno scambio
+di giornate sono due, e conta il più lontano), la richiesta si chiude da sola e
+la proposta sparisce dalla posta di entrambi, anche se nessuno ha premuto
+"Cambio inserito". Prima restava lì per sempre. Conseguenza: da quel momento
+non si può più ringraziare dalla posta.
+
+**Le richieste scadute spariscono dal server.** Una richiesta ancora aperta
+il cui giorno è passato (o i cui giorni cercati sono tutti passati) viene
+cancellata ogni notte, con le proposte che ha dentro. Prima sul server restava
+"aperta" per sempre: la scadenza la calcolava solo il telefono. Gli admin
+perdono dalle statistiche le richieste mai concluse: è voluto.
+
 ## Dettagli che portano peso
 - In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
   ("cerca OFF Sab 12 · offre Lun 14 o Mer 16"). Orari, note, stato e

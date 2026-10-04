@@ -358,3 +358,18 @@ export function cardOpportunita({ richiesta, match }) {
       </button>
     </article>`;
 }
+
+/**
+ * La domanda del promemoria, con l'orologio accanto.
+ *
+ * Sta in un posto solo perché la usano due schermate (Home e Proposte), e la
+ * stessa domanda scritta in due modi diversi sembrerebbe due cose diverse.
+ */
+export function testoPromemoria(promemoria) {
+  if (!promemoria) return '';
+  return html`
+    <p class="promemoria">
+      <span class="icona-in-riga">${raw(icona('orario', { px: 16 }))}</span>
+      ${promemoria.quando.charAt(0).toUpperCase() + promemoria.quando.slice(1)}: l'hai già inserito nell'app ufficiale?
+    </p>`;
+}

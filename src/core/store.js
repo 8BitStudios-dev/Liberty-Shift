@@ -6,7 +6,7 @@ import { RULES, PREFERENZE, STATUS } from './rules.js';
 import { newId, isExpired, hasPriority, isOpen, usaRotazione } from './model.js';
 import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
 import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
-import { monthKey, todayISO } from './time.js';
+import { monthKey, todayISO, addDays, formatDay } from './time.js';
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
@@ -242,6 +242,28 @@ export const store = {
     return this.state.proposals.filter(
       (p) => (p.daUserId === me || p.aUserId === me) && p.status !== 'RIFIUTATA' && !p.cambioInserito,
     );
+  },
+  /**
+   * Il promemoria di uno scambio concordato ma non ancora inserito.
+   *
+   * Conta il prossimo giorno **ancora da venire**, non il primo in assoluto:
+   * in uno scambio di giornate una può essere già passata, e ricordare
+   * qualcosa di già successo non serve a niente. Torna `null` quando non c'è
+   * niente da ricordare (non è un accordo, già inserito, giorno lontano).
+   *
+   * Vale per chi non ha le notifiche accese, o le ha perse: la stessa
+   * domanda, nello stesso momento, in Home e in Proposte.
+   */
+  promemoriaAccordo(p, oggi = todayISO()) {
+    if (p.status !== 'ACCORDO' || p.cambioInserito) return null;
+    const r = this.request(p.requestId);
+    const giorno = [this.shift(r?.cedo?.shiftId)?.data, this.shift(p.shiftOffertoId)?.data]
+      .filter((d) => d && d >= oggi)
+      .sort()[0];
+    if (!giorno) return null;
+    const giorniMancanti = [0, 1, 2, 3, 4, 5, 6].find((n) => addDays(oggi, n) === giorno);
+    if (giorniMancanti === undefined || giorniMancanti > RULES.promemoriaAccordo.giorniPrima) return null;
+    return { giorno, quando: ['oggi', 'domani', 'dopodomani'][giorniMancanti] ?? formatDay(giorno) };
   },
   creditoPriorita(userId = this.state.currentUserId) {
     const u = this.user(userId);

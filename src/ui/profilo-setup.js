@@ -30,6 +30,7 @@ export const bozzaProfilo = {
   accedi: false,
   avvisoOmonimo: false,
   omonimoConfermato: false,
+  controllando: false,
   errori: [],
 };
 
@@ -83,6 +84,7 @@ export function apriProfilo({ modifica = false } = {}) {
     accedi: false,
     avvisoOmonimo: false,
     omonimoConfermato: false,
+    controllando: false,
     modifica,
     errori: [],
   });

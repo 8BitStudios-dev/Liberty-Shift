@@ -158,6 +158,16 @@ export const RULES = {
   // quando il resto del match è forte — è l'utente a decidere, non il
   // motore al posto suo.
   evitaPenalty: 30,
+
+  /**
+   * Da quanti giorni prima l'app ricorda di inserire un cambio concordato.
+   *
+   * **Assunzione**: due giorni. Non so quanto preavviso chieda il gestionale
+   * ufficiale. Lo stesso numero sta anche sul server, in
+   * `promemoria_accordi()` di supabase/schema.sql, dove decide quando parte
+   * la notifica: se cambia qui, cambia anche lì.
+   */
+  promemoriaAccordo: { giorniPrima: 2 },
 };
 
 /**

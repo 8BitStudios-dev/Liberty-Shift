@@ -338,6 +338,10 @@ const AZIONI = {
   },
   'profilo-avanti': async () => {
     const b = P.bozzaProfilo;
+    // Il controllo sull'omonimo aspetta il server: un secondo tocco mentre
+    // l'attesa è in corso farebbe avanzare di due passi, e salterebbe una
+    // domanda senza che chi tocca se ne accorga.
+    if (b.controllando) return;
     // Si controlla un passo per volta: un errore sul contratto mentre stai
     // scrivendo il nome è solo rumore. Quale sia il passo lo sa il modulo che
     // li mette in fila, non questa riga.
@@ -353,7 +357,8 @@ const AZIONI = {
     // prima di far compilare il resto. Un omonimo vero può proseguire.
     if (P.passi()[b.passo - 1]?.name === 'passoChiSei' && !b.modifica && serverConfigurato()
       && !b.omonimoConfermato) {
-      const { candidati } = await candidatiAccesso(b.nome, b.cognome);
+      b.controllando = true;
+      const { candidati } = await candidatiAccesso(b.nome, b.cognome).finally(() => { b.controllando = false; });
       if (candidati.length) { b.avvisoOmonimo = true; return render(); }
     }
     b.avvisoOmonimo = false;

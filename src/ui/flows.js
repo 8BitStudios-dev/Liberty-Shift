@@ -13,7 +13,7 @@ import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
-  chipsOrariTipici,
+  chipsOrariTipici, testoPromemoria,
 } from './components.js';
 
 export const draft = {
@@ -662,6 +662,7 @@ function vocebox(v) {
         <div class="accordo">
           <strong>🟢 Scambio concordato</strong>
           <p>Ora fate il cambio nell'app ufficiale dei turni.</p>
+          ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
           <div class="barra-azioni">
             <button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">💛 Ringrazia ${altro.nome}</button>
             <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
@@ -672,6 +673,7 @@ function vocebox(v) {
           <div class="accordo">
             <strong>🟢 Scambio concordato</strong>
             <p>Hai già ringraziato. Quando avete fatto il cambio nell'app ufficiale, chiudi la richiesta.</p>
+            ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             <button class="btn secondario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
           </div>`
         : html`<p class="testo-tenue">In attesa che ${altro.nome} risponda (${p.accettataDa.length}/2).</p>`;
