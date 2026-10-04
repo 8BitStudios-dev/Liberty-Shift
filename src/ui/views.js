@@ -306,7 +306,7 @@ export function profilo() {
 
     <section class="sezione">
       <h2>Priorità</h2>
-      <p>${credito} di ${RULES.priority.creditsPerMonth} disponibile per ${monthKey(todayISO())}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
+      <p>${credito} di ${RULES.priority.creditsPerMonth} disponibile per ${MESI[Number(monthKey(todayISO()).slice(5)) - 1].toLowerCase()}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
     </section>
 
     <button class="riga-impostazioni" data-act="vai" data-to="#/impostazioni">
