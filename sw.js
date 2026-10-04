@@ -6,7 +6,7 @@
 // una cache-first pura, pubblicare una correzione non sarebbe servito a niente
 // finché qualcuno non svuotava il browser — e nessuno lo fa.
 
-const CACHE = 'liberty-shift-v9';
+const CACHE = 'liberty-shift-v10';
 
 const ASSET = [
   './',
@@ -17,6 +17,7 @@ const ASSET = [
   './src/core/time.js',
   './src/core/model.js',
   './src/core/engine.js',
+  './src/core/compatibili.js',
   './src/core/ics.js',
   './src/core/config.js',
   './src/core/supabase.js',

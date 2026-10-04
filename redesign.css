@@ -435,3 +435,8 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 }
 .promemoria .icona-in-riga { margin-top: 2px; flex: none; }
 .accordo .promemoria { margin: 8px 0 12px; }
+
+/* Le due scelte sulle notifiche: due righe con la spiegazione sotto, e il
+   cerchietto allineato al titolo e non alla riga intera. */
+.switch input[type="radio"] { align-self: flex-start; margin-top: 3px; flex: none; }
+.riquadro .avviso-box { margin: 10px 0 14px; font-size: 14px; }

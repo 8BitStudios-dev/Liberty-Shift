@@ -111,9 +111,16 @@ function render() {
 
   // Finché il profilo non c'è, non si va da nessuna parte: senza sapere chi
   // sei, l'app non ha un nome da mettere su una richiesta.
-  if (store.profiloDaCompletare(VERSIONE_NOTE) && percorso !== 'setup') {
+  if (store.profiloDaCompletare() && percorso !== 'setup') {
     P.apriProfilo({ modifica: false });
     location.hash = '#/setup';
+    return;
+  }
+
+  // Note cambiate: una presa visione, non l'iscrizione da capo.
+  if (store.noteDaRiaccettare(VERSIONE_NOTE)) {
+    app.innerHTML = P.schermataNuoveNote();
+    tabbar.hidden = true;
     return;
   }
 
@@ -169,7 +176,7 @@ function render() {
   // saltare altrove senza tornare indietro passo per passo. L'unico caso in
   // cui non hanno senso è la primissima apertura, prima che un profilo
   // esista: non c'è ancora niente su cui atterrare.
-  tabbar.hidden = store.profiloDaCompletare(VERSIONE_NOTE);
+  tabbar.hidden = store.profiloDaCompletare();
 }
 
 /**
@@ -472,6 +479,38 @@ const AZIONI = {
     toast(`Bentornato ${store.me.nome}`);
     vai('#/home');
     sincronizzaSilenziosa();
+  },
+
+  'note-riaccetta': () => {
+    if (!P.bozzaProfilo.accettazioni.every(Boolean)) return;
+    store.riaccettaNote(VERSIONE_NOTE);
+    P.apriProfilo({ modifica: false });
+    toast('Grazie');
+    render();
+  },
+
+  // Cosa ricevere. Tornare a "solo dirette" è immediato: i turni sul server
+  // vengono cancellati. Passare a "compatibili" non lo è: i turni lasciano il
+  // telefono, e prima si dice cosa esce, dove va e chi lo legge. Finché non si
+  // acconsente la scelta resta com'era.
+  'modo-notifiche': (e, el) => {
+    if (el.value === 'dirette') {
+      const { errori } = store.impostaModoNotifiche('dirette');
+      toast(errori ? errori[0] : 'Solo le proposte dirette: i tuoi turni sono stati tolti dal server');
+      return render();
+    }
+    render();
+    sheet('Avvisami anche per le richieste compatibili', V.consensoCompatibili(), {
+      azioni: '<button class="btn primario largo" data-act="consenso-compatibili">Acconsento e attiva</button>'
+        + '<button class="btn secondario largo" data-chiudi>Resta com\'è</button>',
+    });
+  },
+
+  'consenso-compatibili': (_, el) => {
+    el.closest('.sheet-backdrop').querySelector('[data-chiudi]').click();
+    const { errori } = store.impostaModoNotifiche('compatibili');
+    toast(errori ? errori[0] : 'Fatto: ti avviso anche per le richieste compatibili');
+    render();
   },
 
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },

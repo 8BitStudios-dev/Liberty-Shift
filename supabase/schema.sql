@@ -484,10 +484,13 @@ create policy "si ringrazia a proprio nome"
 --     questo passo restavano "aperte" per sempre. La regola è quella di
 --     `isExpired` in src/core/model.js: il giorno ceduto è passato, oppure
 --     sono passati tutti i giorni che si cercavano.
---  2. chiude da sola la richiesta con accordo il cui ultimo giorno è passato.
---     In uno scambio di giornate sono due, e conta il più lontano. Se nessuno
---     preme "Cambio inserito" non resta in sospeso per sempre; la proposta
---     passa a "cambio inserito" così da sparire dalla posta di entrambi.
+--  2. chiude da sola la richiesta con accordo il cui ultimo giorno è passato
+--     da più di un giorno. In uno scambio di giornate sono due, e conta il più
+--     lontano. Il giorno di margine serve a ringraziare: chi ha fatto lo
+--     scambio lo ringrazia il giorno dopo, e chiudere a mezzanotte glielo
+--     toglieva. Se nessuno preme "Cambio inserito" non resta in sospeso per
+--     sempre; la proposta passa a "cambio inserito" così da sparire dalla
+--     posta di entrambi.
 --  3. toglie le richieste chiuse o rimosse da più di 90 giorni e le
 --     disponibilità di settimane passate da più di 60.
 --
@@ -520,7 +523,7 @@ begin
       q.cedo_data,
       coalesce((select max(p.turno_data) from public.proposte p
                 where p.richiesta_id = q.id and p.stato = 'ACCORDO'), q.cedo_data)
-    ) < oggi;
+    ) < oggi - 1;
 
   update public.richieste set stato = 'CHIUSA', chiusa_il = now() where id = any(chiuse);
   update public.proposte set cambio_inserito = true
@@ -757,3 +760,87 @@ revoke all on function public.promemoria_accordi() from public, anon, authentica
 
 -- Ogni mattina alle 08:00 UTC, cioè le 9 o le 10 a Roma.
 select cron.schedule('promemoria-accordi', '0 8 * * *', $$ select public.promemoria_accordi(); $$);
+
+-- ================================== notifiche sulle richieste compatibili
+--
+-- Di base le notifiche arrivano solo per le proposte dirette (vedi
+-- `notifica_proposta`). Chi lo sceglie può ricevere anche un avviso quando un
+-- collega pubblica una richiesta che **il suo calendario** può risolvere: è la
+-- stessa domanda di "Aiuta un collega", ma risolta sul server perché il
+-- telefono, ad app chiusa, non può rispondere.
+--
+-- Per questo, e solo per chi lo accende, i turni escono dal telefono. È
+-- l'unica eccezione alla promessa delle note d'uso ("i tuoi turni restano su
+-- questo dispositivo"), ed è per questo che:
+--
+--  · si accende solo con un consenso scritto, e `consenso_il` lo registra: il
+--    vincolo sotto rifiuta `compatibili` senza consenso;
+--  · la tabella la legge solo il proprietario della riga e la funzione
+--    `send-push` (service_role). Né i colleghi né gli admin: nessuna policy di
+--    lettura per loro, e non va aggiunta;
+--  · tornando a "solo proposte dirette" la riga si svuota, non si ferma:
+--    `turni` e `preferenze` tornano vuoti;
+--  · escono solo i prossimi 28 giorni, non il calendario intero, e solo
+--    data, tipo e orari: niente note, niente ferie scritte per esteso.
+--
+-- Escono anche le preferenze di turno: senza, le notifiche ignorerebbero il
+-- motivo per cui uno le ha personalizzate (chi evita le chiusure non vuole un
+-- avviso per ogni cambio di chiusura).
+create table if not exists public.notifiche_preferenze (
+  user_id        uuid primary key references public.profili(id) on delete cascade,
+  modo           text not null default 'dirette' check (modo in ('dirette', 'compatibili')),
+  turni          jsonb not null default '[]'::jsonb
+                   check (jsonb_typeof(turni) = 'array' and jsonb_array_length(turni) <= 60),
+  preferenze     jsonb not null default '{}'::jsonb check (jsonb_typeof(preferenze) = 'object'),
+  consenso_il    timestamptz,
+  aggiornato_il  timestamptz not null default now(),
+  constraint compatibili_solo_con_consenso check (modo = 'dirette' or consenso_il is not null)
+);
+
+alter table public.notifiche_preferenze enable row level security;
+
+drop policy if exists "ognuno gestisce le proprie preferenze di notifica" on public.notifiche_preferenze;
+create policy "ognuno gestisce le proprie preferenze di notifica"
+  on public.notifiche_preferenze for all to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+-- Quando nasce una richiesta, se qualcuno ha scelto di essere avvisato la
+-- funzione `send-push` la confronta con i calendari di chi l'ha scelto. Il
+-- controllo `exists` risparmia la chiamata finché nessuno l'ha acceso. Come per
+-- le proposte, un guasto qui non deve impedire di pubblicare.
+create or replace function public.notifica_richiesta() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  segreto text;
+begin
+  if new.stato <> 'APERTA' then
+    return new;
+  end if;
+  if not exists (select 1 from public.notifiche_preferenze where modo = 'compatibili') then
+    return new;
+  end if;
+
+  select decrypted_secret into segreto from vault.decrypted_secrets where name = 'push_webhook';
+  if segreto is null then
+    return new;
+  end if;
+
+  begin
+    perform net.http_post(
+      url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
+      body := jsonb_build_object('type', 'RICHIESTA', 'record', to_jsonb(new), 'autore', auth.uid()),
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+    );
+  exception when others then
+    raise warning 'notifica_richiesta: %', sqlerrm;
+  end;
+  return new;
+end $$;
+
+revoke all on function public.notifica_richiesta() from public, anon, authenticated;
+
+drop trigger if exists notifica_richiesta on public.richieste;
+create trigger notifica_richiesta
+  after insert on public.richieste
+  for each row execute function public.notifica_richiesta();

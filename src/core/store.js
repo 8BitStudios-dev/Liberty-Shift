@@ -15,7 +15,7 @@ import {
 import { parseICS } from './ics.js';
 import { daRiempire, rotazioneVuota } from './rotazione.js';
 import {
-  sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato,
+  sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche,
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
 } from './sincronia.js';
 
@@ -161,6 +161,9 @@ export const store = {
   /** Manda quello che c'è da mandare, poi riporta a bordo la bacheca. */
   async sincronizza() {
     if (!sulServer(this.state)) return { saltato: true };
+    // All'apertura la finestra dei 28 giorni può essere scivolata di un giorno
+    // anche se nessun turno è cambiato: va rimandata prima di tutto il resto.
+    condividiNotifiche(this.state);
     const esito = await sincronizzaStato(this.state);
     this.state.ultimoErroreServer = esito.errore || null;
     if (!esito.saltato) this.commit();
@@ -174,6 +177,10 @@ export const store = {
 
   commit() {
     this.scadenze();
+    // Chi ha acceso le notifiche sulle richieste compatibili ha il calendario
+    // anche sul server: ogni volta che cambia lo si rimanda, prima di salvare,
+    // così la firma dell'ultimo invio resta scritta insieme al resto.
+    if (condividiNotifiche(this.state)) this.spingi();
     salva(this.state);
     this.listeners.forEach((fn) => fn(this.state));
   },
@@ -919,6 +926,33 @@ export const store = {
   },
 
   /**
+   * Quali notifiche ricevere: solo le proposte dirette, o anche le richieste
+   * compatibili con i propri turni.
+   *
+   * La seconda richiede che i turni dei prossimi 28 giorni e le preferenze
+   * vadano al server, perché ad app chiusa il telefono non può fare il
+   * confronto. Per questo accenderla vuole un consenso (`consensoIl`, che il
+   * server registra e verifica) e spegnerla svuota quello che era stato
+   * mandato.
+   */
+  impostaModoNotifiche(modo) {
+    if (!sulServer(this.state)) return { errori: ['Per le notifiche serve essere iscritti al negozio.'] };
+    if (modo !== 'dirette' && modo !== 'compatibili') return { errori: ['Scelta non valida.'] };
+    const prima = this.state.profilo.notifiche;
+    this.state.profilo.notifiche = modo === 'compatibili'
+      ? { modo, consensoIl: new Date().toISOString(), firma: null }
+      : { modo, consensoIl: null, firma: null };
+    // Forzato: anche tornando a "dirette" la riga va riscritta, vuota.
+    condividiNotifiche(this.state, { forzato: true });
+    this.commit();
+    this.spingi();
+    return { ok: true, cambiato: prima?.modo !== modo };
+  },
+  modoNotifiche() {
+    return this.state.profilo?.notifiche?.modo || 'dirette';
+  },
+
+  /**
    * Il profilo della persona che usa l'app.
    *
    * Non crea un utente nuovo: riscrive quello corrente, così i turni inseriti
@@ -954,6 +988,8 @@ export const store = {
       // costare il reinserimento dell'indirizzo dei turni.
       calendarioUrl: this.state.profilo?.calendarioUrl || null,
       calendarioAggiornatoIl: this.state.profilo?.calendarioAggiornatoIl || null,
+      // Quali notifiche ricevere: correggere il profilo non deve rimetterle a "solo dirette".
+      notifiche: this.state.profilo?.notifiche || null,
     };
     if (credenziali) apriSessione(credenziali);
     this.commit();
@@ -1002,10 +1038,27 @@ export const store = {
     return esito;
   },
 
-  /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */
-  profiloDaCompletare(versioneNote) {
+  /** Il profilo va fatto se non c'è. */
+  profiloDaCompletare() {
+    return !this.state.profilo?.completato;
+  },
+
+  /**
+   * Le note sono cambiate dall'ultima presa visione.
+   *
+   * Serve solo quella, non rifare il profilo: prima il cambio di versione
+   * rimandava all'intera iscrizione, che con un account sul server vuol dire
+   * riscrivere la password locale senza cambiare quella dell'account, e
+   * restare chiusi fuori.
+   */
+  noteDaRiaccettare(versioneNote) {
     const p = this.state.profilo;
-    return !p?.completato || p.versioneNote !== versioneNote;
+    return Boolean(p?.completato) && p.versioneNote !== versioneNote;
+  },
+  riaccettaNote(versioneNote) {
+    this.state.profilo.versioneNote = versioneNote;
+    this.state.profilo.noteAccettateIl = new Date().toISOString();
+    this.commit();
   },
 
   /**

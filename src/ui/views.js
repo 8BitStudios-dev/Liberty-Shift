@@ -466,7 +466,70 @@ export function impostazioni() {
           <span class="chevron">›</span>
         </button>` : '')}
       ${raw(rigaNotifiche())}
-    </section>`;
+    </section>
+    ${raw(rigaModoNotifiche())}`;
+}
+
+/**
+ * Quali richieste ti avvisano: solo le proposte dirette, o anche quelle
+ * compatibili con i tuoi turni.
+ *
+ * Compare solo a notifiche accese: scegliere cosa ricevere quando non se ne
+ * riceve nessuna sarebbe una domanda senza risposta. La seconda scelta è
+ * l'unica cosa dell'app che manda i turni al server, e per questo non si
+ * accende con un tocco: si apre un foglio che dice cosa esce e chi lo legge.
+ */
+export function rigaModoNotifiche(stato = statoNoto()) {
+  if (stato !== STATO.ATTIVE) return '';
+  const modo = store.modoNotifiche();
+  const opzione = (valore, titolo, testo) => html`
+    <label class="switch">
+      <input type="radio" name="modo-notifiche" data-act="modo-notifiche" value="${valore}"
+             ${raw(modo === valore ? 'checked' : '')}>
+      <span>
+        ${titolo}
+        <em class="aiuto">${testo}</em>
+      </span>
+    </label>`;
+  const turniQui = store.state.shifts.some((s) => s.userId === store.state.currentUserId && s.data >= todayISO());
+  return html`
+    <details class="riquadro" data-riquadro="modo-notifiche" ${raw(riquadriAperti.has('modo-notifiche') ? 'open' : '')}>
+      <summary>
+        <span>Quali richieste ti avvisano</span>
+        <span class="conteggio">${modo === 'compatibili' ? 'anche le compatibili' : 'solo le dirette'}</span>
+      </summary>
+      ${raw(opzione('dirette', 'Solo le proposte dirette', 'Ti avviso quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
+      ${raw(opzione('compatibili', 'Anche le richieste compatibili con i miei turni', 'Quando un collega pubblica una richiesta che il tuo calendario può risolvere. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server.'))}
+      ${raw(modo === 'compatibili' && !turniQui
+    ? '<p class="avviso-box">Nel calendario di questo dispositivo non ci sono turni futuri: importali dal Profilo, altrimenti non ti arriva niente.</p>'
+    : '')}
+    </details>`;
+}
+
+/**
+ * Il foglio del consenso. Dice cosa esce dal telefono, dove va e chi lo legge,
+ * con le stesse parole che finiscono nelle note d'uso: chi accetta deve poter
+ * ritrovare qui quello che ha letto lì.
+ */
+export function consensoCompatibili() {
+  return html`
+    <p>
+      Quando un collega pubblica una richiesta che il tuo calendario può
+      risolvere, ti mando una notifica. Altrimenti resti con le sole proposte
+      dirette.
+    </p>
+    <p>
+      Ad app chiusa il telefono non può confrontare niente, quindi il
+      confronto lo fa il server. Per questo l'app gli manda
+      <strong>i tuoi turni dei prossimi ${RULES.notifiche.giorniCondivisi} giorni</strong>
+      (data, tipo e orari) <strong>e le tue preferenze di turno</strong>.
+    </p>
+    <ul class="elenco">
+      <li>Li legge solo il server, per questo confronto.</li>
+      <li><strong>Non li vedono i colleghi, e nemmeno gli admin.</strong></li>
+      <li>Si aggiornano ogni volta che apri l'app.</li>
+      <li>Puoi tornare a «solo le proposte dirette» quando vuoi: sul server vengono cancellati subito.</li>
+    </ul>`;
 }
 
 /**

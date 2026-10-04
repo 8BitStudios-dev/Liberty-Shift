@@ -146,6 +146,36 @@ export function schermataProfilo() {
 }
 
 /**
+ * Le note sono cambiate: serve la presa visione, non rifare il profilo.
+ *
+ * Mostra le stesse tre voci della prima apertura, perché è su una di quelle
+ * che è cambiato il senso, e dice cosa è cambiato prima di chiedere di
+ * spuntarle.
+ */
+export function schermataNuoveNote() {
+  const b = bozzaProfilo;
+  const tutte = b.accettazioni.every(Boolean);
+  return html`
+    ${raw(insegna(1))}
+    <header class="testata"><h1>Le note sono cambiate</h1></header>
+    <p>
+      Da questa versione chi lo sceglie può ricevere un avviso anche per le
+      richieste compatibili con i propri turni. Per farlo, <strong>solo in quel
+      caso</strong>, i turni dei prossimi ${RULES.notifiche.giorniCondivisi} giorni vanno al server.
+    </p>
+    <p class="testo-tenue">
+      Non cambia niente finché non lo scegli tu, in Impostazioni. Ma le note lo
+      dicono, e per questo vanno rilette.
+    </p>
+    ${raw(accettazioneNote(b.accettazioni))}
+    <details class="riquadro">
+      <summary><span>Note complete</span><span class="conteggio">testo integrale</span></summary>
+      ${raw(noteLegali({ compatte: false }))}
+    </details>
+    <button class="btn primario largo" data-act="note-riaccetta" ${raw(tutte ? '' : 'disabled')}>Continua</button>`;
+}
+
+/**
  * Il marchio durante la creazione del profilo.
  *
  * Al primo passo è un'insegna vera, col nome e il motto: è la prima cosa che

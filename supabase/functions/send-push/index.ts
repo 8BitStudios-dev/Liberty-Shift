@@ -5,6 +5,11 @@
 // qui la riga. Con lo stesso percorso arriva il promemoria di un accordo
 // ancora da inserire (`promemoria_accordi`, ogni mattina).
 //
+// Il terzo percorso è la richiesta nuova: chi ha scelto di essere avvisato per
+// le richieste compatibili ha mandato il proprio calendario, e qui il motore
+// dell'app (la copia in `core/`, vedi scripts/prepara-funzioni.js) lo confronta
+// con la richiesta appena pubblicata.
+//
 // Si pubblica senza verifica del JWT: a proteggerla è il segreto
 // nell'intestazione `x-webhook-secret`, che conoscono solo il database e
 // questa funzione.
@@ -14,6 +19,8 @@
 // variabili d'ambiente da ricordare in dashboard, niente segreti nel codice.
 
 import webpush from 'npm:web-push@3.6.7';
+import { candidatiCompatibili } from './core/compatibili.js';
+import { RULES } from './core/rules.js';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -137,40 +144,15 @@ function messaggio(
   return null;
 }
 
-const json = (corpo: unknown, stato = 200) => new Response(JSON.stringify(corpo), {
-  status: stato, headers: { 'Content-Type': 'application/json' },
-});
-
-Deno.serve(async (req) => {
-  const s = await caricaSegreti();
-  if (!s) return json({ errore: 'Segreti delle notifiche non configurati.' }, 500);
-  if (req.headers.get('x-webhook-secret') !== s.push_webhook) return json({ errore: 'non autorizzato' }, 401);
-
-  const { type, record, old_record, autore, destinatario, giorno } = await req.json();
-  if (!record?.da_user_id || !record?.a_user_id) return json({ inviate: 0, motivo: 'riga incompleta' });
-
-  const profili = await leggi(
-    `profili?id=in.(${record.da_user_id},${record.a_user_id})&select=id,nome,cognome_iniziale,attivo`,
-  );
-  const nomi: Record<string, string> = Object.fromEntries(
-    [record.da_user_id, record.a_user_id].map((id) => [id, nomeBreve(profili.find((p: { id: string }) => p.id === id))]),
-  );
-
-  const altraScelta = type === 'UPDATE' && record.stato === 'RIFIUTATA' && record.richiesta_id
-    ? (await leggi(`proposte?richiesta_id=eq.${record.richiesta_id}&stato=eq.ACCORDO&select=id`)).length > 0
-    : false;
-
-  const m = messaggio(type, record, old_record, autore || null, nomi, { destinatario, giorno, altraScelta });
-  if (!m) return json({ inviate: 0, motivo: 'niente da notificare' });
-  // Un profilo disattivato non è più nel negozio: niente notifiche.
-  if (profili.find((p: { id: string; attivo: boolean }) => p.id === m.a)?.attivo === false) {
-    return json({ inviate: 0, motivo: 'destinatario disattivato' });
-  }
-
-  const dispositivi = await leggi(`push_subscriptions?user_id=eq.${m.a}&select=id,subscription`);
-  // L'indirizzo è relativo: il service worker lo risolve sul proprio scope,
-  // così funziona uguale sul sito e in locale.
-  const payload = JSON.stringify({ title: m.title, body: m.body, url: '#/inbox' });
+/**
+ * Manda una notifica a tutti i dispositivi di una persona.
+ *
+ * L'indirizzo è relativo: il service worker lo risolve sul proprio scope,
+ * così funziona uguale sul sito e in locale.
+ */
+async function invia(utente: string, notifica: { title: string; body: string; url: string }) {
+  const dispositivi = await leggi(`push_subscriptions?user_id=eq.${utente}&select=id,subscription`);
+  const payload = JSON.stringify(notifica);
 
   let inviate = 0;
   let rimosse = 0;
@@ -195,5 +177,107 @@ Deno.serve(async (req) => {
   }));
 
   if (errori.length) console.error('send-push', errori);
-  return json({ inviate, rimosse, errori });
+  return { inviate, rimosse, errori };
+}
+
+type RigaRichiesta = {
+  id: string; autore_id: string; tipo: string; stato: string;
+  cedo_data: string; cedo_start: string | null; cedo_end: string | null;
+  cerco_giorni: string[]; cerco: Record<string, unknown>;
+};
+
+/**
+ * Una richiesta appena pubblicata: chi, fra quelli che hanno scelto di essere
+ * avvisati, ha un calendario compatibile.
+ *
+ * Il calendario lo ha mandato chi ha acceso l'opzione (tabella
+ * `notifiche_preferenze`, leggibile solo da qui). Se non lo apre da più di due
+ * settimane non gli si crede più: un avviso su un turno che forse non c'è più
+ * è peggio di nessun avviso.
+ */
+async function avvisaCompatibili(riga: RigaRichiesta) {
+  const oggi = oggiARoma();
+  const limite = new Date(Date.now() - RULES.notifiche.giorniFreschezza * 86400000).toISOString();
+
+  const scelte = await leggi(
+    `notifiche_preferenze?modo=eq.compatibili&user_id=neq.${riga.autore_id}&aggiornato_il=gte.${limite}&select=user_id,turni,preferenze`,
+  );
+  if (!scelte.length) return { notificati: [], motivo: 'nessuno ha scelto le richieste compatibili' };
+
+  const ids = [riga.autore_id, ...scelte.map((s: { user_id: string }) => s.user_id)];
+  const elenco = ids.join(',');
+  const profili = await leggi(
+    `profili?id=in.(${elenco})&select=id,nome,cognome_iniziale,contratto,ore_settimanali,genere,attivo`,
+  );
+  const autore = profili.find((p: { id: string }) => p.id === riga.autore_id);
+  if (!autore) return { notificati: [], motivo: 'autore non trovato' };
+
+  const righeDisponibilita = await leggi(`disponibilita?user_id=in.(${elenco})&select=user_id,settimana,giorni`);
+  const disponibilita: Record<string, Record<string, boolean[]>> = {};
+  for (const d of righeDisponibilita) (disponibilita[d.user_id] ||= {})[d.settimana] = d.giorni;
+
+  const candidati = scelte
+    .map((s: { user_id: string; turni: unknown[]; preferenze: Record<string, boolean> }) => ({
+      profilo: profili.find((p: { id: string }) => p.id === s.user_id),
+      turni: s.turni,
+      preferenze: s.preferenze,
+      disponibilita: disponibilita[s.user_id] || {},
+    }))
+    // Un profilo disattivato non è più nel negozio: niente notifiche.
+    .filter((c: { profilo?: { attivo: boolean } }) => c.profilo && c.profilo.attivo !== false);
+
+  const trovati = candidatiCompatibili({ riga, autore, candidati, oggi });
+  const nomeAutore = nomeBreve(autore);
+  const notificati: string[] = [];
+  let inviate = 0;
+
+  for (const t of trovati) {
+    // Cambio orario: il tuo turno quel giorno. Cambio OFF: il giorno che
+    // l'autore vuole libero lo lavoreresti tu, e lui lavorerebbe il tuo.
+    const body = riga.tipo === 'OFF'
+      ? `${nomeAutore} vuole libero ${formatData(riga.cedo_data)} e in cambio lavorerebbe ${formatData(t.giorno)}. Quel giorno tu non lavori: potete scambiarvi le due giornate.`
+      : `${nomeAutore} cerca un cambio orario per ${formatData(riga.cedo_data)}: il tuo turno dalle ${t.turno?.start} alle ${t.turno?.end} potrebbe andare bene.`;
+    const esito = await invia(t.userId, { title: 'Richiesta compatibile con i tuoi turni', body, url: '#/aiuta' });
+    if (esito.inviate || esito.rimosse) notificati.push(t.userId);
+    inviate += esito.inviate;
+  }
+  return { notificati, inviate, confrontati: candidati.length };
+}
+
+const json = (corpo: unknown, stato = 200) => new Response(JSON.stringify(corpo), {
+  status: stato, headers: { 'Content-Type': 'application/json' },
+});
+
+Deno.serve(async (req) => {
+  const s = await caricaSegreti();
+  if (!s) return json({ errore: 'Segreti delle notifiche non configurati.' }, 500);
+  if (req.headers.get('x-webhook-secret') !== s.push_webhook) return json({ errore: 'non autorizzato' }, 401);
+
+  const { type, record, old_record, autore, destinatario, giorno } = await req.json();
+  if (type === 'RICHIESTA') {
+    if (!record?.autore_id || !record?.cedo_data) return json({ notificati: [], motivo: 'riga incompleta' });
+    return json(await avvisaCompatibili(record));
+  }
+  if (!record?.da_user_id || !record?.a_user_id) return json({ inviate: 0, motivo: 'riga incompleta' });
+
+  const profili = await leggi(
+    `profili?id=in.(${record.da_user_id},${record.a_user_id})&select=id,nome,cognome_iniziale,attivo`,
+  );
+  const nomi: Record<string, string> = Object.fromEntries(
+    [record.da_user_id, record.a_user_id].map((id) => [id, nomeBreve(profili.find((p: { id: string }) => p.id === id))]),
+  );
+
+  const altraScelta = type === 'UPDATE' && record.stato === 'RIFIUTATA' && record.richiesta_id
+    ? (await leggi(`proposte?richiesta_id=eq.${record.richiesta_id}&stato=eq.ACCORDO&select=id`)).length > 0
+    : false;
+
+  const m = messaggio(type, record, old_record, autore || null, nomi, { destinatario, giorno, altraScelta });
+  if (!m) return json({ inviate: 0, motivo: 'niente da notificare' });
+  // Un profilo disattivato non è più nel negozio: niente notifiche.
+  if (profili.find((p: { id: string; attivo: boolean }) => p.id === m.a)?.attivo === false) {
+    return json({ inviate: 0, motivo: 'destinatario disattivato' });
+  }
+
+  const esito = await invia(m.a, { title: m.title, body: m.body, url: '#/inbox' });
+  return json(esito);
 });

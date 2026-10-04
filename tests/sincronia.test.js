@@ -293,3 +293,32 @@ test('le disponibilità dei colleghi si attaccano alla persona giusta', async ()
   const anna = state.users.find((u) => u.id === 'u-anna');
   assert.deepEqual(anna.disponibilita['2026-10-03'], [true, false, true, true, false, false, true]);
 });
+
+test('la scelta sulle notifiche scende dal server, e una scelta ancora in coda vince', async () => {
+  // Su un dispositivo nuovo è da lì che si scopre. Ma una scelta fatta qui e
+  // non ancora arrivata non va riscritta con la versione vecchia: la annullerebbe.
+  const state = statoIscritto();
+  serverFinto({
+    profili: { righe: PROFILI }, richieste: {}, proposte: {}, ringraziamenti: {}, disponibilita: {},
+    notifiche_preferenze: { righe: [{ user_id: 'io-sul-server', modo: 'compatibili', consenso_il: '2026-10-04T08:00:00Z' }] },
+  });
+
+  await scarica(state);
+  assert.equal(state.profilo.notifiche.modo, 'compatibili');
+  assert.equal(state.profilo.notifiche.consensoIl, '2026-10-04T08:00:00Z');
+
+  state.profilo.notifiche = { modo: 'dirette', consensoIl: null };
+  accoda(state, 'notifiche.salva', { user_id: 'io-sul-server', modo: 'dirette', turni: [], preferenze: {}, consenso_il: null });
+  await scarica(state);
+  assert.equal(state.profilo.notifiche.modo, 'dirette', 'la scelta in coda non viene sovrascritta');
+});
+
+test('il calendario condiviso sale con l\'upsert sul suo vincolo, non sulla chiave primaria', async () => {
+  const state = statoIscritto();
+  const scritture = serverFinto({ notifiche_preferenze: {} });
+  accoda(state, 'notifiche.salva', { user_id: 'io-sul-server', modo: 'dirette', turni: [], preferenze: {}, consenso_il: null });
+  await svuotaCoda(state);
+  const s = scritture.find((x) => x.percorso.includes('notifiche_preferenze'));
+  assert.ok(s, 'la riga è partita');
+  assert.match(s.percorso, /on_conflict=user_id/);
+});

@@ -231,8 +231,9 @@ server: `pulizia_periodica()`, pianificata ogni notte alle 03:00 UTC con
 
 1. cancella le richieste ancora aperte ma scadute (il giorno ceduto è passato,
    o lo sono tutti i giorni cercati: la stessa regola di `isExpired`);
-2. chiude da sola le richieste con accordo il cui ultimo giorno è passato, e
-   segna la proposta come "cambio inserito" così sparisce dalla posta;
+2. chiude da sola le richieste con accordo il cui ultimo giorno è passato da
+   più di un giorno (il margine serve a ringraziare), e segna la proposta come
+   "cambio inserito" così sparisce dalla posta;
 3. toglie le richieste chiuse o rimosse da più di 90 giorni e le disponibilità
    di settimane passate da più di 60.
 
@@ -519,3 +520,19 @@ vero sull'interruttore va provato su un telefono.
 E prima di aprirlo ai colleghi, la domanda del capitolo 27, che con un server
 condiviso diventa più netta, non meno: vedi
 [`05-decisioni-aperte.md`](05-decisioni-aperte.md).
+
+## Notifiche sulle richieste compatibili
+
+Chi sceglie "richieste compatibili" (Profilo, notifiche) acconsente a mandare al
+server i turni dei prossimi 28 giorni (solo data, tipo e orari) e le preferenze.
+Stanno in `notifiche_preferenze`: la legge solo il proprietario e `service_role`,
+**mai admin né colleghi**. Tornando a "solo proposte dirette" la riga si svuota.
+
+Quando nasce una richiesta, il trigger `notifica_richiesta` chiama `send-push`
+con `type: RICHIESTA`; la funzione usa il motore vero (`core/`, copia generata
+da `npm run funzioni`) per decidere chi avvisare. Dopo ogni modifica a
+`src/core/` va rilanciato `npm run funzioni` e **ripubblicata la funzione**: i
+test verificano che le copie siano identiche, non che siano online.
+Limiti noti: il server non conosce le preferenze dell'autore, i suoi altri turni
+e le richieste altrui, quindi in casi al limite il telefono può rispondere
+diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi.

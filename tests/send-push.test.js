@@ -77,3 +77,18 @@ test('la propria azione non suona il proprio telefono', () => {
 test('nessuna notifica ha un trattino lungo: lo stile dell\'app non li usa', () => {
   assert.doesNotMatch(sorgente.slice(sorgente.indexOf('function messaggio'), sorgente.indexOf('const json =')), /[—–]/);
 });
+
+test('il motore dentro la funzione è identico a quello dell\'app', async () => {
+  // Una Edge Function si pubblica senza il resto del repository, quindi il
+  // motore le sta accanto in copia. Una copia che invecchia in silenzio
+  // manderebbe avvisi che l'app poi non conferma: `npm run funzioni` la
+  // rigenera, e questo test dice quando ci si è dimenticati.
+  const { MODULI_FUNZIONE, CARTELLA_FUNZIONE } = await import('../scripts/prepara-funzioni.js');
+  const diversi = [];
+  for (const nome of MODULI_FUNZIONE) {
+    const originale = await readFile(new URL(`../src/core/${nome}`, import.meta.url), 'utf8');
+    const copia = await readFile(new URL(`../${CARTELLA_FUNZIONE}/${nome}`, import.meta.url), 'utf8').catch(() => null);
+    if (originale !== copia) diversi.push(nome);
+  }
+  assert.deepEqual(diversi, [], `da rigenerare con npm run funzioni: ${diversi.join(', ')}`);
+});

@@ -8,7 +8,7 @@
 import { html, raw } from './dom.js';
 
 /** La versione del testo: cambiarla ripropone l'accettazione a tutti. */
-export const VERSIONE_NOTE = '2026-09-4';
+export const VERSIONE_NOTE = '2026-10-1';
 
 export function noteLegali({ compatte = false } = {}) {
   const esteso = (contenuto) => (compatte ? '' : contenuto);
@@ -65,6 +65,17 @@ export function noteLegali({ compatte = false } = {}) {
           </td>
         </tr>
       </table>
+
+      <p>
+        <strong>Un'eccezione, solo se la scegli.</strong> Puoi ricevere una
+        notifica anche per le richieste che il tuo calendario può risolvere,
+        non solo per le proposte che ti arrivano. Ad app chiusa il telefono non
+        può fare quel confronto, quindi in quel caso, e solo in quel caso,
+        l'app manda al server i tuoi turni dei prossimi 28 giorni (data, tipo e
+        orari) e le tue preferenze di turno. Li legge solo il server, per quel
+        confronto: non li vedono i colleghi e nemmeno gli admin. Tornando a
+        «solo le proposte dirette» vengono cancellati.
+      </p>
 
       <ul class="elenco piccolo">
         <li>Il server è Supabase, ad accesso protetto e criptato: si legge e si
@@ -127,7 +138,7 @@ const VOCI_ACCETTAZIONE = [
   { titolo: 'Non fa nessun cambio turno.', testo: 'Serve a mettersi d\'accordo; il cambio va poi inserito nel sistema ufficiale.' },
   {
     titolo: 'I tuoi turni restano su questo dispositivo.',
-    testo: 'Solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente.',
+    testo: 'Solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente. Fa eccezione, solo se lo scegli tu, l\'avviso sulle richieste compatibili: in quel caso i turni dei prossimi 28 giorni vanno al server, che li legge solo per quel confronto.',
   },
 ];
 

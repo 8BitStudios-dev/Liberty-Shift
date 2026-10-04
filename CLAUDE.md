@@ -93,3 +93,9 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 `docs/` tiene regolamento, motore di matching, data model, flussi UX,
 decisioni aperte e pubblicazione. Quando una regola cambia, cambia anche lì:
 la documentazione che mente è peggio di quella che manca.
+
+- **`supabase/functions/send-push/core/` è una copia di `src/core/`.** Si
+  rigenera con `npm run funzioni` e va ripubblicata la funzione, altrimenti il
+  server ragiona con regole vecchie. `notifiche_preferenze` non va mai aperta
+  in lettura ad admin o colleghi: contiene turni di persone che hanno
+  acconsentito solo a questo uso.

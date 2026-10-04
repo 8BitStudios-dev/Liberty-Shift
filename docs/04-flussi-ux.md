@@ -118,11 +118,12 @@ con l'orologio, sulla riga in Home e nella scheda in Proposte. In uno scambio di
 giorni sono un'assunzione (`RULES.promemoriaAccordo`, e lo stesso numero in
 `promemoria_accordi()` sul server): non so quanto preavviso chieda il gestionale.
 
-**La chiusura da sola.** Passato l'ultimo giorno dello scambio (in uno scambio
-di giornate sono due, e conta il più lontano), la richiesta si chiude da sola e
-la proposta sparisce dalla posta di entrambi, anche se nessuno ha premuto
-"Cambio inserito". Prima restava lì per sempre. Conseguenza: da quel momento
-non si può più ringraziare dalla posta.
+**La chiusura da sola.** Un giorno dopo l'ultimo giorno dello scambio (in uno
+scambio di giornate sono due, e conta il più lontano), la richiesta si chiude da
+sola e la proposta sparisce dalla posta di entrambi, anche se nessuno ha premuto
+"Cambio inserito". Prima restava lì per sempre. Il giorno di margine serve a
+ringraziare: chi ha fatto lo scambio lo ringrazia il giorno dopo, e chiudere a
+mezzanotte glielo avrebbe tolto.
 
 **Le richieste scadute spariscono dal server.** Una richiesta ancora aperta
 il cui giorno è passato (o i cui giorni cercati sono tutti passati) viene

@@ -14,6 +14,8 @@ import {
   seleziona, inserisci, aggiorna, salvaSuChiave, elimina, collegato,
 } from './supabase.js';
 import { serverConfigurato } from './config.js';
+import { todayISO } from './time.js';
+import { turniDaCondividere, preferenzeDaCondividere } from './compatibili.js';
 
 /** Le entità scese dal server, o nate qui per andarci. */
 export const DAL_SERVER = 'daServer';
@@ -212,11 +214,74 @@ const OPERAZIONI = {
   'proposta.aggiorna': (d) => aggiorna('proposte', { eq: { id: d.id } }, d.patch),
   'ringraziamento.crea': (d) => inserisci('ringraziamenti', d),
   'disponibilita.salva': (d) => salvaSuChiave('disponibilita', d),
+  'notifiche.salva': (d) => salvaSuChiave('notifiche_preferenze', d, 'user_id'),
 };
+
+/**
+ * Operazioni che sostituiscono la precedente invece di aggiungersi: del
+ * calendario condiviso conta solo l'ultima versione, e dieci giorni senza rete
+ * non devono accodare dieci copie dello stesso calendario.
+ *
+ * Si sostituisce tutto tranne la testa della coda: se è in corso proprio ora,
+ * toglierla farebbe togliere (`shift`) l'operazione sbagliata quando finisce.
+ */
+const SOSTITUISCE = new Set(['notifiche.salva']);
 
 export function accoda(state, tipo, dati) {
   state.coda = state.coda || [];
+  if (SOSTITUISCE.has(tipo)) {
+    state.coda = state.coda.filter((op, i) => i === 0 || op.tipo !== tipo);
+  }
   state.coda.push({ tipo, dati, tentativi: 0 });
+}
+
+// ---------------------------------------------- notifiche sulle compatibili
+
+/**
+ * La riga da scrivere in `notifiche_preferenze`.
+ *
+ * Con "solo proposte dirette" turni e preferenze sono vuoti: tornare indietro
+ * non ferma la condivisione, la cancella. `aggiornato_il` dice al server
+ * quanto è fresco il calendario, ed è l'unico campo che cambia a ogni invio.
+ */
+export function rigaNotifiche(state, oggi = todayISO()) {
+  const scelta = state.profilo?.notifiche;
+  const compatibili = scelta?.modo === 'compatibili';
+  const io = state.users.find((u) => u.id === state.currentUserId);
+  return {
+    user_id: state.profilo.idServer,
+    modo: compatibili ? 'compatibili' : 'dirette',
+    turni: compatibili ? turniDaCondividere(state.shifts, state.currentUserId, oggi) : [],
+    preferenze: compatibili ? preferenzeDaCondividere(io) : {},
+    consenso_il: compatibili ? scelta.consensoIl : null,
+    aggiornato_il: new Date().toISOString(),
+  };
+}
+
+/**
+ * Manda al server il calendario aggiornato, ma solo se è cambiato.
+ *
+ * Si guarda il contenuto e non il momento: ogni salvataggio dell'app passa da
+ * qui, e quasi tutti non toccano i turni dei prossimi 28 giorni. Senza questo
+ * confronto ogni tocco sarebbe una scrittura sul server.
+ */
+export function condividiNotifiche(state, { forzato = false, oggi = todayISO() } = {}) {
+  if (!sulServer(state)) return false;
+  const scelta = state.profilo.notifiche;
+  if (!forzato && scelta?.modo !== 'compatibili') return false;
+
+  const riga = rigaNotifiche(state, oggi);
+  const firma = JSON.stringify([riga.modo, riga.turni, riga.preferenze]);
+  if (!forzato && scelta.firma === firma) return false;
+  // Un dispositivo che non ha mai mandato niente e non ha ancora i turni (un
+  // telefono nuovo dopo il rientro) non sa com'è il calendario: mandare una
+  // lista vuota cancellerebbe quello che c'era, e le notifiche si
+  // spegnerebbero in silenzio finché non si reimporta il calendario.
+  if (!forzato && !scelta.firma && riga.turni.length === 0) return false;
+
+  state.profilo.notifiche = { ...(scelta || { modo: 'dirette', consensoIl: null }), firma };
+  accoda(state, 'notifiche.salva', riga);
+  return true;
 }
 
 /** Gli id che la coda deve ancora mandare: non si cancellano al prossimo giro. */
@@ -291,12 +356,14 @@ async function svuota(state) {
 export async function scarica(state) {
   if (!collegato()) return { saltato: true };
 
-  const [profili, richieste, proposte, ringraziamenti, disponibilita] = await Promise.all([
+  const [profili, richieste, proposte, ringraziamenti, disponibilita, notifiche] = await Promise.all([
     seleziona('profili'),
     seleziona('richieste', { ordine: 'creata_il.desc' }),
     seleziona('proposte'),
     seleziona('ringraziamenti'),
     seleziona('disponibilita'),
+    // Solo la propria riga: per tutti gli altri la tabella non ha policy di lettura.
+    seleziona('notifiche_preferenze'),
   ]);
 
   const rifiuto = [profili, richieste, proposte, ringraziamenti, disponibilita]
@@ -318,6 +385,18 @@ export async function scarica(state) {
     ...state.requests.map((r) => r.id),
     ...state.proposals.map((p) => p.id),
   ]);
+
+  // La scelta sulle notifiche sta sul server: su un dispositivo nuovo è da lì
+  // che si scopre. Quello che c'è in coda vince: è una scelta fatta qui e non
+  // ancora arrivata, e riscriverla con la versione vecchia la annullerebbe.
+  const mia = notifiche.dati?.[0];
+  if (mia && !(state.coda || []).some((op) => op.tipo === 'notifiche.salva')) {
+    state.profilo.notifiche = {
+      ...(state.profilo.notifiche || {}),
+      modo: mia.modo,
+      consensoIl: mia.consenso_il || null,
+    };
+  }
 
   for (const riga of profili.dati || []) {
     // Il mio profilo sul server non diventa una seconda persona: sono già qui.
