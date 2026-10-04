@@ -145,6 +145,17 @@ export function home() {
 
 // ----------------------------------------------------------- CALENDARIO
 
+/** I quattro segni delle celle del mese, uguali nel Calendario e nel Profilo. */
+function legendaMese() {
+  return `
+    <ul class="legenda-mese">
+      <li><span class="barre in-legenda"><i class="cerca"></i></span>qualcuno cerca</li>
+      <li><span class="barre in-legenda"><i class="offre"></i></span>qualcuno offre</li>
+      <li><span class="campione prioritaria"></span>priorità</li>
+      <li><span class="campione disponibile"></span>sei disponibile</li>
+    </ul>`;
+}
+
 export function calendario(params) {
   const mese = /^\d{4}-\d{2}$/.test(params.mese || '') ? params.mese : monthKey(todayISO());
   const [anno, m] = mese.split('-').map(Number);
@@ -158,12 +169,7 @@ export function calendario(params) {
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}" aria-label="Mese dopo">›</button>
       <button class="icon-btn" data-act="guida" data-sezione="calendario" title="Come funziona">?</button>
     </header>
-    <ul class="legenda-mese">
-      <li><span class="barre in-legenda"><i class="cerca"></i></span>qualcuno cerca</li>
-      <li><span class="barre in-legenda"><i class="offre"></i></span>qualcuno offre</li>
-      <li><span class="campione prioritaria"></span>priorità</li>
-      <li><span class="campione disponibile"></span>sei disponibile</li>
-    </ul>
+    ${raw(legendaMese())}
     ${raw(ilTuoMese(mese))}
     <p class="testo-tenue nota-mese">
       Tocca un giorno per il tuo turno, la disponibilità e chi puoi aiutare.
@@ -246,6 +252,15 @@ export function profilo() {
         <button class="icon-btn" data-act="guida" data-sezione="profilo" title="Come funziona">?</button>
       </span>
     </header>
+
+    <section class="sezione">
+      <h2 class="titolo-mese">Il tuo mese</h2>
+      ${raw(legendaMese())}
+      ${raw(ilTuoMese())}
+      <p class="testo-tenue nota-mese">
+        Tocca un giorno per il tuo turno, la disponibilità e chi puoi aiutare.
+      </p>
+    </section>
 
     <section class="sezione">
       <details class="riquadro turni" data-riquadro="turni" ${raw(riquadriAperti.has('turni') ? 'open' : '')}>
@@ -660,11 +675,11 @@ function sezioneTurni() {
       <span class="chevron">›</span>
     </button>
 
-    <button class="tile" data-act="vai" data-to="#/calendario">
+    <button class="tile" data-act="giorno-profilo" data-data="${todayISO()}">
       <span class="tile-icona">${raw(icona('scrivi'))}</span>
       <span>
         <strong>Inserisci manualmente i turni</strong>
-        <em>Giorno per giorno, dal Calendario</em>
+        <em>Giorno per giorno, dal mese qui sopra</em>
       </span>
       <span class="chevron">›</span>
     </button>

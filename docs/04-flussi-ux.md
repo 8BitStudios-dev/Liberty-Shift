@@ -376,13 +376,15 @@ il suo nome. Ora la testata è una riga sola: il bollino in alto a sinistra,
 sincronizzazione, grazie e guida a destra. Nome, contratto e ruoli si aprono
 toccando il bollino, insieme a una scorciatoia per modificare il profilo.
 
-## Il Calendario: il tuo mese e quello del negozio
+## Il tuo mese, nel Calendario e nel Profilo
 Il mese stava nel Profilo, e il tab Calendario ne aveva un altro: griglie
 diverse, segni diversi, e un giorno che si apriva in due modi a seconda di
-dove lo si toccava. Ora c'è un calendario solo, nel tab Calendario, con le
-settimane del vecchio mese del Profilo e, sotto ogni giorno, le barre di chi
-cerca (blu) e di chi offre (verde). Il Profilo è tornato a essere chi sei,
-le preferenze, le notifiche e la priorità.
+dove lo si toccava. Ora c'è un componente solo, `ilTuoMese`, usato in due
+posti: nel tab Calendario, dove si scorre di mese in mese, e in cima al
+Profilo, sempre sul mese di oggi, perché è lì che si va a guardare come si sta
+messi. Stesse settimane, stesse barre di chi cerca (blu) e di chi offre
+(verde), stesso foglio del giorno: due calendari che si disegnano allo stesso
+modo non possono più divergere.
 
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
 ✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.

@@ -169,8 +169,15 @@ export const GUIDE = {
     titolo: 'Il Profilo',
     icona: '👤',
     corpo: () => html`
+      <h3>Il tuo mese</h3>
+      <p>
+        Lo stesso del Calendario, sempre sul mese di oggi: il tuo turno giorno per
+        giorno, le ore della settimana e chi puoi aiutare. Tocca un giorno per
+        correggere il turno o darti disponibile.
+      </p>
+
       <h3>I tuoi turni</h3>
-      <p>Dal calendario dei turni, o a mano dal Calendario. Restano su questo telefono.</p>
+      <p>Dal calendario dei turni, o a mano dal mese qui sopra. Restano su questo telefono.</p>
       <p class="testo-tenue">
         Se sei Part Time e le tue settimane girano ad A, B, C, dillo una volta
         nella Rotazione: l'app riempie i mesi avanti da sola, lasciando stare i
