@@ -306,12 +306,20 @@ Quando in un giorno c'è sia un riposo programmato sia un turno — capita, il
 gestionale li sovrappone — **vince il turno lavorato**: se ci sono delle ore,
 quel giorno si lavora, comunque lo chiami il codice.
 
-## Le preferenze, in due riquadri che si aprono
+## Le preferenze, in un riquadro solo
 Nove interruttori in fila nasconderebbero la sola cosa che conta saperne: quello
-che **eviti** è un filtro netto e quei turni spariscono, quello che
-**preferisci** vale qualche punto. Ora sono due riquadri chiusi — **Turni da
-evitare** e **Turni preferiti** — ciascuno col conto di quante ne hai attive, e
-sotto un terzo riquadro che dice cosa vuol dire ogni fascia, con gli orari veri.
+che **eviti** abbassa molto il punteggio e quei turni di solito spariscono,
+quello che **preferisci** vale qualche punto. Prima erano due riquadri chiusi
+(*Turni da evitare* e *Turni preferiti*) con un terzo in fondo per la legenda
+delle fasce: per capire cosa volesse dire "Evito le aperture" bisognava
+scendere, aprire e risalire.
+
+Ora è **un riquadro solo**, *Le tue preferenze*, che da chiuso dice quante ne
+hai attive. Aperto, l'ordine è quello in cui si ragiona: come funziona, cosa
+vuol dire ogni fascia con gli orari veri, e solo dopo le scelte, divise in
+*Turni da evitare* e *Turni preferiti* con quanto pesano. Il paragrafo sul
+perché un turno non può stare in due fasce insieme è sparito dalla schermata:
+spiegava un caso che non succede, e faceva leggere una riga in più a chiunque.
 
 Attivando una preferenza si spegne la sua opposta, e la schermata si ridisegna
 per farlo vedere: senza il ridisegno la casella dell'opposta restava accesa a

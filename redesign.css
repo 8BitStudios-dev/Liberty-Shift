@@ -403,3 +403,26 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .avviso-box.omonimo p { margin: 0; font-size: 15px; color: var(--testo-tenue); }
 .ho-gia-account { margin-top: 26px; text-align: center; }
 .ho-gia-account p { margin: 0 0 8px; }
+
+/* ---------------------------------------------------------------- Profilo
+   Più aria sopra il bollino, e "Il tuo mese" è il titolo della pagina: deve
+   pesare come tale, non come le altre sezioni. */
+.testata-profilo { padding: 30px 0 10px; }
+.testata-profilo + .sezione { margin-top: 14px; }
+.titolo-mese { font-size: 27px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 16px; }
+
+/* Le preferenze: un riquadro, e dentro l'ordine in cui si ragiona. */
+.riquadro.preferenze > summary { font-size: 17px; padding: 17px 0; }
+.pref-corpo { padding-top: 14px; }
+.pref-intro { margin: 0; font-size: 15px; line-height: 1.5; }
+.pref-titolo {
+  margin: 24px 0 8px; font-size: 12.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .07em; color: var(--testo-tenue);
+}
+.pref-nota { margin: 0 0 4px; }
+.pref-fasce { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.pref-fasce li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 9px 12px; border-radius: 10px; background: var(--superficie-2); font-size: 15px;
+}
+.pref-fasce li span { color: var(--testo-tenue); font-size: 14px; text-align: right; }

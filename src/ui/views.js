@@ -288,7 +288,7 @@ export function profilo() {
     </header>
 
     <section class="sezione">
-      <h2>Il tuo mese</h2>
+      <h2 class="titolo-mese">Il tuo mese</h2>
       ${raw(ilTuoMese())}
       <p class="testo-tenue">
         Tocca un giorno per dare disponibilità al cambio e vedere chi puoi aiutare.
@@ -301,7 +301,6 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>Preferenze</h2>
       ${raw(sezionePreferenze(me))}
     </section>
 
@@ -525,51 +524,64 @@ function bottoneSync() {
 }
 
 /**
- * Le preferenze, in due riquadri che si aprono.
+ * Le preferenze, in un riquadro solo.
  *
- * Aperte tutte insieme erano sei interruttori in fila, e la differenza che
- * conta — quanto pesa quello che eviti, quanto poco quello che preferisci —
- * si perdeva nell'elenco. Chiusi, il profilo resta leggibile e si vede a
- * colpo d'occhio quante ne hai attive.
+ * Erano due riquadri, uno per chi evita e uno per chi preferisce, con la
+ * spiegazione di cosa pesano sparsa dentro e la legenda delle fasce in un
+ * terzo riquadro in fondo: per capire cosa voleva dire "Evito le aperture"
+ * bisognava scendere, aprire, risalire. Ora è un tocco solo, e dentro l'ordine
+ * è quello in cui si ragiona: come funziona, cosa vuol dire ogni fascia, e
+ * solo dopo le scelte.
+ *
+ * Chiuso, il profilo resta leggibile e dice quante ne hai attive.
  */
 function sezionePreferenze(me) {
   const gruppi = [
     {
       key: 'evita',
       titolo: 'Turni da evitare',
-      nota: `Abbassa il punteggio di ${RULES.evitaPenalty} punti: di solito basta a far sparire il turno, ma non è un divieto — se il resto del match è forte, resta visibile.`,
+      nota: `Abbassano il punteggio di ${RULES.evitaPenalty} punti: di solito basta a far sparire il turno, ma non è un divieto. Se il resto del match è forte, resta visibile.`,
     },
     {
       key: 'preferisce',
       titolo: 'Turni preferiti',
-      nota: `Sposta il punteggio di ${RULES.preferenzaBonus} punti, non esclude niente.`,
+      nota: `Alzano il punteggio di ${RULES.preferenzaBonus} punti, e non escludono niente.`,
     },
   ];
+  const attive = PREFERENZE.filter((p) => me.preferenze[p.key]).length;
 
-  const box = gruppi.map((g) => {
-    const voci = PREFERENZE.filter((p) => p.gruppo === g.key);
-    const attive = voci.filter((p) => me.preferenze[p.key]).length;
-    return html`
-      <details class="riquadro" data-riquadro="pref-${g.key}" ${raw(riquadriAperti.has(`pref-${g.key}`) ? 'open' : '')}>
-        <summary>
-          <span>${g.titolo}</span>
-          <span class="conteggio">${attive ? `${attive} attiv${attive === 1 ? 'a' : 'e'}` : 'nessuna'}</span>
-        </summary>
-        <p class="testo-tenue">${g.nota}</p>
-        ${raw(voci.map((p) => html`
-          <label class="switch">
-            <input type="checkbox" data-act="pref" data-key="${p.key}" ${raw(me.preferenze[p.key] ? 'checked' : '')}>
-            <span>
-              ${p.label}
-              ${raw(p.aiuto ? `<em class="aiuto">${p.aiuto}</em>` : '')}
-            </span>
-          </label>`).join(''))}
-      </details>`;
-  }).join('');
+  const scelte = gruppi.map((g) => html`
+    <h3 class="pref-titolo">${g.titolo}</h3>
+    <p class="testo-tenue pref-nota">${g.nota}</p>
+    ${raw(PREFERENZE.filter((p) => p.gruppo === g.key).map((p) => html`
+      <label class="switch">
+        <input type="checkbox" data-act="pref" data-key="${p.key}" ${raw(me.preferenze[p.key] ? 'checked' : '')}>
+        <span>
+          ${p.label}
+          ${raw(p.aiuto ? `<em class="aiuto">${p.aiuto}</em>` : '')}
+        </span>
+      </label>`).join(''))}`).join('');
 
   return html`
-    ${raw(box)}
-    ${raw(legendaFasce())}`;
+    <details class="riquadro preferenze" data-riquadro="preferenze" ${raw(riquadriAperti.has('preferenze') ? 'open' : '')}>
+      <summary>
+        <span>Le tue preferenze</span>
+        <span class="conteggio">${attive ? `${attive} attiv${attive === 1 ? 'a' : 'e'}` : 'nessuna'}</span>
+      </summary>
+      <div class="pref-corpo">
+        <p class="pref-intro">
+          Dici all'app che turni preferisci e quali no. Non escludono niente:
+          fanno salire o scendere i match, così in cima trovi quelli che ti
+          vanno bene.
+        </p>
+        ${raw(legendaFasce())}
+        <p class="testo-tenue">
+          Due preferenze opposte non possono stare accese insieme: attivandone
+          una, l'altra si spegne da sola.
+        </p>
+        ${raw(scelte)}
+      </div>
+    </details>`;
 }
 
 /** Cosa vuol dire ciascuna fascia, con gli orari veri. */
@@ -578,22 +590,12 @@ function legendaFasce() {
     const quando = f.inizioDa ? `inizia fra le ${f.inizioDa} e le ${f.inizioA}`
       : f.fineDa ? `finisce fra le ${f.fineDa} e le ${f.fineA}`
         : `finisce dopo le ${f.fineDopo}`;
-    return `<li><strong>${f.label}</strong>: ${quando}</li>`;
+    const nome = f.label.charAt(0).toUpperCase() + f.label.slice(1);
+    return `<li><strong>${nome}</strong><span>${quando}</span></li>`;
   }).join('');
   return html`
-    <details class="riquadro" data-riquadro="legenda-fasce" ${raw(riquadriAperti.has('legenda-fasce') ? 'open' : '')}>
-      <summary><span>Cosa vuol dire ogni fascia</span><span class="conteggio">orari</span></summary>
-      <ul class="elenco piccolo">${raw(righe)}</ul>
-      <p class="testo-tenue">
-        Due fasce guardano l'inizio e due la fine, quindi in teoria un turno
-        potrebbe stare in due insieme — ma con turni fino a 9 ore, come sono
-        davvero in negozio, non succede mai.
-      </p>
-      <p class="testo-tenue">
-        Due preferenze opposte non possono stare accese insieme: attivandone
-        una, l'altra si spegne da sola.
-      </p>
-    </details>`;
+    <h3 class="pref-titolo">Cosa vuol dire ogni fascia</h3>
+    <ul class="pref-fasce">${raw(righe)}</ul>`;
 }
 
 /**
