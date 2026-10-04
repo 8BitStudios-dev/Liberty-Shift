@@ -7,6 +7,7 @@
 // orario vero vale tre righe di teoria.
 
 import { html, raw } from './dom.js';
+import { iconaTipo } from './components.js';
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
 export const VERSIONE_GUIDA = '7';
@@ -18,20 +19,20 @@ export const GUIDE = {
     corpo: () => html`
       <p>Da qui parti, in tre modi.</p>
 
-      <h3>⚡ Cambio rapido</h3>
+      <h3>Cambio rapido</h3>
       <p>Scegli un tuo turno, vedi chi può prenderlo. Nessuna domanda.</p>
 
-      <h3>🤝 Aiuta un collega</h3>
+      <h3>Aiuta un collega</h3>
       <p>Il contrario: chi ha bisogno di un turno che tu hai.</p>
 
-      <h3>＋ Nuovo cambio</h3>
+      <h3>Nuovo cambio</h3>
       <p>Quando vuoi decidere tu le condizioni.</p>
 
       <h3>I tuoi cambi</h3>
       <p>In cima. Il pallino rosso vuol dire che aspettano una tua risposta.</p>
 
       <p class="testo-tenue">
-        La ⭐ in alto è la priorità: una al mese, mette la tua richiesta in cima
+        La stella in alto è la priorità: una al mese, mette la tua richiesta in cima
         alla bacheca per 48 ore.
       </p>`,
   },
@@ -91,14 +92,14 @@ export const GUIDE = {
     corpo: () => html`
       <p>Tre passi, e la prima domanda decide tutto.</p>
 
-      <h3>🕐 Cambio orario</h3>
+      <h3>Cambio orario</h3>
       <p>
         Stesso giorno, orario diverso. Serve un collega che quel giorno
         <strong>lavori</strong>: vi scambiate gli orari.
       </p>
       <p class="esempio">«Mercoledì faccio 12:00–21:00, cerco un turno che finisca prima.»</p>
 
-      <h3>📅 Cambio OFF</h3>
+      <h3>Cambio OFF</h3>
       <p>
         Vuoi OFF un giorno intero. In cambio offri un giorno in cui sei a
         casa, e prendi il turno di chi ti libera.
@@ -116,28 +117,31 @@ export const GUIDE = {
     titolo: 'Il Calendario',
     icona: '📅',
     corpo: () => html`
-      <p>Dove c'è movimento, giorno per giorno.</p>
+      <p>Il tuo mese e quello del negozio, nello stesso posto.</p>
 
-      <h3>Le barre sotto i numeri</h3>
+      <h3>In ogni giorno</h3>
       <ul class="elenco piccolo">
+        <li>il numero e il tuo turno;</li>
+        <li>la percentuale: c'è qualcuno che puoi aiutare, e quanto combacia;</li>
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
-          rossa: qualcuno vuole OFF quel giorno;</li>
+          blu: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
           verde: qualcuno offre un turno o una giornata;</li>
-        <li>bordo oro: c'è una priorità.</li>
+        <li>bordo oro: c'è una priorità;</li>
+        <li>linea verde in basso: ti sei detto disponibile a scambiare.</li>
       </ul>
 
       <h3>Aprendo un giorno</h3>
-      <p>Due blocchi: <strong>Cercano</strong> e <strong>Offrono</strong>.</p>
-      <p class="esempio">
-        Marco vuole OFF sabato 12 e offre lunedì 14. Sul 12 leggi «vuole
-        OFF questo giorno», sul 14 «offre di lavorare questo giorno».
+      <p>
+        In alto il tuo turno, da correggere se serve, e l'interruttore della
+        disponibilità. Sotto chi puoi aiutare, e in fondo le altre richieste
+        del giorno, divise fra chi cerca e chi offre.
       </p>
 
       <p class="testo-tenue">
-        La settimana parte dal sabato, come i turni: due giorni scambiabili
-        stanno sempre sulla stessa riga. «Al momento non puoi cambiare» in rosso
-        vuol dire che con i tuoi turni non c'è modo di rispondere.
+        Ogni riga è una settimana Apple, da sabato a venerdì: due giorni
+        scambiabili stanno sempre sulla stessa riga. A destra le ore inserite
+        contro quelle del contratto; la spunta compare quando tornano.
       </p>`,
   },
 
@@ -150,8 +154,8 @@ export const GUIDE = {
       <p>Ogni riga dice chi è e cosa cerca. Toccala per orari, note e proposte.</p>
 
       <ul class="elenco piccolo">
-        <li><strong>🕐 orario</strong> — stesso giorno, orario diverso;</li>
-        <li><strong>📅 OFF</strong> — una giornata intera scambiata con un'altra.</li>
+        <li><strong>${raw(iconaTipo('ORARIO'))} orario</strong>: stesso giorno, orario diverso;</li>
+        <li><strong>${raw(iconaTipo('OFF'))} OFF</strong>: una giornata intera scambiata con un'altra.</li>
       </ul>
 
       <p class="testo-tenue">
@@ -165,23 +169,8 @@ export const GUIDE = {
     titolo: 'Il Profilo',
     icona: '👤',
     corpo: () => html`
-      <h3>Il tuo mese</h3>
-      <p>
-        Il tuo turno giorno per giorno. Tocca un giorno per correggerlo, per
-        darti disponibile al cambio o per vedere chi puoi aiutare.
-      </p>
-      <p class="testo-tenue">
-        Il bordo arancione sotto una giornata vuol dire che ti sei dichiarato
-        disponibile: da lì compari fra i match di chi cerca, anche senza aver
-        pubblicato niente.
-      </p>
-      <p class="testo-tenue">
-        Accanto a ogni settimana ci sono le ore che hai inserito e quelle del
-        contratto. La spunta compare solo quando tornano.
-      </p>
-
       <h3>I tuoi turni</h3>
-      <p>Dal calendario dei turni, o a mano. Restano su questo telefono.</p>
+      <p>Dal calendario dei turni, o a mano dal Calendario. Restano su questo telefono.</p>
       <p class="testo-tenue">
         Se sei Part Time e le tue settimane girano ad A, B, C, dillo una volta
         nella Rotazione: l'app riempie i mesi avanti da sola, lasciando stare i
@@ -190,7 +179,7 @@ export const GUIDE = {
 
       <h3>Preferenze</h3>
       <ul class="elenco piccolo">
-        <li><strong>Da evitare</strong>: quei turni non ti vengono proposti;</li>
+        <li><strong>Da evitare</strong>: quei turni scendono molto in classifica;</li>
         <li><strong>Preferiti</strong>: salgono di qualche punto, nient'altro.</li>
       </ul>
 

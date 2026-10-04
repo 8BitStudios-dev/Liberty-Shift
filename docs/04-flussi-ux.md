@@ -376,7 +376,14 @@ il suo nome. Ora la testata è una riga sola: il bollino in alto a sinistra,
 sincronizzazione, grazie e guida a destra. Nome, contratto e ruoli si aprono
 toccando il bollino, insieme a una scorciatoia per modificare il profilo.
 
-## Il Profilo: il tuo mese
+## Il Calendario: il tuo mese e quello del negozio
+Il mese stava nel Profilo, e il tab Calendario ne aveva un altro: griglie
+diverse, segni diversi, e un giorno che si apriva in due modi a seconda di
+dove lo si toccava. Ora c'è un calendario solo, nel tab Calendario, con le
+settimane del vecchio mese del Profilo e, sotto ogni giorno, le barre di chi
+cerca (blu) e di chi offre (verde). Il Profilo è tornato a essere chi sei,
+le preferenze, le notifiche e la priorità.
+
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
 ✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.
 Ora sono una griglia sola, dove ogni cella mostra il tuo turno di quel giorno
@@ -395,9 +402,11 @@ spiegava la pausa pranzo: quella la si legge una volta e poi ingombra, mentre
 il dato che si guarda davvero è se le ore quadrano. Senza spunta l'occhio va da
 solo alle settimane da sistemare.
 
-Il bordo sotto una giornata è **arancione** e non verde: il verde nelle barre
-del calendario vuol già dire "offre", e due verdi con due significati diversi
-nella stessa app sono un verde di troppo.
+La disponibilità è il **fondo verde chiaro** della cella, non una linea. La
+linea arancione che c'era prima, una volta che i calendari sono diventati uno,
+stava accanto al bordo oro della priorità e alle barre: tre segni sottili sul
+bordo della stessa cella. Un fondo è un'altra forma, e non si confonde con la
+barra verde di chi offre.
 
 Toccando un giorno si apre tutto quello che riguarda quella data:
 
@@ -408,8 +417,14 @@ Toccando un giorno si apre tutto quello che riguarda quella data:
   di risolvere, ciascuna con la percentuale e con le due righe che contano —
   che turno faresti tu, che turno farebbe l'altra persona.
 
-Quando ci sono richieste che non puoi risolvere, l'app lo dice e conta quante
-sono, invece di far finta che non esistano.
+In fondo, le altre richieste del giorno, quelle che i tuoi turni non
+risolvono, divise fra **Cercano** e **Offrono**: era il foglio del vecchio
+Calendario.
+
+Nelle liste (Bacheca, Home, il giorno) una richiesta a cui non puoi rispondere
+non dice più "al momento non puoi cambiare" in rosso: dice il perché con i
+tuoi turni ("Sab 10/10 lavori già"), in grigio, e sta in fondo alla lista.
+Non è un errore, è un fatto.
 
 ### Il matching al contrario
 La percentuale è la stessa che vedrebbe l'altra persona guardando i suoi match:

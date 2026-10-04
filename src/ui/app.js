@@ -66,7 +66,7 @@ function apriGuida(chiave, { automatica = false } = {}) {
   if (!g) return;
   if (automatica && guideViste().viste.includes(chiave)) return;
   segnaGuidaVista(chiave);
-  sheet(`${g.icona} ${g.titolo}`, schedaGuida(chiave), {
+  sheet(g.titolo, schedaGuida(chiave), {
     azioni: '<button class="btn primario largo" data-chiudi>Ho capito</button>',
   });
 }
@@ -246,10 +246,7 @@ const AZIONI = {
     vai(`#/richiesta?id=${el.dataset.id}`);
   },
 
-  giorno: (_, el) => {
-    const data = el.dataset.data;
-    sheet(formatDay(data, true), V.dettaglioGiorno(data));
-  },
+  giorno: (_, el) => apriGiornoProfilo(el.dataset.data),
 
   entra: async () => {
     const campo = app.querySelector('[data-campo="password"]');

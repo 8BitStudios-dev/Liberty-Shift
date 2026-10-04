@@ -20,6 +20,16 @@ import {
 
 // ---------------------------------------------------------------- HOME
 
+/**
+ * Prima le richieste a cui puoi rispondere, poi le altre, ciascun gruppo
+ * nell'ordine che aveva (priorità, poi le più recenti). Una lista che apre
+ * con quattro righe "non fa per te" fa scorrere per niente.
+ */
+const perTe = (lista) => [
+  ...lista.filter((r) => store.possoRispondere(r)),
+  ...lista.filter((r) => !store.possoRispondere(r)),
+];
+
 export function home() {
   const me = store.me;
   const ora = new Date().getHours();
@@ -28,7 +38,7 @@ export function home() {
   const miei = store.state.requests.filter((r) => r.userId === me.id && isOpen(r));
   const proposte = store.propostePerMe();
   const credito = store.creditoPriorita();
-  const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
+  const altrui = perTe(store.bacheca().filter((r) => r.userId !== me.id)).slice(0, 3);
   const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
   const bloccoMiei = miei.length || proposte.length
@@ -136,68 +146,28 @@ export function home() {
 // ----------------------------------------------------------- CALENDARIO
 
 export function calendario(params) {
-  const mese = params.mese || monthKey(todayISO());
+  const mese = /^\d{4}-\d{2}$/.test(params.mese || '') ? params.mese : monthKey(todayISO());
   const [anno, m] = mese.split('-').map(Number);
-  const primo = new Date(Date.UTC(anno, m - 1, 1));
-  const giorniNelMese = new Date(Date.UTC(anno, m, 0)).getUTCDate();
-  // La griglia parte dal sabato: così ogni riga è una settimana Apple intera
-  // e il vincolo "non si scambia fra settimane diverse" si vede a colpo d'occhio.
-  const offset = slotSettimana(`${anno}-${String(m).padStart(2, '0')}-01`);
-
-  const aperte = store.state.requests.filter(isOpen);
-  const perGiorno = new Map();
-  for (const r of aperte) {
-    const cedo = store.shift(r.cedo.shiftId);
-    for (const d of [cedo?.data, ...(r.cerco.giorni || [])]) {
-      if (!d) continue;
-      const lista = perGiorno.get(d) || [];
-      lista.push(r);
-      perGiorno.set(d, lista);
-    }
-  }
-
-  const celle = [];
-  for (let i = 0; i < offset; i += 1) celle.push('<div class="giorno vuota"></div>');
-  for (let g = 1; g <= giorniNelMese; g += 1) {
-    const data = `${anno}-${String(m).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
-    const richieste = perGiorno.get(data) || [];
-    const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
-    const prio = richieste.some(hasPriority);
-    // Una barra sotto la cella, non dei pallini: un segmento per ruolo
-    // presente quel giorno. Quello che serve sapere guardando il mese è se su
-    // quel giorno qualcuno cerca, qualcuno offre, o tutte e due le cose.
-    const ruoli = new Set(richieste.map((r) => ruoloNelGiorno(r, data).ruolo));
-    const segmenti = ['CERCA', 'OFFRE']
-      .filter((k) => ruoli.has(k))
-      .map((k) => `<i class="${k.toLowerCase()}"></i>`)
-      .join('');
-    celle.push(html`
-      <button class="giorno ${data === todayISO() ? 'oggi' : ''} ${prio ? 'prioritaria' : ''}"
-              data-act="giorno" data-data="${data}">
-        <span class="numero">${g}</span>
-        <span class="mio-turno">${mio ? (mio.tipo === 'OFF' ? 'OFF' : mio.start.slice(0, 5)) : ''}</span>
-        <span class="barre">${raw(segmenti)}</span>
-      </button>`);
-  }
-
   const prev = m === 1 ? `${anno - 1}-12` : `${anno}-${String(m - 1).padStart(2, '0')}`;
   const next = m === 12 ? `${anno + 1}-01` : `${anno}-${String(m + 1).padStart(2, '0')}`;
 
   return html`
     <header class="testata">
-      <button class="icon-btn grande" data-act="vai" data-to="#/calendario?mese=${prev}">‹</button>
+      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}" aria-label="Mese prima">‹</button>
       <h1>${MESI[m - 1]} ${anno}</h1>
-      <button class="icon-btn grande" data-act="vai" data-to="#/calendario?mese=${next}">›</button>
+      <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${next}" aria-label="Mese dopo">›</button>
       <button class="icon-btn" data-act="guida" data-sezione="calendario" title="Come funziona">?</button>
     </header>
-    <div class="griglia-intestazione">
-      ${['S', 'D', 'L', 'M', 'M', 'G', 'V'].map((d) => raw(`<span>${d}</span>`))}
-    </div>
-    <div class="griglia-mese">${celle.map(raw)}</div>
-    <p class="legenda">
-      <span class="barre in-legenda"><i class="cerca"></i></span> cercano ·
-      <span class="barre in-legenda"><i class="offre"></i></span> offrono ·
-      bordo oro: priorità. Ogni riga è una settimana Apple, da sabato a venerdì.
+    <ul class="legenda-mese">
+      <li><span class="barre in-legenda"><i class="cerca"></i></span>qualcuno cerca</li>
+      <li><span class="barre in-legenda"><i class="offre"></i></span>qualcuno offre</li>
+      <li><span class="campione prioritaria"></span>priorità</li>
+      <li><span class="campione disponibile"></span>sei disponibile</li>
+    </ul>
+    ${raw(ilTuoMese(mese))}
+    <p class="testo-tenue nota-mese">
+      Tocca un giorno per il tuo turno, la disponibilità e chi puoi aiutare.
+      Ogni riga è una settimana Apple, da sabato a venerdì.
     </p>`;
 }
 
@@ -212,35 +182,6 @@ const GRUPPI_GIORNO = [
   { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate messi a disposizione: qui si prende.' },
 ];
 
-export function dettaglioGiorno(data) {
-  const richieste = store.state.requests.filter((r) => {
-    if (!isOpen(r)) return false;
-    const cedo = store.shift(r.cedo.shiftId);
-    return cedo?.data === data || (r.cerco.giorni || []).includes(data);
-  }).sort((a, b) => hasPriority(b) - hasPriority(a));
-  const mio = store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
-
-  const sezioni = GRUPPI_GIORNO.map((g) => {
-    const dentro = richieste.filter((r) => ruoloNelGiorno(r, data).ruolo === g.ruolo);
-    if (!dentro.length) return '';
-    return html`
-      <section class="gruppo-giorno ${g.ruolo}">
-        <h3>${g.titolo} · ${dentro.length}</h3>
-        <p class="testo-tenue">${g.nota}</p>
-        ${raw(dentro.map((r) => cardRichiesta(r, data)).join(''))}
-      </section>`;
-  }).join('');
-
-  return html`
-    <div class="giorno-dettaglio">
-      <p class="tuo-turno">
-        Il tuo turno: <strong>${mio ? shiftLabel(mio) : 'non inserito'}</strong>
-        ${raw(mio && etichettaFascia(mio) ? `<span class="tag">${etichettaFascia(mio)}</span>` : '')}
-      </p>
-      ${raw(sezioni || '<p class="testo-tenue">Nessuna richiesta su questo giorno.</p>')}
-    </div>`;
-}
-
 // -------------------------------------------------------------- BACHECA
 
 const FILTRI = {
@@ -252,9 +193,9 @@ const FILTRI = {
 
 export function bacheca(params) {
   const filtro = FILTRI[params.filtro] ? params.filtro : 'TUTTI';
-  const lista = store.bacheca()
+  const lista = perTe(store.bacheca()
     .filter((r) => r.userId !== store.state.currentUserId)
-    .filter(FILTRI[filtro].test);
+    .filter(FILTRI[filtro].test));
 
   return html`
     <header class="testata">
@@ -307,18 +248,10 @@ export function profilo() {
     </header>
 
     <section class="sezione">
-      <h2 class="titolo-mese">Il tuo mese</h2>
-      ${raw(ilTuoMese())}
-      <p class="testo-tenue">
-        Tocca un giorno per dare disponibilità al cambio e vedere chi puoi aiutare.
-      </p>
-    </section>
-
-    <section class="sezione">
       <details class="riquadro turni" data-riquadro="turni" ${raw(riquadriAperti.has('turni') ? 'open' : '')}>
         <summary>
           <span>I tuoi turni</span>
-          <span class="conteggio">importa o inserisci</span>
+          <span class="conteggio">${raw(contaTurni())}</span>
         </summary>
         <div class="turni-corpo">${raw(sezioneTurni())}</div>
       </details>
@@ -701,6 +634,14 @@ function legendaFasce() {
     <ul class="pref-fasce">${raw(righe)}</ul>`;
 }
 
+/** Quanti turni hai nei prossimi 28 giorni: chiuso, il riquadro dice se sei a posto. */
+function contaTurni() {
+  const oggi = todayISO();
+  const fine = addDays(oggi, 27);
+  const n = store.state.shifts.filter((s) => s.userId === store.state.currentUserId && s.data >= oggi && s.data <= fine).length;
+  return n ? `${n} nei prossimi 28 giorni` : 'nessuno inserito';
+}
+
 /**
  * Da dove arrivano i turni. Due strade, quella comoda per prima, e le
  * istruzioni dell'import scritte per intero: un'app che dice "importa da
@@ -719,11 +660,11 @@ function sezioneTurni() {
       <span class="chevron">›</span>
     </button>
 
-    <button class="tile" data-act="giorno-profilo" data-data="${todayISO()}">
+    <button class="tile" data-act="vai" data-to="#/calendario">
       <span class="tile-icona">${raw(icona('scrivi'))}</span>
       <span>
         <strong>Inserisci manualmente i turni</strong>
-        <em>Giorno per giorno, dal calendario del mese qui sotto</em>
+        <em>Giorno per giorno, dal Calendario</em>
       </span>
       <span class="chevron">›</span>
     </button>
@@ -880,10 +821,19 @@ export function listaRingraziamenti() {
  * metà per far quadrare il bordo del mese avrebbe spezzato l'unica riga su
  * cui il monte ore ha senso.
  */
-export function ilTuoMese() {
+export function ilTuoMese(mese = todayISO().slice(0, 7)) {
   const me = store.me;
   const oggi = todayISO();
-  const mese = oggi.slice(0, 7);
+
+  // Chi cerca e chi offre su ogni giorno: è quello che il Calendario mostrava
+  // con le sue barre, prima che i due calendari diventassero uno.
+  const richiestePerGiorno = new Map();
+  for (const r of store.state.requests.filter(isOpen)) {
+    const cedo = store.shift(r.cedo.shiftId);
+    for (const d of [cedo?.data, ...(r.cerco.giorni || [])]) {
+      if (d) richiestePerGiorno.set(d, [...(richiestePerGiorno.get(d) || []), r]);
+    }
+  }
 
   // Una volta sola per tutta la griglia: il motore è lo stesso che usano i match.
   const opportunita = opportunitaPerMe(me.id, store.state);
@@ -908,14 +858,19 @@ export function ilTuoMese() {
       const data = addDays(wk, i);
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
       const migliore = (perGiorno.get(data) || [])[0];
+      const richieste = richiestePerGiorno.get(data) || [];
+      const ruoli = new Set(richieste.map((r) => ruoloNelGiorno(r, data).ruolo));
+      const barre = ['CERCA', 'OFFRE'].filter((k) => ruoli.has(k)).map((k) => `<i class="${k.toLowerCase()}"></i>`).join('');
       return html`
         <button class="mese-giorno ${data === oggi ? 'oggi' : ''} ${data < oggi ? 'passato' : ''}
                        ${disponibileIl(me, data) ? 'disponibile' : ''}
+                       ${richieste.some(hasPriority) ? 'prioritaria' : ''}
                        ${data.slice(0, 7) === mese ? '' : 'fuori'}"
                 data-act="giorno-profilo" data-data="${data}">
           <span class="numero">${toDate(data).getUTCDate()}</span>
           <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '·'}</span>
           ${raw(migliore ? `<span class="quota">${migliore.match.score}%</span>` : '<span class="quota vuota"></span>')}
+          <span class="barre">${raw(barre)}</span>
         </button>`;
     }).join('');
 
@@ -969,14 +924,37 @@ function spiaOre(me, settimana) {
     </span>`;
 }
 
-/** Il dettaglio di un giorno: il tuo turno, e chi puoi aiutare. */
+/**
+ * Le altre richieste del giorno, quelle che i tuoi turni non risolvono,
+ * divise fra chi cerca e chi offre. Era il foglio del vecchio Calendario: ora
+ * sta in fondo a quello del giorno, così un giorno si apre in un posto solo.
+ */
+function altreRichieste(data, mie) {
+  const giaViste = new Set(mie.map((o) => o.richiesta.id));
+  const richieste = store.state.requests.filter((r) => {
+    if (!isOpen(r) || giaViste.has(r.id) || r.userId === store.state.currentUserId) return false;
+    const cedo = store.shift(r.cedo.shiftId);
+    return cedo?.data === data || (r.cerco.giorni || []).includes(data);
+  }).sort((a, b) => hasPriority(b) - hasPriority(a));
+  return GRUPPI_GIORNO.map((g) => {
+    const dentro = richieste.filter((r) => ruoloNelGiorno(r, data).ruolo === g.ruolo);
+    if (!dentro.length) return '';
+    return html`
+      <section class="gruppo-giorno ${g.ruolo}">
+        <h3>${g.titolo} · ${dentro.length}</h3>
+        <p class="testo-tenue">${g.nota}</p>
+        ${raw(dentro.map((r) => cardRichiesta(r, data)).join(''))}
+      </section>`;
+  }).join('');
+}
+
+/** Il dettaglio di un giorno: il tuo turno, la disponibilità, chi puoi aiutare. */
 export function dettaglioGiornoProfilo(data) {
   const me = store.me;
   const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
   const disponibile = disponibileIl(me, data);
   const mie = opportunitaPerMe(me.id, store.state).filter((o) => o.giorni.includes(data));
   const tutte = richiesteSulGiorno(me.id, data, store.state);
-  const senzaRisposta = tutte.length - mie.length;
 
   return html`
     <div class="giorno-profilo">
@@ -1000,10 +978,8 @@ export function dettaglioGiornoProfilo(data) {
       ${raw(mie.length
     ? mie.map((o) => cardOpportunita(o)).join('')
     : `<p class="testo-tenue">${tutte.length
-      ? `Ci sono ${tutte.length} richieste su questo giorno, ma nessuna che tu possa risolvere con i turni che hai.`
+      ? 'Nessuna delle richieste di questo giorno torna con i tuoi turni.'
       : 'Nessuna richiesta aperta su questo giorno.'}</p>`)}
-      ${raw(mie.length && senzaRisposta > 0
-    ? `<p class="testo-tenue">Altre ${senzaRisposta} richieste su questo giorno non tornano con i tuoi turni.</p>`
-    : '')}
+      ${raw(altreRichieste(data, mie))}
     </div>`;
 }

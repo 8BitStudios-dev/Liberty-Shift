@@ -7,6 +7,17 @@ import { STATUS_META, TIPO_META, TIPO_CAMBIO, RULES } from '../core/rules.js';
 import { formatDay } from '../core/time.js';
 import { icona } from './icone.js';
 
+/**
+ * L'icona di un tipo di cambio, disegnata come il resto dell'app.
+ *
+ * `TIPO_META` in rules.js porta ancora un'emoji: è il dato del regolamento,
+ * condiviso col server, e qui si sceglie solo come mostrarlo.
+ */
+const ICONA_TIPO = { ORARIO: 'orario', OFF: 'calendario' };
+export function iconaTipo(tipo, px = 14) {
+  return `<span class="icona-in-riga">${icona(ICONA_TIPO[tipo] || 'orario', { px })}</span>`;
+}
+
 export function nomeUtente(u) {
   return u ? `${u.nome} ${u.cognomeIniziale}.` : '—';
 }
@@ -90,7 +101,7 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
 
   return html`
     <div class="coppia ${compatto ? 'compatta' : ''}">
-      <div class="tipo-cambio">${meta.icona} ${meta.label}</div>
+      <div class="tipo-cambio">${raw(iconaTipo(request.tipo))} ${meta.label}</div>
       <div class="lati">
         <div class="lato cedo">
           <span class="etichetta">${off ? '🔵 CERCO' : '🔵 LASCIO'}</span>
@@ -122,6 +133,50 @@ export function sintesiRichiesta(request) {
   return `${formatDay(cedo?.data)} · cede ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`;
 }
 
+/**
+ * Perché non puoi rispondere a una richiesta, detto con i tuoi turni.
+ *
+ * La forma `breve` sta in una riga della bacheca: dice il fatto, non la
+ * regola. Prima la riga diceva solo "al momento non puoi cambiare", in rosso,
+ * su metà della lista: un errore senza causa, che gridava più del nome.
+ */
+export function motivoNonOfferibile(request, { breve = false } = {}) {
+  const me = store.state.currentUserId;
+  const cedo = store.shift(request.cedo.shiftId);
+  const giorni = request.cerco.giorni || [];
+  const mioIl = (data) => store.state.shifts.find((s) => s.userId === me && s.data === data);
+
+  if (request.tipo === TIPO_CAMBIO.ORARIO) {
+    const mio = mioIl(cedo?.data);
+    if (!mio || mio.tipo !== 'WORK') {
+      return breve
+        ? `${formatDay(cedo?.data)} non lavori`
+        : `${formatDay(cedo?.data)} non lavori: in un cambio orario servono due persone in turno.`;
+    }
+    return breve
+      ? `Il tuo ${shiftLabel(mio)} non è quello che cerca`
+      : `Il tuo ${shiftLabel(mio)} non rientra in quello che cerca (${wantLabel(request.cerco)}).`;
+  }
+
+  // Cambio OFF: le due condizioni sono essere liberi il giorno che vuole
+  // lasciare, e lavorare in uno dei giorni che offre.
+  const mioNelSuoGiorno = mioIl(cedo?.data);
+  if (mioNelSuoGiorno && mioNelSuoGiorno.tipo === 'WORK') {
+    return breve
+      ? `${formatDay(cedo?.data)} lavori già`
+      : `${formatDay(cedo?.data)} lavori già (${shiftLabel(mioNelSuoGiorno)}): non puoi prendere anche il suo turno.`;
+  }
+  const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
+  if (!lavorati.length) {
+    return breve
+      ? `Nei giorni che offre sei a casa`
+      : `Nei giorni che offre (${giorni.map((g) => formatDay(g)).join(', ')}) sei a casa: non hai un turno da dargli in cambio.`;
+  }
+  return breve
+    ? 'I tuoi turni non sono quelli che cerca'
+    : `I tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
+}
+
 /** Il ruolo della richiesta nel giorno guardato, col turno ceduto già risolto. */
 export function ruoloNelGiorno(request, giorno) {
   const r = ruoloCore(request, giorno, store.shift(request.cedo.shiftId));
@@ -143,16 +198,16 @@ export function cardRichiesta(request, giorno = null) {
   const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   const ctx = giorno ? ruoloNelGiorno(request, giorno) : null;
   return html`
-    <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''}"
+    <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${store.possoRispondere(request) ? '' : 'non-per-me'}"
             data-act="apri-richiesta" data-id="${request.id}">
       <span class="avatar piccolo">${iniziali(autore)}</span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${nomeUtente(autore)}
-          <span class="tipo-pill">${ctx ? `${ctx.icona} ${ctx.verbo}` : `${meta.icona} ${meta.breve}`}</span>
+          <span class="tipo-pill">${raw(iconaTipo(request.tipo, 13))} ${ctx ? ctx.verbo : meta.breve}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
-        ${raw(store.possoRispondere(request) ? '' : '<span class="non-puoi">al momento non puoi cambiare</span>')}
+        ${raw(store.possoRispondere(request) ? '' : `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>`)}
       </span>
       <span class="chevron">›</span>
     </button>`;
@@ -219,10 +274,16 @@ export function cardMatch(match, opzioni = {}) {
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
       ${raw(riassuntoMatch(match, u, turno, opzioni))}
-      <ul class="perche">
-        ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
-      </ul>
-      ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${match.avvisi.join(' ')}</div>` : '')}
+      ${raw(opzioni.compatta ? html`
+        <details class="perche-aperto">
+          <summary>Perché${match.avvisi.length ? ' · un avviso' : ''}</summary>
+          <ul class="perche">${raw(match.reasons.map((r) => `<li>${r}</li>`).join(''))}</ul>
+          ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${match.avvisi.join(' ')}</div>` : '')}
+        </details>` : html`
+        <ul class="perche">
+          ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
+        </ul>
+        ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${match.avvisi.join(' ')}</div>` : '')}`)}
       ${raw(azioneMatch(match, opzioni))}
     </article>`;
 }

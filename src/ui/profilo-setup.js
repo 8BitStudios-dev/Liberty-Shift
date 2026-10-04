@@ -366,7 +366,7 @@ function passoCodice() {
 
     <div class="ho-gia-account">
       <p class="testo-tenue">Ti sei già iscritto da un altro dispositivo?</p>
-      <button class="btn secondario largo" data-act="ho-gia-account">Ho già un account</button>
+      <button class="link-btn" data-act="ho-gia-account">Ho già un account: accedi</button>
     </div>`;
 }
 

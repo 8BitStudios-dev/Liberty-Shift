@@ -9,12 +9,13 @@ import {
 } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } from '../core/model.js';
-import { appleWeekKey, addDays, formatDay, todayISO } from '../core/time.js';
+import { appleWeekKey, addDays, formatDay, todayISO, MESI } from '../core/time.js';
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
-  chipsOrariTipici, testoPromemoria,
+  chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo,
 } from './components.js';
+import { icona } from './icone.js';
 
 export const draft = {
   tipo: null,
@@ -73,29 +74,25 @@ export function vistaRapida() {
   const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
   const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
 
-  const sceltaTurno = miei.map((s) => html`
-    <button class="pill ${s.id === rapido.shiftId ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}">
-      ${formatDay(s.data)}
-      <em>${shiftLabel(s)}</em>
-    </button>`).join('');
+  const sceltaTurno = calendarioTurni(miei, rapido.shiftId);
 
   const gruppo = (titolo, sottotitolo, lista) => (lista.length ? html`
-    <h2 class="titolo-gruppo">${titolo}</h2>
+    <h2 class="titolo-gruppo">${raw(titolo)}</h2>
     <p class="testo-tenue">${sottotitolo}</p>
-    ${raw(lista.map((m) => cardMatch(m, { mioCedo: cedo })).join(''))}` : '');
+    ${raw(lista.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true })).join(''))}` : '');
 
   return html`
     ${raw(testataRapido())}
     <p class="occhiello">Quale turno vuoi lasciare?</p>
-    <div class="pillole">${raw(sceltaTurno)}</div>
+    ${raw(sceltaTurno)}
 
     ${raw(gruppo(
-    `🕐 Cambio orario (${orario.length})`,
+    `${iconaTipo(TIPO_CAMBIO.ORARIO, 17)} Cambio orario (${orario.length})`,
     `Restano ${formatDay(cedo.data)}, cambiate solo l'orario.`,
     orario,
   ))}
     ${raw(gruppo(
-    `📅 Cambio OFF (${off.length})`,
+    `${iconaTipo(TIPO_CAMBIO.OFF, 17)} Cambio OFF (${off.length})`,
     'Ti danno OFF quella giornata, tu lavori in un giorno in cui sei a casa.',
     off,
   ))}
@@ -105,16 +102,45 @@ export function vistaRapida() {
     `Per ${formatDay(cedo.data)} non risulta nessun collega con un turno che vada bene. Pubblicare la richiesta la mette comunque in bacheca.`,
     '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
   ))}
-    ${raw(risultati.length ? `
-      <p class="testo-tenue">Nessuno di questi va bene? Con <strong>Nuovo cambio</strong> scegli tu le condizioni.</p>
-      <button class="btn secondario largo" data-act="vai" data-to="#/nuovo">Nuovo cambio</button>` : '')}`;
+`;
+}
+
+/**
+ * I turni che puoi lasciare, messi come in un calendario: una riga per
+ * settimana Apple, sette colonne dal sabato al venerdì.
+ *
+ * Prima erano pillole in fila, una per turno, alte due righe: quindici
+ * turni facevano mezzo schermo e non si capiva in che settimana cadessero.
+ * Nella griglia i giorni senza turno restano vuoti, e la forma della
+ * settimana si vede da sola.
+ */
+function calendarioTurni(miei, scelto) {
+  const settimane = [...new Set(miei.map((s) => appleWeekKey(s.data)))].sort();
+  const perData = new Map(miei.map((s) => [s.data, s]));
+  const intestazione = Array.from({ length: 7 }, (_, i) => `<span>${formatDay(addDays(settimane[0], i)).slice(0, 3)}</span>`).join('');
+  const righe = settimane.map((wk) => Array.from({ length: 7 }, (_, i) => {
+    const data = addDays(wk, i);
+    const s = perData.get(data);
+    const numero = Number(data.slice(8));
+    if (!s) return `<span class="cal-turno vuoto"><b>${numero}</b></span>`;
+    return html`
+      <button class="cal-turno ${s.id === scelto ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}"
+              aria-label="${formatDay(s.data)} ${shiftLabel(s)}">
+        <b>${numero}</b><em>${s.start}</em>
+      </button>`;
+  }).join('')).join('');
+  return `
+    <div class="cal-turni">
+      <div class="cal-turni-testa">${intestazione}</div>
+      <div class="cal-turni-griglia">${righe}</div>
+    </div>`;
 }
 
 function testataRapido() {
   return html`
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
-      <h1>⚡ Cambio rapido</h1>
+      <h1>Cambio rapido</h1>
       <button class="icon-btn" data-act="guida" data-sezione="rapido" title="Come funziona">?</button>
     </header>`;
 }
@@ -131,7 +157,7 @@ export function scelta() {
     <p class="occhiello">Che tipo di cambio ti serve?</p>
 
     <button class="tile scelta blu" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.ORARIO}">
-      <span class="tile-icona">🕐</span>
+      <span class="tile-icona">${raw(icona('orario'))}</span>
       <span>
         <strong>Cambio orario</strong>
         <em>Stesso giorno, orario diverso. "Lascio mercoledì 12:00–21:00, cerco mercoledì un turno che finisca prima."</em>
@@ -139,21 +165,14 @@ export function scelta() {
     </button>
 
     <button class="tile scelta verde" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.OFF}">
-      <span class="tile-icona">📅</span>
+      <span class="tile-icona">${raw(icona('calendario'))}</span>
       <span>
         <strong>Cambio OFF</strong>
         <em>Vuoi un giorno OFF e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
       </span>
     </button>
 
-    <p class="testo-tenue nota-regola">
-      In entrambi i casi la richiesta ha due lati: quello che lasci e quello che prendi.
-      È la regola che tiene in piedi tutto il resto.
-    </p>
-    <p class="testo-tenue">
-      Se ti basta sapere chi può prenderti un turno, il <strong>Cambio rapido</strong> te lo dice senza domande.
-    </p>
-    <button class="btn secondario largo" data-act="vai" data-to="#/rapido">⚡ Cambio rapido</button>`;
+`;
 }
 
 export function nuovo() {
@@ -431,7 +450,7 @@ export function dettaglio(params) {
           ${raw(p.cambioInserito
     ? '<span class="tag">cambio inserito</span>'
     : `<div class="barra-azioni">
-        ${store.haGiaRingraziato(p.id) ? '' : `<button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">💛 Ringrazia</button>`}
+        ${store.haGiaRingraziato(p.id) ? '' : `<button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">${icona('grazie', { px: 17 })} Ringrazia</button>`}
         <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
       </div>`)}
         </div>`
@@ -470,8 +489,7 @@ export function dettaglio(params) {
         ? html`<button class="btn primario largo" data-act="proponi" data-user="${r.userId}" data-richiesta="${r.id}" data-shift="">Proponi uno scambio</button>`
         // Il posto dove ci sarebbe stato il pulsante è il posto giusto per
         // dire perché non c'è: prima spariva e basta.
-        : html`<p class="non-puoi">al momento non puoi cambiare</p>
-          <p class="testo-tenue nota-non-puoi">${motivoNonOfferibile(r)}</p>`;
+        : html`<p class="motivo-non-puoi">${motivoNonOfferibile(r)}</p>`;
 
   // Un admin può chiudere o rimuovere qualsiasi richiesta ancora viva, anche
   // la propria: non è un'azione che si nega a sé stessi. Su una già chiusa non
@@ -530,33 +548,6 @@ export function formMotivoAdmin(requestId, azione) {
  * richiesta di mercoledì: il primo turno della lista non c'entra niente.
  * Le condizioni sono poche e note (R8), tanto vale guardare quelle.
  */
-function motivoNonOfferibile(request) {
-  const me = store.state.currentUserId;
-  const cedo = store.shift(request.cedo.shiftId);
-  const giorni = request.cerco.giorni || [];
-  const mioIl = (data) => store.state.shifts.find((s) => s.userId === me && s.data === data);
-
-  if (request.tipo === TIPO_CAMBIO.ORARIO) {
-    const mio = mioIl(cedo?.data);
-    if (!mio || mio.tipo !== 'WORK') {
-      return `${formatDay(cedo?.data)} non lavori: in un cambio orario servono due persone in turno.`;
-    }
-    return `Il tuo ${shiftLabel(mio)} non rientra in quello che cerca (${wantLabel(request.cerco)}).`;
-  }
-
-  // Cambio OFF: le due condizioni sono essere liberi il giorno che vuole
-  // lasciare, e lavorare in uno dei giorni che offre.
-  const mioNelSuoGiorno = mioIl(cedo?.data);
-  if (mioNelSuoGiorno && mioNelSuoGiorno.tipo === 'WORK') {
-    return `${formatDay(cedo?.data)} lavori già (${shiftLabel(mioNelSuoGiorno)}): non puoi prendere anche il suo turno.`;
-  }
-  const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
-  if (!lavorati.length) {
-    return `Nei giorni che offre (${giorni.map((g) => formatDay(g)).join(', ')}) sei a casa: non hai un turno da dargli in cambio.`;
-  }
-  return `I tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
-}
-
 /** I turni che posso davvero offrire su una richiesta. Il calcolo sta nello store. */
 export const turniOfferibili = (request) => store.turniOfferibili(request);
 
@@ -664,7 +655,7 @@ function vocebox(v) {
           <p>Ora fate il cambio nell'app ufficiale dei turni.</p>
           ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
           <div class="barra-azioni">
-            <button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">💛 Ringrazia ${altro.nome}</button>
+            <button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">${raw(icona('grazie', { px: 17 }))} Ringrazia ${altro.nome}</button>
             <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
           </div>
         </div>`
@@ -798,10 +789,10 @@ export function statistiche() {
             <span class="barra-mese pubblicate" style="height:${(m.pubblicate / massimo) * 100}%" title="${m.pubblicate} pubblicate"></span>
             <span class="barra-mese chiuse" style="height:${(m.chiuse / massimo) * 100}%" title="${m.chiuse} chiuse"></span>
           </div>
-          <span class="etichetta-mese">${m.mese.slice(5)}</span>
+          <span class="etichetta-mese">${MESI[Number(m.mese.slice(5)) - 1].slice(0, 3)}</span>
         </div>`).join(''))}
     </div>
-    <p class="testo-tenue"><span class="tag">🟡 pubblicate</span> <span class="tag">⚫ chiuse</span> per mese di creazione o chiusura.</p>
+    <p class="testo-tenue legenda-statistiche"><span><i class="campione-barra pubblicate"></i>pubblicate</span> <span><i class="campione-barra chiuse"></i>chiuse</span> · per mese di creazione o di chiusura</p>
 
     <h2 class="titolo-gruppo">Richieste aperte in bacheca (${aperte.length})</h2>
     ${raw(aperte.length

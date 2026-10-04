@@ -129,7 +129,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .giorno-dettaglio .testo-tenue, .legenda, .elenco.piccolo,
 .gruppo-giorno > .testo-tenue { font-size: 14px; }
 .occhiello { font-size: 16px; margin: 6px 0 18px; }
-.badge, .tag { font-size: 12.5px; }
+.badge, .tag { font-size: 12px; }
 .perche { font-size: 14px; line-height: 1.55; }
 .perche li { margin: 5px 0; }
 
@@ -216,10 +216,10 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .coppia .cedo .etichetta { color: var(--cedo); }
 .coppia .cerco .etichetta { color: var(--prendo); }
 .coppia strong { font-size: 16px; }
-.coppia .nota { font-size: 13px; }
+.coppia .nota { font-size: 14px; }
 .coppia.compatta .lati { padding: 11px; }
-.coppia.compatta strong { font-size: 14.5px; }
-.coppia.compatta .orario { font-size: 13px; }
+.coppia.compatta strong { font-size: 15px; }
+.coppia.compatta .orario { font-size: 14px; }
 .coppia .freccia { color: var(--testo-tenue); font-size: 20px; }
 .tipo-cambio { font-size: 12px; letter-spacing: .03em; margin-bottom: 8px; }
 
@@ -246,7 +246,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 /* Il gradiente del logo vive in due posti soli: il nome del marchio e
    l'azione principale. Steso su tutto si sarebbe letto come sfondo. */
 .marchio-nome {
-  font-size: 12.5px;
+  font-size: 12px;
   background: var(--marchio);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
@@ -264,14 +264,14 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 
 /* 36px era sotto il minimo comodo per un pollice. */
 .icon-btn { width: 40px; height: 40px; font-size: 19px; }
-.icon-btn.grande { width: 46px; height: 46px; font-size: 25px; }
-.chip, .pill { font-size: 14.5px; padding: 9px 16px; }
+.icon-btn.grande { width: 46px; height: 46px; font-size: 24px; }
+.chip, .pill { font-size: 15px; padding: 9px 16px; }
 .chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); }
 .link, .link-btn { font-size: 15px; }
 
 .avatar { width: 40px; height: 40px; font-size: 15px; }
-.avatar.piccolo { width: 34px; height: 34px; font-size: 13px; }
-.avatar.grande { width: 76px; height: 76px; font-size: 25px; }
+.avatar.piccolo { width: 34px; height: 34px; font-size: 14px; }
+.avatar.grande { width: 76px; height: 76px; font-size: 24px; }
 .pallino { width: 10px; height: 10px; }
 
 .hero { padding: 20px 0 8px; }
@@ -286,7 +286,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .giorno .numero { font-size: 17px; }
 .giorno .mio-turno { font-size: 12px; }
 .giorno.oggi { border-color: var(--accento); }
-.griglia-intestazione { font-size: 13px; }
+.griglia-intestazione { font-size: 14px; }
 .barre { height: 4px; width: 66%; }
 .legenda { line-height: 2; }
 
@@ -294,16 +294,16 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    dato più consultato dell'app scritto nel corpo più piccolo che ha. */
 .mese-griglia { gap: 3px; }
 .mese-giorno { min-height: 54px; border-radius: 9px; border-color: var(--filetto); padding: 5px 2px; }
-.mese-giorno .numero { font-size: 13.5px; }
-.mese-giorno .turno { font-size: 11px; }
-.mese-giorno .quota { font-size: 10px; padding: 1px 5px; }
+.mese-giorno .numero { font-size: 14px; }
+.mese-giorno .turno { font-size: 12px; }
+.mese-giorno .quota { font-size: 12px; padding: 1px 5px; }
 .mese-giorno.oggi { border-color: var(--accento); }
-.dow-fisso { font-size: 11px; }
+.dow-fisso { font-size: 12px; }
 .riga-settimana h3 { font-size: 12px; }
 .spia-ore { font-size: 12px; }
 .spia-ore.quadra { color: var(--prendo); }
 .giorno-rot { min-height: 46px; font-size: 12px; border-radius: 9px; border-color: var(--filetto); }
-.giorno-rot .dow { font-size: 11px; }
+.giorno-rot .dow { font-size: 12px; }
 
 /* ------------------------------------------------------------ moduli */
 
@@ -312,7 +312,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
   padding: 13px 14px; border-radius: var(--raggio-s); font-size: 16px;
 }
 .switch { padding: 14px 0; font-size: 16px; border-bottom-color: var(--filetto); }
-.switch .aiuto { font-size: 13px; }
+.switch .aiuto { font-size: 14px; }
 .errori { font-size: 15px; padding: 12px 16px; }
 .avviso { font-size: 14px; }
 
@@ -321,7 +321,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 #tabbar { padding: 9px 0 max(env(safe-area-inset-bottom), 8px); border-top-color: var(--filetto); }
 /* Cinque voci al posto di quattro: lo spazio orizzontale non basta più a
    14px di margine per voce, e "Calendario" è l'etichetta più lunga. */
-.tab { position: relative; font-size: 11px; padding: 5px 8px; gap: 4px; }
+.tab { position: relative; font-size: 12px; padding: 5px 8px; gap: 4px; }
 .tab-icona { width: 24px; height: 24px; }
 /* Quante proposte aspettano una risposta, sulla voce che le contiene: è la
    sola cosa dell'app che va saputa senza aprire niente. */
@@ -329,7 +329,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
   position: absolute; top: 2px; right: 4px;
   min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
   background: var(--rosso); color: #fff;
-  font-size: 11px; font-weight: 700; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; display: grid; place-items: center;
 }
 
 /* -------------------------------------------------------------- vari */
@@ -337,7 +337,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .vuoto { padding: 40px 22px; }
 .vuoto strong { font-size: 17px; }
 .vuoto p { font-size: 15px; }
-.non-puoi, .nota-non-puoi { font-size: 13px; }
+.non-puoi, .nota-non-puoi { font-size: 14px; }
 .sheet { border-radius: 24px 24px 0 0; padding: 6px 18px max(env(safe-area-inset-bottom), 18px); }
 .sheet-head h2 { font-size: 19px; }
 #toast { font-size: 15px; padding: 13px 20px; box-shadow: var(--ombra-alta); }
@@ -373,7 +373,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
   border-radius: 14px; box-shadow: var(--ombra-alta);
 }
 .io-pannello strong { font-size: 16px; }
-.io-pannello span { font-size: 13px; color: var(--testo-tenue); }
+.io-pannello span { font-size: 14px; color: var(--testo-tenue); }
 .io-pannello .link-btn { justify-self: start; margin-top: 6px; font-size: 14px; }
 
 /* L'invito alle notifiche: in Home, colorato, con il tasto che le accende
@@ -409,14 +409,14 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
    pesare come tale, non come le altre sezioni. */
 .testata-profilo { padding: 30px 0 10px; }
 .testata-profilo + .sezione { margin-top: 14px; }
-.titolo-mese { font-size: 27px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 16px; }
+.titolo-mese { font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 16px; }
 
 /* Le preferenze: un riquadro, e dentro l'ordine in cui si ragiona. */
 .riquadro.preferenze > summary { font-size: 17px; padding: 17px 0; }
 .pref-corpo { padding-top: 14px; }
 .pref-intro { margin: 0; font-size: 15px; line-height: 1.5; }
 .pref-titolo {
-  margin: 24px 0 8px; font-size: 12.5px; font-weight: 700;
+  margin: 24px 0 8px; font-size: 12px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .07em; color: var(--testo-tenue);
 }
 .pref-nota { margin: 0 0 4px; }
@@ -474,7 +474,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .riquadro-fisso .testo-tenue { margin: 0; }
 .titolo-riquadro { display: inline-flex; align-items: center; gap: 6px; }
 .titolo-riquadro svg { fill: var(--oro); stroke: var(--oro); }
-.riquadro-testa .conteggio { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--testo-tenue); }
+.riquadro-testa .conteggio { margin-left: auto; font-size: 14px; font-weight: 500; color: var(--testo-tenue); }
 .priorita-usata { margin: 6px 0 0; font-weight: 600; }
 
 .pref-titolo {
@@ -492,3 +492,157 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
   border: 1px solid var(--bordo); border-right: 0; border-radius: 12px 0 0 12px;
 }
 .campo-codice .testo { border-radius: 0 12px 12px 0; flex: 1; min-width: 0; }
+
+/* ===================================================== revisione di ottobre
+   Una passata sola su contrasto, bersagli, ritmo e calendari. Sta in fondo
+   apposta: ogni regola qui vince su quelle sopra, e si legge in un posto. */
+
+/* Contrasto. Il blu e il verde del marchio, sul bianco, stavano a 3,5–4 e
+   2,5–3: sotto la soglia proprio sul bottone principale, che è il testo più
+   importante di ogni schermata. Le tinte scure qui sotto stanno sopra 4,5 sia
+   come testo sul chiaro sia come fondo sotto il bianco. */
+:root {
+  --accento: #1d66db;
+  --cedo: #1d66db;
+  --verde: #0b7a52;
+  --prendo: #0b7a52;
+  --rosso: #c0303a;
+  --oro: #8a6305;
+  /* Avvisi e match potenziali: un ambra, non l'oro. L'oro vuol dire priorità. */
+  --giallo: #a0520a;
+  --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
+  /* Il testo sopra un fondo pieno di accento. */
+  --su-pieno: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --su-pieno: #0d1421; --giallo: #ffb066; }
+}
+:root[data-theme="dark"] { --su-pieno: #0d1421; --giallo: #ffb066; }
+
+/* In scuro i fondi pieni sono chiari: il bianco sopra stava a 2,5. */
+.chip.attivo, .pill.attivo, .mese-giorno .quota, .tab .conta { color: var(--su-pieno); }
+/* Il bottone principale resta bianco in entrambi i temi: il gradiente è scuro. */
+.btn.primario { color: #fff; }
+
+/* Bersagli: 44px è il minimo per un pollice, in piedi, con una mano. */
+.icon-btn { width: 44px; height: 44px; }
+.link-btn { min-height: 44px; display: inline-flex; align-items: center; }
+.priorita-chip, .grazie-chip { min-height: 44px; padding: 0 14px; }
+.btn.piccolo { min-height: 44px; }
+
+/* Ritmo. Le distanze fra blocchi erano tredici valori diversi, e la testata
+   distava dal contenuto 10, 22 o 30 px secondo la schermata. Ora: 12 dentro
+   un gruppo, 28 fra sezioni, 16 sotto ogni testata. */
+.testata { padding: 14px 0 0; margin-bottom: 16px; }
+.testata h1 { font-size: 22px; }
+.sezione { margin: 28px 0; }
+.testata + .sezione, .testata + .chips, .testata + .occhiello { margin-top: 0; }
+.tile, .card { margin-bottom: 12px; }
+.chips { margin: 0 0 16px; }
+
+/* --------------------------------------------- le righe che non fanno per te
+   Il motivo, in grigio, al posto di un "non puoi" rosso: non è un errore, è
+   un fatto sui tuoi turni. La riga resta toccabile, solo più quieta. */
+.riga-richiesta .non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 3px 0 0; }
+.riga-richiesta.non-per-me .riga-titolo,
+.riga-richiesta.non-per-me .avatar { opacity: .62; }
+.motivo-non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 8px 0 0; }
+
+/* L'icona del tipo dentro la pillola, allineata al testo. */
+.tipo-pill { display: inline-flex; align-items: center; gap: 4px; }
+.tipo-cambio { display: flex; align-items: center; gap: 6px; }
+.titolo-gruppo { display: flex; align-items: center; gap: 8px; }
+
+/* --------------------------------------------------------- calendario unico
+   Il tab Calendario usa le settimane che prima stavano nel Profilo: ore della
+   settimana, rotazione, la percentuale di chi puoi aiutare, e sotto ogni
+   giorno le barre di chi cerca e chi offre. */
+.legenda-mese {
+  list-style: none; margin: 0 0 14px; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px 14px;
+  font-size: 14px; color: var(--testo-tenue);
+}
+.legenda-mese li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.legenda-mese .barre.in-legenda { width: 18px; margin: 0; }
+.campione { width: 16px; height: 12px; border-radius: 4px; border: 1px solid var(--bordo); background: var(--superficie); }
+.campione.prioritaria { border: 2px solid var(--oro); }
+.campione.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
+.nota-mese { margin: 14px 0 0; }
+
+.mese-griglia { gap: 4px; }
+.mese-settimana { margin-bottom: 12px; }
+.riga-settimana { margin-bottom: 4px; }
+.mese-giorno { min-height: 64px; padding: 6px 2px 5px; gap: 2px; }
+.mese-giorno .numero { font-size: 15px; }
+.mese-giorno .quota { padding: 0 5px; }
+.mese-giorno .barre { width: 70%; height: 4px; margin-top: auto; }
+.mese-giorno.prioritaria { border: 2px solid var(--oro); }
+/* La disponibilità in verde, il colore di chi prende: l'arancio si
+   confondeva con l'oro della priorità. */
+.mese-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
+.mese-griglia.intestazione .dow-fisso { font-size: 12px; }
+
+/* --------------------------------------------------- Cambio rapido, i turni
+   Una griglia di settimana in settimana, sette colonne, testo piccolo: i
+   turni si scelgono come su un calendario. */
+.cal-turni { margin: 0 0 8px; }
+.cal-turni-testa, .cal-turni-griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-turni-testa { margin-bottom: 4px; }
+.cal-turni-testa span { font-size: 12px; text-align: center; color: var(--testo-tenue); }
+.cal-turno {
+  appearance: none; font: inherit; color: inherit; cursor: pointer;
+  min-height: 44px; padding: 4px 0; border-radius: 9px;
+  border: 1px solid var(--bordo); background: var(--superficie);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+}
+.cal-turno b { font-size: 14px; line-height: 1.1; }
+.cal-turno em { font-style: normal; font-size: 12px; color: var(--testo-tenue); font-variant-numeric: tabular-nums; }
+.cal-turno.vuoto { border-color: transparent; background: none; cursor: default; }
+.cal-turno.vuoto b { font-weight: 400; color: var(--testo-tenue); opacity: .55; }
+.cal-turno.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
+.cal-turno.attivo em { color: inherit; opacity: .85; }
+
+/* Le ragioni di un match dietro "Perché": in Rapido le schede erano alte
+   cinque righe di spiegazione, e la decisione si perdeva sotto. */
+.perche-aperto { margin: 4px 0 12px; }
+.perche-aperto > summary {
+  cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accento);
+  min-height: 44px; display: flex; align-items: center; list-style: none;
+}
+.perche-aperto > summary::-webkit-details-marker { display: none; }
+.perche-aperto > summary::after { content: '›'; margin-left: 6px; transition: transform .15s ease; }
+.perche-aperto[open] > summary::after { transform: rotate(90deg); }
+.perche-aperto .perche { margin-top: 0; }
+
+/* ------------------------------------------------------------- statistiche
+   L'oro è della priorità: le richieste pubblicate sono un conteggio. */
+.barra-mese.pubblicate { background: var(--accento); }
+
+/* --------------------------------------------------------------- iscrizione
+   La R del codice centrata sull'altezza del campo, e larga quanto basta. */
+.campo-codice .prefisso-codice { width: 48px; padding: 0; display: flex; align-items: center; justify-content: center; }
+.ho-gia-account .link-btn { font-weight: 600; }
+
+/* Icona e testo dei filtri sulla stessa riga: l'svg è un blocco, e andava a
+   capo sopra l'etichetta raddoppiando l'altezza del chip. */
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; }
+
+/* La disponibilità come fondo della cella, non come linea: la linea verde in
+   basso si confondeva con la barra di chi offre. */
+.mese-giorno.disponibile { box-shadow: none; background: var(--prendo-tenue); }
+.campione.disponibile { box-shadow: none; background: var(--prendo-tenue); border-color: color-mix(in srgb, var(--prendo) 40%, transparent); }
+
+/* Il fuoco dei campi nel colore dell'app, al posto del contorno nero del browser. */
+input.testo:focus-visible, input[type="password"]:focus-visible, input[type="time"]:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accento); outline-offset: 0; border-color: var(--accento);
+}
+
+/* I quattro filtri della Bacheca su una riga sola, anche a 360px. */
+.chips { gap: 6px; }
+.chips .chip { padding: 0 13px; font-size: 14px; }
+
+/* La legenda delle Statistiche con i colori veri delle barre. */
+.legenda-statistiche span { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; }
+.campione-barra { width: 10px; height: 12px; border-radius: 3px 3px 0 0; display: inline-block; }
+.campione-barra.pubblicate { background: var(--accento); }
+.campione-barra.chiuse { background: var(--testo-tenue); }
