@@ -322,3 +322,39 @@ test('il calendario condiviso sale con l\'upsert sul suo vincolo, non sulla chia
   assert.ok(s, 'la riga è partita');
   assert.match(s.percorso, /on_conflict=user_id/);
 });
+
+test('il traguardo annunciato sale sul server e scende su un altro telefono', async () => {
+  const state = statoIscritto();
+  const scritture = serverFinto({
+    profili: { righe: PROFILI }, richieste: {}, proposte: {}, ringraziamenti: {}, disponibilita: {}, traguardi_visti: {},
+  });
+
+  store.segnaTraguardiVisti(3);
+  // Uno più basso non riscrive: le soglie salgono e basta.
+  store.segnaTraguardiVisti(1);
+  assert.equal(state.coda.filter((op) => op.tipo === 'traguardi.salva').length, 1);
+  await svuotaCoda(state);
+  const su = scritture.find((s) => s.percorso.includes('/rest/v1/traguardi_visti'));
+  assert.ok(su, 'non è salito niente');
+  assert.ok(su.percorso.includes('on_conflict=user_id'));
+  assert.equal(su.corpo.user_id, 'io-sul-server');
+  assert.equal(su.corpo.soglia, 3);
+
+  // Un telefono nuovo: niente in locale, dieci sul server.
+  const nuovo = statoIscritto();
+  serverFinto({
+    profili: { righe: PROFILI }, richieste: {}, proposte: {}, ringraziamenti: {}, disponibilita: {},
+    traguardi_visti: { righe: [{ user_id: 'io-sul-server', soglia: 10 }] },
+  });
+  await scarica(nuovo);
+  assert.equal(store.traguardiVisti(), 10);
+});
+
+test('senza una riga sul server il traguardo annunciato in locale resta', async () => {
+  const state = statoIscritto();
+  state.profilo.traguardiVisti = 5;
+  serverFinto({ profili: { righe: PROFILI }, richieste: {}, proposte: {}, ringraziamenti: {}, disponibilita: {} });
+  const esito = await scarica(state);
+  assert.ok(!esito.errore);
+  assert.equal(state.profilo.traguardiVisti, 5, 'il valore locale non si perde');
+});

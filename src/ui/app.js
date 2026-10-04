@@ -55,23 +55,17 @@ function guideViste() {
 }
 
 /**
- * I traguardi già annunciati, per persona. Come la guida: una cosa di questo
- * telefono, non un dato da sincronizzare. Su un telefono nuovo l'annuncio
- * torna una volta, e va bene così.
+ * Un traguardo nuovo si annuncia una volta sola, anche cambiando telefono:
+ * la soglia già annunciata sta sul server (vedi `traguardi_visti`).
  */
-const CHIAVE_TRAGUARDI = 'cambio-turno:traguardi';
-
 function annunciaTraguardi() {
-  let visti = {};
-  try { visti = JSON.parse(localStorage.getItem(CHIAVE_TRAGUARDI) || '{}'); } catch { /* privata */ }
-  const me = store.me.id;
-  const nuovi = traguardiNuovi(karma(store.state.ringraziamenti, me), visti[me] || []);
+  const nuovi = traguardiNuovi(karma(store.state.ringraziamenti, store.me.id), store.traguardiVisti());
   if (!nuovi.length) return;
   // Uno solo, il più alto: tre avvisi di fila per chi apre dopo mesi
   // sarebbero rumore.
-  toast(`Nuovo traguardo: ${nuovi.at(-1).titolo}`);
-  visti[me] = [...(visti[me] || []), ...nuovi.map((t) => t.id)];
-  try { localStorage.setItem(CHIAVE_TRAGUARDI, JSON.stringify(visti)); } catch { /* privata */ }
+  const ultimo = nuovi.at(-1);
+  toast(`Nuovo traguardo: ${ultimo.titolo}`);
+  store.segnaTraguardiVisti(ultimo.soglia);
 }
 
 function segnaGuidaVista(chiave) {

@@ -30,6 +30,10 @@ avrebbe dato al server il calendario completo di ognuno in cambio di niente.
   stati impossibili.
 - **`disponibilita`** — sette booleani per settimana, a partire dal sabato.
 - **`ringraziamenti`** — l'unica cosa che resta dopo il cambio.
+- **`traguardi_visti`** — una riga per persona: la soglia più alta dei grazie
+  già annunciata, perché l'avviso di un traguardo non torni su un telefono
+  nuovo. La legge solo il proprietario: dalla soglia si capirebbe quanti
+  grazie hai ricevuto, e quello lo vedi solo tu.
 
 ## Row Level Security
 

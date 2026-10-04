@@ -411,7 +411,12 @@ con un nome (1, 3, 5, 10, 15, 25, 50, 75, 100, 125, 150 grazie, nomi e soglie
 in `RULES.karma`), dal "Primo grazie" alla "Leggenda Liberty". Si vedono quelli
 raggiunti e il prossimo, con l'avanzamento; gli altri si scoprono strada
 facendo. Un traguardo nuovo si annuncia una volta, con un avviso breve quando
-apri il Profilo. In alto, accanto al totale, quanti colleghi diversi ti hanno
+apri il Profilo; la soglia già annunciata sta sul server (`traguardi_visti`),
+quindi cambiando telefono l'avviso non torna.
+
+Per ringraziare si sceglie fra due frasi pronte, pescate a caso da una decina,
+oppure se ne scrive una a mano. Sempre le stesse quattro diventavano un tasto
+premuto senza leggere, e chi riceve vedeva arrivare ogni volta la stessa frase. In alto, accanto al totale, quanti colleghi diversi ti hanno
 ringraziato: è un'informazione, non ha traguardi suoi.
 
 Lo vede solo chi lo riceve. Nessuna classifica e nessun numero sulle schede

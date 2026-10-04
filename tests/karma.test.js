@@ -41,7 +41,8 @@ test('karma: le soglie salgono, così "il prossimo" è sempre quello giusto', ()
 });
 
 test('karma: un traguardo già annunciato non torna', () => {
-  const k = karma([grazie('giulia', 'lorenzo', 1)], 'lorenzo');
-  assert.deepEqual(traguardiNuovi(k, []).map((t) => t.id), ['grazie-1']);
-  assert.deepEqual(traguardiNuovi(k, ['grazie-1']), []);
+  const k = karma([1, 2, 3].map((i) => grazie(`u${i}`, 'lorenzo', i)), 'lorenzo');
+  assert.deepEqual(traguardiNuovi(k, 0).map((t) => t.soglia), [1, 3]);
+  assert.deepEqual(traguardiNuovi(k, 1).map((t) => t.soglia), [3]);
+  assert.deepEqual(traguardiNuovi(k, 3), []);
 });

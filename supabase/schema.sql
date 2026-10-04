@@ -892,3 +892,27 @@ drop trigger if exists notifica_richiesta on public.richieste;
 create trigger notifica_richiesta
   after insert on public.richieste
   for each row execute function public.notifica_richiesta();
+
+
+-- ======================================================= traguardi annunciati
+--
+-- Il gradino più alto dei grazie che l'app ti ha già annunciato. Senza, su
+-- ogni telefono nuovo (o dopo aver pulito il browser) l'avviso tornava.
+--
+-- È un numero solo e lo legge solo il proprietario: dalla soglia annunciata
+-- si ricava più o meno quanti grazie hai ricevuto, e il karma lo vede solo
+-- chi lo riceve. Nessuna policy di lettura per colleghi o admin, e non va
+-- aggiunta.
+create table if not exists public.traguardi_visti (
+  user_id        uuid primary key references public.profili(id) on delete cascade,
+  soglia         integer not null default 0 check (soglia >= 0),
+  aggiornato_il  timestamptz not null default now()
+);
+
+alter table public.traguardi_visti enable row level security;
+
+drop policy if exists "ognuno vede solo i propri traguardi" on public.traguardi_visti;
+create policy "ognuno vede solo i propri traguardi"
+  on public.traguardi_visti for all to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);

@@ -15,7 +15,7 @@ import {
 import { parseICS } from './ics.js';
 import { daRiempire, rotazioneVuota } from './rotazione.js';
 import {
-  sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche,
+  sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche, salvaTraguardi,
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
 } from './sincronia.js';
 
@@ -679,6 +679,19 @@ export const store = {
     this.commit();
     this.spingi();
     return { ok: true };
+  },
+
+  /** Il gradino più alto dei grazie già annunciato a chi usa l'app. */
+  traguardiVisti() {
+    return this.state.profilo?.traguardiVisti || 0;
+  },
+
+  segnaTraguardiVisti(soglia) {
+    if (soglia <= this.traguardiVisti()) return;
+    this.state.profilo.traguardiVisti = soglia;
+    salvaTraguardi(this.state, soglia);
+    this.commit();
+    this.spingi();
   },
 
   ringraziamentiRicevuti(userId = this.state.currentUserId) {

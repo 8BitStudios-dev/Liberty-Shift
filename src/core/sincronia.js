@@ -215,6 +215,7 @@ const OPERAZIONI = {
   'ringraziamento.crea': (d) => inserisci('ringraziamenti', d),
   'disponibilita.salva': (d) => salvaSuChiave('disponibilita', d),
   'notifiche.salva': (d) => salvaSuChiave('notifiche_preferenze', d, 'user_id'),
+  'traguardi.salva': (d) => salvaSuChiave('traguardi_visti', d, 'user_id'),
 };
 
 /**
@@ -225,7 +226,7 @@ const OPERAZIONI = {
  * Si sostituisce tutto tranne la testa della coda: se è in corso proprio ora,
  * toglierla farebbe togliere (`shift`) l'operazione sbagliata quando finisce.
  */
-const SOSTITUISCE = new Set(['notifiche.salva']);
+const SOSTITUISCE = new Set(['notifiche.salva', 'traguardi.salva']);
 
 export function accoda(state, tipo, dati) {
   state.coda = state.coda || [];
@@ -281,6 +282,20 @@ export function condividiNotifiche(state, { forzato = false, oggi = todayISO() }
 
   state.profilo.notifiche = { ...(scelta || { modo: 'dirette', consensoIl: null }), firma };
   accoda(state, 'notifiche.salva', riga);
+  return true;
+}
+
+/**
+ * Il traguardo più alto già annunciato, verso il server: così l'avviso non
+ * torna su un altro telefono. Conta solo l'ultimo valore, come le notifiche.
+ */
+export function salvaTraguardi(state, soglia) {
+  if (!sulServer(state)) return false;
+  accoda(state, 'traguardi.salva', {
+    user_id: state.profilo.idServer,
+    soglia,
+    aggiornato_il: new Date().toISOString(),
+  });
   return true;
 }
 
@@ -356,7 +371,7 @@ async function svuota(state) {
 export async function scarica(state) {
   if (!collegato()) return { saltato: true };
 
-  const [profili, richieste, proposte, ringraziamenti, disponibilita, notifiche] = await Promise.all([
+  const [profili, richieste, proposte, ringraziamenti, disponibilita, notifiche, traguardi] = await Promise.all([
     seleziona('profili'),
     seleziona('richieste', { ordine: 'creata_il.desc' }),
     seleziona('proposte'),
@@ -364,6 +379,9 @@ export async function scarica(state) {
     seleziona('disponibilita'),
     // Solo la propria riga: per tutti gli altri la tabella non ha policy di lettura.
     seleziona('notifiche_preferenze'),
+    // Come sopra, solo la propria. Se la tabella non c'è ancora (schema non
+    // rilanciato) l'errore resta qui e non ferma il resto.
+    seleziona('traguardi_visti'),
   ]);
 
   const rifiuto = [profili, richieste, proposte, ringraziamenti, disponibilita]
@@ -396,6 +414,13 @@ export async function scarica(state) {
       modo: mia.modo,
       consensoIl: mia.consenso_il || null,
     };
+  }
+
+  // Vince il più alto: un traguardo annunciato su un telefono non deve
+  // tornare sull'altro, e uno annunciato qui e ancora in coda non si perde.
+  const visto = traguardi.dati?.[0]?.soglia || 0;
+  if (state.profilo && visto > (state.profilo.traguardiVisti || 0)) {
+    state.profilo.traguardiVisti = visto;
   }
 
   for (const riga of profili.dati || []) {

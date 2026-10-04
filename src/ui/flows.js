@@ -762,20 +762,42 @@ export function formRifiuto(proposalId) {
     <p class="testo-tenue">Due parole aiutano chi ha proposto a capire se riprovare.</p>`;
 }
 
-/** Il modulo per ringraziare, con qualche formula pronta. */
+/**
+ * Le frasi pronte per ringraziare. Se ne propongono due a caso: sempre le
+ * stesse quattro, dopo un paio di scambi, diventavano un tasto da premere
+ * senza leggerlo, e chi riceve vedeva arrivare ogni volta la stessa frase.
+ */
+const FRASI_GRAZIE = [
+  'Mi hai salvato!',
+  'Grazie mille 💛',
+  'Ricambio quando vuoi',
+  'Sei un grande',
+  'Mi hai salvato la serata',
+  'Te ne devo una',
+  'Il prossimo cambio lo offro io',
+  'Grazie, davvero',
+  'Sei un asso',
+  'Senza di te non ce la facevo',
+];
+
+function dueACaso(lista) {
+  const i = Math.floor(Math.random() * lista.length);
+  const j = (i + 1 + Math.floor(Math.random() * (lista.length - 1))) % lista.length;
+  return [lista[i], lista[j]];
+}
+
+/** Il modulo per ringraziare: due frasi pronte e una da scrivere a mano. */
 export function formGrazie(proposalId) {
   const p = store.state.proposals.find((x) => x.id === proposalId);
   const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
   return html`
     <p>Un grazie a <strong>${nomeUtente(altro)}</strong>: resterà nel suo profilo.</p>
     <div class="chips">
-      ${['Mi hai salvato!', 'Grazie mille 💛', 'Ricambio quando vuoi', 'Sei un grande'].map((t) => raw(
-    `<button class="chip" data-act="grazie-veloce" data-testo="${t}">${t}</button>`,
-  ))}
+      ${raw(dueACaso(FRASI_GRAZIE).map((t) => html`<button class="chip" data-act="grazie-veloce" data-testo="${t}">${t}</button>`).join(''))}
     </div>
     <label class="campo">
       <span>Oppure scrivi tu</span>
-      <textarea data-campo="grazie" rows="2" placeholder="Grazie!"></textarea>
+      <textarea data-campo="grazie" rows="2" maxlength="200" placeholder="Grazie!"></textarea>
     </label>`;
 }
 

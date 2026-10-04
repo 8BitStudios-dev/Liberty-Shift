@@ -15,7 +15,6 @@ export function karma(ringraziamenti, userId) {
   const grazie = ricevuti.length;
   const traguardi = RULES.karma.traguardi.map((t) => ({
     ...t,
-    id: `grazie-${t.soglia}`,
     raggiunto: grazie >= t.soglia,
   }));
   return {
@@ -28,7 +27,11 @@ export function karma(ringraziamenti, userId) {
   };
 }
 
-/** I traguardi raggiunti che chi guarda non ha ancora visto. */
-export function traguardiNuovi(stato, visti) {
-  return stato.traguardi.filter((t) => t.raggiunto && !visti.includes(t.id));
+/**
+ * I traguardi raggiunti oltre l'ultimo già annunciato. Basta un numero, la
+ * soglia più alta vista: le soglie salgono, e un id per traguardo sarebbe
+ * una lista da tenere allineata fra telefono e server.
+ */
+export function traguardiNuovi(stato, sogliaVista) {
+  return stato.traguardi.filter((t) => t.raggiunto && t.soglia > sogliaVista);
 }
