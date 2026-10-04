@@ -445,3 +445,19 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .titolo-priorita { color: var(--oro); display: flex; align-items: center; gap: 6px; }
 .titolo-priorita svg { fill: currentColor; stroke: currentColor; }
 .priorita-usata { color: var(--oro); font-weight: 600; }
+
+/* Profilo, passata di respiro. Il bollino è la firma della pagina: più grande
+   e con aria sopra, il pannello scende di conseguenza. */
+.testata-profilo { padding: 44px 0 18px; }
+.io-bollino { width: 68px; height: 68px; font-size: 24px; }
+.io-pannello { top: 78px; }
+.testata-profilo + .sezione { margin-top: 22px; }
+
+/* "I tuoi turni" è un riquadro come le preferenze. Dentro, le righe non sono
+   altre scatole con ombra: un tono di sfondo basta a staccarle. */
+.riquadro.turni > summary { font-size: 17px; padding: 17px 0; }
+.turni-corpo { padding: 4px 0 14px; display: grid; gap: 10px; }
+.riquadro.turni .tile,
+.riquadro.turni .tile-sync {
+  border: 0; box-shadow: none; margin: 0; background: var(--superficie-2);
+}

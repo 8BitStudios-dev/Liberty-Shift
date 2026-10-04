@@ -315,8 +315,13 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <h2>I tuoi turni</h2>
-      ${raw(sezioneTurni())}
+      <details class="riquadro turni" data-riquadro="turni" ${raw(riquadriAperti.has('turni') ? 'open' : '')}>
+        <summary>
+          <span>I tuoi turni</span>
+          <span class="conteggio">importa o inserisci</span>
+        </summary>
+        <div class="turni-corpo">${raw(sezioneTurni())}</div>
+      </details>
     </section>
 
     <section class="sezione">
