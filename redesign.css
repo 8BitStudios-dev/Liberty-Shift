@@ -473,7 +473,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .riquadro-fisso { padding-bottom: 14px; }
 .riquadro-fisso .testo-tenue { margin: 0; }
 .titolo-riquadro { display: inline-flex; align-items: center; gap: 6px; }
-.titolo-riquadro svg[fill="currentColor"] { color: var(--oro); }
+.titolo-riquadro svg { fill: var(--oro); stroke: var(--oro); }
 .riquadro-testa .conteggio { margin-left: auto; font-size: 13px; font-weight: 500; color: var(--testo-tenue); }
 .priorita-usata { margin: 6px 0 0; font-weight: 600; }
 

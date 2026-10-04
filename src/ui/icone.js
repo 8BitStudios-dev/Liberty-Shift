@@ -38,7 +38,6 @@ const TRACCIATI = {
   notifiche: '<path d="M6.2 16.5V11a5.8 5.8 0 0 1 11.6 0v5.5l1.7 1.9h-15z"/><path d="M10 20.6a2.2 2.2 0 0 0 4 0"/>',
   invita: '<rect x="3.5" y="6" width="17" height="12.5" rx="3"/><path d="M4.5 8l7.5 5 7.5-5"/>',
   legale: '<path d="M6.5 3.5h7.5l4 4v13H6.5z"/><path d="M13.5 3.5V8h4.5M9.5 12.5h5M9.5 16h5"/>',
-  scudo: '<path d="M12 3.4l7 2.6v5.4c0 4.4-2.9 7.9-7 9.2-4.1-1.3-7-4.8-7-9.2V6z"/><path d="M9 12l2.1 2.1L15.2 10"/>',
   vuoto: '<rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17M9.5 15h5"/>',
 };
 
