@@ -776,8 +776,10 @@ const FRASI_GRAZIE = [
   'Te ne devo una',
   'Il prossimo cambio lo offro io',
   'Grazie, davvero',
-  'Sei un asso',
-  'Senza di te non ce la facevo',
+  'Sei Top',
+  'Come farei senza di te',
+  'Ti devo uno spritz',
+  'Thanks bro',
 ];
 
 function dueACaso(lista) {
