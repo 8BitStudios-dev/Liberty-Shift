@@ -21,14 +21,22 @@ import {
 // ---------------------------------------------------------------- HOME
 
 /**
- * Prima le richieste a cui puoi rispondere, poi le altre, ciascun gruppo
- * nell'ordine che aveva (priorità, poi le più recenti). Una lista che apre
- * con quattro righe "non fa per te" fa scorrere per niente.
+ * L'ordine delle liste di richieste, uguale ovunque: prima le prioritarie,
+ * sempre, perché la priorità è proprio la promessa di stare in cima; poi, a
+ * pari priorità, quelle a cui puoi rispondere; dentro ogni gruppo le più
+ * recenti. Una lista che apre con quattro righe "non fa per te" fa scorrere
+ * per niente, ma una priorità che finisce in fondo non è una priorità.
  */
-const perTe = (lista) => [
-  ...lista.filter((r) => store.possoRispondere(r)),
-  ...lista.filter((r) => !store.possoRispondere(r)),
+/** Le occasioni di aiutare, prioritarie prima; a pari priorità resta l'ordine per percentuale. */
+export const primaLePrioritarie = (opportunita) => [
+  ...opportunita.filter((o) => hasPriority(o.richiesta)),
+  ...opportunita.filter((o) => !hasPriority(o.richiesta)),
 ];
+
+export const perTe = (lista) => {
+  const peso = (r) => (hasPriority(r) ? 0 : 2) + (store.possoRispondere(r) ? 0 : 1);
+  return lista.map((r, i) => ({ r, i })).sort((a, b) => peso(a.r) - peso(b.r) || a.i - b.i).map((x) => x.r);
+};
 
 export function home() {
   const me = store.me;
@@ -218,7 +226,6 @@ const FILTRI = {
   TUTTI: { label: 'Tutti', icona: null, test: () => true },
   ORARIO: { label: 'Orario', icona: 'orario', test: (r) => r.tipo === TIPO_CAMBIO.ORARIO },
   OFF: { label: 'OFF', icona: 'calendario', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
-  PRIORITA: { label: 'Priorità', icona: 'priorita', test: (r) => hasPriority(r) },
 };
 
 export function bacheca(params) {
@@ -1029,7 +1036,7 @@ export function dettaglioGiornoPubblico(data) {
     <div class="giorno-dettaglio">
       ${raw(mie.length ? html`
         <h3>Puoi aiutare ${mie.length === 1 ? 'una persona' : `${mie.length} persone`}</h3>
-        ${raw(mie.map((o) => cardOpportunita(o)).join(''))}` : '')}
+        ${raw(primaLePrioritarie(mie).map((o) => cardOpportunita(o)).join(''))}` : '')}
       ${raw(gruppi)}
     </div>`;
 }

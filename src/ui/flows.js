@@ -16,6 +16,7 @@ import {
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo,
 } from './components.js';
 import { icona } from './icone.js';
+import { primaLePrioritarie } from './views.js';
 
 export const draft = {
   tipo: null,
@@ -745,7 +746,7 @@ export function aiuta() {
       compaiono: non servirebbe a nessuno.
     </p>
     ${raw(mie.length
-    ? mie.map((o) => cardOpportunita(o)).join('')
+    ? primaLePrioritarie(mie).map((o) => cardOpportunita(o)).join('')
     : vuoto(
       'Niente da fare, per ora',
       'Nessuna richiesta aperta torna con i turni che hai in calendario. Se il calendario non è aggiornato, il posto per farlo è il Profilo.',

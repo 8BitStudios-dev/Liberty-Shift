@@ -158,7 +158,7 @@ export const GUIDE = {
       <p class="testo-tenue">
         I filtri in alto servono quando le richieste sono tante: se devi
         liberarti un giorno guardi gli OFF, se devi spostare un orario guardi
-        gli orari.
+        gli orari. Le prioritarie stanno sempre in cima, in ogni lista.
       </p>`,
   },
 
