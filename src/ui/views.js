@@ -168,14 +168,23 @@ function legendaPubblica() {
     </ul>`;
 }
 
+/**
+ * A che punto è il cambio di un giorno, detto dalla forma e non dal colore:
+ * clessidra finché si cerca o si aspetta una risposta, spunta quando è
+ * concordato e manca solo UKG. Il colore è lo stesso, l'ambra del giorno da
+ * cambiare: due clessidre di due colori si distinguevano solo guardando bene.
+ */
+function segnoCambio(fase, px) {
+  const accordo = fase === 'accordo';
+  return `<span class="in-corso" aria-label="${accordo ? 'cambio concordato, manca la conferma in UKG' : 'cambio in corso'}">${icona(accordo ? 'spunta' : 'clessidra', { px, forte: true })}</span>`;
+}
+
 function legendaPersonale() {
   return `
-    <ul class="legenda-mese">
-      <li><span class="in-corso in-corso-richiesta in-legenda">${icona('clessidra', { px: 14 })}</span>richiesta in corso</li>
-      <li><span class="in-corso in-corso-accordo in-legenda">${icona('clessidra', { px: 14 })}</span>accordo, da confermare in UKG</li>
-      <li><span class="campione da-cambiare"></span>giorno da cambiare</li>
-      <li><span class="campione disponibile"></span>sei disponibile</li>
-      <li><span class="campione riposo"></span>OFF</li>
+    <ul class="legenda-mese legenda-personale">
+      <li><span class="campione-giorno da-cambiare">${icona('clessidra', { px: 12, forte: true })}</span>cambio in corso</li>
+      <li><span class="campione-giorno da-cambiare">${icona('spunta', { px: 12, forte: true })}</span>concordato, manca UKG</li>
+      <li><span class="campione-giorno disponibile"></span>disponibile a scambiare</li>
     </ul>`;
 }
 
@@ -959,7 +968,7 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
                        ${disponibileIl(me, data) ? 'disponibile' : ''}
                        ${inCorso.has(data) ? 'da-cambiare' : ''}"
                 data-act="giorno-profilo" data-data="${data}">
-          ${raw(inCorso.has(data) ? `<span class="in-corso in-corso-${inCorso.get(data)}" aria-label="${inCorso.get(data) === 'accordo' ? 'scambio concordato, da confermare in UKG' : 'scambio in corso'}">${icona('clessidra', { px: 13, forte: true })}</span>` : '')}
+          ${raw(inCorso.has(data) ? segnoCambio(inCorso.get(data), 12) : '')}
           <span class="numero">${toDate(data).getUTCDate()}</span>
           <span class="turno">${turno ? (turno.tipo === 'OFF' ? 'OFF' : turno.start) : '—'}</span>
           ${raw(turno?.tipo === 'WORK' ? `<span class="fine">${turno.end}</span>` : '')}
@@ -1051,7 +1060,7 @@ function rigaMiaRichiesta(r) {
     : `Lasci ${shiftLabel(cedo)} · cerchi ${wantLabel(r.cerco)}`;
   return html`
     <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
-      <span class="in-corso in-corso-richiesta">${raw(icona('clessidra', { px: 16, forte: true }))}</span>
+      ${raw(segnoCambio('richiesta', 15))}
       <div>
         <strong>${raw(iconaTipo(r.tipo))} ${r.tipo === TIPO_CAMBIO.OFF ? 'Cambio OFF' : 'Cambio orario'}</strong>
         <div class="meta">${cosa}</div>
@@ -1068,7 +1077,7 @@ function rigaScambio(p) {
   const accordo = p.status === 'ACCORDO';
   return html`
     <div class="riga-cambio" data-act="apri-richiesta" data-id="${p.requestId}">
-      <span class="in-corso ${accordo ? 'in-corso-accordo' : 'in-corso-richiesta'}">${raw(icona('clessidra', { px: 16, forte: true }))}</span>
+      ${raw(segnoCambio(accordo ? 'accordo' : 'richiesta', 15))}
       <div>
         <strong>${accordo ? `Scambio concordato con ${nomeUtente(altro)}` : `Hai proposto uno scambio a ${nomeUtente(altro)}`}</strong>
         <div class="meta">${accordo
