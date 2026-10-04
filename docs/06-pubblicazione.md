@@ -59,8 +59,21 @@ sottofondo: la prima apertura dopo un aggiornamento mostra ancora quella
 vecchia, la seconda è aggiornata. È il compromesso che tiene l'app istantanea e
 funzionante offline senza inchiodarla per sempre a una versione.
 
-Se una correzione deve arrivare subito, si alza `CACHE` in `sw.js`
-(`liberty-shift-v1` → `v2`): la cache vecchia viene buttata all'attivazione.
+Ogni pubblicazione alza `CACHE` in `sw.js` (`liberty-shift-v21` diventa
+`v22`): senza, il telefono non ha modo di accorgersi che qualcosa è cambiato.
+
+Quando la versione nuova si installa, l'app si ricarica da sola. Serviva
+perché su iPhone l'app sulla schermata Home, riaperta, riprende la pagina di
+prima invece di ricaricarla, e si poteva restare per giorni su una versione
+superata. Quindi:
+
+- a ogni ritorno in primo piano l'app chiede se `sw.js` è cambiato;
+- quando la versione nuova prende il controllo la pagina si ricarica, ma non
+  con un foglio aperto: un messaggio scritto a metà non si butta, si aspetta
+  il prossimo ritorno in primo piano;
+- l'installazione scarica i file scavalcando la cache HTTP del browser, che
+  per GitHub Pages dura dieci minuti: senza, una versione installata appena
+  dopo una pubblicazione poteva riempirsi di file vecchi.
 
 ## Alternative valutate
 

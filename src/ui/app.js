@@ -1212,6 +1212,31 @@ async function aggiornamentoSilenzioso() {
 }
 
 // PWA
+//
+// Su iPhone l'app sulla schermata Home, riaperta, riprende la pagina di prima
+// invece di ricaricarla: il browser non va a vedere se c'è una versione nuova,
+// e si poteva restare per giorni su una versione superata. Per questo:
+//  · a ogni ritorno in primo piano si chiede al server se sw.js è cambiato;
+//  · quando la versione nuova prende il controllo, la pagina si ricarica da
+//    sola, ma solo se non c'è un foglio aperto (un messaggio a metà non si
+//    butta): in quel caso si aspetta che l'app torni in primo piano.
 if ('serviceWorker' in navigator) {
+  // Alla prima installazione non c'è niente da ricaricare: la pagina è già
+  // quella giusta.
+  const avevaUnaVersione = Boolean(navigator.serviceWorker.controller);
+  let daRicaricare = false;
+  const ricaricaSePuoi = () => {
+    if (daRicaricare && !document.querySelector('.sheet-backdrop')) location.reload();
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!avevaUnaVersione || daRicaricare) return;
+    daRicaricare = true;
+    ricaricaSePuoi();
+  });
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    ricaricaSePuoi();
+    navigator.serviceWorker.getRegistration('./').then((reg) => reg?.update()).catch(() => {});
+  });
 }

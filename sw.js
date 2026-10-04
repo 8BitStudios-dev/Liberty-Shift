@@ -6,7 +6,7 @@
 // una cache-first pura, pubblicare una correzione non sarebbe servito a niente
 // finché qualcuno non svuotava il browser — e nessuno lo fa.
 
-const CACHE = 'liberty-shift-v21';
+const CACHE = 'liberty-shift-v22';
 
 const ASSET = [
   './',
@@ -42,7 +42,13 @@ const ASSET = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSET)).then(() => self.skipWaiting()));
+  // `cache: 'reload'` scavalca la cache HTTP del browser. GitHub Pages dice
+  // di tenere i file per dieci minuti: senza, una versione installata subito
+  // dopo una pubblicazione poteva riempirsi di file vecchi sotto il nome
+  // nuovo, e restarci fino alla versione dopo.
+  e.waitUntil(caches.open(CACHE)
+    .then((c) => c.addAll(ASSET.map((u) => new Request(u, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
