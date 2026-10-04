@@ -356,11 +356,13 @@ function passoCodice() {
   return html`
     <h2 class="titolo-gruppo">Il codice del negozio</h2>
 
-    <label class="campo campo-codice">
+    <label class="campo-codice">
       <span class="prefisso-codice" aria-hidden="true">R</span>
       <input type="text" class="testo" data-campo="codice" value="${b.codice.replace(/^R/i, '')}"
-             placeholder="667" inputmode="numeric" autocomplete="off" aria-label="Codice del negozio, dopo la R" autofocus>
+             inputmode="numeric" autocomplete="off" maxlength="6"
+             aria-label="Codice del negozio, le cifre dopo la R" autofocus>
     </label>
+    <p class="testo-tenue aiuto-codice">Scrivi le cifre che seguono la R.</p>
 
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>
 

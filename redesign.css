@@ -752,3 +752,32 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 @media (max-width: 359px) {
   .mese-personale .mese-giorno.mia-richiesta::after { top: 2px; right: 2px; width: 6px; height: 6px; }
 }
+
+/* --------------------------------------------- il codice del negozio
+   Un campo solo, con la R già scritta dentro: prima erano due scatole di
+   altezza e bordo diversi accostate, e la R sembrava un tasto. Nessun
+   suggerimento nel campo: chi non ha il codice non deve trovarlo scritto lì. */
+.campo-codice {
+  display: flex; align-items: center; gap: 2px;
+  margin: 14px 0 6px; padding: 0 16px; height: 60px;
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s); cursor: text;
+}
+.campo-codice:focus-within { border-color: var(--accento); outline: 2px solid var(--accento); outline-offset: -1px; }
+.campo-codice .prefisso-codice {
+  width: auto; height: auto; padding: 0; border: 0; background: none;
+  display: inline; font-size: 22px; font-weight: 700; letter-spacing: .06em; color: var(--testo);
+}
+.campo-codice input.testo {
+  flex: 1; min-width: 0; height: 100%; padding: 0; margin: 0;
+  border: 0; border-radius: 0; background: none; outline: none;
+  font-size: 22px; font-weight: 700; letter-spacing: .06em; color: var(--testo);
+  font-variant-numeric: tabular-nums;
+}
+.campo-codice input.testo:focus-visible { outline: none; }
+.aiuto-codice { margin: 0 0 18px; font-size: 14px; }
+
+/* Una testata senza tasto a sinistra allinea il titolo a sinistra: centrato
+   fra il vuoto e i tasti di destra finiva fuori asse ("Benvenuto" e "1/5",
+   "Bacheca" e "?"). */
+.testata h1:first-child { text-align: left; }
