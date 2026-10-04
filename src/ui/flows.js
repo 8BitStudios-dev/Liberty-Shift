@@ -3,6 +3,7 @@
 
 import { html, raw, toast } from './dom.js';
 import { store } from '../core/store.js';
+import { icona } from './icone.js';
 import {
   findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
   opportunitaPerMe,
@@ -479,8 +480,8 @@ export function dettaglio(params) {
   const azioniAdmin = store.me.admin && !chiusaOAccordo
     ? html`
       <div class="barra-azioni compatta">
-        <button class="btn secondario piccolo" data-act="chiedi-chiudi-admin" data-id="${r.id}">🛡️ Chiudi</button>
-        <button class="btn pericolo piccolo" data-act="chiedi-rimuovi-admin" data-id="${r.id}">🛡️ Rimuovi</button>
+        <button class="btn secondario piccolo" data-act="chiedi-chiudi-admin" data-id="${r.id}"><span class="icona-in-riga">${raw(icona('scudo', { px: 15 }))}</span> Chiudi</button>
+        <button class="btn pericolo piccolo" data-act="chiedi-rimuovi-admin" data-id="${r.id}"><span class="icona-in-riga">${raw(icona('scudo', { px: 15 }))}</span> Rimuovi</button>
       </div>`
     : '';
 
@@ -501,7 +502,7 @@ export function dettaglio(params) {
       ${raw(r.cerco.note ? `<p class="nota-utente">“${r.cerco.note}”</p>` : '')}
       <div class="meta">${raw(badgeStato(r.status))} · pubblicata ${formatDay(r.createdAt.slice(0, 10))}</div>
       ${raw(r.chiusaDaAdmin
-    ? `<p class="avviso">🛡️ ${r.status === STATUS.RIMOSSA ? 'Rimossa' : 'Chiusa'} da un admin: “${r.motivoAdmin}”</p>`
+    ? `<p class="avviso"><span class="icona-in-riga">${icona('scudo', { px: 15 })}</span> ${r.status === STATUS.RIMOSSA ? 'Rimossa' : 'Chiusa'} da un admin: “${r.motivoAdmin}”</p>`
     : '')}
     </article>
     ${raw(blocchiProposte)}
