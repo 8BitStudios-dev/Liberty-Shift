@@ -100,7 +100,7 @@ export const RULES = {
       { soglia: 25, titolo: 'Ministro dei cambi' },
       { soglia: 50, titolo: 'Santo patrono del sabato' },
       { soglia: 75, titolo: 'Mago del calendario' },
-      { soglia: 100, titolo: 'Leggenda' },
+      { soglia: 100, titolo: 'Statua all\'ingresso' },
       { soglia: 125, titolo: 'Patrimonio dello store' },
       { soglia: 150, titolo: 'Leggenda Liberty' },
     ],
