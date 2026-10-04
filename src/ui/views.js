@@ -316,18 +316,6 @@ export function profilo() {
     </button>
 
     <section class="sezione">
-      <h2>Demo</h2>
-      <p class="testo-tenue">
-        Le persone inventate servono a far vedere l'app quando la bacheca vera
-        è ancora vuota. Cambia persona per guardare lo stesso scambio
-        dall'altro lato; da Impostazioni si nascondono tutte in un tocco.
-      </p>
-      <select data-act="cambia-utente" class="select">
-        ${store.state.users.map((u) => raw(
-    `<option value="${u.id}" ${u.id === me.id ? 'selected' : ''}>${u.nome} ${u.cognomeIniziale}. — ${u.contratto}</option>`,
-  ))}
-      </select>
-      <button class="btn secondario largo" data-act="reset">Ripristina i dati di esempio</button>
       <button class="btn pericolo largo" data-act="esci">Esci</button>
     </section>
 
@@ -390,33 +378,7 @@ export function impostazioni() {
           </span>
           <span class="chevron">›</span>
         </button>` : '')}
-      ${raw(rigaDemo())}
     </section>`;
-}
-
-/**
- * L'interruttore delle persone inventate.
- *
- * Non le cancella: le mette da parte e le rimette. Serve a mostrare l'app a
- * un collega quando la bacheca vera è ancora vuota, e a togliersele di mezzo
- * il giorno in cui i colleghi veri ci sono.
- */
-function rigaDemo() {
-  const visibile = store.demoVisibile();
-  const quante = visibile
-    ? store.state.users.filter((u) => !u.daServer && u.id !== store.state.currentUserId).length
-    : (store.state.demoNascosta?.users || []).length;
-  return html`
-    <label class="tile switch-tile">
-      <span class="tile-icona">${raw(icona('profilo'))}</span>
-      <span>
-        <strong>Persone di esempio</strong>
-        <em>${visibile
-    ? `${quante} colleghi inventati, per far vedere l'app`
-    : 'Nascoste: in bacheca ci sono solo persone vere'}</em>
-      </span>
-      <input type="checkbox" data-act="mostra-demo" ${raw(visibile ? 'checked' : '')}>
-    </label>`;
 }
 
 /**

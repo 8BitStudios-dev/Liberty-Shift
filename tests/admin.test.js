@@ -18,6 +18,7 @@ localStorage.setItem('liberty-shift:sessione-server', JSON.stringify({
 }));
 
 const { store } = await import('../src/core/store.js');
+const { seed } = await import('./fixtures/seed.js');
 const { cambiPerPersona, andamentoMensile, richiesteAperte } = await import('../src/core/statistiche.js');
 
 /** Un collega vero, come se fosse già sceso dal server. */
@@ -32,7 +33,7 @@ function collegaVero(patch = {}) {
 }
 
 test('un admin chiude la richiesta di un altro, con motivo', () => {
-  store.reset();
+  store.reset(seed());
   // u_lorenzo è admin nella demo; rq_martina_1 non è sua.
   const { ok } = store.adminChiudiRichiesta('rq_martina_1', 'Il cambio è già stato fatto fuori dall\'app.');
   assert.equal(ok, true);
@@ -46,7 +47,7 @@ test('un admin chiude la richiesta di un altro, con motivo', () => {
 });
 
 test('un admin rimuove la richiesta di un altro: stato dedicato, non una chiusura normale', () => {
-  store.reset();
+  store.reset(seed());
   const { ok } = store.adminRimuoviRichiesta('rq_luca_1', 'Contenuto duplicato.');
   assert.equal(ok, true);
   const r = store.request('rq_luca_1');
@@ -55,14 +56,14 @@ test('un admin rimuove la richiesta di un altro: stato dedicato, non una chiusur
 });
 
 test('senza motivo, niente azione: chi guarda deve sempre sapere perché', () => {
-  store.reset();
+  store.reset(seed());
   const { errori } = store.adminChiudiRichiesta('rq_martina_1', '   ');
   assert.ok(errori?.length);
   assert.equal(store.request('rq_martina_1').status, 'APERTA');
 });
 
 test('chi non è admin non può chiudere la richiesta di un altro', () => {
-  store.reset();
+  store.reset(seed());
   store.cambiaUtente('u_martina');
   const { errori } = store.adminChiudiRichiesta('rq_luca_1', 'Provo comunque.');
   assert.ok(errori?.length);
@@ -70,7 +71,7 @@ test('chi non è admin non può chiudere la richiesta di un altro', () => {
 });
 
 test('chiudere una richiesta d\'ufficio rifiuta le proposte ancora aperte', () => {
-  store.reset();
+  store.reset(seed());
   store.cambiaUtente('u_giulia');
   store.proponiScambio({
     requestId: 'rq_martina_1',
@@ -87,7 +88,7 @@ test('chiudere una richiesta d\'ufficio rifiuta le proposte ancora aperte', () =
 });
 
 test('cambiPerPersona conta le proposte in accordo per entrambe le parti', () => {
-  store.reset();
+  store.reset(seed());
   store.state.proposals.push(
     { id: 'p1', requestId: 'rq_x', daUserId: 'u_luca', aUserId: 'u_sara', status: 'ACCORDO' },
     { id: 'p2', requestId: 'rq_y', daUserId: 'u_luca', aUserId: 'u_marco', status: 'ACCORDO' },
@@ -101,7 +102,7 @@ test('cambiPerPersona conta le proposte in accordo per entrambe le parti', () =>
 });
 
 test('andamentoMensile copre sempre il mese in corso', () => {
-  store.reset();
+  store.reset(seed());
   const mesi = andamentoMensile(store.state, 3);
   assert.equal(mesi.length, 3);
   const oggi = new Date();
@@ -110,7 +111,7 @@ test('andamentoMensile copre sempre il mese in corso', () => {
 });
 
 test('richiesteAperte esclude quello che un admin ha chiuso o rimosso', () => {
-  store.reset();
+  store.reset(seed());
   const primaCount = richiesteAperte(store.state).length;
   store.adminChiudiRichiesta('rq_martina_1', 'x');
   store.adminRimuoviRichiesta('rq_luca_1', 'y');
@@ -122,7 +123,7 @@ test('richiesteAperte esclude quello che un admin ha chiuso o rimosso', () => {
 // ---------------------------------------------------------- SuperAdmin
 
 test('il SuperAdmin promuove un collega vero ad admin', async () => {
-  store.reset();
+  store.reset(seed());
   store.me.superAdmin = true;
   store.state.users.push(collegaVero());
   globalThis.fetch = async (url) => {
@@ -136,7 +137,7 @@ test('il SuperAdmin promuove un collega vero ad admin', async () => {
 });
 
 test('il SuperAdmin disattiva e poi riattiva un profilo', async () => {
-  store.reset();
+  store.reset(seed());
   store.me.superAdmin = true;
   store.state.users.push(collegaVero());
   globalThis.fetch = async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ ok: true }) });
@@ -149,7 +150,7 @@ test('il SuperAdmin disattiva e poi riattiva un profilo', async () => {
 });
 
 test('chi non è SuperAdmin non può promuovere nessuno', async () => {
-  store.reset();
+  store.reset(seed());
   store.me.superAdmin = false; // u_lorenzo è SuperAdmin nella demo: qui si nega di proposito
   store.state.users.push(collegaVero());
   const { errori } = await store.promuoviAdmin('srv-anna');
@@ -158,7 +159,7 @@ test('chi non è SuperAdmin non può promuovere nessuno', async () => {
 });
 
 test('il SuperAdmin non può agire su sé stesso', async () => {
-  store.reset();
+  store.reset(seed());
   store.me.superAdmin = true;
   const { errori } = await store.disattivaProfilo(store.state.currentUserId);
   assert.ok(errori?.length);
@@ -166,7 +167,7 @@ test('il SuperAdmin non può agire su sé stesso', async () => {
 });
 
 test('una persona della demo non è gestibile: non è su Supabase', async () => {
-  store.reset();
+  store.reset(seed());
   store.me.superAdmin = true;
   const { errori } = await store.promuoviAdmin('u_martina');
   assert.ok(errori?.length);
@@ -174,7 +175,7 @@ test('una persona della demo non è gestibile: non è su Supabase', async () => 
 });
 
 test('un rifiuto della funzione lato server non promuove comunque nessuno', async () => {
-  store.reset();
+  store.reset(seed());
   store.me.superAdmin = true;
   store.state.users.push(collegaVero());
   globalThis.fetch = async () => ({

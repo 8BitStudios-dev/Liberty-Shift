@@ -24,8 +24,7 @@ const ora = (t) => (t ? String(t).slice(0, 5) : null);
 /**
  * L'id locale di una persona del server.
  *
- * Io resto me stesso: sul telefono sono `u_lorenzo` da prima che il server
- * esistesse, e i miei turni sono appesi a quell'id. Tradurre qui, in un posto
+ * Io resto me stesso: sul telefono sono `u_io` da prima dell'iscrizione, e i miei turni sono appesi a quell'id. Tradurre qui, in un posto
  * solo, evita di dover riscrivere mezzo stato il giorno dell'iscrizione.
  */
 function localeDi(state, idServer) {
@@ -286,8 +285,8 @@ async function svuota(state) {
  *
  * Quello che era sceso l'ultima volta viene buttato e riscritto: la copia
  * buona è quella appena arrivata, e tenere le due insieme vorrebbe dire
- * decidere ogni volta quale ha ragione. Restano intoccate le persone
- * inventate della demo, che vivono solo qui.
+ * decidere ogni volta quale ha ragione. Resta intoccato quello che è nato
+ * solo su questo telefono.
  */
 export async function scarica(state) {
   if (!collegato()) return { saltato: true };
@@ -322,7 +321,16 @@ export async function scarica(state) {
 
   for (const riga of profili.dati || []) {
     // Il mio profilo sul server non diventa una seconda persona: sono già qui.
-    if (riga.id === state.profilo?.idServer) continue;
+    // Ne scendono solo i permessi, che decide il server e non questo telefono:
+    // è l'unico modo in cui un admin nominato da SQL Editor lo scopre.
+    if (riga.id === state.profilo?.idServer) {
+      const io = state.users.find((u) => u.id === state.currentUserId);
+      if (io) {
+        const { admin, superAdmin, attivo } = utenteDaRiga(riga);
+        Object.assign(io, { admin, superAdmin, attivo });
+      }
+      continue;
+    }
     state.users.push(utenteDaRiga(riga));
   }
 

@@ -44,9 +44,8 @@ cancello: chi arriva senza credenziali salvate crea semplicemente il proprio
 profilo, come alla prima apertura. Protegge i dati di *quel* dispositivo, non
 l'ingresso.
 
-Finché il server non è collegato non c'è niente di condiviso da proteggere:
-ognuno vede i propri dati e le persone inventate della demo. Quando arriverà
-Supabase la situazione cambia, e servirà un vero controllo su chi entra.
+Con Supabase collegato il controllo su chi entra è il codice del negozio,
+chiesto all'iscrizione: vedi `docs/07-supabase.md`.
 
 Resta aperta la domanda del capitolo 27, che pubblicare non risolve: la
 Business Conduct chiede di verificare prima di **condividere** lo strumento con

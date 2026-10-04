@@ -7,7 +7,6 @@ import { newId, isExpired, hasPriority, isOpen, usaRotazione } from './model.js'
 import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
 import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
 import { monthKey, todayISO } from './time.js';
-import { seed } from './seed.js';
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
@@ -24,6 +23,64 @@ import {
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
 // turni e le richieste già inseriti su un telefono sparirebbero.
 const CHIAVE = 'cambio-turno:v1';
+
+/**
+ * La versione dello stato salvato. La 2 è quella del lancio ai colleghi veri.
+ *
+ * Fino alla 1 ogni telefono nasceva dentro la demo, nei panni di Lorenzo:
+ * con i suoi turni, le sue richieste e i suoi permessi da SuperAdmin. Al
+ * lancio il server è stato azzerato, quindi su un telefono della 1 non resta
+ * niente di vero da salvare: l'account a cui era agganciato non esiste più, e
+ * tenere quello stato vorrebbe dire una password che il server rifiuta.
+ */
+const VERSIONE = 2;
+
+/** Chi apre l'app per la prima volta: una persona sola, senza turni né permessi. */
+export function statoIniziale() {
+  return {
+    versione: VERSIONE,
+    currentUserId: 'u_io',
+    profilo: { completato: false, noteAccettateIl: null, versioneNote: null, credenziali: null },
+    users: [{
+      id: 'u_io',
+      nome: '',
+      cognome: '',
+      cognomeIniziale: '',
+      contratto: 'FT',
+      genere: 'X',
+      oreSettimanali: 40,
+      // Admin e SuperAdmin si decidono sul server e scendono con la
+      // sincronizzazione: qui nessuno nasce con un permesso.
+      admin: false,
+      superAdmin: false,
+      attivo: true,
+      preferenze: {},
+      disponibilita: {},
+      prioritaUsata: {},
+    }],
+    shifts: [],
+    requests: [],
+    proposals: [],
+    ringraziamenti: [],
+    notifications: [],
+    coda: [],
+  };
+}
+
+/**
+ * Uno stato salvato da una versione precedente al lancio si ricomincia da
+ * capo. Si salva solo l'indirizzo del calendario, l'unica cosa che costerebbe
+ * fatica ritrovare: i turni tornano da lì al primo aggiornamento.
+ */
+function aggiornaVersione(salvato) {
+  if (!salvato || (salvato.versione || 1) >= VERSIONE) return salvato;
+  chiudiSessione();
+  esciDalServer();
+  const nuovo = statoIniziale();
+  const calendarioUrl = salvato.profilo?.calendarioUrl;
+  if (calendarioUrl) nuovo.profilo.calendarioUrl = calendarioUrl;
+  return nuovo;
+}
 
 /** Motore comune di `adminChiudiRichiesta`/`adminRimuoviRichiesta`: cambia solo lo stato finale. */
 function azioneAdmin(store, id, motivo, status) {
@@ -62,7 +119,9 @@ export const store = {
   listeners: new Set(),
 
   init() {
-    this.state = carica() || seed();
+    const salvato = carica();
+    this.state = aggiornaVersione(salvato) || statoIniziale();
+    if (salvato && this.state !== salvato) salva(this.state);
     // Dati salvati da una versione precedente possono non avere i campi nuovi.
     this.state.ringraziamenti = this.state.ringraziamenti || [];
     this.state.profilo = this.state.profilo
@@ -119,9 +178,10 @@ export const store = {
     this.listeners.forEach((fn) => fn(this.state));
   },
 
-  reset() {
+  /** Da capo. Lo stato di partenza si può passare: i test ci mettono la demo. */
+  reset(stato = statoIniziale()) {
     localStorage.removeItem(CHIAVE);
-    this.state = seed();
+    this.state = stato;
     this.commit();
   },
 
@@ -400,8 +460,7 @@ export const store = {
    * solo — vedi il trigger `blocca_scritture_privilegiate` in schema.sql.
    *
    * Funzionano solo su un collega vero (`daServer`): un profilo nato solo
-   * qui, come le persone della demo, non esiste su Supabase e non ha niente
-   * da promuovere o disattivare.
+   * qui non esiste su Supabase e non ha niente da promuovere o disattivare.
    */
   async promuoviAdmin(userId) { return this.azioneSuperAdmin('promuovi', userId, { admin: true }); },
   async retrocediAdmin(userId) { return this.azioneSuperAdmin('retrocedi', userId, { admin: false }); },
@@ -767,9 +826,8 @@ export const store = {
   /**
    * Il profilo della persona che usa l'app.
    *
-   * Non crea un utente nuovo: riscrive quello corrente. Così i turni e le
-   * richieste della demo restano coerenti e l'app è viva dal primo minuto,
-   * invece di aprirsi su un calendario vuoto in cui non c'è niente da provare.
+   * Non crea un utente nuovo: riscrive quello corrente, così i turni inseriti
+   * prima di completarlo restano appesi alla persona giusta.
    */
   completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote }) {
     const me = this.me;
@@ -847,59 +905,6 @@ export const store = {
     this.state.profilo.calendarioAggiornatoIl = new Date().toISOString();
     this.commit();
     return esito;
-  },
-
-  /**
-   * Le persone inventate si nascondono, non si cancellano.
-   *
-   * Servono a mostrare l'app quando la bacheca vera è ancora vuota, e
-   * smettono di servire nel momento in cui entra il secondo collega: una
-   * richiesta di Martina Rossi in mezzo a quelle vere è una perdita di tempo
-   * per chiunque provi a rispondere.
-   *
-   * Metterle da parte invece di eliminarle costa una riga in più e rende la
-   * cosa reversibile: la demo torna intera, con i suoi turni e le sue
-   * richieste, il giorno in cui serve di nuovo far vedere l'app a qualcuno.
-   */
-  mostraDemo(valore) {
-    if (valore) {
-      const messeDaParte = this.state.demoNascosta;
-      if (!messeDaParte) return;
-      for (const [dove, righe] of Object.entries(messeDaParte)) {
-        this.state[dove] = [...this.state[dove], ...righe];
-      }
-      delete this.state.demoNascosta;
-      this.commit();
-      return;
-    }
-
-    const io = this.state.currentUserId;
-    // Inventata è una persona che non viene dal server e non sono io: quello
-    // che ho scritto prima che il server esistesse resta dov'è.
-    const nascosti = new Set(
-      this.state.users.filter((u) => !u.daServer && u.id !== io).map((u) => u.id),
-    );
-    // Poi va via tutto quello che le nomina, comprese le proposte fra me e
-    // loro: lasciarne una vorrebbe dire una riga in posta che rimanda a un
-    // turno di nessuno, e la schermata che si rompe nel disegnarla.
-    const inventata = {
-      users: (u) => nascosti.has(u.id),
-      shifts: (s) => nascosti.has(s.userId),
-      requests: (r) => nascosti.has(r.userId),
-      proposals: (p) => nascosti.has(p.daUserId) || nascosti.has(p.aUserId),
-      ringraziamenti: (g) => nascosti.has(g.daUserId) || nascosti.has(g.aUserId),
-    };
-    const daParte = {};
-    for (const [dove, e] of Object.entries(inventata)) {
-      daParte[dove] = (this.state[dove] || []).filter(e);
-      this.state[dove] = (this.state[dove] || []).filter((x) => !e(x));
-    }
-    this.state.demoNascosta = daParte;
-    this.commit();
-  },
-
-  demoVisibile() {
-    return !this.state.demoNascosta;
   },
 
   /** Il profilo va (ri)fatto se non c'è, o se le note sono cambiate da allora. */

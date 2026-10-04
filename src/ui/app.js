@@ -106,8 +106,8 @@ function render() {
     return;
   }
 
-  // Finché il profilo non c'è, non si va da nessuna parte: l'app senza sapere
-  // chi sei mostrerebbe i turni di una persona inventata.
+  // Finché il profilo non c'è, non si va da nessuna parte: senza sapere chi
+  // sei, l'app non ha un nome da mettere su una richiesta.
   if (store.profiloDaCompletare(VERSIONE_NOTE) && percorso !== 'setup') {
     P.apriProfilo({ modifica: false });
     location.hash = '#/setup';
@@ -380,12 +380,6 @@ const AZIONI = {
     }[esito]);
   },
 
-  'mostra-demo': (e) => {
-    store.mostraDemo(e.target.checked);
-    toast(e.target.checked ? 'Persone di esempio rimesse' : 'Persone di esempio nascoste');
-    render();
-  },
-
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },
 
   // La guida, riaperta a mano dal punto interrogativo nella testata.
@@ -648,13 +642,6 @@ const AZIONI = {
   // ridisegnare la casella dell'opposta resterebbe accesa a mentire.
   pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); render(); },
   'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
-
-  reset: () => {
-    if (!confirm('Ripristinare i dati di esempio? Perdi tutto quello che hai inserito.')) return;
-    store.reset();
-    vai('#/home');
-    render();
-  },
 
   /**
    * Import dei turni da un calendario. Oggi il testo si incolla: un
@@ -991,11 +978,6 @@ on(document.body, 'click', '[data-act]', (e, el) => {
 
 on(document.body, 'change', '[data-act]', (e, el) => {
   if (el.tagName !== 'INPUT' && el.tagName !== 'SELECT') return;
-  if (el.dataset.act === 'cambia-utente') {
-    store.cambiaUtente(el.value);
-    toast(`Ora sei ${store.me.nome}`);
-    return render();
-  }
   const fn = AZIONI[el.dataset.act];
   if (fn) fn(e, el);
 });

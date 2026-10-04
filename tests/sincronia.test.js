@@ -20,6 +20,7 @@ localStorage.setItem('liberty-shift:sessione-server', JSON.stringify({
 
 const { scarica, svuotaCoda, accoda } = await import('../src/core/sincronia.js');
 const { store } = await import('../src/core/store.js');
+const { seed } = await import('./fixtures/seed.js');
 
 /** Risponde per tabella, e registra tutto quello che è stato scritto. */
 function serverFinto(tabelle) {
@@ -41,7 +42,7 @@ function serverFinto(tabelle) {
 
 /** Uno stato pronto, con me già iscritto al negozio. */
 function statoIscritto() {
-  store.init();
+  store.reset(seed());
   store.state.profilo = { ...(store.state.profilo || {}), idServer: 'io-sul-server' };
   store.state.coda = [];
   return store.state;
@@ -75,6 +76,26 @@ test('io non divento una seconda persona', async () => {
 
   assert.equal(state.users.filter((u) => u.id === 'io-sul-server').length, 0);
   assert.ok(state.users.find((u) => u.id === state.currentUserId), 'io resto quello di prima');
+});
+
+test('i miei permessi scendono dal server, in tutte e due le direzioni', async () => {
+  // Senza la demo nessuno nasce admin sul telefono: un SuperAdmin nominato da
+  // SQL Editor lo scopre solo da qui. E una retrocessione deve arrivare
+  // allo stesso modo, o il pannello resterebbe aperto a chi non può più usarlo.
+  const state = statoIscritto();
+  const io = () => state.users.find((u) => u.id === state.currentUserId);
+  Object.assign(io(), { admin: false, superAdmin: false });
+  const promosso = [{ ...PROFILI[0], admin: true, super_admin: true }, PROFILI[1]];
+  serverFinto({ profili: { righe: promosso }, richieste: {}, proposte: {}, ringraziamenti: {}, disponibilita: {} });
+
+  await scarica(state);
+  assert.equal(io().admin, true);
+  assert.equal(io().superAdmin, true);
+
+  serverFinto({ profili: { righe: PROFILI }, richieste: {}, proposte: {}, ringraziamenti: {}, disponibilita: {} });
+  await scarica(state);
+  assert.equal(io().admin, false);
+  assert.equal(io().superAdmin, false);
 });
 
 test('le persone inventate della demo restano al loro posto', async () => {

@@ -44,9 +44,8 @@ src/core/     il prodotto vero e proprio, senza UI
   engine.js     matching: chi è compatibile con chi, e perché
   store.js      stato e persistenza (oggi localStorage)
   ics.js        lettura di un calendario iCalendar
-  seed.js       dati di esempio, costruiti sulla settimana corrente
 src/ui/       viste e flussi, ~1000 righe senza framework
-tests/        node --test sul motore
+tests/        node --test sul motore; in fixtures/ la vecchia demo, usata solo dai test
 docs/         regolamento, motore, data model, flussi, decisioni aperte
 scripts/      server statico per lo sviluppo, build in file unico
 ```

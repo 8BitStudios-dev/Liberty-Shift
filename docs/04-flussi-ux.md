@@ -77,9 +77,9 @@ richiesta su cui farlo. L'unica cosa onesta è scrivergli.
 
 Il pulsante dice **Scrivi** e non **Avvisa** quando dall'altra parte c'è una
 persona vera, perché è quello che succede: si apre il foglio di condivisione
-del telefono. Un avviso dentro l'app resterebbe su questo dispositivo, e con le
-persone inventate della demo — che stanno tutte qui — l'etichetta resta
-"Avvisa", perché lì l'avviso arriva davvero.
+del telefono. Un avviso dentro l'app resterebbe su questo dispositivo, e
+servirebbe solo a una persona nata qui e mai salita sul server: per lei
+l'etichetta resta "Avvisa", perché lì l'avviso arriva davvero.
 
 ## Bacheca
 Filtri: **Tutti**, **🕐 Orario**, **📅 OFF**, **⭐ Priorità**. Ora che i tipi
@@ -210,11 +210,10 @@ all'ultima uscita.
 Le stesse scorciatoie stanno nel wizard del nuovo cambio, dove si descrive
 l'orario che si vorrebbe ricevere: è la stessa tastiera e lo stesso fastidio.
 
-Anche i turni della demo usano questi orari. Serviva a due cose: mostrare
-l'app a un collega senza che il piano turni finto suoni sbagliato, e far
-scattare le preferenze come scatterebbero davvero. Con le vecchie 09:00 il
-turno di Lorenzo cadeva nell'apertura invece che nella mattina, e la sua
-preferenza non si accendeva mai.
+Anche i turni della vecchia demo, che oggi vive solo nei test
+(`tests/fixtures/seed.js`), usano questi orari: con le 09:00 di prima il turno
+di Lorenzo cadeva nell'apertura invece che nella mattina, e la sua preferenza
+non si accendeva mai.
 
 ### La rotazione: A, B, C, e poi da capo
 **Solo per i Part Time**, ed è scritto in `RULES.contracts`: un Full Time fa
@@ -484,6 +483,16 @@ dati, di chi è la responsabilità. Non commentano regolamenti e non spiegano
 cosa sia permesso — quelle valutazioni stanno in `docs/05-decisioni-aperte.md`,
 che è il posto per ragionarci, non una schermata che si legge una volta.
 
-## Modalità demo
-Dal Profilo si cambia persona. Serve a vedere lo stesso scambio dai due lati
-senza sei telefoni: pubblichi come Lorenzo, accetti come Martina.
+## Niente demo
+Dal lancio ai colleghi veri (ottobre 2026) l'app non ha più persone inventate:
+chi la apre per la prima volta trova solo sé stesso, senza turni, richieste o
+permessi. La demo serviva a mostrare l'app quando la bacheca era vuota; con
+dieci persone vere in prova, una richiesta di Martina Rossi in mezzo alle loro
+era solo una perdita di tempo per chi provava a rispondere.
+
+I telefoni rimasti alla versione con la demo (stato `versione: 1`) ripartono da
+capo alla prima apertura, tenendo solo l'indirizzo del calendario: l'account a
+cui erano agganciati è stato cancellato con l'azzeramento del server.
+
+Admin e SuperAdmin non nascono più sul telefono: si impostano sul server e
+scendono con la sincronizzazione, insieme alla propria riga di `profili`.

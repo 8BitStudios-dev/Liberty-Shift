@@ -7,7 +7,7 @@ import {
   opportunitaPerMe, richiesteSulGiorno,
 } from '../src/core/engine.js';
 import { WANT_MODE, RULES, PREFERENZE, TIPO_CAMBIO } from '../src/core/rules.js';
-import { seed } from '../src/core/seed.js';
+import { seed } from './fixtures/seed.js';
 import {
   impronta, creaCredenziali, verificaPassword, controllaPassword,
 } from '../src/core/accesso.js';

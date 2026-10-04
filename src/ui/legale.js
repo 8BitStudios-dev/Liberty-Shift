@@ -82,12 +82,6 @@ export function noteLegali({ compatte = false } = {}) {
           informazioni di lavoro riservate.</li>`))}
       </ul>
 
-      ${raw(esteso(`
-        <p class="testo-tenue">
-          In questa versione di prova il server non è collegato: tutto sta nel
-          browser e le persone sono inventate.
-        </p>`))}
-
       <h3>4. Dati degli altri</h3>
       <p>
         Sul server ci sono anche nome, turni e disponibilità dei colleghi. Sono

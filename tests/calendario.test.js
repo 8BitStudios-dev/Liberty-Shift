@@ -16,17 +16,18 @@ globalThis.localStorage = {
 };
 
 const { store } = await import('../src/core/store.js');
+const { seed } = await import('./fixtures/seed.js');
 const { RULES } = await import('../src/core/rules.js');
 
 test('senza indirizzo salvato non si prova nemmeno', async () => {
-  store.init();
+  store.reset(seed());
   store.state.profilo = { completato: true };
   const esito = await store.aggiornaCalendario();
   assert.equal(esito.saltato, true);
 });
 
 test('senza sessione sul server non si prova, anche con l\'indirizzo', async () => {
-  store.init();
+  store.reset(seed());
   store.state.profilo = { completato: true, calendarioUrl: 'https://esempio/cal.ics' };
   // Nei test non c'è nessuna sessione: la funzione che scarica non è
   // raggiungibile, e provarci sarebbe solo un errore da mostrare.
@@ -39,7 +40,7 @@ test('la regola delle sei ore sta scritta in un posto solo', () => {
 });
 
 test('modificare il profilo non cancella il calendario collegato', () => {
-  store.init();
+  store.reset(seed());
   store.ricordaCalendario('https://esempio/cal.ics');
   store.state.profilo.calendarioAggiornatoIl = '2026-09-01T08:00:00.000Z';
 

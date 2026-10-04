@@ -15,6 +15,7 @@ globalThis.localStorage = {
 };
 
 const { store } = await import('../src/core/store.js');
+const { seed } = await import('./fixtures/seed.js');
 const { parseICS } = await import('../src/core/ics.js');
 const { STATUS } = await import('../src/core/rules.js');
 
@@ -23,7 +24,7 @@ const evento = (righe) => `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${righe}\r\nEND:VCA
 // --- il calendario che riscriveva un turno già offerto -----------------
 
 test('un turno legato a una richiesta aperta non viene riscritto dall\'import', () => {
-  store.init();
+  store.reset(seed());
   const me = store.state.currentUserId;
   const mio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK');
   assert.ok(mio, 'serve un turno di partenza');
@@ -50,7 +51,7 @@ test('un turno legato a una richiesta aperta non viene riscritto dall\'import', 
 });
 
 test('un giorno libero si aggiorna comunque, se nessuno lo sta offrendo', () => {
-  store.init();
+  store.reset(seed());
   const me = store.state.currentUserId;
   const mio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK');
   const esito = store.importaTurni([
@@ -96,7 +97,7 @@ test('un calendario storto non riempie l\'app di anni di riposi', () => {
 // --- il cambio password che lasciava fuori dalla porta -----------------
 
 test('il cambio password passa dal server quando il server c\'è', async () => {
-  store.init();
+  store.reset(seed());
   store.completaProfilo({
     nome: 'Prova', cognome: 'Prova', genere: 'X',
     contratto: store.me.contratto, oreSettimanali: store.me.oreSettimanali,
@@ -118,7 +119,7 @@ test('il cambio password passa dal server quando il server c\'è', async () => {
 });
 
 test('la password attuale sbagliata ferma tutto prima di toccare il server', async () => {
-  store.init();
+  store.reset(seed());
   store.completaProfilo({
     nome: 'Prova', cognome: 'Prova', genere: 'X',
     contratto: store.me.contratto, oreSettimanali: store.me.oreSettimanali,
@@ -223,7 +224,7 @@ test('nessuna scorciatoia porta il turno oltre l\'ultima uscita', async () => {
 });
 
 test('gli orari della demo sono fra quelli veri dello store', async () => {
-  const { seed } = await import('../src/core/seed.js');
+  const { seed } = await import('./fixtures/seed.js');
   const { RULES } = await import('../src/core/rules.js');
   const fuori = seed().shifts
     .filter((s) => s.tipo === 'WORK' && !RULES.turniTipici.inizi.includes(s.start))
@@ -233,44 +234,52 @@ test('gli orari della demo sono fra quelli veri dello store', async () => {
   assert.deepEqual([...new Set(fuori)], [], 'la demo si mostra ai colleghi: deve somigliare al vero');
 });
 
-// --- le persone inventate accanto ai colleghi veri ---------------------
+// --- il lancio: niente persone inventate ---------------------------------
 
-test('nascondere la demo la mette da parte, non la cancella', () => {
-  store.init();
-  const io = store.state.currentUserId;
-  const primaUtenti = store.state.users.length;
-  const primaRichieste = store.state.requests.length;
-
-  store.mostraDemo(false);
-
-  assert.equal(store.demoVisibile(), false);
-  assert.deepEqual(store.state.users.map((u) => u.id), [io], 'resto solo io');
-  assert.ok(store.state.requests.every((r) => r.userId === io), 'e solo le mie richieste');
-  assert.ok(store.state.shifts.every((s) => s.userId === io), 'e solo i miei turni');
-
-  store.mostraDemo(true);
-
-  assert.equal(store.demoVisibile(), true);
-  assert.equal(store.state.users.length, primaUtenti, 'tornano tutte');
-  assert.equal(store.state.requests.length, primaRichieste);
+test('chi apre l\'app per la prima volta non trova nessun altro e nessun permesso', () => {
+  store.reset();
+  assert.equal(store.state.users.length, 1, 'solo io');
+  assert.equal(store.me.admin, false);
+  assert.equal(store.me.superAdmin, false);
+  assert.deepEqual(
+    [store.state.shifts, store.state.requests, store.state.proposals, store.state.ringraziamenti]
+      .map((l) => l.length),
+    [0, 0, 0, 0],
+  );
+  assert.deepEqual(store.inbox(), []);
 });
 
-test('nascondere la demo non tocca quello che viene dal server', () => {
+test('un telefono rimasto alla demo riparte da capo, tenendo il calendario', () => {
+  // Prima del lancio ogni telefono nasceva nei panni di Lorenzo, SuperAdmin
+  // compreso, e il suo account sul server non esiste più.
+  const vecchio = { ...seed(), versione: 1 };
+  vecchio.profilo = {
+    completato: true, credenziali: { sale: 'x', impronta: 'y' },
+    identificativo: 'lorenzo.bandini.abc123', idServer: 'cancellato',
+    calendarioUrl: 'webcal://esempio/turni.ics',
+  };
+  localStorage.setItem('cambio-turno:v1', JSON.stringify(vecchio));
+
   store.init();
-  store.state.users.push({
-    id: 'u-vera', daServer: true, nome: 'Anna', cognome: '', cognomeIniziale: 'V',
-    contratto: 'PT', oreSettimanali: 25, genere: 'F',
-    preferenze: {}, disponibilita: {}, prioritaUsata: {},
-  });
 
-  store.mostraDemo(false);
+  assert.equal(store.state.users.length, 1);
+  assert.equal(store.me.superAdmin, false);
+  assert.equal(store.me.admin, false);
+  assert.equal(store.state.requests.length, 0);
+  assert.equal(store.state.profilo.completato, false, 'il profilo va rifatto');
+  assert.equal(store.state.profilo.idServer, undefined, 'l\'account cancellato non si aggancia più');
+  assert.equal(store.state.profilo.calendarioUrl, 'webcal://esempio/turni.ics');
 
-  assert.ok(store.state.users.some((u) => u.id === 'u-vera'), 'i colleghi veri restano');
-  assert.equal(store.state.users.length, 2, 'io e lei, nessun altro');
+  // Un secondo avvio non ricomincia ancora: il passaggio avviene una volta sola.
+  store.state.profilo.completato = true;
+  store.commit();
+  store.init();
+  assert.equal(store.state.profilo.completato, true);
 });
+
 
 test('avvisare un collega vero non finge una notifica che non arriverebbe', () => {
-  store.init();
+  store.reset(seed());
   const io = store.state.currentUserId;
   store.state.users.push({
     id: 'u-vera', daServer: true, nome: 'Anna', cognome: '', cognomeIniziale: 'V',
@@ -296,7 +305,7 @@ test('avvisare un collega vero non finge una notifica che non arriverebbe', () =
 test('con una persona inventata la notifica ha ancora senso: e\' su questo telefono', () => {
   // Da capo davvero: i test prima di questo hanno lasciato in memoria un
   // collega vero, e `init()` rilegge quello che c'era.
-  store.reset();
+  store.reset(seed());
   const io = store.state.currentUserId;
   const altro = store.state.users.find((u) => u.id !== io && !u.daServer);
   const mio = store.state.shifts.find((s) => s.userId === io && s.tipo === 'WORK');
@@ -311,24 +320,3 @@ test('con una persona inventata la notifica ha ancora senso: e\' su questo telef
   assert.ok(store.state.notifications.some((n) => n.userId === altro.id));
 });
 
-test('nascondere la demo non lascia proposte che puntano a nessuno', () => {
-  // Una proposta fra me e una persona inventata è parte della demo, anche se
-  // da un lato ci sono io: tenerla vorrebbe dire una riga in posta che
-  // rimanda a un turno che non c'è più, e la schermata che si rompe.
-  store.reset();
-  const io = store.state.currentUserId;
-
-  store.mostraDemo(false);
-
-  const presenti = new Set(store.state.users.map((u) => u.id));
-  for (const p of store.state.proposals) {
-    assert.ok(presenti.has(p.daUserId) && presenti.has(p.aUserId),
-      'una proposta senza una delle due parti');
-  }
-  const turni = new Set(store.state.shifts.map((s) => s.id));
-  for (const r of store.state.requests) {
-    assert.ok(turni.has(r.cedo.shiftId), 'una richiesta senza il turno che cede');
-  }
-  assert.ok(store.inbox().every((v) => v.altro && v.richiesta));
-  assert.equal(store.state.users.length, 1, `resto solo io (${io})`);
-});

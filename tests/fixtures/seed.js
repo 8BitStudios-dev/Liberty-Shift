@@ -1,8 +1,8 @@
 // Dati dimostrativi. Sono costruiti attorno alla settimana Apple corrente,
 // così la demo non invecchia. Riproducono gli esempi del capitolo 11.
 
-import { appleWeekKey, addDays, todayISO } from './time.js';
-import { STATUS, WANT_MODE, TIPO_CAMBIO } from './rules.js';
+import { appleWeekKey, addDays, todayISO } from '../../src/core/time.js';
+import { STATUS, WANT_MODE, TIPO_CAMBIO } from '../../src/core/rules.js';
 
 const W = (turni) => turni; // [sab, dom, lun, mar, mer, gio, ven]
 const o = 'OFF';
@@ -242,7 +242,7 @@ export function seed() {
   marco.prioritaUsata[todayISO().slice(0, 7)] = 1;
 
   return {
-    versione: 1,
+    versione: 2,
     currentUserId: 'u_lorenzo',
     // Finché non è completato, all'avvio compare la creazione del profilo.
     profilo: { completato: false, noteAccettateIl: null, versioneNote: null, credenziali: null },

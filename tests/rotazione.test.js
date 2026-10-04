@@ -141,7 +141,8 @@ test('passando a Full Time la rotazione si dimentica', async () => {
     removeItem(k) { this._dati.delete(k); },
   };
   const { store } = await import('../src/core/store.js');
-  store.reset();
+  const { seed } = await import('./fixtures/seed.js');
+  store.reset(seed());
   store.impostaContratto({ contratto: 'PT', oreSettimanali: 30 });
   store.salvaRotazione({ ancora: SAB, settimane: [{ nome: 'A', giorni: [turno('10:00', '16:00'), null, null, null, null, null, null] }] });
   assert.ok(store.me.rotazione, 'un Part Time la può avere');

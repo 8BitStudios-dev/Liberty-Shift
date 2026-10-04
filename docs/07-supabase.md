@@ -300,7 +300,13 @@ minuscola risponde `404 NOT_FOUND` senza spiegare perché. Serve l'accesso di un
 utente autenticato, quindi un estraneo non può usarla come proxy.
 
 **`supabase/functions/Amministrazione/index.ts`** si pubblica nello stesso
-modo, stessa maiuscola nel nome. Non chiede nessuna chiave da impostare a
+modo, stessa maiuscola nel nome. Conta l'**indirizzo** (lo *slug*), non il nome
+che compare in elenco: l'editor della dashboard ne propone uno suo, tipo
+`quick-task`, e lasciandolo la funzione si chiama Amministrazione ma risponde
+a un altro indirizzo. L'app chiama `/functions/v1/Amministrazione` e riceve
+`Requested function was not found`. Fino al lancio era andata proprio così, con
+dentro il modello "hello world" invece del codice: "Gestisci iscritti" non
+aveva mai funzionato. Non chiede nessuna chiave da impostare a
 mano: `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` sono già nell'ambiente di
 ogni Edge Function del progetto, messe lì da Supabase stesso. È proprio
 perché vivono solo lì, mai nel codice o nel repository, che questa funzione
@@ -372,14 +378,15 @@ su tre colonne: scendendo, `cedo_data/start/end` ridiventano un turno vero. Se
 giorno, che sfalserebbe le ore della settimana e mostrerebbe due righe nel
 calendario.
 
-**Io resto io.** Sul telefono sono `u_lorenzo` da prima che il server
-esistesse, e i miei turni sono appesi a quell'id. La traduzione fra il mio id
-del server e quello di casa avviene in una funzione sola.
+**Io resto io.** Sul telefono sono `u_io` da prima dell'iscrizione, e i miei
+turni sono appesi a quell'id. La traduzione fra il mio id del server e quello
+di casa avviene in una funzione sola. Della mia riga in `profili` scendono solo
+`admin`, `super_admin` e `attivo`: è così che chi viene nominato da SQL Editor
+lo scopre, alla prima sincronizzazione.
 
-**Le persone inventate restano.** La demo convive con i colleghi veri finché
-serve a mostrare l'app. A distinguerle è il campo `daServer`: a ogni discesa si
-butta e si riscrive solo quello che era sceso, e le persone inventate non
-vengono toccate.
+**Quello che è nato qui resta.** A distinguere le cose scese dal server è il
+campo `daServer`: a ogni discesa si butta e si riscrive solo quello che era
+sceso.
 
 ### Cosa il server non può fare, e perché va bene
 Non esiste una tabella dei turni, quindi il server non sa quando lavorano i

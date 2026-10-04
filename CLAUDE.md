@@ -81,6 +81,13 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   (`auth.role() in ('anon', 'authenticated')`), e lascia passare tutto il
   resto.
 
+- **Il database non legge `schema.sql` da solo.** Una correzione che sta nel
+  file arriva sul server solo quando qualcuno lo rilancia da SQL Editor: al
+  lancio il trigger dei privilegi era ancora quello vecchio, settimane dopo la sua
+  correzione nel repository. Dopo ogni modifica allo schema, va rilanciato. Lo
+  stesso vale per le Edge Functions, e lì conta lo slug: vedi
+  `docs/07-supabase.md`.
+
 ## Documentazione
 
 `docs/` tiene regolamento, motore di matching, data model, flussi UX,

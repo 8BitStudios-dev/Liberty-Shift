@@ -515,7 +515,7 @@ export function formMotivoAdmin(requestId, azione) {
   const autore = store.user(r?.userId);
   const verbo = azione === 'rimuovi' ? 'rimuovendo' : 'chiudendo';
   return html`
-    <p>Stai ${verbo} la richiesta di <strong>${nomeUtente(autore)}</strong>.</p>
+    <p>Stai ${verbo} la richiesta di <strong>${nomeUtente(autore)}</strong></p>
     <label class="campo">
       <span>Perché? Lo leggerà nella sua richiesta.</span>
       <textarea data-campo="motivo" rows="3" placeholder="Es. il cambio è già stato fatto fuori dall'app"></textarea>
@@ -700,7 +700,7 @@ export function formRifiuto(proposalId) {
   const p = store.state.proposals.find((x) => x.id === proposalId);
   const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
   return html`
-    <p>Stai rifiutando lo scambio con <strong>${nomeUtente(altro)}</strong>.</p>
+    <p>Stai rifiutando lo scambio con <strong>${nomeUtente(altro)}</strong></p>
     <label class="campo">
       <span>Vuoi dire perché? (facoltativo)</span>
       <textarea data-campo="motivo" rows="2" placeholder="Es. quel giorno ho già un impegno"></textarea>
@@ -718,7 +718,7 @@ export function formGrazie(proposalId) {
   const p = store.state.proposals.find((x) => x.id === proposalId);
   const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
   return html`
-    <p>Un grazie a <strong>${nomeUtente(altro)}</strong>. Resterà nel suo profilo.</p>
+    <p>Un grazie a <strong>${nomeUtente(altro)}</strong>: resterà nel suo profilo.</p>
     <div class="chips">
       ${['Mi hai salvato!', 'Grazie mille 💛', 'Ricambio quando vuoi', 'Sei un grande'].map((t) => raw(
     `<button class="chip" data-act="grazie-veloce" data-testo="${t}">${t}</button>`,
@@ -810,9 +810,9 @@ export function statistiche() {
 // -------------------------------------------------------- GESTIONE ISCRITTI
 
 /**
- * Solo per il SuperAdmin. Chi non è ancora sceso dal server (le persone
- * della demo, `!daServer`) non compare: non esistono su Supabase, non c'è
- * niente da promuovere o disattivare.
+ * Solo per il SuperAdmin. Chi non è sceso dal server (`!daServer`) non
+ * compare: non esiste su Supabase, non c'è niente da promuovere o
+ * disattivare.
  */
 export function gestioneIscritti() {
   if (!store.me.superAdmin) return vuoto('Sezione riservata', 'Solo il SuperAdmin può gestire gli iscritti.');
