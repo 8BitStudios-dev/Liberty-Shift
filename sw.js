@@ -6,7 +6,7 @@
 // una cache-first pura, pubblicare una correzione non sarebbe servito a niente
 // finché qualcuno non svuotava il browser — e nessuno lo fa.
 
-const CACHE = 'liberty-shift-v3';
+const CACHE = 'liberty-shift-v4';
 
 const ASSET = [
   './',
@@ -27,6 +27,7 @@ const ASSET = [
   './src/core/store.js',
   './src/ui/dom.js',
   './src/ui/icone.js',
+  './src/ui/notifiche.js',
   './src/ui/components.js',
   './src/ui/views.js',
   './src/ui/flows.js',
@@ -65,5 +66,34 @@ self.addEventListener('fetch', (e) => {
     // Con qualcosa in cache si risponde subito e si aggiorna dietro le quinte.
     if (salvato) return salvato;
     return (await rete) || cache.match('./index.html');
+  }));
+});
+
+// ------------------------------------------------------------- notifiche
+//
+// I percorsi si risolvono sullo scope del service worker e non sulla radice
+// del dominio: sul sito l'app vive in /Liberty-Shift/, in locale in /, e un
+// "/icona.png" scritto a mano funzionerebbe solo in uno dei due posti.
+const qui = (percorso) => new URL(percorso, self.registration.scope).href;
+
+self.addEventListener('push', (e) => {
+  let dati = {};
+  try { dati = e.data ? e.data.json() : {}; } catch { dati = { body: e.data?.text() || '' }; }
+  e.waitUntil(self.registration.showNotification(dati.title || 'Liberty Shift', {
+    body: dati.body || '',
+    icon: qui('./public/icons/icon-192.png'),
+    badge: qui('./public/icons/icon-192.png'),
+    data: { url: qui(dati.url || '#/home') },
+  }));
+});
+
+// Il tocco riporta nell'app già aperta, se c'è, invece di aprirne una seconda.
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || qui('#/home');
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((finestre) => {
+    const aperta = finestre.find((c) => c.url.startsWith(self.registration.scope) && 'focus' in c);
+    if (aperta) return aperta.focus().then((c) => (c || aperta).navigate?.(url)).catch(() => {});
+    return self.clients.openWindow(url);
   }));
 });

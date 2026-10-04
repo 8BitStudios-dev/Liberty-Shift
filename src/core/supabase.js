@@ -257,8 +257,12 @@ export const aggiorna = (tabella, opzioni, patch) => chiama(`/rest/v1/${tabella}
   body: JSON.stringify(patch),
 });
 
-/** Inserisce o sovrascrive: serve alle disponibilità, che hanno chiave doppia. */
-export const salvaSuChiave = (tabella, riga) => chiama(`/rest/v1/${tabella}`, {
+/**
+ * Inserisce o sovrascrive: serve alle disponibilità, che hanno chiave doppia.
+ * `suColonna` sceglie un vincolo unico diverso dalla chiave primaria, come
+ * l'endpoint di un dispositivo per le notifiche.
+ */
+export const salvaSuChiave = (tabella, riga, suColonna) => chiama(`/rest/v1/${tabella}${suColonna ? `?on_conflict=${suColonna}` : ''}`, {
   method: 'POST',
   headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
   body: JSON.stringify(riga),

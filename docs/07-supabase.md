@@ -395,8 +395,9 @@ una persona vera: per loro l'unico segnale è la **disponibilità dichiarata**,
 che infatti viaggia. Al contrario funziona benissimo: «quali richieste posso
 risolvere io» si calcola sui miei turni, che sono qui.
 
-Le notifiche restano locali e non attraversano i dispositivi. A portare
-l'informazione è la posta, che è costruita sulle proposte e quindi sincronizza.
+Le notifiche dentro l'app restano locali e non attraversano i dispositivi: a
+portare l'informazione è la posta, che è costruita sulle proposte e quindi
+sincronizza. A telefono chiuso ci pensano le notifiche push, più sotto.
 
 ### Il collaudo, contro il server vero
 Due dispositivi, due account, il giro completo:
@@ -409,6 +410,60 @@ Due dispositivi, due account, il giro completo:
 | Anna accetta | `ACCORDO` da entrambe le parti |
 | la richiesta cambia stato | `ACCORDO` anche per Bruno |
 | **estraneo registrato senza codice** | profili `[]`, bacheca `[]` |
+
+## Le notifiche push
+
+Due momenti, e solo due: arriva una proposta (avvisato chi ha pubblicato la
+richiesta) e una proposta si chiude con un accordo o un rifiuto (avvisato chi
+l'aveva fatta). Chi compie l'azione non riceve mai la notifica della propria
+azione, e chi è stato disattivato non ne riceve più.
+
+Il percorso, tutto sul server:
+
+1. il trigger `notifica_proposta` su `proposte` filtra gli eventi che non
+   interessano a nessuno e, per gli altri, chiama la funzione con `pg_net`
+   senza aspettarla: la proposta si salva anche se il servizio push di Apple
+   è lento o giù;
+2. la Edge Function `send-push` (pubblicata **senza** verifica JWT: la chiama
+   il database, e la protegge il segreto nell'intestazione `x-webhook-secret`)
+   sceglie testo e destinatario, cifra il messaggio per ogni dispositivo e lo
+   firma con la chiave VAPID;
+3. un dispositivo che risponde 404 o 410 ha spento le notifiche o non esiste
+   più, e la funzione toglie la sua riga da `push_subscriptions`.
+
+Le risposte della funzione restano per qualche ora in `net._http_response`
+(`{"inviate":1,"rimosse":0,"errori":[]}`): è il primo posto dove guardare se
+una notifica non arriva, prima ancora dei log.
+
+**I segreti stanno in Vault**, non nei secrets delle Edge Functions:
+`push_vapid_pubblica`, `push_vapid_privata`, `push_webhook`. La funzione li
+legge con `service_role` da `segreti_push()`, che nessuna chiave dell'app può
+chiamare; il trigger legge solo `push_webhook`. Senza `push_webhook` il trigger
+non chiama niente e le proposte funzionano come prima. Per cambiare le chiavi:
+
+```sql
+select vault.update_secret(id, '<nuovo valore>')
+from vault.secrets where name = 'push_vapid_privata';
+```
+
+Cambiare la coppia VAPID vuol dire cambiare anche `chiaveVapidPubblica` in
+`src/core/config.js`, e tutti i dispositivi dovranno riaccendere le notifiche:
+le iscrizioni vecchie sono legate alla chiave vecchia.
+
+**Il mittente VAPID** è l'indirizzo del sito, non un'email: il protocollo
+accetta entrambi, e così nessun indirizzo personale arriva ai servizi push.
+
+**Su iPhone** le push esistono da iOS 16.4 e solo per l'app aggiunta alla
+schermata Home e aperta da lì. Da Safari le API mancano del tutto: il
+riquadro Notifiche lo riconosce e spiega il passaggio invece di dire "non
+supportate". Il permesso si chiede solo dentro il tocco sull'interruttore,
+mai all'apertura: Safari rifiuta in silenzio una richiesta fatta a freddo.
+
+**Collaudo.** Chromium in modalità incognito (quella dei test automatici) non
+supporta la Push API, quindi il collaudo della catena server si fa con
+dispositivi finti che puntano a un endpoint di prova: uno che risponde 201
+verifica cifratura e firma, uno che risponde 410 verifica la pulizia. Il tocco
+vero sull'interruttore va provato su un telefono.
 
 ## Cosa manca per collegarlo
 

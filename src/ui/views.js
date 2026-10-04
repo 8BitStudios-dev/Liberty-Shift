@@ -5,6 +5,7 @@ import {
   ruoloNelGiorno,
 } from './components.js';
 import { icona } from './icone.js';
+import { STATO, statoNoto } from './notifiche.js';
 import {
   hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
 } from '../core/model.js';
@@ -371,14 +372,51 @@ export function impostazioni() {
       </button>
       ${raw(store.state.profilo?.idServer ? `
         <button class="tile" data-act="invita">
-          <span class="tile-icona">${raw(icona('invita'))}</span>
+          <span class="tile-icona">${icona('invita')}</span>
           <span>
             <strong>Invita un collega</strong>
             <em>Il messaggio con il link, già pronto da mandare</em>
           </span>
           <span class="chevron">›</span>
         </button>` : '')}
+      ${raw(rigaNotifiche())}
     </section>`;
+}
+
+/**
+ * Le notifiche push, con lo stato detto chiaro.
+ *
+ * Ogni stato ha la sua frase perché ognuno chiede una cosa diversa alla
+ * persona: niente su un browser che non le supporta, un giro nelle
+ * impostazioni del telefono se le ha bloccate, la Home su iPhone. Un
+ * interruttore spento e basta lascerebbe a lei indovinare quale dei tre.
+ */
+function rigaNotifiche() {
+  const stato = statoNoto();
+  if (!stato || stato === STATO.SENZA_SERVER) return '';
+  const riga = (em, interruttore = '') => html`
+    <label class="tile ${interruttore ? 'switch-tile' : ''}">
+      <span class="tile-icona">${raw(icona('notifiche'))}</span>
+      <span>
+        <strong>Notifiche</strong>
+        <em>${em}</em>
+      </span>
+      ${raw(interruttore)}
+    </label>`;
+  switch (stato) {
+    case STATO.ATTIVE:
+      return riga('Attive su questo dispositivo: ti avvisiamo per le proposte e le risposte.',
+        '<input type="checkbox" data-act="notifiche" checked>');
+    case STATO.DA_ATTIVARE:
+      return riga('Ti avvisiamo quando ricevi una proposta e quando ti rispondono.',
+        '<input type="checkbox" data-act="notifiche">');
+    case STATO.BLOCCATE:
+      return riga('Bloccate dal browser. Si riattivano dalle impostazioni del telefono, alla voce Notifiche.');
+    case STATO.DA_INSTALLARE:
+      return riga('Su iPhone arrivano solo dall\'app sulla schermata Home. Tocca Condividi, poi Aggiungi alla schermata Home, poi apri Liberty Shift da lì e attiva le notifiche.');
+    default:
+      return riga('Questo browser non le supporta. Su iPhone servono iOS 16.4 o successivo.');
+  }
 }
 
 /**

@@ -477,3 +477,104 @@ select cron.schedule(
   '0 3 * * *',
   $$ select public.pulizia_periodica(); $$
 );
+
+-- ======================================================= notifiche push
+--
+-- Una riga per ogni dispositivo che ha acceso le notifiche. `subscription` è
+-- l'oggetto che il browser restituisce a `pushManager.subscribe()`: endpoint
+-- del servizio push del produttore (Apple, Google, Mozilla) e le due chiavi
+-- con cui il messaggio viene cifrato per quel dispositivo e nessun altro.
+--
+-- `endpoint` è unico perché identifica il dispositivo: riaccendere le
+-- notifiche sullo stesso telefono aggiorna la riga invece di duplicarla, e
+-- duplicarla vorrebbe dire ricevere ogni notifica due volte.
+create table if not exists public.push_subscriptions (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references public.profili(id) on delete cascade,
+  endpoint     text not null unique,
+  subscription jsonb not null,
+  created_at   timestamptz not null default now()
+);
+
+create index if not exists push_subscriptions_user_id_idx on public.push_subscriptions (user_id);
+
+alter table public.push_subscriptions enable row level security;
+
+-- Ognuno vede e tocca solo i propri dispositivi. Chi manda le notifiche è la
+-- funzione `send-push`, che legge con `service_role` e quindi non passa da qui.
+drop policy if exists "utente gestisce le sue subscription" on public.push_subscriptions;
+create policy "utente gestisce le sue subscription"
+  on public.push_subscriptions for all to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
+
+-- I segreti delle notifiche stanno in Vault, cifrati nel database, e non nei
+-- secrets delle Edge Functions: così si impostano una volta da SQL Editor
+-- (vedi docs/07-supabase.md) e non finiscono mai in un file del repository.
+-- Questa funzione è l'unica porta per leggerli, e la apre solo `service_role`,
+-- cioè la funzione `send-push`. Nessuna chiave dell'app può chiamarla.
+create or replace function public.segreti_push() returns jsonb
+language sql security definer set search_path = '' as $$
+  select jsonb_object_agg(name, decrypted_secret)
+  from vault.decrypted_secrets
+  where name in ('push_vapid_pubblica', 'push_vapid_privata', 'push_webhook');
+$$;
+
+revoke all on function public.segreti_push() from public, anon, authenticated;
+grant execute on function public.segreti_push() to service_role;
+
+-- pg_net fa partire chiamate HTTP dal database senza aspettarle: chi inserisce
+-- una proposta non resta appeso al servizio push di Apple.
+create extension if not exists pg_net;
+
+-- Chiama `send-push` quando una proposta riguarda qualcuno che non è chi l'ha
+-- appena toccata: nuova (al destinatario) o chiusa con un accordo o un rifiuto
+-- (a chi l'aveva proposta). Gli altri cambi di stato non dicono niente di
+-- nuovo a nessuno, e filtrarli qui risparmia una chiamata per ogni update.
+--
+-- `autore` viaggia insieme alla riga perché solo il database sa chi ha fatto
+-- la modifica: una proposta che rifiuti tu non deve notificarti il tuo rifiuto.
+create or replace function public.notifica_proposta() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  segreto text;
+begin
+  if tg_op = 'UPDATE' and (
+    new.stato is not distinct from old.stato
+    or new.stato not in ('ACCORDO', 'RIFIUTATA')
+  ) then
+    return new;
+  end if;
+
+  select decrypted_secret into segreto
+  from vault.decrypted_secrets where name = 'push_webhook';
+  -- Senza segreto le notifiche non sono ancora configurate: la proposta deve
+  -- passare lo stesso, una notifica mancata non vale un cambio perso.
+  if segreto is null then
+    return new;
+  end if;
+
+  begin
+    perform net.http_post(
+      url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
+      body := jsonb_build_object(
+        'type', tg_op,
+        'record', to_jsonb(new),
+        'old_record', case when tg_op = 'UPDATE' then to_jsonb(old) end,
+        'autore', auth.uid()
+      ),
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+    );
+  exception when others then
+    -- Stessa ragione di sopra: la notifica si perde, la proposta no.
+    raise warning 'notifica_proposta: %', sqlerrm;
+  end;
+  return new;
+end $$;
+
+revoke all on function public.notifica_proposta() from public, anon, authenticated;
+
+drop trigger if exists notifica_proposta on public.proposte;
+create trigger notifica_proposta
+  after insert or update of stato on public.proposte
+  for each row execute function public.notifica_proposta();

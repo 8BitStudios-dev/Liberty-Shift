@@ -12,27 +12,23 @@ mettersi d'accordo. Il cambio vero si fa poi nell'app ufficiale.
 ## Provarla
 
 Online, senza installare niente:
-**[c4gv4kf4d7-dev.github.io/Liberty-Shift](https://c4gv4kf4d7-dev.github.io/Liberty-Shift/)**
+**[8bitstudios-dev.github.io/Liberty-Shift](https://8bitstudios-dev.github.io/Liberty-Shift/)**
 (su iPhone: Safari → Condividi → Aggiungi alla schermata Home).
 
 C'è anche la versione a file unico, comoda da mandare in chat:
-[liberty-shift.html](https://c4gv4kf4d7-dev.github.io/Liberty-Shift/liberty-shift.html).
+[liberty-shift.html](https://8bitstudios-dev.github.io/Liberty-Shift/liberty-shift.html).
 
 In locale:
 
 ```bash
 npm run dev     # http://localhost:5173
-npm test        # 74 test su motore, import e service worker
+npm test        # motore, import, sincronia, notifiche e service worker
 npm run build   # dist/liberty-shift.html, tutta l'app in un file solo
 ```
 
 Nessuna dipendenza, nessun build step: moduli ES aperti direttamente dal
-browser. Dal Profilo si cambia persona, così vedi lo stesso scambio dai due
-lati.
-
-Il giro che conviene fare: Home → ⚡ Cambio rapido, che senza domande mostra
-chi può prendere il tuo turno. Poi Nuovo cambio per il percorso completo →
-proponi a Martina → dal Profilo diventa Martina → accetta.
+browser. Le persone inventate non ci sono più: per vedere uno scambio dai due
+lati servono due account, per esempio due finestre private.
 
 ## Com'è fatta
 
@@ -44,7 +40,10 @@ src/core/     il prodotto vero e proprio, senza UI
   engine.js     matching: chi è compatibile con chi, e perché
   store.js      stato e persistenza (oggi localStorage)
   ics.js        lettura di un calendario iCalendar
-src/ui/       viste e flussi, ~1000 righe senza framework
+  sincronia.js  tutto quello che va e viene dal server, in un posto solo
+src/ui/       viste e flussi, senza framework
+  notifiche.js  permesso, service worker e iscrizione alle push
+supabase/     schema del database e Edge Functions (send-push, Amministrazione, Calendario)
 tests/        node --test sul motore; in fixtures/ la vecchia demo, usata solo dai test
 docs/         regolamento, motore, data model, flussi, decisioni aperte
 scripts/      server statico per lo sviluppo, build in file unico
@@ -83,7 +82,7 @@ Sostituire `localStorage` con un backend significa cambiare due funzioni in
 
 ## Cosa manca, di proposito
 
-Backend e login, notifiche push vere, admin operativo, scambi a tre.
+Scambi a tre.
 
 Il backend non è rimandato per tempo: la Business Conduct Policy di Apple
 consente di creare app «solo per scopi personali o didattici» e vieta di

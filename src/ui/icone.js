@@ -34,6 +34,7 @@ const TRACCIATI = {
   orario: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/>',
   importa: '<path d="M12 4v10M8 10.5l4 4 4-4"/><path d="M4.5 17.5V20h15v-2.5"/>',
   rotazione: '<path d="M20 12a8 8 0 1 1-3.4-6.5"/><path d="M20 4.4V10h-5.4"/><path d="M9.5 12h5"/>',
+  notifiche: '<path d="M6.2 16.5V11a5.8 5.8 0 0 1 11.6 0v5.5l1.7 1.9h-15z"/><path d="M10 20.6a2.2 2.2 0 0 0 4 0"/>',
   invita: '<rect x="3.5" y="6" width="17" height="12.5" rx="3"/><path d="M4.5 8l7.5 5 7.5-5"/>',
   legale: '<path d="M6.5 3.5h7.5l4 4v13H6.5z"/><path d="M13.5 3.5V8h4.5M9.5 12.5h5M9.5 16h5"/>',
   vuoto: '<rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17M9.5 15h5"/>',

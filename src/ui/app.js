@@ -21,6 +21,9 @@ import {
   campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito,
 } from './components.js';
 import { icona, VOCI_TABBAR } from './icone.js';
+import {
+  STATO, statoNoto, statoNotifiche, attivaNotifiche, disattivaNotifiche,
+} from './notifiche.js';
 
 const app = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -142,6 +145,15 @@ function render() {
 
   // La guida della sezione, la prima volta che ci si entra.
   if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
+
+  // Lo stato delle notifiche si scopre solo chiedendo al browser: si ridisegna
+  // quando arriva, e solo se è cambiato, altrimenti sarebbe un giro infinito.
+  if (percorso === 'impostazioni') {
+    const prima = statoNoto();
+    statoNotifiche(store.state).then((ora) => {
+      if (ora !== prima && parseHash().percorso === 'impostazioni') render();
+    });
+  }
 
   const attivo = TABS.find((t) => t.hash === `#/${percorso}`);
   const daFare = store.inbox().filter((v) => v.aspettaMe || v.daRingraziare).length;
@@ -378,6 +390,18 @@ const AZIONI = {
       copiato: 'Invito copiato: incollalo dove preferisci',
       niente: 'Non sono riuscito a preparare l\'invito',
     }[esito]);
+  },
+
+  // Il permesso parte dentro questo tocco: `attivaNotifiche` lo chiede prima
+  // di qualsiasi attesa, ed è l'unico modo in cui iPhone lo accetta.
+  notifiche: async (e) => {
+    const accendi = e.target.checked;
+    const { stato, errore } = accendi ? await attivaNotifiche(store.state) : await disattivaNotifiche();
+    if (errore) toast(errore);
+    else if (stato === STATO.ATTIVE) toast('Notifiche attive');
+    else if (stato === STATO.BLOCCATE) toast('Le hai bloccate: si riattivano dalle impostazioni del telefono');
+    else if (!accendi) toast('Notifiche spente su questo dispositivo');
+    render();
   },
 
   'modifica-profilo': () => { P.apriProfilo({ modifica: true }); vai('#/setup'); },

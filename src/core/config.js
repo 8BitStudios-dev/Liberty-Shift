@@ -23,6 +23,13 @@ export const SERVER = {
    * È pubblica quanto l'altra: senza una sessione non apre niente.
    */
   chiavePubblicabile: 'sb_publishable_7zoKcK51OdsBKUgNZLI2Qw_DVvnVQeH',
+  /**
+   * La chiave pubblica VAPID delle notifiche push. Pubblica davvero: il
+   * browser la consegna al servizio push del telefono, che la usa per
+   * riconoscere i messaggi firmati dalla nostra chiave privata. Quella sta in
+   * Vault sul server, e solo lì.
+   */
+  chiaveVapidPubblica: 'BID0iZcecaccRRQh1c49CrIQfIS7Orn_9KGp8dS5OXGXSOxmzTYAkF8ezYtdfAyaD7LM9EvMozT4zVALO3F80H8',
   chiaveAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZXJlYnRraWJnbXR5dnpuZnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE4NzAsImV4cCI6MjEwNDM1Nzg3MH0.icOOSXRX6k3jYmyj66NQg_EMDs5cvvY5etzEvJ7xQfY',
 };
 

@@ -41,7 +41,7 @@ jobs:
       - name: Prepara il sito
         run: |
           mkdir -p site
-          cp index.html styles.css sw.js site/
+          cp index.html styles.css redesign.css sw.js site/
           cp -r src public site/
           node scripts/build-single.js
           cp dist/liberty-shift.html site/

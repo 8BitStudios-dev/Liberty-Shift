@@ -1,7 +1,7 @@
 # Pubblicazione
 
 L'app sta su **GitHub Pages**, all'indirizzo
-`https://c4gv4kf4d7-dev.github.io/Liberty-Shift/`.
+`https://8bitstudios-dev.github.io/Liberty-Shift/`.
 
 ## Come ci arriva
 

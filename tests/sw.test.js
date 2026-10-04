@@ -34,3 +34,16 @@ test('il service worker non elenca file che non esistono', async () => {
   const fantasmi = elencati.filter((f) => !esistenti.has(f));
   assert.deepEqual(fantasmi, [], `file elencati ma inesistenti: ${fantasmi.join(', ')}`);
 });
+
+// redesign.css era in cache ma il workflow non lo copiava: sul sito dava 404,
+// e un solo 404 basta a far fallire `addAll`. Il service worker non si
+// installava mai, e con lui sparivano l'uso offline e le notifiche.
+test('ogni file in cache arriva davvero sul sito pubblicato', async () => {
+  const sw = await readFile(join(RADICE, 'sw.js'), 'utf8');
+  const flusso = await readFile(join(RADICE, '.github/workflows/pages.yml'), 'utf8');
+  const copiati = [...flusso.matchAll(/^\s*cp (?:-r )?(.+) site\/$/gm)]
+    .flatMap((m) => m[1].trim().split(/\s+/));
+  const elencati = [...sw.matchAll(/'\.\/([^']+)'/g)].map((m) => m[1]);
+  const mancanti = elencati.filter((f) => !copiati.some((c) => f === c || f.startsWith(`${c}/`)));
+  assert.deepEqual(mancanti, [], `in cache ma non copiati da pages.yml: ${mancanti.join(', ')}`);
+});

@@ -11,7 +11,7 @@
 // tabella dei turni, e questo modulo non deve inventarne una per comodità.
 
 import {
-  seleziona, inserisci, aggiorna, salvaSuChiave, collegato,
+  seleziona, inserisci, aggiorna, salvaSuChiave, elimina, collegato,
 } from './supabase.js';
 import { serverConfigurato } from './config.js';
 
@@ -377,4 +377,30 @@ export async function sincronizza(state) {
   const coda = await svuotaCoda(state);
   const giu = await scarica(state);
   return { ...giu, errore: giu.errore || coda.errore, inviate: coda.fatte };
+}
+
+// ---------------------------------------------------------- notifiche
+
+/**
+ * Il dispositivo che ha appena acceso le notifiche.
+ *
+ * Non passa dalla coda, ed è voluto: iscriversi alle push richiede comunque
+ * la rete (il browser parla col servizio push del telefono prima ancora di
+ * arrivare qui), quindi un'iscrizione senza campo non esiste da rimandare.
+ * Meglio dire subito che non è andata.
+ */
+export async function salvaDispositivoPush(state, iscrizione) {
+  if (!sulServer(state)) return { errore: 'Per le notifiche serve essere iscritti al negozio.' };
+  const { errore } = await salvaSuChiave('push_subscriptions', {
+    user_id: state.profilo.idServer,
+    endpoint: iscrizione.endpoint,
+    subscription: iscrizione,
+  }, 'endpoint');
+  return { errore: errore || null };
+}
+
+/** Il dispositivo che le spegne. Se la rete manca, ci pensa il server al primo invio fallito. */
+export async function eliminaDispositivoPush(endpoint) {
+  const { errore } = await elimina('push_subscriptions', { eq: { endpoint } });
+  return { errore: errore || null };
 }

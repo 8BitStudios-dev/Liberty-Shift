@@ -97,9 +97,11 @@ lista, che è il genere di cosa che poi si paga.
 Niente chat: un messaggio per proposta, punto.
 
 ## Notification
-`{ id, userId, testo, letta, createdAt }`. Oggi è una coda in memoria che
-alimenta la UI. Le push vere richiedono un backend e vanno verificate su iOS
-(vedi `docs/05-decisioni-aperte.md`).
+`{ id, userId, testo, letta, createdAt }`. È una coda in memoria che alimenta
+la UI di questo dispositivo. Le notifiche push, quelle che arrivano a telefono
+chiuso, sono un'altra cosa e non passano da qui: le decide il database quando
+una proposta nasce o si chiude (vedi *Le notifiche push* in
+`docs/07-supabase.md`).
 
 ## Dove sta lo stato
 `src/core/store.js` è l'unico punto che legge e scrive. Sostituire `salva()` e

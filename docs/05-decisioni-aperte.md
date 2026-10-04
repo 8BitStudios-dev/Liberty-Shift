@@ -213,4 +213,7 @@ persone.
 Da iOS 16.4 le PWA possono ricevere push, ma **solo dopo che l'utente ha
 aggiunto l'app alla schermata Home**: da Safari non funzionano. Servono un
 backend con chiavi VAPID e una schermata che spieghi il passaggio "condividi →
-aggiungi alla Home". Nel prototipo le notifiche sono in-app, senza push.
+aggiungi alla Home". **Fatto** (ottobre 2026): le push partono quando arriva
+una proposta e quando viene accettata o rifiutata, e su iPhone dal browser il
+riquadro Notifiche spiega il passaggio dalla Home invece di dire "non
+supportate". Dettagli in `docs/07-supabase.md`.
