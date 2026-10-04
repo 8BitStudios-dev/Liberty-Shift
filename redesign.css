@@ -663,3 +663,19 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .campione-quota { font-size: 12px; font-weight: 700; padding: 0 5px; border-radius: 999px; background: var(--accento); color: var(--su-pieno); }
 .mese-giorno.mia-richiesta::after { top: 4px; right: 4px; width: 7px; height: 7px; }
 .giorno-profilo .tile { margin-top: 16px; }
+
+/* Le tue richieste hanno un colore loro, il viola, che il Calendario non usa:
+   blu e verde vi dicono chi cerca e chi offre fra i colleghi, l'oro la
+   priorità. Nel Profilo nessuno di quei segni deve comparire, così un colpo
+   d'occhio basta a capire su quale dei due mesi si è. */
+:root { --mio: #6b46c8; --mio-tenue: #efe9fb; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --mio: #b39bff; --mio-tenue: #261d3d; }
+}
+:root[data-theme="dark"] { --mio: #b39bff; --mio-tenue: #261d3d; }
+
+.mese-giorno.mia-richiesta::after { background: var(--mio); }
+.campione.mia-richiesta::after { background: var(--mio); }
+.pallino.mia { background: var(--mio); }
+.giorno-profilo .lista-cambi { margin-top: 4px; }
+.giorno-profilo .riga-cambio strong { display: inline-flex; align-items: center; gap: 6px; }

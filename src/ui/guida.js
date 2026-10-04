@@ -167,7 +167,7 @@ export const GUIDE = {
     corpo: () => html`
       <h3>Il tuo mese</h3>
       <p>
-        I tuoi turni giorno per giorno, con le ore della settimana. Il punto blu
+        I tuoi turni giorno per giorno, con le ore della settimana. Il punto viola
         nell'angolo è un giorno toccato da una tua richiesta; il fondo verde,
         un giorno in cui ti sei detto disponibile a scambiare.
       </p>

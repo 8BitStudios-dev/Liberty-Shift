@@ -385,10 +385,12 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
   priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
   giorno: chi puoi aiutare, poi Cercano e Offrono.
 - **Profilo**: tu. I tuoi turni, le ore della settimana, la rotazione, il
-  fondo verde dei giorni in cui sei disponibile e un punto blu sui giorni
+  fondo verde dei giorni in cui sei disponibile e un punto viola sui giorni
   toccati da una tua richiesta aperta. Toccando un giorno: il turno, la
-  disponibilità, le tue richieste, e se ci sono richieste dei colleghi un
-  tocco porta al giorno del Calendario.
+  disponibilità e le tue richieste, dette in seconda persona ("Lasci…,
+  cerchi…"). Niente dei colleghi: né barre, né percentuali, né rimandi.
+  Il viola è il colore delle tue richieste e il Calendario non lo usa, così
+  un colpo d'occhio dice su quale dei due mesi si è.
 
 Le due griglie escono dalla stessa funzione (`grigliaMese`), che decide le
 righe e lascia la cella a chi chiama: si disegnano allo stesso modo e non
@@ -424,11 +426,11 @@ Toccando un giorno del Profilo si apre quello che riguarda te:
 - il tuo turno, da inserire o correggere;
 - l'interruttore "disponibile a scambiare questo giorno", che è quello che ti
   fa comparire fra i match potenziali di chi cerca;
-- le tue richieste aperte su quella data;
-- se ci sono richieste dei colleghi quel giorno, un tocco al giorno del
-  Calendario, dove stanno **chi puoi aiutare** (con la percentuale e le due
-  righe che contano: che turno faresti tu, che turno farebbe l'altra persona)
-  e le altre, divise fra **Cercano** e **Offrono**.
+- le tue richieste aperte su quella data.
+
+**Chi puoi aiutare** (con la percentuale e le due righe che contano: che
+turno faresti tu, che turno farebbe l'altra persona) e le altre richieste,
+divise fra **Cercano** e **Offrono**, stanno nel giorno del Calendario.
 
 Nelle liste (Bacheca, Home, il giorno) una richiesta a cui non puoi rispondere
 non dice più "al momento non puoi cambiare" in rosso: dice il perché con i

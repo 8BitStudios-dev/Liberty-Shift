@@ -2,15 +2,15 @@ import { html, raw, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno, testoPromemoria,
+  ruoloNelGiorno, testoPromemoria, iconaTipo,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
 import {
-  hasPriority, shiftLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
+  hasPriority, shiftLabel, wantLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
 } from '../core/model.js';
 import {
-  slotSettimana, opportunitaPerMe, richiesteSulGiorno, disponibileIl,
+  slotSettimana, opportunitaPerMe, disponibileIl,
 } from '../core/engine.js';
 import { RULES, PREFERENZE, TIPO_CAMBIO } from '../core/rules.js';
 import { letteraDi, rotazioneVuota } from '../core/rotazione.js';
@@ -1023,9 +1023,31 @@ export function dettaglioGiornoPubblico(data) {
 }
 
 /**
+ * Una tua richiesta, detta in seconda persona: nel Profilo non è una riga
+ * della bacheca (con le tue iniziali, "offre", il bordo di chi offre), è una
+ * cosa che hai chiesto tu.
+ */
+function rigaMiaRichiesta(r) {
+  const cedo = store.shift(r.cedo.shiftId);
+  const giorni = r.cerco.giorni || [];
+  const cosa = r.tipo === TIPO_CAMBIO.OFF
+    ? `Vuoi OFF ${formatDay(cedo?.data)} · offri ${giorni.map((g) => formatDay(g)).join(' o ')}`
+    : `Lasci ${shiftLabel(cedo)} · cerchi ${wantLabel(r.cerco)}`;
+  return html`
+    <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
+      <span class="pallino mia"></span>
+      <div>
+        <strong>${raw(iconaTipo(r.tipo))} ${r.tipo === TIPO_CAMBIO.OFF ? 'Cambio OFF' : 'Cambio orario'}</strong>
+        <div class="meta">${cosa}</div>
+        <div class="meta">${raw(badgeStato(r.status))}</div>
+      </div>
+      <span class="chevron">›</span>
+    </div>`;
+}
+
+/**
  * Il giorno del Profilo: il tuo turno, la disponibilità e le tue richieste
- * su quella data. Per vedere chi cerca e chi offre, un tocco porta al giorno
- * del Calendario.
+ * su quella data. Solo cose tue: le richieste dei colleghi sono nel Calendario.
  */
 export function dettaglioGiornoProfilo(data) {
   const me = store.me;
@@ -1036,7 +1058,6 @@ export function dettaglioGiornoProfilo(data) {
     const cedo = store.shift(r.cedo.shiftId);
     return cedo?.data === data || (r.cerco.giorni || []).includes(data);
   });
-  const altrui = richiesteSulGiorno(me.id, data, store.state).length;
 
   return html`
     <div class="giorno-profilo">
@@ -1058,16 +1079,6 @@ export function dettaglioGiornoProfilo(data) {
 
       ${raw(mieRichieste.length ? html`
         <h3>${mieRichieste.length === 1 ? 'La tua richiesta' : 'Le tue richieste'}</h3>
-        ${raw(mieRichieste.map((r) => cardRichiesta(r, data)).join(''))}` : '')}
-
-      ${raw(altrui ? html`
-        <button class="tile" data-act="giorno" data-data="${data}">
-          <span class="tile-icona">${raw(icona('calendario'))}</span>
-          <span>
-            <strong>${altrui === 1 ? 'Una richiesta dei colleghi' : `${altrui} richieste dei colleghi`}</strong>
-            <em>Su questo giorno, nel Calendario</em>
-          </span>
-          <span class="chevron">›</span>
-        </button>` : '')}
+        <div class="lista-cambi">${raw(mieRichieste.map((r) => rigaMiaRichiesta(r)).join(''))}</div>` : '')}
     </div>`;
 }
