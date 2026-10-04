@@ -376,20 +376,29 @@ il suo nome. Ora la testata è una riga sola: il bollino in alto a sinistra,
 sincronizzazione, grazie e guida a destra. Nome, contratto e ruoli si aprono
 toccando il bollino, insieme a una scorciatoia per modificare il profilo.
 
-## Il tuo mese, nel Calendario e nel Profilo
-Il mese stava nel Profilo, e il tab Calendario ne aveva un altro: griglie
-diverse, segni diversi, e un giorno che si apriva in due modi a seconda di
-dove lo si toccava. Ora c'è un componente solo, `ilTuoMese`, usato in due
-posti: nel tab Calendario, dove si scorre di mese in mese, e in cima al
-Profilo, sempre sul mese di oggi, perché è lì che si va a guardare come si sta
-messi. Stesse settimane, stesse barre di chi cerca (blu) e di chi offre
-(verde), stesso foglio del giorno: due calendari che si disegnano allo stesso
-modo non possono più divergere.
+## Due mesi: quello del negozio e il tuo
+Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
+(settimane Apple, dal sabato al venerdì) e contenuti divisi senza eccezioni:
+
+- **Calendario**: il negozio. Le richieste aperte dei colleghi, mai le tue;
+  le barre di chi cerca (blu) e di chi offre (verde), il bordo oro della
+  priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
+  giorno: chi puoi aiutare, poi Cercano e Offrono.
+- **Profilo**: tu. I tuoi turni, le ore della settimana, la rotazione, il
+  fondo verde dei giorni in cui sei disponibile e un punto blu sui giorni
+  toccati da una tua richiesta aperta. Toccando un giorno: il turno, la
+  disponibilità, le tue richieste, e se ci sono richieste dei colleghi un
+  tocco porta al giorno del Calendario.
+
+Le due griglie escono dalla stessa funzione (`grigliaMese`), che decide le
+righe e lascia la cella a chi chiama: si disegnano allo stesso modo e non
+possono divergere, ma ciascuna mostra solo quello che è suo.
 
 Prima erano tre cose sparse: una schermata per inserire i turni, una griglia di
 ✅/❌ per la disponibilità, e nessun posto per scoprire chi aveva bisogno di te.
-Ora sono una griglia sola, dove ogni cella mostra il tuo turno di quel giorno
-e, se c'è, la **percentuale del miglior cambio che potresti risolvere**.
+Ora sono una griglia sola, dove ogni cella mostra il tuo turno di quel giorno.
+La **percentuale del miglior cambio che potresti risolvere** sta nel
+Calendario, con le richieste da cui viene.
 
 Le settimane sono cinque e non due: due bastavano a inserire i turni, non a
 farsi un'idea, e la domanda vera è "come sto messo questo mese". La divisione
@@ -410,18 +419,16 @@ stava accanto al bordo oro della priorità e alle barre: tre segni sottili sul
 bordo della stessa cella. Un fondo è un'altra forma, e non si confonde con la
 barra verde di chi offre.
 
-Toccando un giorno si apre tutto quello che riguarda quella data:
+Toccando un giorno del Profilo si apre quello che riguarda te:
 
 - il tuo turno, da inserire o correggere;
 - l'interruttore "disponibile a scambiare questo giorno", che è quello che ti
   fa comparire fra i match potenziali di chi cerca;
-- **chi puoi aiutare**: le richieste aperte su quel giorno che tu sei in grado
-  di risolvere, ciascuna con la percentuale e con le due righe che contano —
-  che turno faresti tu, che turno farebbe l'altra persona.
-
-In fondo, le altre richieste del giorno, quelle che i tuoi turni non
-risolvono, divise fra **Cercano** e **Offrono**: era il foglio del vecchio
-Calendario.
+- le tue richieste aperte su quella data;
+- se ci sono richieste dei colleghi quel giorno, un tocco al giorno del
+  Calendario, dove stanno **chi puoi aiutare** (con la percentuale e le due
+  righe che contano: che turno faresti tu, che turno farebbe l'altra persona)
+  e le altre, divise fra **Cercano** e **Offrono**.
 
 Nelle liste (Bacheca, Home, il giorno) una richiesta a cui non puoi rispondere
 non dice più "al momento non puoi cambiare" in rosso: dice il perché con i

@@ -246,7 +246,13 @@ const AZIONI = {
     vai(`#/richiesta?id=${el.dataset.id}`);
   },
 
-  giorno: (_, el) => apriGiornoProfilo(el.dataset.data),
+  // Il giorno del Calendario: le richieste dei colleghi. Si apre anche dal
+  // giorno del Profilo, che si chiude per non lasciare due fogli uno sopra l'altro.
+  giorno: (_, el) => {
+    const data = el.dataset.data;
+    chiudiSheet();
+    sheet(formatDay(data, true), V.dettaglioGiornoPubblico(data));
+  },
 
   entra: async () => {
     const campo = app.querySelector('[data-campo="password"]');

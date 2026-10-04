@@ -117,31 +117,27 @@ export const GUIDE = {
     titolo: 'Il Calendario',
     icona: '📅',
     corpo: () => html`
-      <p>Il tuo mese e quello del negozio, nello stesso posto.</p>
+      <p>Le richieste dei colleghi, giorno per giorno. Le tue sono nel Profilo.</p>
 
       <h3>In ogni giorno</h3>
       <ul class="elenco piccolo">
-        <li>il numero e il tuo turno;</li>
-        <li>la percentuale: c'è qualcuno che puoi aiutare, e quanto combacia;</li>
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
           blu: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
           verde: qualcuno offre un turno o una giornata;</li>
         <li>bordo oro: c'è una priorità;</li>
-        <li>linea verde in basso: ti sei detto disponibile a scambiare.</li>
+        <li>la percentuale: c'è una richiesta che puoi risolvere, e quanto combacia.</li>
       </ul>
 
       <h3>Aprendo un giorno</h3>
       <p>
-        In alto il tuo turno, da correggere se serve, e l'interruttore della
-        disponibilità. Sotto chi puoi aiutare, e in fondo le altre richieste
-        del giorno, divise fra chi cerca e chi offre.
+        Prima chi puoi aiutare, poi le altre richieste divise fra
+        <strong>Cercano</strong> e <strong>Offrono</strong>.
       </p>
 
       <p class="testo-tenue">
         Ogni riga è una settimana Apple, da sabato a venerdì: due giorni
-        scambiabili stanno sempre sulla stessa riga. A destra le ore inserite
-        contro quelle del contratto; la spunta compare quando tornano.
+        scambiabili stanno sempre sulla stessa riga.
       </p>`,
   },
 
@@ -171,9 +167,13 @@ export const GUIDE = {
     corpo: () => html`
       <h3>Il tuo mese</h3>
       <p>
-        Lo stesso del Calendario, sempre sul mese di oggi: il tuo turno giorno per
-        giorno, le ore della settimana e chi puoi aiutare. Tocca un giorno per
-        correggere il turno o darti disponibile.
+        I tuoi turni giorno per giorno, con le ore della settimana. Il punto blu
+        nell'angolo è un giorno toccato da una tua richiesta; il fondo verde,
+        un giorno in cui ti sei detto disponibile a scambiare.
+      </p>
+      <p class="testo-tenue">
+        Tocca un giorno per correggere il turno, darti disponibile o vedere le
+        tue richieste. Le richieste dei colleghi sono nel Calendario.
       </p>
 
       <h3>I tuoi turni</h3>

@@ -646,3 +646,20 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .campione-barra { width: 10px; height: 12px; border-radius: 3px 3px 0 0; display: inline-block; }
 .campione-barra.pubblicate { background: var(--accento); }
 .campione-barra.chiuse { background: var(--testo-tenue); }
+
+/* I due mesi. Nel Calendario la cella è del negozio: numero, percentuale,
+   barre. Nel Profilo è tua: turno, disponibilità, e un punto blu nell'angolo
+   sui giorni toccati da una tua richiesta aperta. */
+.mese-giorno { position: relative; }
+.mese-giorno.mia-richiesta::after {
+  content: ''; position: absolute; top: 5px; right: 5px;
+  width: 8px; height: 8px; border-radius: 50%; background: var(--accento);
+}
+.campione.mia-richiesta { position: relative; }
+.campione.mia-richiesta::after {
+  content: ''; position: absolute; top: 2px; right: 2px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--accento);
+}
+.campione-quota { font-size: 12px; font-weight: 700; padding: 0 5px; border-radius: 999px; background: var(--accento); color: var(--su-pieno); }
+.mese-giorno.mia-richiesta::after { top: 4px; right: 4px; width: 7px; height: 7px; }
+.giorno-profilo .tile { margin-top: 16px; }
