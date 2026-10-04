@@ -899,3 +899,5 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .mese-pubblico .mese-giorno { min-height: 72px; gap: 3px; }
 .mese-pubblico .mese-giorno .quota.vuota { display: none; }
 @media (max-width: 359px) { .mese-pubblico .conta-giorno { position: static; } }
+/* "Il tuo calendario" è il titolo della pagina: un gradino sopra le altre testate. */
+.titolo-mese { font-size: 28px; letter-spacing: -.025em; }

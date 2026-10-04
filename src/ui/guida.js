@@ -166,7 +166,7 @@ export const GUIDE = {
     titolo: 'Il Profilo',
     icona: '👤',
     corpo: () => html`
-      <h3>Il tuo mese</h3>
+      <h3>Il tuo calendario</h3>
       <p>
         È solo tuo: i tuoi turni giorno per giorno, con inizio e fine, e le
         ore della settimana. I giorni OFF sono vuoti, senza fondo. Il punto viola

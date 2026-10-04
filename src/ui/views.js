@@ -278,7 +278,7 @@ export function profilo() {
     </header>
 
     <section class="sezione">
-      <h2 class="titolo-mese">Il tuo mese</h2>
+      <h2 class="titolo-mese">Il tuo calendario</h2>
       ${raw(legendaPersonale())}
       ${raw(ilTuoMese())}
       <p class="testo-tenue nota-mese">
