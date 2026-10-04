@@ -416,7 +416,8 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
   fondo verde dei giorni in cui sei disponibile e una **clessidra** sui giorni
   toccati da uno scambio in corso: viola per una tua richiesta aperta o una
   proposta che hai fatto e aspetta risposta, verde per un accordo fatto e da
-  confermare in UKG. La clessidra verde resta fino al giorno stesso, anche
+  confermare in UKG; il giorno ha anche il **fondo giallo**, che vince sul
+  verde di "disponibile". La clessidra verde resta fino al giorno stesso, anche
   dopo "Cambio inserito": l'approvazione arriva da UKG, e senza un segno fra
   l'accordo e il nuovo calendario dei turni il giorno sembrava fermo
   (`giorniInCorso` nello store). Toccando un giorno: il turno, la

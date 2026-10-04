@@ -173,6 +173,7 @@ function legendaPersonale() {
     <ul class="legenda-mese">
       <li><span class="in-corso in-corso-richiesta in-legenda">${icona('clessidra', { px: 14 })}</span>richiesta in corso</li>
       <li><span class="in-corso in-corso-accordo in-legenda">${icona('clessidra', { px: 14 })}</span>accordo, da confermare in UKG</li>
+      <li><span class="campione da-cambiare"></span>giorno da cambiare</li>
       <li><span class="campione disponibile"></span>sei disponibile</li>
       <li><span class="campione riposo"></span>OFF</li>
     </ul>`;
@@ -955,7 +956,8 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
       const stato = !turno ? 'senza-turno' : turno.tipo === 'OFF' ? 'riposo' : 'lavoro';
       return html`
         <button class="mese-giorno ${stato} ${classiGiorno(data, mese, oggi)}
-                       ${disponibileIl(me, data) ? 'disponibile' : ''}"
+                       ${disponibileIl(me, data) ? 'disponibile' : ''}
+                       ${inCorso.has(data) ? 'da-cambiare' : ''}"
                 data-act="giorno-profilo" data-data="${data}">
           ${raw(inCorso.has(data) ? `<span class="in-corso in-corso-${inCorso.get(data)}" aria-label="${inCorso.get(data) === 'accordo' ? 'scambio concordato, da confermare in UKG' : 'scambio in corso'}">${icona('clessidra', { px: 13, forte: true })}</span>` : '')}
           <span class="numero">${toDate(data).getUTCDate()}</span>

@@ -937,3 +937,34 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   .mese-personale .mese-giorno .in-corso { top: -5px; right: -5px; }
 }
 .mese-personale .mese-settimana { margin-bottom: 10px; }
+
+/* Di nuovo la clessidra semplice, senza bollino: il segno forte ora è il fondo
+   giallo del giorno da cambiare, che vince sul verde di "disponibile". Il
+   giallo qui è tenue e vive solo nel tuo calendario; l'oro della priorità sta
+   nel Calendario pubblico, come bordo. */
+:root { --da-cambiare: #fbefb8; --da-cambiare-bordo: #e2c869; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --da-cambiare: #3b3315; --da-cambiare-bordo: #7a6526; }
+}
+:root[data-theme="dark"] { --da-cambiare: #3b3315; --da-cambiare-bordo: #7a6526; }
+
+.in-corso {
+  width: auto; height: auto; border-radius: 0; background: none; box-shadow: none;
+  color: var(--mio);
+}
+.in-corso-accordo { background: none; color: var(--prendo); }
+.in-corso svg { width: 13px; height: 13px; }
+.mese-personale .mese-giorno .in-corso { top: 4px; right: 4px; width: auto; height: auto; }
+.mese-personale .mese-giorno .in-corso svg { width: 13px; height: 13px; }
+.giorno-profilo .riga-cambio .in-corso { width: auto; height: auto; }
+.giorno-profilo .riga-cambio .in-corso svg { width: 16px; height: 16px; }
+@media (max-width: 359px) {
+  .mese-personale .mese-giorno .in-corso { top: 2px; right: 2px; width: auto; height: auto; }
+  .mese-personale .mese-giorno .in-corso svg { width: 11px; height: 11px; }
+}
+
+.mese-personale .mese-giorno.da-cambiare,
+.mese-personale .mese-giorno.da-cambiare.disponibile {
+  background: var(--da-cambiare); border-color: var(--da-cambiare-bordo);
+}
+.campione.da-cambiare { background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo); border-radius: 4px; }

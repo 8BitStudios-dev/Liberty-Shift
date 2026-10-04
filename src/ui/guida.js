@@ -172,8 +172,8 @@ export const GUIDE = {
         ore della settimana. I giorni OFF sono vuoti, senza fondo. La clessidra
         nell'angolo dice che su quel giorno c'è uno scambio in corso: viola se
         è una tua richiesta o proposta che aspetta, verde se l'accordo è fatto
-        e va confermato in UKG. Il fondo verde è un giorno in cui ti sei detto
-        disponibile a scambiare.
+        e va confermato in UKG. Il fondo giallo è un giorno da cambiare, quello
+        verde un giorno in cui ti sei detto disponibile a scambiare.
       </p>
       <p class="testo-tenue">
         Tocca un giorno per correggere il turno, darti disponibile o vedere le
