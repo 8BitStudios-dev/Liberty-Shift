@@ -289,7 +289,7 @@ function matchOrario(request, ctx) {
     const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
     score = clamp(Math.round(score - v.penalita + v.bonus), 0,
       origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
-    if (score < RULES.potentialThreshold) continue;
+    if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
 
     risultati.push({
       origine,
@@ -394,7 +394,7 @@ function matchOff(request, ctx) {
       const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
       score = clamp(Math.round(score - v.penalita + v.bonus), 0,
         origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
-      if (score < RULES.potentialThreshold) continue;
+      if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
 
       const chiave = `${u.id}|${suo.id}`;
       if (visti.has(chiave)) continue;

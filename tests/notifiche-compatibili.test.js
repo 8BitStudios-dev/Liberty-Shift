@@ -143,21 +143,21 @@ test('senza iscrizione al negozio non c\'è niente da scegliere', () => {
   assert.equal(store.modoNotifiche(), 'dirette');
 });
 
-test('la scelta compare solo a notifiche accese, e dice quale è attiva', () => {
+test('la scelta compare a notifiche accese, e prima invita ad accenderle', () => {
   iscritto();
-  assert.equal(rigaModoNotifiche(STATO.DA_ATTIVARE), '', 'scegliere cosa ricevere senza riceverne è una domanda senza risposta');
+  assert.match(rigaModoNotifiche(STATO.DA_ATTIVARE), /Attiva le notifiche/, 'chi non le ha accese deve trovare la strada, non un vuoto');
   assert.equal(rigaModoNotifiche(STATO.BLOCCATE), '');
 
   const dirette = rigaModoNotifiche(STATO.ATTIVE);
-  assert.match(dirette, /Solo le proposte dirette/);
-  assert.match(dirette, /Anche le richieste compatibili con i miei turni/);
+  assert.match(dirette, /Solo le richieste personali/);
+  assert.match(dirette, /Tutte le richieste che i miei turni possono soddisfare/);
   assert.match(dirette, /value="dirette"\s+checked/);
-  assert.match(dirette, /solo le dirette/);
+  assert.match(dirette, /solo le personali/);
 
   store.impostaModoNotifiche('compatibili');
   const compatibili = rigaModoNotifiche(STATO.ATTIVE);
   assert.match(compatibili, /value="compatibili"\s+checked/);
-  assert.match(compatibili, /anche le compatibili/);
+  assert.match(compatibili, /tutte le compatibili/);
   assert.doesNotMatch(compatibili, /\[object Object\]/);
 });
 

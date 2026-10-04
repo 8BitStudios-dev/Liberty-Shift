@@ -496,11 +496,11 @@ const AZIONI = {
   'modo-notifiche': (e, el) => {
     if (el.value === 'dirette') {
       const { errori } = store.impostaModoNotifiche('dirette');
-      toast(errori ? errori[0] : 'Solo le proposte dirette: i tuoi turni sono stati tolti dal server');
+      toast(errori ? errori[0] : 'Solo le richieste personali: i tuoi turni sono stati tolti dal server');
       return render();
     }
     render();
-    sheet('Avvisami anche per le richieste compatibili', V.consensoCompatibili(), {
+    sheet('Avvisami per tutte le richieste che posso soddisfare', V.consensoCompatibili(), {
       azioni: '<button class="btn primario largo" data-act="consenso-compatibili">Acconsento e attiva</button>'
         + '<button class="btn secondario largo" data-chiudi>Resta com\'è</button>',
     });
@@ -509,7 +509,7 @@ const AZIONI = {
   'consenso-compatibili': (_, el) => {
     el.closest('.sheet-backdrop').querySelector('[data-chiudi]').click();
     const { errori } = store.impostaModoNotifiche('compatibili');
-    toast(errori ? errori[0] : 'Fatto: ti avviso anche per le richieste compatibili');
+    toast(errori ? errori[0] : 'Fatto: ti avviso per tutte le richieste che i tuoi turni possono soddisfare');
     render();
   },
 
@@ -1125,7 +1125,13 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
   if (chiave === 'cognome') { Object.assign(P.bozzaProfilo, { cognome: el.value, omonimoConfermato: false }); return; }
   if (chiave === 'password-nuova') { P.bozzaProfilo.password = el.value; return; }
   if (chiave === 'password-conferma') { P.bozzaProfilo.conferma = el.value; return; }
-  if (chiave === 'codice') { P.bozzaProfilo.codice = el.value; return; }
+  // La R davanti sta fuori dal campo: chi iscrive scrive solo le cifre. Una
+  // R incollata insieme al codice non si raddoppia.
+  if (chiave === 'codice') {
+    const cifre = el.value.replace(/^\s*r/i, '').trim();
+    P.bozzaProfilo.codice = cifre ? `R${cifre}` : '';
+    return;
+  }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
   // Con 90+ iscritti un rerender a ogni lettera sposterebbe il cursore come
   // sopra: si nasconde e mostra direttamente le card già disegnate.

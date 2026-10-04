@@ -326,6 +326,7 @@ export function profilo() {
 
     <section class="sezione">
       ${raw(sezionePreferenze(me))}
+      ${raw(rigaModoNotifiche())}
     </section>
 
     <section class="sezione">
@@ -495,8 +496,7 @@ export function impostazioni() {
           <span class="chevron">›</span>
         </button>` : '')}
       ${raw(rigaNotifiche())}
-    </section>
-    ${raw(rigaModoNotifiche())}`;
+    </section>`;
 }
 
 /**
@@ -509,6 +509,16 @@ export function impostazioni() {
  * accende con un tocco: si apre un foglio che dice cosa esce e chi lo legge.
  */
 export function rigaModoNotifiche(stato = statoNoto()) {
+  if (stato === STATO.DA_ATTIVARE) {
+    return html`
+      <div class="riquadro riquadro-fisso">
+        <div class="riquadro-testa">
+          <span class="titolo-riquadro">Quali richieste ti avvisano</span>
+        </div>
+        <p class="testo-tenue">Solo le personali o tutte quelle che i tuoi turni possono soddisfare: si sceglie dopo aver attivato le notifiche.</p>
+        <button class="btn primario largo" data-act="attiva-notifiche">Attiva le notifiche</button>
+      </div>`;
+  }
   if (stato !== STATO.ATTIVE) return '';
   const modo = store.modoNotifiche();
   const opzione = (valore, titolo, testo) => html`
@@ -525,10 +535,10 @@ export function rigaModoNotifiche(stato = statoNoto()) {
     <details class="riquadro" data-riquadro="modo-notifiche" ${raw(riquadriAperti.has('modo-notifiche') ? 'open' : '')}>
       <summary>
         <span>Quali richieste ti avvisano</span>
-        <span class="conteggio">${modo === 'compatibili' ? 'anche le compatibili' : 'solo le dirette'}</span>
+        <span class="conteggio">${modo === 'compatibili' ? 'tutte le compatibili' : 'solo le personali'}</span>
       </summary>
-      ${raw(opzione('dirette', 'Solo le proposte dirette', 'Ti avviso quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Anche le richieste compatibili con i miei turni', 'Quando un collega pubblica una richiesta che il tuo calendario può risolvere. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server.'))}
+      ${raw(opzione('dirette', 'Solo le richieste personali', 'Ti avviso quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
+      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server.'))}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Nel calendario di questo dispositivo non ci sono turni futuri: importali dal Profilo, altrimenti non ti arriva niente.</p>'
     : '')}

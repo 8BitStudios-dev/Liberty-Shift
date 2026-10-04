@@ -147,3 +147,21 @@ test('delle preferenze escono solo quelle accese', () => {
   assert.deepEqual(preferenzeDaCondividere({ preferenze: {} }), {});
   assert.deepEqual(preferenzeDaCondividere(null), {});
 });
+
+test('chi sceglie tutte le richieste compatibili le riceve anche con un punteggio basso', () => {
+  // Il collega evita le chiusure, e il turno dell'autore finisce alle 21: il punteggio scende sotto la soglia dell'app,
+  // ma il turno può comunque soddisfare la richiesta, e a lui interessa saperlo.
+  const riga = {
+    id: 'r1', autore_id: 'a', tipo: 'ORARIO', stato: 'APERTA', cedo_data: '2099-10-04',
+    cedo_start: '12:00', cedo_end: '21:00', cerco_giorni: ['2099-10-04'],
+    cerco: { mode: 'RANGE', entroLe: '18:00', dalleOre: '' },
+  };
+  const persona = (id, contratto, ore) => ({ id, nome: id, cognome_iniziale: 'X', contratto, ore_settimanali: ore, genere: 'X' });
+  const candidati = [{
+    profilo: persona('b', 'FT', 40),
+    turni: [{ data: '2099-10-04', tipo: 'WORK', start: '09:30', end: '18:30' }],
+    preferenze: { evitaChiusure: true }, disponibilita: {},
+  }];
+  const trovati = candidatiCompatibili({ riga, autore: persona('a', 'FT', 40), candidati, oggi: '2099-10-01' });
+  assert.equal(trovati.length, 1);
+});

@@ -119,6 +119,9 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
     proposals: [],
     // Nessuno sta guardando: le frasi del motore non servono, serve solo chi c'è.
     currentUserId: null,
+    // Chi sceglie questo avviso vuole sapere di ogni richiesta che può soddisfare,
+    // non solo di quelle con un punteggio alto: la percentuale resta nell'app.
+    sogliaPotenziale: RULES.notifiche.sogliaMinima,
   };
 
   const perPersona = new Map();

@@ -179,8 +179,12 @@ export const RULES = {
    * il calendario sul server non è più affidabile, e un avviso su un turno che
    * forse non c'è più è peggio di nessun avviso. Il limite di 60 righe è
    * anche un vincolo della tabella `notifiche_preferenze`.
+   *
+   * `sogliaMinima` è il punteggio sotto cui una richiesta non fa suonare il
+   * telefono: zero vuol dire che basta poterla soddisfare, qualunque sia la
+   * percentuale. È la scelta di chi attiva "tutte le richieste compatibili".
    */
-  notifiche: { giorniCondivisi: 28, giorniFreschezza: 14 },
+  notifiche: { giorniCondivisi: 28, giorniFreschezza: 14, sogliaMinima: 0 },
 };
 
 /**
