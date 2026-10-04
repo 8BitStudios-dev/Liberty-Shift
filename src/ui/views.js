@@ -38,7 +38,9 @@ export const ordineBacheca = (lista) => [...lista].sort(
 export function home() {
   const me = store.me;
   const ora = new Date().getHours();
-  const saluto = ora < 13 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera';
+  // La sera arriva fino alle due di notte: chi chiude il negozio e apre l'app
+  // dopo mezzanotte sta ancora finendo la giornata, non cominciandone una.
+  const saluto = ora >= 2 && ora < 13 ? 'Buongiorno' : ora >= 13 && ora < 18 ? 'Buon pomeriggio' : 'Buonasera';
 
   const miei = store.state.requests.filter((r) => r.userId === me.id && isOpen(r));
   const proposte = store.propostePerMe();
@@ -95,14 +97,14 @@ export function home() {
           <h1>${me.nome}</h1>
         </div>
         <span class="hero-azioni">
-          ${raw(credito > 0 ? `
-            <button class="priorita-chip" data-act="spiega-priorita">${icona('priorita', { px: 15 })} ${credito}</button>` : '')}
+          <button class="priorita-tasto ${credito > 0 ? '' : 'usata'}" data-act="spiega-priorita"
+                  aria-label="${credito > 0 ? 'Priorità del mese disponibile' : 'Priorità del mese già usata'}">
+            <span class="priorita-cerchio">${raw(icona('priorita', { px: 18 }))}</span>
+            <span class="priorita-etichetta">Priorità</span>
+          </button>
           <button class="icon-btn" data-act="guida" data-sezione="home" title="Come funziona">?</button>
         </span>
       </div>
-      ${raw(credito > 0
-    ? `<p class="sottotitolo">Hai ancora una priorità disponibile questo mese · dura ${RULES.priority.durationHours}h</p>`
-    : `<p class="sottotitolo">${RULES.contracts[me.contratto].label}</p>`)}
     </header>
 
     ${raw(invitoNotifiche())}

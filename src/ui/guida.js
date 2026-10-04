@@ -33,7 +33,7 @@ export const GUIDE = {
 
       <p class="testo-tenue">
         La stella in alto è la priorità: una al mese, mette la tua richiesta in cima
-        alla bacheca per 48 ore.
+        alla bacheca per 48 ore. Quando l'hai usata diventa grigia fino al mese dopo.
       </p>`,
   },
 

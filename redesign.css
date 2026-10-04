@@ -1045,3 +1045,20 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 }
 .campione-giorno.da-cambiare { background: var(--da-cambiare); border-color: var(--da-cambiare-bordo); }
 .campione-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
+
+/* La priorità in Home: una stella nel cerchio e la parola sotto, senza
+   numero (è una al mese, il numero diceva sempre 1). Usata, diventa grigia:
+   si capisce a colpo d'occhio se c'è ancora, senza leggere una frase. */
+.hero-azioni { align-items: flex-start; }
+.priorita-tasto {
+  appearance: none; border: 0; background: none; padding: 0; cursor: pointer; font: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--oro);
+}
+.priorita-cerchio {
+  width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1.5px solid currentColor; background: var(--superficie);
+}
+.priorita-etichetta { font-size: 12px; font-weight: 600; line-height: 1; }
+.priorita-tasto.usata { color: var(--testo-tenue); }
+.priorita-tasto.usata .priorita-cerchio { border-color: var(--linea); }
