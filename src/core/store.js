@@ -4,9 +4,9 @@
 
 import { RULES, PREFERENZE, STATUS } from './rules.js';
 import { newId, isExpired, hasPriority, isOpen, usaRotazione } from './model.js';
-import { validateRequest, nextStatus, turnoOfferibile } from './engine.js';
+import { validateRequest, nextStatus, turnoOfferibile, slotSettimana } from './engine.js';
 import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
-import { monthKey, todayISO, addDays, formatDay } from './time.js';
+import { monthKey, todayISO, addDays, formatDay, appleWeekKey } from './time.js';
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
@@ -280,6 +280,8 @@ export const store = {
    * al giorno stesso anche dopo "Cambio inserito", perché la conferma vera
    * arriva da UKG e il calendario dei turni la mostra solo più tardi. Senza
    * questo segno, fra l'accordo e l'approvazione il giorno sembrava fermo.
+   * Il segno sparisce prima solo quando il calendario mostra il cambio fatto
+   * (vedi chiudiScambiApprovati).
    *
    * Uno scambio tocca il giorno che la richiesta lascia e quello del turno
    * offerto: nel cambio orario coincidono, nel cambio OFF sono due.
@@ -299,6 +301,8 @@ export const store = {
       if (p.daUserId !== userId && p.aUserId !== userId) continue;
       const r = this.request(p.requestId);
       const giorniScambio = [this.shift(p.shiftOffertoId)?.data, r && this.shift(r.cedo.shiftId)?.data];
+      // Confermato dal calendario ufficiale: non c'è più niente da aspettare.
+      if (this.state.scambiConfermati?.includes(p.id)) continue;
       if (p.status === 'ACCORDO') giorniScambio.forEach((d) => segna(d, 'accordo'));
       else if (p.status === 'IN_ATTESA' && p.daUserId === userId) giorniScambio.forEach((d) => segna(d, 'richiesta'));
     }
@@ -344,6 +348,9 @@ export const store = {
       this.state.requests.filter(isOpen).map((r) => r.cedo.shiftId),
     );
     const bloccati = [];
+    // I miei giorni che il calendario ha davvero cambiato: servono a capire se
+    // UKG ha approvato uno scambio (vedi chiudiScambiApprovati).
+    const cambiati = new Set();
     for (const t of turni) {
       const esistente = this.state.shifts.find((s) => s.userId === userId && s.data === t.data);
       if (esistente && impegnati.has(esistente.id)) {
@@ -354,6 +361,9 @@ export const store = {
         continue;
       }
       if (esistente) {
+        if (esistente.tipo !== t.tipo || esistente.start !== t.start || esistente.end !== t.end) {
+          cambiati.add(t.data);
+        }
         Object.assign(esistente, { tipo: t.tipo, start: t.start, end: t.end });
         aggiornati += 1;
       } else {
@@ -363,8 +373,55 @@ export const store = {
         aggiunti += 1;
       }
     }
+    const scambiChiusi = userId === this.state.currentUserId ? this.chiudiScambiApprovati(cambiati) : [];
     this.commit();
-    return { aggiunti, aggiornati, bloccati };
+    return { aggiunti, aggiornati, bloccati, scambiChiusi };
+  },
+
+  /**
+   * Uno scambio concordato che il calendario ufficiale mostra già fatto si
+   * chiude da solo.
+   *
+   * Prima il fondo giallo restava finché qualcuno non toccava "Cambio
+   * inserito", e chi se ne dimenticava si portava dietro per giorni uno
+   * scambio che UKG aveva già approvato. Il segnale è un cambiamento, non
+   * un orario preciso: chi prende un turno ne fa le ore adattate al proprio
+   * contratto, e indovinare l'orario esatto sbaglierebbe proprio quei casi.
+   * Basta che un giorno dello scambio sia diverso da com'era.
+   *
+   * Dello scambio contano entrambi i giorni, il turno lasciato e quello
+   * offerto: nel cambio orario coincidono, nel cambio OFF uno diventa riposo
+   * e l'altro lavoro. Chi se ne accorge per primo chiude per tutti e due,
+   * perché lo stato della proposta sta sul server.
+   *
+   * La disponibilità a cambiare si toglie solo dai giorni cambiati davvero:
+   * il resto della settimana è ancora una scelta tua.
+   */
+  chiudiScambiApprovati(cambiati) {
+    if (!cambiati.size) return [];
+    const me = this.state.currentUserId;
+    const chiusi = [];
+    this.state.scambiConfermati = this.state.scambiConfermati || [];
+    for (const p of this.state.proposals) {
+      // Anche quelli già segnati "Cambio inserito" a mano: lì mancava ancora
+      // la conferma di UKG, ed è questa.
+      if (p.status !== 'ACCORDO' || this.state.scambiConfermati.includes(p.id)) continue;
+      if (p.daUserId !== me && p.aUserId !== me) continue;
+      const r = this.request(p.requestId);
+      const giorni = [this.shift(r?.cedo.shiftId)?.data, this.shift(p.shiftOffertoId)?.data].filter(Boolean);
+      const toccati = [...new Set(giorni)].filter((g) => cambiati.has(g));
+      if (!toccati.length) continue;
+      this.state.scambiConfermati.push(p.id);
+      const giaChiuso = p.cambioInserito;
+      if (!giaChiuso) this.cambioInserito(p.id);
+      for (const g of toccati) {
+        const settimana = appleWeekKey(g);
+        const slot = slotSettimana(g);
+        if (this.me.disponibilita?.[settimana]?.[slot]) this.impostaDisponibilita(settimana, slot, false);
+      }
+      if (!giaChiuso) chiusi.push({ proposalId: p.id, altroId: p.daUserId === me ? p.aUserId : p.daUserId });
+    }
+    return chiusi;
   },
 
   /**

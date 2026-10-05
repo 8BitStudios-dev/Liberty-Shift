@@ -212,6 +212,34 @@ function riassuntoImport({ aggiunti = 0, aggiornati = 0, bloccati = [] }) {
 }
 
 /**
+ * Gli scambi che il calendario ha mostrato approvati da UKG, e chiusi da soli.
+ *
+ * Si dice, perché una richiesta che sparisce senza spiegazione sembra un
+ * guasto. Poi si propone il grazie per il primo scambio non ancora
+ * ringraziato: è il momento in cui il cambio è vero davvero. Uno solo, e mai
+ * sopra un foglio già aperto: due fogli di fila sarebbero un interrogatorio.
+ * Restituisce true se ha detto qualcosa.
+ */
+function annunciaScambiChiusi(esito) {
+  const chiusi = esito?.scambiChiusi || [];
+  if (!chiusi.length) return false;
+  const nomi = [...new Set(chiusi.map((c) => store.user(c.altroId)?.nome).filter(Boolean))];
+  toast(chiusi.length === 1
+    ? `UKG ha approvato lo scambio${nomi[0] ? ` con ${nomi[0]}` : ''}: chiuso`
+    : `UKG ha approvato ${chiusi.length} scambi: chiusi`);
+  const daRingraziare = chiusi.find((c) => !store.haGiaRingraziato(c.proposalId));
+  // Il controllo sta dentro l'attesa: il foglio da cui si è appena importato
+  // si sta ancora chiudendo, e guardato subito sembrerebbe aperto.
+  if (daRingraziare) {
+    setTimeout(() => {
+      if (document.querySelector('.sheet-backdrop')) return;
+      AZIONI['chiedi-grazie'](null, { dataset: { id: daRingraziare.proposalId } });
+    }, 700);
+  }
+  return true;
+}
+
+/**
  * Segnala una richiesta a un collega vero, fuori dall'app.
  *
  * L'app non può bussare a un altro telefono: le notifiche che scrive restano
@@ -929,6 +957,7 @@ const AZIONI = {
     render();
     const errore = cal.errore || sync.errore;
     if (errore) return toast(errore);
+    if (annunciaScambiChiusi(cal)) return;
     if (cal.saltato && sync.saltato) {
       return toast(store.state.profilo?.calendarioUrl ? 'Non sei collegato al negozio' : 'Nessun calendario collegato');
     }
@@ -1030,8 +1059,8 @@ const AZIONI = {
     if (em) em.textContent = testo;
     if (esito.errore) return toast(esito.errore);
     if (esito.saltato) return toast('Nessun calendario collegato');
-    toast(riassuntoImport(esito));
     render();
+    if (!annunciaScambiChiusi(esito)) toast(riassuntoImport(esito));
   },
 
   'conferma-import': (_, el) => {
@@ -1040,8 +1069,8 @@ const AZIONI = {
     if (!turni.length) return toast('Niente da importare');
     const esito = store.importaTurni(turni);
     wrap.querySelector('[data-chiudi]').click();
-    toast(riassuntoImport(esito));
     render();
+    if (!annunciaScambiChiusi(esito)) toast(riassuntoImport(esito));
   },
 
   'spiega-priorita': () => {
@@ -1223,7 +1252,10 @@ async function sincronizzaSilenziosa() {
  */
 async function aggiornamentoSilenzioso() {
   const esito = await store.aggiornaCalendario();
-  if (!esito.saltato && !esito.errore) render();
+  if (esito.saltato || esito.errore) return;
+  render();
+  // Silenzioso sì, ma uno scambio chiuso da solo si dice.
+  annunciaScambiChiusi(esito);
 }
 
 /**

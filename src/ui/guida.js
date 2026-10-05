@@ -179,8 +179,9 @@ export const GUIDE = {
         ore della settimana. I giorni OFF sono vuoti, senza fondo. Il fondo giallo è un giorno che
         sta cambiando, e l'icona nell'angolo dice a che punto: clessidra se cerchi
         ancora qualcuno o aspetti una risposta, spunta se è concordato e manca
-        solo la conferma in UKG. La linea verde in basso è un giorno in cui ti sei
-        detto disponibile a scambiare.
+        solo la conferma in UKG. Quando il calendario dei turni mostra il cambio
+        fatto, lo scambio si chiude da solo e il giallo sparisce. La linea verde
+        in basso è un giorno in cui ti sei detto disponibile a scambiare.
       </p>
       <p class="testo-tenue">
         Tocca un giorno per correggere il turno, darti disponibile o vedere le

@@ -380,3 +380,74 @@ test('i giorni di uno scambio restano segnati dall\'accordo fino al giorno stess
   assert.equal(giorni.get('2026-10-12'), 'accordo', 'il giorno che lasci, anche dopo "Cambio inserito"');
   assert.equal(giorni.has('2026-10-01'), false, 'i giorni passati non si segnano');
 });
+
+// --- lo scambio che UKG aveva già approvato -----------------------------
+
+/** Uno scambio concordato fra me e un collega, sui giorni dati. */
+function scambioConcordato({ tipo, giornoSuo, giornoMio, inserito = false }) {
+  store.reset(seed());
+  const me = store.state.currentUserId;
+  const altro = store.state.users.find((u) => u.id !== me);
+  // Turni puliti: i giorni dello scambio non devono dipendere dal seed.
+  store.state.shifts = store.state.shifts.filter((s) => ![giornoSuo, giornoMio].includes(s.data));
+  store.state.shifts.push(
+    { id: 't-suo', userId: altro.id, data: giornoSuo, tipo: 'WORK', start: '12:00', end: '21:00' },
+    { id: 't-mio', userId: me, data: giornoMio, tipo: 'WORK', start: '09:30', end: '18:30' },
+  );
+  if (giornoSuo !== giornoMio) {
+    store.state.shifts.push({ id: 't-mio-off', userId: me, data: giornoSuo, tipo: 'OFF', start: null, end: null });
+  }
+  store.state.requests.push({
+    id: 'rq-ukg', userId: altro.id, createdAt: '2026-10-01T10:00:00Z', status: inserito ? STATUS.CHIUSA : STATUS.ACCORDO,
+    prioritaFinoA: null, tipo, cedo: { shiftId: 't-suo', flessibile: false }, cerco: { giorni: [giornoMio] },
+  });
+  store.state.proposals.push({
+    id: 'pr-ukg', requestId: 'rq-ukg', daUserId: me, aUserId: altro.id, shiftOffertoId: 't-mio', messaggio: '',
+    accettataDa: [me, altro.id], status: 'ACCORDO', createdAt: '2026-10-02T10:00:00Z', cambioInserito: inserito,
+  });
+  return { me, altro };
+}
+
+const turnoICS = (data, tipo, start = null, end = null) => ({ data, tipo, start, end });
+
+test('il calendario che mostra il cambio chiude lo scambio da solo', () => {
+  const { altro } = scambioConcordato({ tipo: 'ORARIO', giornoSuo: '2026-10-20', giornoMio: '2026-10-20' });
+  // UKG ha approvato: quel giorno faccio il suo orario.
+  const esito = store.importaTurni([turnoICS('2026-10-20', 'WORK', '12:00', '21:00')]);
+  const p = store.state.proposals.find((x) => x.id === 'pr-ukg');
+  assert.equal(p.cambioInserito, true);
+  assert.equal(store.request('rq-ukg').status, STATUS.CHIUSA);
+  assert.deepEqual(esito.scambiChiusi, [{ proposalId: 'pr-ukg', altroId: altro.id }]);
+  assert.equal(store.giorniInCorso(undefined, '2026-10-04').has('2026-10-20'), false, 'il giallo se ne va');
+});
+
+test('un calendario uguale a prima non chiude niente', () => {
+  scambioConcordato({ tipo: 'ORARIO', giornoSuo: '2026-10-20', giornoMio: '2026-10-20' });
+  const esito = store.importaTurni([turnoICS('2026-10-20', 'WORK', '09:30', '18:30')]);
+  assert.deepEqual(esito.scambiChiusi, []);
+  assert.equal(store.state.proposals.find((x) => x.id === 'pr-ukg').cambioInserito, false);
+  assert.equal(store.giorniInCorso(undefined, '2026-10-04').get('2026-10-20'), 'accordo');
+});
+
+test('nel cambio OFF basta uno dei due giorni, e la disponibilità si toglie solo dove è cambiato', () => {
+  scambioConcordato({ tipo: 'OFF', giornoSuo: '2026-10-21', giornoMio: '2026-10-22' });
+  const settimana = '2026-10-17'; // sabato della settimana Apple
+  // Disponibile mercoledì 21, giovedì 22 e venerdì 23.
+  store.me.disponibilita = { [settimana]: [false, false, false, false, true, true, true] };
+  // Il calendario ha già girato il 21 (lavoro dove ero OFF), il 22 non ancora.
+  const esito = store.importaTurni([
+    turnoICS('2026-10-21', 'WORK', '12:00', '21:00'),
+    turnoICS('2026-10-22', 'WORK', '09:30', '18:30'),
+  ]);
+  assert.equal(esito.scambiChiusi.length, 1);
+  assert.deepEqual(store.me.disponibilita[settimana], [false, false, false, false, false, true, true],
+    'via solo il 21: il 22 non è cambiato, il 23 non c\'entra');
+});
+
+test('uno scambio già segnato a mano si conferma senza riannunciarlo', () => {
+  scambioConcordato({ tipo: 'ORARIO', giornoSuo: '2026-10-20', giornoMio: '2026-10-20', inserito: true });
+  assert.equal(store.giorniInCorso(undefined, '2026-10-04').get('2026-10-20'), 'accordo', 'prima: aspetta UKG');
+  const esito = store.importaTurni([turnoICS('2026-10-20', 'WORK', '12:00', '21:00')]);
+  assert.deepEqual(esito.scambiChiusi, [], 'era già chiuso: niente avviso né grazie');
+  assert.equal(store.giorniInCorso(undefined, '2026-10-04').has('2026-10-20'), false, 'dopo: il giallo se ne va');
+});

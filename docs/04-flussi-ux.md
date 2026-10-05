@@ -111,6 +111,18 @@ offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo. Dopo l'accordo la schermata dice una cosa sola: vai a farlo
 nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 
+Di solito non serve nemmeno toccarlo. Ogni volta che l'app riscarica il
+calendario dei turni guarda se è cambiato un giorno di uno scambio concordato:
+se sì, UKG l'ha approvato, e lo scambio si chiude da solo (`chiudiScambiApprovati`
+nello store). Si toglie il giallo, si toglie la disponibilità a cambiare dai
+giorni cambiati davvero (non dal resto della settimana), compare l'avviso
+"UKG ha approvato lo scambio con…" e si propone il grazie. Il segnale è un
+cambiamento, non un orario preciso: chi prende un turno ne fa le ore adattate
+al proprio contratto, e cercare l'orario esatto sbaglierebbe proprio quei casi.
+Il prezzo è che un turno cambiato per altri motivi proprio quel giorno chiude
+lo scambio: è raro, e l'avviso lo fa notare. Chi se ne accorge per primo chiude
+per tutti e due, perché lo stato della proposta sta sul server.
+
 Le proposte ricevute, in Proposte, si leggono **nell'ordine in cui sono
 arrivate**: prima quella arrivata prima. Sopra restano quelle che aspettano
 una tua risposta.
@@ -456,7 +468,8 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
   disponibile a scambiare. Il giallo resta fino al giorno stesso, anche dopo
   "Cambio inserito": l'approvazione arriva da UKG, e senza un segno fra
   l'accordo e il nuovo calendario dei turni il giorno sembrava fermo
-  (`giorniInCorso` nello store). Prima i segni erano sei, con due fondi
+  (`giorniInCorso` nello store). Se ne va prima solo quando il calendario
+  scaricato mostra il cambio fatto. Prima i segni erano sei, con due fondi
   colorati che si sovrapponevano e due clessidre distinte solo dal colore. Toccando un giorno: il turno, la
   disponibilità e le tue richieste, dette in seconda persona ("Lasci…,
   cerchi…"). Niente dei colleghi: né barre, né percentuali, né rimandi.
