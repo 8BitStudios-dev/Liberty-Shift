@@ -346,10 +346,19 @@ la persona a chiedersi cosa avesse sbagliato. I codici veri stanno in
 
 ### L'aggiornamento da solo
 Una volta scaricato, l'indirizzo resta su quel dispositivo, e da lì in poi
-l'app se lo riprende **all'apertura**, al massimo una volta ogni sei ore
-(`RULES.calendario.oreFraAggiornamenti`). Il tetto non è una questione di
-prestazioni: chi apre l'app quindici volte in un pomeriggio non deve scaricare
-quindici volte lo stesso file.
+l'app se lo riprende **all'apertura e a ogni ritorno in primo piano**, al
+massimo una volta l'ora (`RULES.calendario.oreFraAggiornamenti`). Il ritorno
+in primo piano conta perché su iPhone riaprire l'app non la riavvia: riprende
+la pagina di prima, e prima un cambio approvato in UKG la mattina restava
+invisibile finché non la si chiudeva del tutto. L'ora serve ai cambi, che UKG
+approva durante il giorno; il tetto evita di scaricare lo stesso file a ogni
+sblocco del telefono.
+
+In alto nel Profilo, **Aggiorna calendario** riscarica subito turni e bacheca
+insieme, senza guardare il tetto. Prima era un tondo senza scritta che
+aggiornava solo la bacheca, e i turni stavano in un riquadro chiuso più in
+basso: chi aveva appena visto approvare un cambio toccava il tondo e non
+cambiava niente.
 
 Il giro parte dopo il primo disegno della schermata e fallisce in silenzio: chi
 apre l'app vuole vedere la sua settimana, non una rotella, e un avviso perché
@@ -426,7 +435,7 @@ non può cambiare turni per motivi suoi finirebbe in fondo davanti a tutti.
 Lo stesso vale per chi sei. Il bollino con le iniziali, il nome grande e il
 contratto occupavano mezzo schermo sopra il calendario per dire a una persona
 il suo nome. Ora la testata è una riga sola: il bollino in alto a sinistra,
-sincronizzazione e guida a destra. Nome, contratto e ruoli si aprono
+"Aggiorna calendario" e guida a destra. Nome, contratto e ruoli si aprono
 toccando il bollino, insieme a una scorciatoia per modificare il profilo.
 
 ## Due mesi: quello del negozio e il tuo

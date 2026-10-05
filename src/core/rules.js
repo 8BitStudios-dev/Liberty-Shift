@@ -52,11 +52,13 @@ export const RULES = {
     /**
      * Ogni quante ore l'app riscarica il calendario da sola.
      *
-     * I turni escono una volta ogni due settimane: sei ore sono già
-     * generose, e chi apre l'app quindici volte al giorno non deve scaricare
-     * quindici volte lo stesso file. Dal Profilo si può sempre forzare.
+     * Non per i turni nuovi, che escono ogni due settimane, ma per i cambi:
+     * UKG approva durante il giorno, e chi ha fatto lo scambio vuole vederlo
+     * subito. Un'ora tiene il calendario fresco senza scaricare lo stesso
+     * file a ogni sblocco del telefono. Il tasto "Aggiorna calendario" del
+     * Profilo forza sempre.
      */
-    oreFraAggiornamenti: 6,
+    oreFraAggiornamenti: 1,
 
     codiciOff: [
       /\b(off|riposo|libero|ferie|permesso|festivo)\b/i,

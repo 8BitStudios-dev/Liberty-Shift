@@ -1108,3 +1108,20 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .traguardo-testo { display: flex; flex-direction: column; gap: 1px; }
 .traguardo-soglia { font-size: 12px; font-weight: 400; color: var(--testo-tenue); }
 .traguardo { min-height: 36px; }
+
+/* "Aggiorna calendario" nella testata del Profilo: una pillola con la
+   scritta, perché il tondo senza parole non diceva cosa aggiornava. */
+.tasto-aggiorna {
+  appearance: none; font: inherit; cursor: pointer; position: relative;
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--bordo); background: var(--superficie); color: var(--testo);
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+.tasto-aggiorna svg { color: var(--accento); }
+.tasto-aggiorna:disabled { opacity: .6; cursor: default; }
+.tasto-aggiorna .pallino { position: absolute; top: 4px; right: 6px; }
+@media (max-width: 359px) {
+  .tasto-aggiorna { padding: 0 11px; gap: 5px; font-size: 13px; }
+  .azioni-profilo { gap: 6px; }
+}

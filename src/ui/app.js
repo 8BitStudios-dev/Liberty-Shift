@@ -909,15 +909,30 @@ const AZIONI = {
     area.dispatchEvent(new Event('input'));
   },
 
-  /** Manda e riscarica la bacheca adesso, senza aspettare la prossima apertura. */
+  /**
+   * "Aggiorna calendario": i turni dal calendario aziendale e la bacheca dal
+   * server, insieme e adesso. Il calendario si riscarica anche se l'ultima
+   * volta è stata poco fa: chi tocca il tasto ha appena visto qualcosa
+   * cambiare.
+   */
   sincronizza: async (_, el) => {
-    const testo = el.querySelector('.tile-sync-testo');
+    const testo = el.querySelector('.tasto-aggiorna-testo');
+    const prima = testo?.textContent;
     if (testo) testo.textContent = 'Un attimo…';
-    const esito = await store.sincronizza();
+    el.disabled = true;
+    const [cal, sync] = await Promise.all([
+      store.aggiornaCalendario({ forzato: true }),
+      store.sincronizza(),
+    ]);
+    el.disabled = false;
+    if (testo) testo.textContent = prima;
     render();
-    if (esito.saltato) return toast('Non sei collegato al negozio');
-    if (esito.errore) return toast(esito.errore);
-    toast(esito.inviate ? `${esito.inviate} inviate, bacheca aggiornata` : 'Bacheca aggiornata');
+    const errore = cal.errore || sync.errore;
+    if (errore) return toast(errore);
+    if (cal.saltato && sync.saltato) {
+      return toast(store.state.profilo?.calendarioUrl ? 'Non sei collegato al negozio' : 'Nessun calendario collegato');
+    }
+    toast(cal.saltato ? 'Bacheca aggiornata' : riassuntoImport(cal));
   },
 
   /**
@@ -1210,6 +1225,26 @@ async function aggiornamentoSilenzioso() {
   const esito = await store.aggiornaCalendario();
   if (!esito.saltato && !esito.errore) render();
 }
+
+/**
+ * L'app che torna in primo piano fa quello che farebbe all'apertura.
+ *
+ * Su iPhone riaprirla non la riavvia: riprende la pagina di prima, e i due
+ * aggiornamenti qui sopra non ripartivano finché non la si chiudeva del tutto.
+ * Un cambio approvato in UKG la mattina restava invisibile fino a sera.
+ * Il calendario ha già il suo tetto di un'ora; la bacheca al massimo una volta
+ * al minuto, per chi passa da un'app all'altra.
+ */
+let ultimaRipresa = 0;
+function allaRipresa() {
+  if (Date.now() - ultimaRipresa < 60000) return;
+  ultimaRipresa = Date.now();
+  aggiornamentoSilenzioso();
+  sincronizzaSilenziosa();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') allaRipresa();
+});
 
 // PWA
 //

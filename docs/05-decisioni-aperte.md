@@ -65,7 +65,7 @@ Il secondo modo **è costruito e collaudato**: `supabase/functions/Calendario`
 scarica il calendario aziendale al posto del browser (Apple non manda le
 intestazioni CORS che servirebbero per farlo direttamente), solo da domini
 Apple/iCloud/Google/Outlook e solo per chi è già autenticato. `store.js`
-salva l'indirizzo sul telefono e lo riscarica da solo al più ogni sei ore.
+salva l'indirizzo sul telefono e lo riscarica da solo al più una volta l'ora.
 Provato contro un calendario vero il 7 settembre 2026 (29 KB, 64 turni letti).
 Vedi `docs/07-supabase.md`.
 

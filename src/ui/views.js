@@ -602,20 +602,24 @@ function rigaNotifiche() {
 }
 
 /**
- * Il tasto di sincronizzazione col server, un tondo nella testata.
+ * "Aggiorna calendario", in alto nel Profilo: riscarica i turni e la bacheca
+ * insieme.
  *
- * Compare solo a chi è iscritto al negozio sul server. È un'azione, non
- * un'informazione: il numero di colleghi collegati o le cose in coda
- * stavano meglio nella riga estesa che aveva prima. Quello che conta
- * davvero — un invio fallito — resta visibile come pallino rosso
- * sull'icona, non sparisce e basta.
+ * Prima era un tondo senza scritta che aggiornava solo la bacheca, mentre i
+ * turni si riscaricavano da un riquadro chiuso più in basso: chi aveva appena
+ * visto approvare un cambio in UKG toccava il tondo e non succedeva niente. Un
+ * tasto solo, con il nome di quello che uno vuole vedere.
+ *
+ * Un invio fallito resta visibile come pallino rosso, non sparisce e basta.
  */
 function bottoneSync() {
-  if (!store.state.profilo?.idServer) return '';
+  const p = store.state.profilo;
+  if (!p?.idServer && !p?.calendarioUrl) return '';
   const errore = store.state.ultimoErroreServer;
   return html`
-    <button class="icon-btn" data-act="sincronizza" aria-label="Sincronizza col negozio">
-      ${raw(icona('aggiorna', { px: 20 }))}
+    <button class="tasto-aggiorna" data-act="sincronizza">
+      ${raw(icona('aggiorna', { px: 17 }))}
+      <span class="tasto-aggiorna-testo">Aggiorna calendario</span>
       ${raw(errore ? '<span class="pallino urgente"></span>' : '')}
     </button>`;
 }
