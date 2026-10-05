@@ -358,3 +358,61 @@ test('senza una riga sul server il traguardo annunciato in locale resta', async 
   assert.ok(!esito.errore);
   assert.equal(state.profilo.traguardiVisti, 5, 'il valore locale non si perde');
 });
+
+// --- ritirare una proposta ------------------------------------------------
+
+/** Anna ha una richiesta; io le ho proposto uno scambio che aspetta lei. */
+function propostaMiaAdAnna() {
+  const state = statoIscritto();
+  state.users.push({ id: 'u-anna', nome: 'Anna', cognomeIniziale: 'V', contratto: 'PT', preferenze: {}, disponibilita: {} });
+  state.shifts.push(
+    { id: 't-anna', userId: 'u-anna', data: '2026-10-20', tipo: 'WORK', start: '12:00', end: '21:00' },
+    { id: 't-io', userId: state.currentUserId, data: '2026-10-20', tipo: 'WORK', start: '09:30', end: '18:30' },
+  );
+  state.requests.push({
+    id: 'rq-anna', userId: 'u-anna', tipo: 'ORARIO', status: 'IN_ATTESA', createdAt: '2026-10-01T10:00:00Z',
+    prioritaFinoA: null, cedo: { shiftId: 't-anna', flessibile: false }, cerco: { giorni: ['2026-10-20'] }, daServer: true,
+  });
+  state.proposals.push({
+    id: 'pr-mia', requestId: 'rq-anna', daUserId: state.currentUserId, aUserId: 'u-anna', shiftOffertoId: 't-io',
+    messaggio: '', accettataDa: [state.currentUserId], status: 'IN_ATTESA', createdAt: '2026-10-02T10:00:00Z',
+    cambioInserito: false, daServer: true,
+  });
+  return state;
+}
+
+test('una proposta ritirata sparisce, e la richiesta torna aperta prima che la proposta si cancelli', () => {
+  const state = propostaMiaAdAnna();
+  assert.equal(store.ritiraProposta('pr-mia'), null);
+  assert.equal(state.proposals.some((p) => p.id === 'pr-mia'), false);
+  assert.equal(store.request('rq-anna').status, 'APERTA');
+  // Sul server posso aggiornare la sua richiesta solo finché la proposta esiste.
+  assert.deepEqual(state.coda.map((op) => op.tipo), ['richiesta.aggiorna', 'proposta.ritira']);
+});
+
+test('una proposta già concordata, o di un altro, non si ritira', () => {
+  const state = propostaMiaAdAnna();
+  state.proposals[state.proposals.length - 1].status = 'ACCORDO';
+  assert.match(store.ritiraProposta('pr-mia'), /concordato/);
+  state.proposals[state.proposals.length - 1].status = 'IN_ATTESA';
+  state.proposals[state.proposals.length - 1].daUserId = 'u-anna';
+  assert.match(store.ritiraProposta('pr-mia'), /solo le tue/);
+  assert.equal(state.proposals.some((p) => p.id === 'pr-mia'), true);
+});
+
+test('una proposta ritirata senza rete non torna giù dal server', async () => {
+  const state = propostaMiaAdAnna();
+  store.ritiraProposta('pr-mia');
+  serverFinto({
+    profili: { righe: PROFILI }, richieste: {}, ringraziamenti: {}, disponibilita: {},
+    proposte: {
+      righe: [{
+        id: 'pr-mia', richiesta_id: 'rq-anna', da_user_id: 'io-sul-server', a_user_id: 'u-anna',
+        turno_data: '2026-10-20', turno_start: '09:30:00', turno_end: '18:30:00', messaggio: '',
+        accettata_da: ['io-sul-server'], stato: 'IN_ATTESA', cambio_inserito: false, creata_il: '2026-10-02T10:00:00Z',
+      }],
+    },
+  });
+  await scarica(state);
+  assert.equal(state.proposals.some((p) => p.id === 'pr-mia'), false);
+});

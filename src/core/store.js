@@ -710,6 +710,34 @@ export const store = {
   },
 
   /**
+   * Ritirare una proposta che hai fatto, finché l'altra persona non l'ha
+   * accettata.
+   *
+   * Si cancella, non si rifiuta: "rifiutata" farebbe partire la notifica
+   * sbagliata, e una proposta ritirata non è un no di nessuno. Sul server la
+   * cancellazione è permessa solo a chi l'ha fatta.
+   *
+   * L'ordine conta: lo stato della richiesta del collega si può aggiornare
+   * solo finché esiste una proposta che ti lega a lei, quindi prima si
+   * aggiorna lo stato e poi si cancella la proposta.
+   */
+  ritiraProposta(proposalId) {
+    const p = this.state.proposals.find((x) => x.id === proposalId);
+    if (!p) return 'Proposta non trovata.';
+    if (p.daUserId !== this.state.currentUserId) return 'Puoi ritirare solo le tue proposte.';
+    if (p.status === 'ACCORDO') return 'Lo scambio è già concordato: non si può più ritirare.';
+    if (p.status === 'RIFIUTATA') return 'La proposta non è più attiva.';
+    this.state.proposals = this.state.proposals.filter((x) => x.id !== proposalId);
+    const r = this.request(p.requestId);
+    this.aggiornaStato(r);
+    this.rispecchiaRichiesta(r);
+    if (p.daServer && sulServer(this.state)) accoda(this.state, 'proposta.ritira', { id: p.id });
+    this.commit();
+    this.spingi();
+    return null;
+  },
+
+  /**
    * Un grazie è l'unica cosa che resta dopo che il cambio è fatto. Si
    * conserva nel profilo di chi lo riceve.
    */

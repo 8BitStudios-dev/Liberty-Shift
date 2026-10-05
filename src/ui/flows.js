@@ -516,7 +516,11 @@ export function dettaglio(params) {
             <button class="btn primario" data-act="accetta" data-id="${p.id}">Accetta</button>
             <button class="btn secondario" data-act="chiedi-rifiuto" data-id="${p.id}">Rifiuta</button>
           </div>`
-        : html`<p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>`;
+        : p.daUserId === store.state.currentUserId && p.status !== 'RIFIUTATA'
+          ? html`
+            <p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>
+            <button class="btn secondario largo" data-act="ritira-proposta" data-id="${p.id}">Ritira la proposta</button>`
+          : html`<p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>`;
 
     return html`
       <article class="card proposta">
@@ -723,7 +727,11 @@ function vocebox(v) {
             ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             <button class="btn secondario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
           </div>`
-        : html`<p class="testo-tenue">In attesa che ${altro.nome} risponda (${p.accettataDa.length}/2).</p>`;
+        : ioHoProposto && p.status !== 'RIFIUTATA'
+          ? html`
+            <p class="testo-tenue">In attesa che ${altro.nome} risponda (${p.accettataDa.length}/2).</p>
+            <button class="btn secondario largo" data-act="ritira-proposta" data-id="${p.id}">Ritira la proposta</button>`
+          : html`<p class="testo-tenue">In attesa che ${altro.nome} risponda (${p.accettataDa.length}/2).</p>`;
 
   return html`
     <article class="card ${v.aspettaMe ? 'da-fare' : ''}">

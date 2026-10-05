@@ -212,6 +212,7 @@ const OPERAZIONI = {
   'richiesta.aggiorna': (d) => aggiorna('richieste', { eq: { id: d.id } }, d.patch),
   'proposta.crea': (d) => inserisci('proposte', d),
   'proposta.aggiorna': (d) => aggiorna('proposte', { eq: { id: d.id } }, d.patch),
+  'proposta.ritira': (d) => elimina('proposte', { eq: { id: d.id } }),
   'ringraziamento.crea': (d) => inserisci('ringraziamenti', d),
   'disponibilita.salva': (d) => salvaSuChiave('disponibilita', d),
   'notifiche.salva': (d) => salvaSuChiave('notifiche_preferenze', d, 'user_id'),
@@ -454,8 +455,11 @@ export async function scarica(state) {
     state.requests.push(r);
   }
 
+  // Una proposta ritirata qui ma non ancora cancellata sul server (manca la
+  // rete) tornerebbe giù come se niente fosse: si salta finché la coda non passa.
+  const ritirate = new Set((state.coda || []).filter((op) => op.tipo === 'proposta.ritira').map((op) => op.dati.id));
   for (const riga of proposte.dati || []) {
-    if (gia.has(riga.id)) continue;
+    if (gia.has(riga.id) || ritirate.has(riga.id)) continue;
     const p = propostaDaRiga(state, riga);
     p.shiftOffertoId = agganciaTurno(state, {
       userId: p.daUserId, turno: p.turnoOfferto, chiave: p.id,

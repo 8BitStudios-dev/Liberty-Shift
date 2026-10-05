@@ -766,6 +766,18 @@ const AZIONI = {
   },
   'cambio-inserito': (_, el) => { store.cambioInserito(el.dataset.id); toast('Richiesta chiusa'); vai('#/home'); },
 
+  // Si chiede conferma come per cancellare una richiesta: un tocco per
+  // sbaglio farebbe sparire una proposta a cui il collega stava per dire sì.
+  'ritira-proposta': (_, el) => {
+    const p = store.state.proposals.find((x) => x.id === el.dataset.id);
+    const altro = p && store.user(p.aUserId);
+    if (!confirm(`Ritirare la proposta${altro ? ` a ${altro.nome}` : ''}? Sparirà anche dalle sue proposte.`)) return;
+    const errore = store.ritiraProposta(el.dataset.id);
+    if (errore) return toast(errore);
+    toast('Proposta ritirata');
+    render();
+  },
+
   cancella: (_, el) => {
     if (!confirm('Cancellare la richiesta? Non si può modificare, solo rifare da capo.')) return;
     store.cancellaRichiesta(el.dataset.id);

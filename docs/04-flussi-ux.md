@@ -111,7 +111,16 @@ offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo. Dopo l'accordo la schermata dice una cosa sola: vai a farlo
 nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 
-Di solito non serve nemmeno toccarlo. Ogni volta che l'app riscarica il
+Una proposta fatta si può **ritirare** finché l'altra persona non l'ha
+accettata: "Ritira la proposta", in Proposte e nel dettaglio della richiesta,
+con una conferma. Si cancella, non si rifiuta: "rifiutata" farebbe partire la
+notifica sbagliata, e un ritiro non è un no di nessuno. Chi l'aveva ricevuta
+la vede sparire alla prossima sincronizzazione, senza notifica. Sul server
+la cancellazione è permessa solo a chi l'ha fatta; prima si riporta la
+richiesta del collega allo stato giusto, perché quella si può aggiornare solo
+finché la proposta che vi lega esiste.
+
+Il pulsante "Cambio inserito", invece, di solito non serve nemmeno toccarlo. Ogni volta che l'app riscarica il
 calendario dei turni guarda se è cambiato un giorno di uno scambio concordato:
 se sì, UKG l'ha approvato, e lo scambio si chiude da solo (`chiudiScambiApprovati`
 nello store). Si toglie il giallo, si toglie la disponibilità a cambiare dai
