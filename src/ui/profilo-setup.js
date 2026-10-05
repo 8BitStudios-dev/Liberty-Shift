@@ -12,7 +12,7 @@ import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 import { oreDelContratto, oreAutomatiche } from '../core/model.js';
 import { serverConfigurato } from '../core/config.js';
-import { campoPortachiavi } from './components.js';
+import { campoPortachiavi, elencoErrori } from './components.js';
 
 /** La bozza in corso di compilazione. */
 export const bozzaProfilo = {
@@ -139,9 +139,7 @@ export function schermataProfilo() {
       <span class="passo">${passo}/${totale}</span>
     </header>
     <div class="progresso"><i style="width:${(passo / totale) * 100}%"></i></div>
-    ${raw(b.errori.length
-    ? `<div class="errori">${b.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>`
-    : '')}
+    ${raw(elencoErrori(b.errori))}
     ${raw(contenuto)}`;
 }
 
@@ -387,9 +385,7 @@ function schermataAccedi() {
       <button class="icon-btn" data-act="torna-iscrizione">‹</button>
       <h1>Rientra</h1>
     </header>
-    ${raw(b.errori.length
-    ? `<div class="errori">${b.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>`
-    : '')}
+    ${raw(elencoErrori(b.errori))}
     <p class="testo-tenue">
       Scrivi nome e cognome come all'iscrizione, e la tua password. I turni non
       si ripristinano: restano sul dispositivo dove li avevi inseriti, e da qui

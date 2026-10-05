@@ -347,7 +347,7 @@ export function profilo() {
     ${raw(me.admin || me.superAdmin ? `
     <section class="sezione">
       <details class="riquadro">
-        <summary><span>🛡️ Amministrazione</span></summary>
+        <summary><span class="titolo-admin">${icona('admin', { px: 18 })} Amministrazione</span></summary>
         ${me.admin ? '<button class="btn secondario largo" data-act="vai" data-to="#/statistiche">Statistiche</button>' : ''}
         ${tastoIscritti(me)}
       </details>

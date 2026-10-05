@@ -270,7 +270,7 @@ export function cardMatch(match, opzioni = {}) {
         <span class="score">${match.score}%</span>
       </header>
       <div class="match-tipo">
-        ${verde ? '🟢 Match' : '🟡 Potenziale'}
+        ${raw(segnoMatch(verde))}${verde ? 'Match' : 'Potenziale'}
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
       ${raw(riassuntoMatch(match, u, turno, opzioni))}
@@ -368,6 +368,22 @@ export function messaggioInvito() {
 export function indirizzoApp() {
   return `${location.origin}${location.pathname}`.replace(/index\.html$/, '');
 }
+
+/**
+ * Gli errori di un modulo, uno per riga, con il segno d'avviso. Il testo
+ * arriva già pronto dalle regole: qui non si escapa di nuovo.
+ */
+export function elencoErrori(errori) {
+  if (!errori.length) return '';
+  const segno = `<span class="icona-in-riga">${icona('avviso', { px: 16 })}</span>`;
+  return `<div class="errori">${errori.map((e) => `<p>${segno} ${e}</p>`).join('')}</div>`;
+}
+
+/**
+ * Il segno di un match: pallino pieno se va bene così, anello se è solo
+ * potenziale. Si distinguono per forma oltre che per colore.
+ */
+export const segnoMatch = (pieno) => `<span class="segno-match ${pieno ? 'pieno' : 'potenziale'}" aria-hidden="true"></span>`;
 
 export function vuoto(titolo, sottotitolo, azione = '') {
   return html`

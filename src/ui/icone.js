@@ -41,6 +41,8 @@ const TRACCIATI = {
   condividi: '<path d="M8.5 9.5H6.5v10h11v-10h-2"/><path d="M12 14.5V3.5M8.6 6.6 12 3.3l3.4 3.3"/>',
   notifiche: '<path d="M6.2 16.5V11a5.8 5.8 0 0 1 11.6 0v5.5l1.7 1.9h-15z"/><path d="M10 20.6a2.2 2.2 0 0 0 4 0"/>',
   invita: '<rect x="3.5" y="6" width="17" height="12.5" rx="3"/><path d="M4.5 8l7.5 5 7.5-5"/>',
+  // Lo scudo dell'admin: le mosse che solo un admin può fare.
+  admin: '<path d="M12 3.5 19 6.2v5.3c0 4.3-2.9 7.5-7 9-4.1-1.5-7-4.7-7-9V6.2z"/>',
   legale: '<path d="M6.5 3.5h7.5l4 4v13H6.5z"/><path d="M13.5 3.5V8h4.5M9.5 12.5h5M9.5 16h5"/>',
   clessidra: '<path d="M7 3.5h10M7 20.5h10"/><path d="M8.2 3.5c0 4.3 3.8 5.2 3.8 8.5 0-3.3 3.8-4.2 3.8-8.5M8.2 20.5c0-4.3 3.8-5.2 3.8-8.5 0 3.3 3.8 4.2 3.8 8.5"/>',
   spunta: '<path d="M5 12.6l4.4 4.4L19 7.4"/>',

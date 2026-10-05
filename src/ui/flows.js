@@ -13,7 +13,7 @@ import { appleWeekKey, addDays, formatDay, todayISO, MESI } from '../core/time.j
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
-  chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo,
+  chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
 } from './components.js';
 import { icona } from './icone.js';
 import { primaLePrioritarie, richiestaValida } from './views.js';
@@ -430,12 +430,12 @@ function passoRiepilogo() {
 
     <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
       <input type="checkbox" data-act="priorita" ${raw(draft.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
-      <span>⭐ Usa la priorità del mese (${credito} disponibile, dura ${RULES.priority.durationHours}h)</span>
+      <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (${credito} disponibile, dura ${RULES.priority.durationHours}h)</span>
     </label>
     <p class="testo-tenue">La priorità non si può aggiungere dopo e non torna indietro se cancelli la richiesta.</p>
 
-    ${raw(errori.length ? `<div class="errori">${errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>` : '')}
-    ${raw(draft.errori.length ? `<div class="errori">${draft.errori.map((e) => `<p>⚠️ ${e}</p>`).join('')}</div>` : '')}
+    ${raw(elencoErrori(errori))}
+    ${raw(elencoErrori(draft.errori))}
 
     <div class="barra-azioni">
       <button class="btn secondario" data-act="step" data-step="3">Indietro</button>
@@ -471,8 +471,8 @@ export function match(params) {
     </header>
     <div class="card riepilogo">${raw(coppiaCedoCerco(r, { compatto: true }))}</div>
 
-    ${raw(pieni.length ? `<h2 class="titolo-gruppo">🟢 Match (${pieni.length})</h2>${pieni.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
-    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">🟡 Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
+    ${raw(pieni.length ? `<h2 class="titolo-gruppo">${segnoMatch(true)}Match (${pieni.length})</h2>${pieni.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
+    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">${segnoMatch(false)}Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
     ${raw(risultati.length ? '' : vuoto(
     'Ancora nessuno',
     'Nessun collega ha un turno compatibile su quel giorno. La richiesta resta in bacheca.',
@@ -501,7 +501,7 @@ export function dettaglio(params) {
     const azioni = accordo
       ? html`
         <div class="accordo">
-          <strong>🟢 Scambio concordato</strong>
+          <strong>${raw(icona('spunta', { px: 18, forte: true }))} Scambio concordato</strong>
           <p>Ora effettua il cambio nell'app ufficiale dei turni. Questa app non lo fa al posto tuo.</p>
           ${raw(p.cambioInserito
     ? '<span class="tag">cambio inserito</span>'
@@ -558,8 +558,8 @@ export function dettaglio(params) {
   const azioniAdmin = store.me.admin && !chiusaOAccordo
     ? html`
       <div class="barra-azioni compatta">
-        <button class="btn secondario piccolo" data-act="chiedi-chiudi-admin" data-id="${r.id}">🛡️ Chiudi</button>
-        <button class="btn pericolo piccolo" data-act="chiedi-rimuovi-admin" data-id="${r.id}">🛡️ Rimuovi</button>
+        <button class="btn secondario piccolo" data-act="chiedi-chiudi-admin" data-id="${r.id}">${raw(icona('admin', { px: 16 }))} Chiudi</button>
+        <button class="btn pericolo piccolo" data-act="chiedi-rimuovi-admin" data-id="${r.id}">${raw(icona('admin', { px: 16 }))} Rimuovi</button>
       </div>`
     : '';
 
@@ -572,7 +572,7 @@ export function dettaglio(params) {
       <header class="card-head">
         <span class="avatar">${iniziali(autore)}</span>
         <div>
-          <strong>${hasPriority(r) ? '⭐ ' : ''}${nomeUtente(autore)}</strong>
+          <strong>${raw(hasPriority(r) ? `<span class="icona-in-riga stella">${icona('priorita', { px: 15 })}</span> ` : '')}${nomeUtente(autore)}</strong>
           <div class="meta">${RULES.contracts[autore.contratto].label}</div>
         </div>
       </header>
@@ -580,7 +580,7 @@ export function dettaglio(params) {
       ${raw(r.cerco.note ? `<p class="nota-utente">“${r.cerco.note}”</p>` : '')}
       <div class="meta">${raw(badgeStato(r.status))} · pubblicata ${formatDay(r.createdAt.slice(0, 10))}</div>
       ${raw(r.chiusaDaAdmin
-    ? `<p class="avviso">🛡️ ${r.status === STATUS.RIMOSSA ? 'Rimossa' : 'Chiusa'} da un admin: “${r.motivoAdmin}”</p>`
+    ? `<p class="avviso"><span class="icona-in-riga">${icona('admin', { px: 16 })}</span> ${r.status === STATUS.RIMOSSA ? 'Rimossa' : 'Chiusa'} da un admin: “${r.motivoAdmin}”</p>`
     : '')}
     </article>
     ${raw(blocchiProposte)}
@@ -622,7 +622,7 @@ export function formProposta(request, shiftSuggerito) {
   if (!opzioni.length) {
     return html`
       <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
-      <p class="avviso">⚠️ Non hai niente da offrire su questo cambio.</p>
+      <p class="avviso"><span class="icona-in-riga">${raw(icona('avviso', { px: 16 }))}</span> Non hai niente da offrire su questo cambio.</p>
       <p class="testo-tenue">${motivoNonOfferibile(request)}</p>`;
   }
 
@@ -712,7 +712,7 @@ function vocebox(v) {
     : v.daRingraziare
       ? html`
         <div class="accordo">
-          <strong>🟢 Scambio concordato</strong>
+          <strong>${raw(icona('spunta', { px: 18, forte: true }))} Scambio concordato</strong>
           <p>Ora fate il cambio nell'app ufficiale dei turni.</p>
           ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
           <div class="barra-azioni">
@@ -724,7 +724,7 @@ function vocebox(v) {
       : p.status === 'ACCORDO'
         ? html`
           <div class="accordo">
-            <strong>🟢 Scambio concordato</strong>
+            <strong>${raw(icona('spunta', { px: 18, forte: true }))} Scambio concordato</strong>
             <p>Hai già ringraziato. Quando avete fatto il cambio nell'app ufficiale, chiudi la richiesta.</p>
             ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             <button class="btn secondario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>

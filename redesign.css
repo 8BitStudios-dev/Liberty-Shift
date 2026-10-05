@@ -870,3 +870,24 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 :where(button, a, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accento); outline-offset: 2px;
 }
+
+/* I segni che hanno preso il posto delle ultime emoji. Un match pieno è un
+   pallino verde, un potenziale un anello ambra: si distinguono anche per la
+   forma, non solo per il colore. */
+.segno-match {
+  display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 6px; vertical-align: 0; flex: none;
+}
+.segno-match.pieno { background: var(--prendo); }
+.segno-match.potenziale { box-shadow: inset 0 0 0 2px var(--ambra); }
+.titolo-gruppo .segno-match { margin-right: 0; }
+.icona-in-riga.stella { color: var(--oro); }
+.errori .icona-in-riga { color: var(--rosso); }
+/* "Scambio concordato" con la spunta verde davanti, al posto di 🟢. */
+.accordo > strong { display: flex; align-items: center; gap: 6px; }
+.accordo > strong svg { color: var(--prendo); flex: none; }
+.titolo-admin { display: inline-flex; align-items: center; gap: 6px; }
+/* Un bottone con un'icona davanti: icona() mette display:block sull'svg, e
+   senza flex il cuore di "Ringrazia" finiva sopra la parola. */
+.btn:has(> svg) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.btn.largo:has(> svg) { display: flex; }
