@@ -3,31 +3,30 @@
  *
  * Va caricato DOPO styles.css, in index.html:
  *   <link rel="stylesheet" href="./styles.css">
- *   <link rel="stylesheet" href="./redesign/liberty-shift-redesign.css">
+ *   <link rel="stylesheet" href="./redesign.css">
  *
- * Non riscrive il layout: cambia solo token, dimensioni, colori e leggibilità.
- * Le sezioni, i pulsanti e i flussi restano quelli che ci sono già.
+ * Non riscrive il layout: cambia token, dimensioni, colori e leggibilità.
+ * Le sezioni, i pulsanti e i flussi restano quelli di styles.css.
  *
  * Tre decisioni, dette una volta:
  *
  * 1. Il colore ha un significato, non un umore. Blu = il turno che cedi,
  *    verde = il turno che prendi. Sono i due colori del marchio, e sono
- *    esattamente i due lati di uno scambio. Il rosso torna a fare una cosa
- *    sola: errori. Prima "LASCIO" era rosso come un errore e "CERCO" verde
- *    come un successo, e il colore raccontava un giudizio invece di un lato.
+ *    esattamente i due lati di uno scambio. Il rosso fa una cosa sola:
+ *    errori e "ti aspetta una risposta". L'oro fa una cosa sola: la priorità.
  *
  * 2. Meno riquadri. Un bordo su ogni card, dentro una lista di card, dentro
  *    una sezione con bordo, dà cinque cornici per una informazione. Qui la
  *    separazione la fa la superficie (bianco su grigio) più un'ombra bassa;
  *    dentro una lista la fa un filetto, non un rettangolo per riga.
  *
- * 3. Più aria e testo più grande. I testi secondari salgono da 13/10px a
- *    14/12px, le celle del calendario da 40 a 54px, i bersagli tondi da 36
- *    a 40px. Un'app che si usa in negozio, in piedi, con una mano.
+ * 3. Più aria e testo più grande. Testo secondario a 14px, niente sotto i
+ *    12px, bersagli da 44px. Un'app che si usa in negozio, in piedi, con
+ *    una mano.
  *
- * Nota fuori dal CSS: in `src/ui/components.js` l'etichetta di chi cede è
- * scritta con 🔴. Con questa palette va sostituita con 🔵 (e in `messaggio`
- * nulla cambia): il pallino rosso contraddice il blu dell'etichetta.
+ * Il file è cresciuto per passate, ognuna in fondo a vincere sulle altre.
+ * Ora ogni selettore sta in un posto solo, con il valore che vinceva: chi
+ * aggiunge una regola cerca prima se il selettore c'è già.
  */
 
 /* ------------------------------------------------------------ token */
@@ -37,24 +36,40 @@
   --superficie: #ffffff;
   --superficie-2: #eaeef4;
   --testo: #0f1720;
-  /* #667085 su bianco sta a 4.1:1: sotto la soglia per il testo piccolo,
+  /* #667085 su bianco stava a 4.1:1: sotto la soglia per il testo piccolo,
      ed era proprio il testo piccolo a usarlo di più. */
   --testo-tenue: #56626f;
   --bordo: #e4e8ef;
   --filetto: #edf0f5;
-  --accento: #2f7bf6;
+  /* Il filo delle celle del tuo mese e dei campioni di legenda. */
+  --linea: #dfe4eb;
+  /* Il blu e il verde del marchio, sul bianco, stavano a 3,5–4 e 2,5–3:
+     sotto la soglia proprio sul bottone principale. Queste tinte stanno
+     sopra 4,5 sia come testo sul chiaro sia come fondo sotto il bianco. */
+  --accento: #1d66db;
   --accento-tenue: #e9f1fe;
   /* I due lati di uno scambio, dal marchio. */
-  --cedo: #2f7bf6;
+  --cedo: #1d66db;
   --cedo-tenue: #e9f1fe;
-  --prendo: #109c68;
+  --prendo: #0b7a52;
   --prendo-tenue: #e4f6ee;
-  --marchio: linear-gradient(118deg, #2f7bf6 0%, #34b98a 100%);
-  --rosso: #d23b45;
-  --verde: #109c68;
+  --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
+  --rosso: #c0303a;
+  --verde: #0b7a52;
   --arancio: #b96608;
-  --giallo: #a97a06;
-  --oro: #a97a06;
+  /* Avvisi e match potenziali: un ambra, non l'oro. L'oro vuol dire priorità. */
+  --giallo: #a0520a;
+  --oro: #8a6305;
+  /* Le tue richieste hanno un colore loro, il viola, che il Calendario non
+     usa: un colpo d'occhio basta a capire su quale dei due mesi si è. */
+  --mio: #6b46c8;
+  --mio-tenue: #efe9fb;
+  /* Il giorno che sta cambiando, nel tuo mese: l'unico fondo colorato. */
+  --da-cambiare: #fcefb4;
+  --da-cambiare-bordo: #e6c65c;
+  --da-cambiare-segno: #7a5300;
+  /* Il testo sopra un fondo pieno di accento. */
+  --su-pieno: #ffffff;
   --raggio: 18px;
   --raggio-s: 13px;
   --ombra: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 22px -8px rgba(15, 23, 42, .14);
@@ -71,6 +86,7 @@
     --testo-tenue: #9dabc0;
     --bordo: #26334a;
     --filetto: #223047;
+    --linea: #2a3850;
     --accento: #62a0ff;
     --accento-tenue: #16263f;
     --cedo: #62a0ff;
@@ -80,8 +96,15 @@
     --rosso: #ff7b80;
     --verde: #45d19a;
     --arancio: #ffb066;
-    --giallo: #e8c04c;
+    --giallo: #ffb066;
     --oro: #e8c04c;
+    --mio: #b39bff;
+    --mio-tenue: #261d3d;
+    --da-cambiare: #3d3412;
+    --da-cambiare-bordo: #8a7128;
+    --da-cambiare-segno: #f3cf5e;
+    /* In scuro i fondi pieni sono chiari: il bianco sopra stava a 2,5. */
+    --su-pieno: #0d1421;
     --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 26px -10px rgba(0, 0, 0, .6);
     --ombra-alta: 0 2px 6px rgba(0, 0, 0, .55), 0 22px 44px -16px rgba(0, 0, 0, .7);
   }
@@ -95,6 +118,7 @@
   --testo-tenue: #9dabc0;
   --bordo: #26334a;
   --filetto: #223047;
+  --linea: #2a3850;
   --accento: #62a0ff;
   --accento-tenue: #16263f;
   --cedo: #62a0ff;
@@ -104,8 +128,14 @@
   --rosso: #ff7b80;
   --verde: #45d19a;
   --arancio: #ffb066;
-  --giallo: #e8c04c;
+  --giallo: #ffb066;
   --oro: #e8c04c;
+  --mio: #b39bff;
+  --mio-tenue: #261d3d;
+  --da-cambiare: #3d3412;
+  --da-cambiare-bordo: #8a7128;
+  --da-cambiare-segno: #f3cf5e;
+  --su-pieno: #0d1421;
   --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 26px -10px rgba(0, 0, 0, .6);
   --ombra-alta: 0 2px 6px rgba(0, 0, 0, .55), 0 22px 44px -16px rgba(0, 0, 0, .7);
 }
@@ -126,12 +156,25 @@ h2 {
 h3 { font-size: 16px; margin: 20px 0 10px; }
 
 .testo-tenue, .meta, .riga-sintesi, .tile em, .coppia .orario,
-.giorno-dettaglio .testo-tenue, .legenda, .elenco.piccolo,
+.giorno-dettaglio .testo-tenue, .elenco.piccolo,
 .gruppo-giorno > .testo-tenue { font-size: 14px; }
 .occhiello { font-size: 16px; margin: 6px 0 18px; }
 .badge, .tag { font-size: 12px; }
 .perche { font-size: 14px; line-height: 1.55; }
 .perche li { margin: 5px 0; }
+
+/* Ritmo. Le distanze fra blocchi erano tredici valori diversi, e la testata
+   distava dal contenuto 10, 22 o 30 px secondo la schermata. Ora: 12 dentro
+   un gruppo, 28 fra sezioni, 16 sotto ogni testata. */
+.testata { padding: 14px 0 0; margin-bottom: 16px; }
+.testata h1 { font-size: 22px; }
+/* Una testata senza tasto a sinistra allinea il titolo a sinistra: centrato
+   fra il vuoto e i tasti di destra finiva fuori asse. */
+.testata h1:first-child { text-align: left; }
+.sezione { margin: 28px 0; }
+.testata + .sezione, .testata + .chips, .testata + .occhiello { margin-top: 0; }
+/* I quattro filtri della Bacheca su una riga sola, anche a 360px. */
+.chips { margin: 0 0 16px; gap: 6px; }
 
 /* ---------------------------------------------------- meno riquadri */
 
@@ -140,27 +183,23 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    non esiste e serve un filo per staccare la superficie. */
 .card {
   border: 0; padding: 18px; border-radius: var(--raggio);
-  margin-bottom: 14px; box-shadow: var(--ombra);
+  margin-bottom: 12px; box-shadow: var(--ombra);
 }
 .tile {
   border: 0; padding: 18px; box-shadow: var(--ombra);
   margin-bottom: 12px; border-radius: var(--raggio);
 }
-.tile-sync { border: 0; box-shadow: var(--ombra); padding: 14px 6px; }
 .riquadro { border: 0; box-shadow: var(--ombra); padding: 0 16px; margin-bottom: 12px; }
-.riquadro > summary { padding: 16px 0; font-size: 16px; }
 .tabella-dati, .grazie { border: 0; box-shadow: var(--ombra); }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .card,
   :root:not([data-theme="light"]) .tile,
-  :root:not([data-theme="light"]) .tile-sync,
   :root:not([data-theme="light"]) .riquadro,
   :root:not([data-theme="light"]) .grazie { border: 1px solid var(--bordo); }
 }
 :root[data-theme="dark"] .card,
 :root[data-theme="dark"] .tile,
-:root[data-theme="dark"] .tile-sync,
 :root[data-theme="dark"] .riquadro,
 :root[data-theme="dark"] .grazie { border: 1px solid var(--bordo); }
 
@@ -183,15 +222,22 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .riga-richiesta.ruolo-OFFRE { border-left: 0; box-shadow: inset 3px 0 0 var(--prendo), inset 0 -1px 0 var(--filetto); }
 .riga-titolo { font-size: 16px; gap: 8px; }
 /* La pillola del tipo sta in una riga flex accanto al nome: senza nowrap
-   si restringe e manda a capo "cede"/"offre" fuori dal suo box. */
+   si restringe e manda a capo "cede"/"offre" fuori dal suo box. Dentro c'è
+   un'icona SVG: senza flex cadrebbe sulla baseline invece che al centro. */
 .tipo-pill {
   font-size: 12px; padding: 2px 8px; border-radius: 7px;
   white-space: nowrap; flex: 0 0 auto; align-self: center;
+  display: inline-flex; align-items: center; gap: 4px;
 }
-/* display:inline-flex, non solo white-space: dentro c'è un'icona SVG oltre
-   al numero, e senza allinearli sull'asse centrale l'SVG cade sulla
-   baseline del testo invece che al suo centro. */
-.grazie-chip, .priorita-chip { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+
+/* Le righe che non fanno per te: il motivo in grigio al posto di un "non
+   puoi" rosso. Non è un errore, è un fatto sui tuoi turni. La riga resta
+   toccabile, solo più quieta. */
+.riga-richiesta .non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 3px 0 0; }
+.riga-richiesta.non-per-me .riga-titolo,
+.riga-richiesta.non-per-me .avatar { opacity: .62; }
+.non-puoi { font-size: 14px; }
+.motivo-non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 8px 0 0; }
 
 .lista-cambi, .lista-turni { border: 0; box-shadow: var(--ombra); }
 .riga-cambio, .riga-turno {
@@ -221,7 +267,11 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .coppia.compatta strong { font-size: 15px; }
 .coppia.compatta .orario { font-size: 14px; }
 .coppia .freccia { color: var(--testo-tenue); font-size: 20px; }
-.tipo-cambio { font-size: 12px; letter-spacing: .03em; margin-bottom: 8px; }
+.tipo-cambio {
+  font-size: 12px; letter-spacing: .03em; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.titolo-gruppo { display: flex; align-items: center; gap: 8px; }
 
 .scambio-secco > div { font-size: 15px; padding: 7px 0; border-bottom: 1px solid var(--filetto); }
 .scambio-secco > div:last-child { border-bottom: 0; }
@@ -230,7 +280,6 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .card.match.verde { border-left: 4px solid var(--prendo); }
 .card.match.giallo { border-left: 4px solid var(--giallo); }
 .card.da-fare { border-left: 4px solid var(--accento); }
-.tile.scelta.rosso { border-left: 4px solid var(--cedo); }
 .tile.scelta.verde { border-left: 4px solid var(--prendo); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
 .gruppo-giorno.CERCA h3::before { background: var(--cedo); }
@@ -254,20 +303,31 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .marchio-riga { gap: 9px; margin-bottom: 14px; }
 
 .btn { padding: 15px 20px; border-radius: var(--raggio-s); font-size: 16px; font-weight: 650; }
+/* Bianco in entrambi i temi: il gradiente resta scuro anche in scuro. */
 .btn.primario {
   background: var(--marchio); color: #fff;
   box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--accento) 70%, transparent);
 }
 .btn.secondario { border: 1px solid var(--bordo); }
-.btn.piccolo { padding: 9px 14px; font-size: 14px; }
+/* Bersagli: 44px è il minimo per un pollice, in piedi, con una mano. */
+.btn.piccolo { padding: 9px 14px; font-size: 14px; min-height: 44px; }
 .btn.largo { margin-top: 14px; }
 
-/* 36px era sotto il minimo comodo per un pollice. */
-.icon-btn { width: 40px; height: 40px; font-size: 19px; }
+/* Prima l'.icon-btn portava solo un glifo di testo ("?", "‹"), centrato dal
+   line-height. Con un'icona SVG dentro serve un centraggio vero. */
+.icon-btn { width: 44px; height: 44px; font-size: 19px; display: grid; place-items: center; }
 .icon-btn.grande { width: 46px; height: 46px; font-size: 24px; }
-.chip, .pill { font-size: 15px; padding: 9px 16px; }
-.chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); }
+.pill { font-size: 15px; padding: 9px 16px; }
+/* Icona e testo dei filtri sulla stessa riga: l'svg è un blocco, e andava a
+   capo sopra l'etichetta raddoppiando l'altezza del chip. */
+.chip {
+  font-size: 15px; padding: 0 16px; min-height: 44px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.chips .chip { padding: 0 13px; font-size: 14px; }
+.chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
 .link, .link-btn { font-size: 15px; }
+.link-btn { min-height: 44px; display: inline-flex; align-items: center; }
 
 .avatar { width: 40px; height: 40px; font-size: 15px; }
 .avatar.piccolo { width: 34px; height: 34px; font-size: 14px; }
@@ -277,33 +337,188 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .hero { padding: 20px 0 8px; }
 .hero h1 { font-size: 34px; }
 .hero .sottotitolo, .hero .saluto { font-size: 15px; }
-.sezione { margin: 30px 0; }
 
 /* --------------------------------------------------------- calendario */
 
-.griglia-mese { grid-auto-rows: minmax(80px, auto); gap: 7px; }
-.giorno { min-height: 80px; border-radius: var(--raggio-s); border-color: var(--filetto); }
-.giorno .numero { font-size: 17px; }
-.giorno .mio-turno { font-size: 12px; }
-.giorno.oggi { border-color: var(--accento); }
-.griglia-intestazione { font-size: 14px; }
 .barre { height: 4px; width: 66%; }
-.legenda { line-height: 2; }
 
-/* Il mese del Profilo: le celle erano 40px con il turno a 9px, cioè il
-   dato più consultato dell'app scritto nel corpo più piccolo che ha. */
-.mese-griglia { gap: 3px; }
-.mese-giorno { min-height: 54px; border-radius: 9px; border-color: var(--filetto); padding: 5px 2px; }
-.mese-giorno .numero { font-size: 14px; }
-.mese-giorno .turno { font-size: 12px; }
-.mese-giorno .quota { font-size: 12px; padding: 1px 5px; }
-.mese-giorno.oggi { border-color: var(--accento); }
-.dow-fisso { font-size: 12px; }
+/* Due mesi, due forme. Il Calendario è un tabellone: il numero del giorno
+   grande al centro, sotto solo i segni delle richieste dei colleghi. Il
+   Profilo è un'agenda: celle piccole, il turno protagonista, il numero in
+   alto a sinistra. Le classi di entrambi cominciano per `mese-`. */
+
+/* Sette colonne che non si allargano mai oltre lo schermo: senza minmax(0, …)
+   un orario un po' largo spingeva la colonna e il mese sbordava a destra. */
+.mese-griglia { gap: 4px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.mese-settimana { margin-bottom: 12px; }
+.riga-settimana { margin-bottom: 4px; }
 .riga-settimana h3 { font-size: 12px; }
+.dow-fisso { font-size: 12px; }
+.mese-griglia.intestazione .dow-fisso { font-size: 12px; }
 .spia-ore { font-size: 12px; }
 .spia-ore.quadra { color: var(--prendo); }
+.mese-giorno {
+  position: relative; min-height: 64px; padding: 6px 2px 5px; gap: 2px;
+  border-radius: 9px; border-color: var(--filetto);
+}
+.mese-giorno .numero { font-size: 15px; }
+.mese-giorno .turno { font-size: 12px; }
+.mese-giorno .quota { font-size: 12px; padding: 0 5px; color: var(--su-pieno); }
+.mese-giorno .barre { width: 70%; height: 4px; margin-top: auto; }
+.mese-giorno.oggi { border-color: var(--accento); }
+.mese-giorno.prioritaria { border: 2px solid var(--oro); }
+/* La disponibilità come fondo della cella, non come linea: la linea verde in
+   basso si confondeva con la barra di chi offre. Nel tuo mese, più sotto,
+   torna una linea, perché lì le barre non ci sono. */
+.mese-giorno.disponibile { box-shadow: none; background: var(--prendo-tenue); }
+
 .giorno-rot { min-height: 46px; font-size: 12px; border-radius: 9px; border-color: var(--filetto); }
 .giorno-rot .dow { font-size: 12px; }
+
+/* --- il tabellone */
+.mese-pubblico .mese-giorno { justify-content: flex-start; padding-top: 8px; min-height: 72px; gap: 3px; }
+.mese-pubblico .mese-giorno .numero { font-size: 17px; font-weight: 700; }
+.mese-pubblico .mese-giorno.oggi { border: 2px solid var(--accento); background: var(--superficie); }
+.mese-pubblico .mese-giorno .quota.vuota { display: none; }
+
+/* Quante richieste toccano il giorno, fra chi cerca e chi offre: un numero
+   grigio in un cerchio leggero, sotto il numero del giorno. Dice "quanto
+   movimento" senza competere con il numero. */
+.conta-giorno {
+  position: absolute; top: 4px; right: 4px;
+  min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 600; line-height: 1; color: var(--testo-tenue);
+  border: 1px solid var(--linea); background: var(--superficie);
+}
+.conta-giorno.in-legenda { position: static; display: inline-grid; }
+/* In alto a destra copriva le cifre del giorno su ogni cella. */
+.mese-pubblico .conta-giorno { position: static; margin-top: 3px; }
+@media (max-width: 359px) { .conta-giorno { top: 2px; right: 2px; min-width: 16px; height: 16px; } }
+
+/* Calendario pubblico: il titolo dice di chi è il mese, il mese si sfoglia
+   sotto. */
+.mese-navigazione { display: flex; align-items: center; justify-content: space-between; margin: 0 0 14px; }
+.mese-navigazione h2 { margin: 0; font-size: 19px; font-weight: 700; }
+
+/* --- l'agenda
+   Ogni giorno è un riquadro suo, angoli appena arrotondati e un filo chiaro,
+   separato dagli altri da 3px; le intestazioni sono solo testo. Ogni canale
+   dice una cosa sola:
+   - fondo giallo: questo giorno sta cambiando. È l'unico fondo colorato;
+   - icona in ambra, nell'angolo: a che punto è il cambio, detto dalla forma
+     (clessidra: si cerca o si aspetta; spunta: concordato, manca UKG);
+   - linea verde in basso: sei disponibile a scambiare. Un'impostazione, non
+     un evento: segno discreto, che convive con il giallo;
+   - il riposo si legge dal testo "OFF";
+   - oggi: il bordo blu. */
+.mese-personale { border: 0; border-radius: 0; overflow: visible; background: none; }
+.mese-personale .mese-griglia { gap: 3px; }
+.mese-personale .mese-griglia.intestazione { background: none; border: 0; margin: 0 0 2px; }
+.mese-personale .dow-fisso { padding: 0; font-weight: 500; }
+.mese-personale .mese-settimana { margin: 0 0 10px; }
+.mese-personale .riga-settimana {
+  margin: 0; padding: 0 2px 3px; background: none; border: 0; align-items: center;
+}
+.mese-personale .riga-settimana h3 { margin: 0; font-size: 12px; font-weight: 500; }
+.mese-personale .riga-settimana .spia-ore { font-size: 12px; }
+
+/* Il bollino del cambio sta dentro la cella, che quindi non taglia niente. */
+.mese-personale .mese-giorno {
+  align-items: flex-start; justify-content: flex-start; gap: 0;
+  min-width: 0; min-height: 48px; padding: 4px 5px 5px; overflow: visible;
+  border: 1px solid var(--linea); border-radius: 7px;
+  background: var(--superficie); box-shadow: none;
+}
+.mese-personale .mese-griglia .mese-giorno:last-child { border-right: 1px solid var(--linea); }
+.mese-personale .mese-giorno .numero {
+  font-size: 12px; font-weight: 600; color: var(--testo-tenue); line-height: 1.2;
+}
+.mese-personale .mese-giorno .turno {
+  font-size: 13px; font-weight: 600; color: var(--testo); margin-top: 1px;
+  font-variant-numeric: tabular-nums; line-height: 1.1; letter-spacing: -.01em;
+}
+.mese-personale .mese-giorno .fine {
+  font-size: 12px; color: var(--testo-tenue); font-variant-numeric: tabular-nums; line-height: 1.1;
+}
+.mese-personale .mese-giorno.riposo .turno { font-size: 12px; font-weight: 600; color: var(--testo-tenue); }
+.mese-personale .mese-giorno.senza-turno .turno { color: var(--testo-tenue); font-weight: 400; }
+
+/* L'ordine conta: oggi vince sul bordo del giallo, il giallo vince sul fondo
+   del riposo, e la linea della disponibilità sopravvive al giallo. */
+.mese-personale .mese-giorno.disponibile {
+  background: var(--superficie); border: 1px solid var(--linea);
+  box-shadow: inset 0 -3px 0 var(--prendo);
+}
+.mese-personale .mese-giorno.riposo,
+.mese-personale .mese-giorno.senza-turno { background: transparent; }
+.mese-personale .mese-giorno.da-cambiare,
+.mese-personale .mese-giorno.da-cambiare.riposo,
+.mese-personale .mese-giorno.da-cambiare.disponibile {
+  background: var(--da-cambiare); border-color: var(--da-cambiare-bordo);
+}
+.mese-personale .mese-giorno.da-cambiare.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
+.mese-personale .mese-giorno.oggi { border-color: var(--accento); box-shadow: inset 0 0 0 1px var(--accento); }
+.mese-personale .mese-giorno.oggi.disponibile { box-shadow: inset 0 0 0 1px var(--accento), inset 0 -3px 0 var(--prendo); }
+
+/* Il segno del cambio: un'icona sola per giorno, sempre dello stesso colore. */
+.in-corso {
+  display: inline-grid; place-items: center;
+  width: auto; height: auto; background: none; box-shadow: none; border-radius: 0;
+  color: var(--da-cambiare-segno);
+}
+.in-corso svg { width: 13px; height: 13px; }
+.in-corso.in-legenda { position: static; }
+.mese-personale .mese-giorno .in-corso {
+  position: absolute; top: 4px; right: 4px; width: auto; height: auto; z-index: 1;
+}
+.mese-personale .mese-giorno .in-corso svg { width: 12px; height: 12px; }
+/* Nel foglio del giorno lo stesso segno, su un tassello giallo come la cella. */
+.giorno-profilo .riga-cambio .in-corso {
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; box-shadow: none;
+  background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo);
+}
+.giorno-profilo .riga-cambio .in-corso svg { width: 15px; height: 15px; }
+
+/* Sotto i 360px (iPhone SE e simili) gli orari stanno centrati, altrimenti
+   "11:00" diventava "11:0". */
+@media (max-width: 359px) {
+  .mese-personale .mese-giorno { align-items: center; }
+  .mese-personale .mese-giorno .turno { font-size: 12px; letter-spacing: -.02em; }
+  .mese-personale .mese-giorno .in-corso { top: 3px; right: 2px; }
+  .mese-personale .mese-giorno .in-corso svg { width: 10px; height: 10px; }
+}
+
+/* Il titolo della pagina del Profilo: un gradino sopra le altre testate. */
+.titolo-mese { font-size: 28px; font-weight: 700; letter-spacing: -.025em; margin: 0 0 16px; color: var(--testo); }
+
+/* --- le legende: mostrano le celle come sono, in piccolo */
+.legenda-mese {
+  list-style: none; margin: 0 0 14px; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 6px 14px;
+  font-size: 14px; color: var(--testo-tenue);
+}
+.legenda-mese li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.legenda-mese .barre.in-legenda { width: 18px; margin: 0; }
+.legenda-personale { gap: 8px 16px; }
+.nota-mese { margin: 14px 0 0; }
+.campione { width: 16px; height: 12px; border-radius: 4px; border: 1px solid var(--bordo); background: var(--superficie); }
+.campione.prioritaria { border: 2px solid var(--oro); }
+.campione.disponibile { box-shadow: none; background: var(--prendo-tenue); border: 1px solid var(--linea); border-radius: 4px; }
+.campione.riposo { background: transparent; border: 1px solid var(--linea); border-radius: 4px; }
+.campione.da-cambiare { background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo); border-radius: 4px; }
+.campione-quota { font-size: 12px; font-weight: 700; padding: 0 5px; border-radius: 999px; background: var(--accento); color: var(--su-pieno); }
+.campione-giorno {
+  display: inline-grid; place-items: center;
+  width: 22px; height: 18px; border-radius: 5px;
+  background: var(--superficie); border: 1px solid var(--linea); color: var(--da-cambiare-segno);
+}
+.campione-giorno.da-cambiare { background: var(--da-cambiare); border-color: var(--da-cambiare-bordo); }
+.campione-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
+
+.giorno-profilo .tile { margin-top: 16px; }
+.giorno-profilo .lista-cambi { margin-top: 4px; }
+.giorno-profilo .riga-cambio strong { display: inline-flex; align-items: center; gap: 6px; }
 
 /* ------------------------------------------------------------ moduli */
 
@@ -311,10 +526,51 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 input[type="time"], input.testo, input[type="password"], textarea, .select {
   padding: 13px 14px; border-radius: var(--raggio-s); font-size: 16px;
 }
+/* Il fuoco dei campi nel colore dell'app, al posto del contorno nero del browser. */
+input.testo:focus-visible, input[type="password"]:focus-visible, input[type="time"]:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accento); outline-offset: 0; border-color: var(--accento);
+}
 .switch { padding: 14px 0; font-size: 16px; border-bottom-color: var(--filetto); }
 .switch .aiuto { font-size: 14px; }
+/* Le due scelte sulle notifiche: due righe con la spiegazione sotto, e il
+   cerchietto allineato al titolo e non alla riga intera. */
+.switch input[type="radio"] { align-self: flex-start; margin-top: 3px; flex: none; }
 .errori { font-size: 15px; padding: 12px 16px; }
 .avviso { font-size: 14px; }
+
+/* Il codice del negozio: un campo solo, con la R già scritta dentro. Prima
+   erano due scatole di altezza e bordo diversi accostate, e la R sembrava un
+   tasto. Nessun suggerimento nel campo: chi non ha il codice non deve
+   trovarlo scritto lì. */
+.campo-codice {
+  display: flex; align-items: center; gap: 2px;
+  margin: 14px 0 6px; padding: 0 16px; height: 60px;
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: var(--raggio-s); cursor: text;
+}
+.campo-codice:focus-within { border-color: var(--accento); outline: 2px solid var(--accento); outline-offset: -1px; }
+.campo-codice .prefisso-codice {
+  display: inline; width: auto; height: auto; padding: 0;
+  place-items: center; justify-content: center;
+  border: 0; border-radius: 12px 0 0 12px; background: none;
+  font-size: 22px; font-weight: 700; letter-spacing: .06em; color: var(--testo);
+}
+.campo-codice input.testo {
+  flex: 1; min-width: 0; height: 100%; padding: 0; margin: 0;
+  border: 0; border-radius: 0; background: none; outline: none;
+  font-size: 22px; font-weight: 700; letter-spacing: .06em; color: var(--testo);
+  font-variant-numeric: tabular-nums;
+}
+.campo-codice input.testo:focus-visible { outline: none; }
+.aiuto-codice { margin: 0 0 18px; font-size: 14px; }
+
+/* Gli avvisi in una colonna sola: l'avviso sull'omonimo ha due tasti, e
+   affiancati su un telefono stretto andavano a capo male. */
+.avviso-box.omonimo { display: grid; gap: 8px; margin: 14px 0; }
+.avviso-box.omonimo p { margin: 0; font-size: 15px; color: var(--testo-tenue); }
+.ho-gia-account { margin-top: 26px; text-align: center; }
+.ho-gia-account p { margin: 0 0 8px; }
+.ho-gia-account .link-btn { font-weight: 600; }
 
 /* ------------------------------------------------------------ tabbar */
 
@@ -328,7 +584,7 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .tab .conta {
   position: absolute; top: 2px; right: 4px;
   min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
-  background: var(--rosso); color: #fff;
+  background: var(--rosso); color: var(--su-pieno);
   font-size: 12px; font-weight: 700; display: grid; place-items: center;
 }
 
@@ -337,44 +593,13 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .vuoto { padding: 40px 22px; }
 .vuoto strong { font-size: 17px; }
 .vuoto p { font-size: 15px; }
-.non-puoi, .nota-non-puoi { font-size: 14px; }
 .sheet { border-radius: 24px 24px 0 0; padding: 6px 18px max(env(safe-area-inset-bottom), 18px); }
 .sheet-head h2 { font-size: 19px; }
 #toast { font-size: 15px; padding: 13px 20px; box-shadow: var(--ombra-alta); }
-.priorita-chip, .grazie-chip { font-size: 14px; padding: 7px 14px; }
 .elenco { font-size: 16px; }
 .elenco.piccolo { font-size: 14px; }
-
-/* Prima l'.icon-btn portava solo un glifo di testo ("?", "‹"), centrato dal
-   line-height. Con un'icona SVG dentro serve un centraggio vero. */
-.icon-btn { display: grid; place-items: center; }
-
-/* Il tondo di sincronizzazione, accanto ai ringraziamenti nella testata del
-   Profilo: prende il posto in alto a destra che prima era solo della chip. */
-.azioni-profilo { position: absolute; top: 12px; right: 0; display: flex; align-items: center; gap: 8px; }
-.azioni-profilo .grazie-chip { position: static; }
-
-/* La testata del Profilo è una riga sola: il bollino a sinistra, le azioni a
-   destra. Nome e ruolo stanno nel pannello che apre il bollino. */
-.testata-profilo {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 0 6px; position: relative;
-}
-.testata-profilo .azioni-profilo { position: static; }
-.io { position: relative; }
-.io > summary { list-style: none; cursor: pointer; }
-.io > summary::-webkit-details-marker { display: none; }
-.io-bollino { width: 44px; height: 44px; font-size: 16px; }
-.io[open] .io-bollino { box-shadow: 0 0 0 2px var(--accento); }
-.io-pannello {
-  position: absolute; top: 52px; left: 0; z-index: 20; min-width: 220px;
-  display: grid; gap: 4px; padding: 12px 14px;
-  background: var(--superficie); border: 1px solid var(--bordo);
-  border-radius: 14px; box-shadow: var(--ombra-alta);
-}
-.io-pannello strong { font-size: 16px; }
-.io-pannello span { font-size: 14px; color: var(--testo-tenue); }
-.io-pannello .link-btn { justify-self: start; margin-top: 6px; font-size: 14px; }
+/* icona() mette display:block sull'svg: in mezzo a una frase serve un contenitore in riga. */
+.icona-in-riga { display: inline-flex; vertical-align: -3px; }
 
 /* L'invito alle notifiche: in Home, colorato, con il tasto che le accende
    nello stesso tocco. Deve vedersi: in Impostazioni non lo trovava nessuno. */
@@ -391,660 +616,8 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .invito-notifiche strong { font-size: 17px; }
 .invito-notifiche p { margin: 4px 0 0; font-size: 15px; color: var(--testo-tenue); }
 .invito-passi { margin: 8px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.5; }
-/* icona() mette display:block sull'svg: in mezzo a una frase serve un contenitore in riga. */
-.icona-in-riga { display: inline-flex; vertical-align: -3px; }
-.testata-profilo + .sezione { margin-top: 6px; }
 .invito-azioni { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .invito-azioni .btn { width: auto; padding: 10px 18px; }
-
-/* Gli avvisi in una colonna sola: l'avviso sull'omonimo ha due tasti, e
-   affiancati su un telefono stretto andavano a capo male. */
-.avviso-box.omonimo { display: grid; gap: 8px; margin: 14px 0; }
-.avviso-box.omonimo p { margin: 0; font-size: 15px; color: var(--testo-tenue); }
-.ho-gia-account { margin-top: 26px; text-align: center; }
-.ho-gia-account p { margin: 0 0 8px; }
-
-/* ---------------------------------------------------------------- Profilo
-   Più aria sopra il bollino, e "Il tuo mese" è il titolo della pagina: deve
-   pesare come tale, non come le altre sezioni. */
-.testata-profilo { padding: 30px 0 10px; }
-.testata-profilo + .sezione { margin-top: 14px; }
-.titolo-mese { font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin: 0 0 16px; }
-
-/* Le preferenze: un riquadro, e dentro l'ordine in cui si ragiona. */
-.riquadro.preferenze > summary { font-size: 17px; padding: 17px 0; }
-.pref-corpo { padding-top: 14px; }
-.pref-intro { margin: 0; font-size: 15px; line-height: 1.5; }
-.pref-titolo {
-  margin: 24px 0 8px; font-size: 12px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: .07em; color: var(--testo-tenue);
-}
-.pref-nota { margin: 0 0 4px; }
-.pref-fasce { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
-.pref-fasce li {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-  padding: 9px 12px; border-radius: 10px; background: var(--superficie-2); font-size: 15px;
-}
-.pref-fasce li span { color: var(--testo-tenue); font-size: 14px; text-align: right; }
-
-/* Il promemoria di un accordo non ancora inserito: una riga che si nota senza
-   gridare, con l'orologio nel colore dell'accento. */
-.promemoria {
-  display: flex; align-items: flex-start; gap: 6px;
-  margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--accento);
-}
-.promemoria .icona-in-riga { margin-top: 2px; flex: none; }
-.accordo .promemoria { margin: 8px 0 12px; }
-
-/* Le due scelte sulle notifiche: due righe con la spiegazione sotto, e il
-   cerchietto allineato al titolo e non alla riga intera. */
-.switch input[type="radio"] { align-self: flex-start; margin-top: 3px; flex: none; }
-.riquadro .avviso-box { margin: 10px 0 14px; font-size: 14px; }
-
-
-
-/* Profilo, passata di respiro. Il bollino è la firma della pagina: più grande
-   e con aria sopra, il pannello scende di conseguenza. */
-.testata-profilo { padding: 44px 0 18px; }
-.io-bollino { width: 68px; height: 68px; font-size: 24px; }
-.io-pannello { top: 78px; }
-.testata-profilo + .sezione { margin-top: 22px; }
-
-/* "I tuoi turni" è un riquadro come le preferenze. Dentro, le righe non sono
-   altre scatole con ombra: un tono di sfondo basta a staccarle. */
-.riquadro.turni > summary { font-size: 17px; padding: 17px 0; }
-.turni-corpo { padding: 4px 0 14px; display: grid; gap: 10px; }
-.riquadro.turni .tile,
-.riquadro.turni .tile-sync {
-  border: 0; box-shadow: none; margin: 0; background: var(--superficie-2);
-}
-
-/* Profilo, passata di coerenza.
-   1. Tutti i riquadri hanno la stessa testa: titolo a 17px in semibold, e a
-      destra una riga di riepilogo. Si capisce cosa contengono senza aprirli.
-   2. I titoli dentro i riquadri sono grassetto normale, non maiuscolo largo:
-      su un telefono le maiuscole spaziate affaticano e sanno di modulo.
-   3. Il giallo vale una cosa sola, la priorità: sta solo sulla stella. */
-.riquadro > summary,
-.riquadro-testa {
-  font-size: 17px; font-weight: 600; padding: 17px 0;
-  display: flex; align-items: center; gap: 8px;
-}
-.riquadro-fisso { padding-bottom: 14px; }
-.riquadro-fisso .testo-tenue { margin: 0; }
-.titolo-riquadro { display: inline-flex; align-items: center; gap: 6px; }
-.titolo-riquadro svg { fill: var(--oro); stroke: var(--oro); }
-.riquadro-testa .conteggio { margin-left: auto; font-size: 14px; font-weight: 500; color: var(--testo-tenue); }
-.priorita-usata { margin: 6px 0 0; font-weight: 600; }
-
-.pref-titolo {
-  margin: 22px 0 6px; font-size: 15px; font-weight: 700;
-  text-transform: none; letter-spacing: 0; color: var(--testo);
-}
-.riquadro-testa { padding-bottom: 6px; }
-
-/* Il codice del negozio comincia sempre per R: la lettera sta fuori dal campo,
-   e chi si iscrive scrive solo le cifre. */
-.campo-codice { display: flex; align-items: stretch; gap: 0; }
-.prefisso-codice {
-  display: grid; place-items: center; padding: 0 16px; font-size: 20px; font-weight: 700;
-  background: var(--superficie-2); color: var(--testo-tenue);
-  border: 1px solid var(--bordo); border-right: 0; border-radius: 12px 0 0 12px;
-}
-.campo-codice .testo { border-radius: 0 12px 12px 0; flex: 1; min-width: 0; }
-
-/* ===================================================== revisione di ottobre
-   Una passata sola su contrasto, bersagli, ritmo e calendari. Sta in fondo
-   apposta: ogni regola qui vince su quelle sopra, e si legge in un posto. */
-
-/* Contrasto. Il blu e il verde del marchio, sul bianco, stavano a 3,5–4 e
-   2,5–3: sotto la soglia proprio sul bottone principale, che è il testo più
-   importante di ogni schermata. Le tinte scure qui sotto stanno sopra 4,5 sia
-   come testo sul chiaro sia come fondo sotto il bianco. */
-:root {
-  --accento: #1d66db;
-  --cedo: #1d66db;
-  --verde: #0b7a52;
-  --prendo: #0b7a52;
-  --rosso: #c0303a;
-  --oro: #8a6305;
-  /* Avvisi e match potenziali: un ambra, non l'oro. L'oro vuol dire priorità. */
-  --giallo: #a0520a;
-  --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
-  /* Il testo sopra un fondo pieno di accento. */
-  --su-pieno: #ffffff;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --su-pieno: #0d1421; --giallo: #ffb066; }
-}
-:root[data-theme="dark"] { --su-pieno: #0d1421; --giallo: #ffb066; }
-
-/* In scuro i fondi pieni sono chiari: il bianco sopra stava a 2,5. */
-.chip.attivo, .pill.attivo, .mese-giorno .quota, .tab .conta { color: var(--su-pieno); }
-/* Il bottone principale resta bianco in entrambi i temi: il gradiente è scuro. */
-.btn.primario { color: #fff; }
-
-/* Bersagli: 44px è il minimo per un pollice, in piedi, con una mano. */
-.icon-btn { width: 44px; height: 44px; }
-.link-btn { min-height: 44px; display: inline-flex; align-items: center; }
-.priorita-chip, .grazie-chip { min-height: 44px; padding: 0 14px; }
-.btn.piccolo { min-height: 44px; }
-
-/* Ritmo. Le distanze fra blocchi erano tredici valori diversi, e la testata
-   distava dal contenuto 10, 22 o 30 px secondo la schermata. Ora: 12 dentro
-   un gruppo, 28 fra sezioni, 16 sotto ogni testata. */
-.testata { padding: 14px 0 0; margin-bottom: 16px; }
-.testata h1 { font-size: 22px; }
-.sezione { margin: 28px 0; }
-.testata + .sezione, .testata + .chips, .testata + .occhiello { margin-top: 0; }
-.tile, .card { margin-bottom: 12px; }
-.chips { margin: 0 0 16px; }
-
-/* --------------------------------------------- le righe che non fanno per te
-   Il motivo, in grigio, al posto di un "non puoi" rosso: non è un errore, è
-   un fatto sui tuoi turni. La riga resta toccabile, solo più quieta. */
-.riga-richiesta .non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 3px 0 0; }
-.riga-richiesta.non-per-me .riga-titolo,
-.riga-richiesta.non-per-me .avatar { opacity: .62; }
-.motivo-non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 8px 0 0; }
-
-/* L'icona del tipo dentro la pillola, allineata al testo. */
-.tipo-pill { display: inline-flex; align-items: center; gap: 4px; }
-.tipo-cambio { display: flex; align-items: center; gap: 6px; }
-.titolo-gruppo { display: flex; align-items: center; gap: 8px; }
-
-/* --------------------------------------------------------- calendario unico
-   Il tab Calendario usa le settimane che prima stavano nel Profilo: ore della
-   settimana, rotazione, la percentuale di chi puoi aiutare, e sotto ogni
-   giorno le barre di chi cerca e chi offre. */
-.legenda-mese {
-  list-style: none; margin: 0 0 14px; padding: 0;
-  display: flex; flex-wrap: wrap; gap: 6px 14px;
-  font-size: 14px; color: var(--testo-tenue);
-}
-.legenda-mese li { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.legenda-mese .barre.in-legenda { width: 18px; margin: 0; }
-.campione { width: 16px; height: 12px; border-radius: 4px; border: 1px solid var(--bordo); background: var(--superficie); }
-.campione.prioritaria { border: 2px solid var(--oro); }
-.campione.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
-.nota-mese { margin: 14px 0 0; }
-
-.mese-griglia { gap: 4px; }
-.mese-settimana { margin-bottom: 12px; }
-.riga-settimana { margin-bottom: 4px; }
-.mese-giorno { min-height: 64px; padding: 6px 2px 5px; gap: 2px; }
-.mese-giorno .numero { font-size: 15px; }
-.mese-giorno .quota { padding: 0 5px; }
-.mese-giorno .barre { width: 70%; height: 4px; margin-top: auto; }
-.mese-giorno.prioritaria { border: 2px solid var(--oro); }
-/* La disponibilità in verde, il colore di chi prende: l'arancio si
-   confondeva con l'oro della priorità. */
-.mese-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
-.mese-griglia.intestazione .dow-fisso { font-size: 12px; }
-
-/* --------------------------------------------------- Cambio rapido, i turni
-   Una griglia di settimana in settimana, sette colonne, testo piccolo: i
-   turni si scelgono come su un calendario. */
-.cal-turni { margin: 0 0 8px; }
-.cal-turni-testa, .cal-turni-griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-turni-testa { margin-bottom: 4px; }
-.cal-turni-testa span { font-size: 12px; text-align: center; color: var(--testo-tenue); }
-.cal-turno {
-  appearance: none; font: inherit; color: inherit; cursor: pointer;
-  min-height: 44px; padding: 4px 0; border-radius: 9px;
-  border: 1px solid var(--bordo); background: var(--superficie);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-}
-.cal-turno b { font-size: 14px; line-height: 1.1; }
-.cal-turno em { font-style: normal; font-size: 12px; color: var(--testo-tenue); font-variant-numeric: tabular-nums; }
-.cal-turno.vuoto { border-color: transparent; background: none; cursor: default; }
-.cal-turno.vuoto b { font-weight: 400; color: var(--testo-tenue); opacity: .55; }
-.cal-turno.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
-.cal-turno.attivo em { color: inherit; opacity: .85; }
-
-/* Le ragioni di un match dietro "Perché": in Rapido le schede erano alte
-   cinque righe di spiegazione, e la decisione si perdeva sotto. */
-.perche-aperto { margin: 4px 0 12px; }
-.perche-aperto > summary {
-  cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accento);
-  min-height: 44px; display: flex; align-items: center; list-style: none;
-}
-.perche-aperto > summary::-webkit-details-marker { display: none; }
-.perche-aperto > summary::after { content: '›'; margin-left: 6px; transition: transform .15s ease; }
-.perche-aperto[open] > summary::after { transform: rotate(90deg); }
-.perche-aperto .perche { margin-top: 0; }
-
-/* ------------------------------------------------------------- statistiche
-   L'oro è della priorità: le richieste pubblicate sono un conteggio. */
-.barra-mese.pubblicate { background: var(--accento); }
-
-/* --------------------------------------------------------------- iscrizione
-   La R del codice centrata sull'altezza del campo, e larga quanto basta. */
-.campo-codice .prefisso-codice { width: 48px; padding: 0; display: flex; align-items: center; justify-content: center; }
-.ho-gia-account .link-btn { font-weight: 600; }
-
-/* Icona e testo dei filtri sulla stessa riga: l'svg è un blocco, e andava a
-   capo sopra l'etichetta raddoppiando l'altezza del chip. */
-.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; }
-
-/* La disponibilità come fondo della cella, non come linea: la linea verde in
-   basso si confondeva con la barra di chi offre. */
-.mese-giorno.disponibile { box-shadow: none; background: var(--prendo-tenue); }
-.campione.disponibile { box-shadow: none; background: var(--prendo-tenue); border-color: color-mix(in srgb, var(--prendo) 40%, transparent); }
-
-/* Il fuoco dei campi nel colore dell'app, al posto del contorno nero del browser. */
-input.testo:focus-visible, input[type="password"]:focus-visible, input[type="time"]:focus-visible, textarea:focus-visible {
-  outline: 2px solid var(--accento); outline-offset: 0; border-color: var(--accento);
-}
-
-/* I quattro filtri della Bacheca su una riga sola, anche a 360px. */
-.chips { gap: 6px; }
-.chips .chip { padding: 0 13px; font-size: 14px; }
-
-/* La legenda delle Statistiche con i colori veri delle barre. */
-.legenda-statistiche span { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; }
-.campione-barra { width: 10px; height: 12px; border-radius: 3px 3px 0 0; display: inline-block; }
-.campione-barra.pubblicate { background: var(--accento); }
-.campione-barra.chiuse { background: var(--testo-tenue); }
-
-/* I due mesi. Nel Calendario la cella è del negozio: numero, percentuale,
-   barre. Nel Profilo è tua: turno, disponibilità, e un punto blu nell'angolo
-   sui giorni toccati da una tua richiesta aperta. */
-.mese-giorno { position: relative; }
-.mese-giorno.mia-richiesta::after {
-  content: ''; position: absolute; top: 5px; right: 5px;
-  width: 8px; height: 8px; border-radius: 50%; background: var(--accento);
-}
-.campione.mia-richiesta { position: relative; }
-.campione.mia-richiesta::after {
-  content: ''; position: absolute; top: 2px; right: 2px;
-  width: 5px; height: 5px; border-radius: 50%; background: var(--accento);
-}
-.campione-quota { font-size: 12px; font-weight: 700; padding: 0 5px; border-radius: 999px; background: var(--accento); color: var(--su-pieno); }
-.mese-giorno.mia-richiesta::after { top: 4px; right: 4px; width: 7px; height: 7px; }
-.giorno-profilo .tile { margin-top: 16px; }
-
-/* Le tue richieste hanno un colore loro, il viola, che il Calendario non usa:
-   blu e verde vi dicono chi cerca e chi offre fra i colleghi, l'oro la
-   priorità. Nel Profilo nessuno di quei segni deve comparire, così un colpo
-   d'occhio basta a capire su quale dei due mesi si è. */
-:root { --mio: #6b46c8; --mio-tenue: #efe9fb; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --mio: #b39bff; --mio-tenue: #261d3d; }
-}
-:root[data-theme="dark"] { --mio: #b39bff; --mio-tenue: #261d3d; }
-
-.mese-giorno.mia-richiesta::after { background: var(--mio); }
-.campione.mia-richiesta::after { background: var(--mio); }
-.pallino.mia { background: var(--mio); }
-.giorno-profilo .lista-cambi { margin-top: 4px; }
-.giorno-profilo .riga-cambio strong { display: inline-flex; align-items: center; gap: 6px; }
-
-/* ============================================ due mesi, due forme
-   Il colore da solo non bastava: due griglie uguali con segni diversi si
-   leggevano come la stessa cosa. Ora si riconoscono dalla forma.
-
-   Il tuo mese (Profilo) è un'agenda: sta in un pannello suo, tinto di viola,
-   e in ogni cella il protagonista è il turno, con inizio e fine; il numero del
-   giorno è piccolo, in alto a sinistra. I riposi sono tenui, perché in
-   un'agenda conta dove lavori.
-
-   Il mese del negozio (Calendario) è un tabellone: niente pannello, sta sulla
-   pagina; il numero del giorno è grande al centro, e sotto ci sono solo i
-   segni delle richieste dei colleghi. */
-
-.pannello-mio {
-  background: var(--mio-tenue);
-  border-radius: var(--raggio);
-  padding: 18px 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--mio) 22%, transparent);
-}
-.pannello-mio .titolo-mese { color: var(--mio); margin-bottom: 12px; padding-left: 4px; }
-.pannello-mio .legenda-mese, .pannello-mio .nota-mese { padding: 0 4px; }
-
-/* --- l'agenda */
-.mese-personale .mese-giorno {
-  align-items: flex-start; justify-content: flex-start;
-  padding: 5px 6px 6px; min-height: 62px; gap: 0;
-  border-color: transparent; background: var(--superficie);
-}
-.mese-personale .mese-giorno .numero {
-  font-size: 12px; font-weight: 600; color: var(--testo-tenue); line-height: 1.2;
-}
-.mese-personale .mese-giorno .turno {
-  font-size: 15px; font-weight: 700; color: var(--testo); margin-top: 3px;
-  font-variant-numeric: tabular-nums; line-height: 1.1;
-}
-.mese-personale .mese-giorno .fine {
-  font-size: 12px; color: var(--testo-tenue); font-variant-numeric: tabular-nums;
-}
-.mese-personale .mese-giorno.riposo { background: transparent; border: 1px dashed color-mix(in srgb, var(--mio) 35%, transparent); }
-.mese-personale .mese-giorno.riposo .turno { font-size: 13px; font-weight: 600; color: var(--testo-tenue); }
-.mese-personale .mese-giorno.senza-turno { background: transparent; }
-.mese-personale .mese-giorno.senza-turno .turno { color: var(--testo-tenue); font-weight: 400; }
-.mese-personale .mese-giorno.oggi { border: 2px solid var(--mio); background: var(--superficie); }
-/* La disponibilità resta un fondo, ma dentro il pannello viola serve un
-   verde più deciso per staccarsi. */
-.mese-personale .mese-giorno.disponibile { background: var(--prendo-tenue); border-color: color-mix(in srgb, var(--prendo) 30%, transparent); }
-.mese-personale .mese-giorno.mia-richiesta::after { top: 6px; right: 6px; width: 8px; height: 8px; }
-.campione.riposo { background: transparent; border: 1px dashed color-mix(in srgb, var(--mio) 45%, transparent); }
-
-/* --- il tabellone */
-.mese-pubblico .mese-giorno { justify-content: flex-start; padding-top: 8px; }
-.mese-pubblico .mese-giorno .numero { font-size: 17px; font-weight: 700; }
-.mese-pubblico .mese-giorno.oggi { border: 2px solid var(--accento); background: var(--superficie); }
-/* Sette colonne che non si allargano mai oltre lo schermo: senza minmax(0, …)
-   un orario un po' largo spingeva la colonna e il pannello sbordava a destra. */
-.mese-griglia { grid-template-columns: repeat(7, minmax(0, 1fr)); }
-.pannello-mio { padding: 16px 8px 12px; }
-.mese-personale .mese-griglia { gap: 3px; }
-.mese-personale .mese-giorno { min-width: 0; overflow: hidden; padding: 5px 4px 6px; }
-.mese-personale .mese-giorno .turno { font-size: 13px; letter-spacing: -.01em; }
-.mese-personale .mese-giorno.riposo .turno { font-size: 12px; }
-/* Sotto i 360px (iPhone SE e simili) ogni pixel del pannello torna alle celle,
-   e gli orari stanno centrati, altrimenti "11:00" diventava "11:0". */
-@media (max-width: 359px) {
-  .pannello-mio { padding: 14px 4px 10px; }
-  .mese-personale .mese-griglia { gap: 2px; }
-  .mese-personale .mese-giorno { padding: 4px 1px 5px; align-items: center; }
-  .mese-personale .mese-giorno .turno { font-size: 12px; letter-spacing: -.02em; }
-}
-@media (max-width: 359px) {
-  .mese-personale .mese-giorno.mia-richiesta::after { top: 2px; right: 2px; width: 6px; height: 6px; }
-}
-
-/* --------------------------------------------- il codice del negozio
-   Un campo solo, con la R già scritta dentro: prima erano due scatole di
-   altezza e bordo diversi accostate, e la R sembrava un tasto. Nessun
-   suggerimento nel campo: chi non ha il codice non deve trovarlo scritto lì. */
-.campo-codice {
-  display: flex; align-items: center; gap: 2px;
-  margin: 14px 0 6px; padding: 0 16px; height: 60px;
-  background: var(--superficie); border: 1px solid var(--bordo);
-  border-radius: var(--raggio-s); cursor: text;
-}
-.campo-codice:focus-within { border-color: var(--accento); outline: 2px solid var(--accento); outline-offset: -1px; }
-.campo-codice .prefisso-codice {
-  width: auto; height: auto; padding: 0; border: 0; background: none;
-  display: inline; font-size: 22px; font-weight: 700; letter-spacing: .06em; color: var(--testo);
-}
-.campo-codice input.testo {
-  flex: 1; min-width: 0; height: 100%; padding: 0; margin: 0;
-  border: 0; border-radius: 0; background: none; outline: none;
-  font-size: 22px; font-weight: 700; letter-spacing: .06em; color: var(--testo);
-  font-variant-numeric: tabular-nums;
-}
-.campo-codice input.testo:focus-visible { outline: none; }
-.aiuto-codice { margin: 0 0 18px; font-size: 14px; }
-
-/* Una testata senza tasto a sinistra allinea il titolo a sinistra: centrato
-   fra il vuoto e i tasti di destra finiva fuori asse ("Benvenuto" e "1/5",
-   "Bacheca" e "?"). */
-.testata h1:first-child { text-align: left; }
-
-/* ======================================== il tuo mese, versione tabella
-   Il pannello viola era troppo: un fondo colorato grande quanto mezzo
-   schermo. Il mese del Profilo è una tabella compatta: un riquadro bianco
-   con il bordo, celle separate da linee visibili, una riga sottile per
-   settimana con le ore. Si distingue dal tabellone del Calendario, che ha
-   celle staccate e arrotondate sullo sfondo della pagina. */
-:root { --linea: #cfd6e0; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --linea: #34435c; } }
-:root[data-theme="dark"] { --linea: #34435c; }
-
-.pannello-mio { background: none; border: 0; padding: 0; }
-
-.mese-personale {
-  border: 1px solid var(--linea); border-radius: 12px; overflow: hidden;
-  background: var(--superficie);
-}
-.mese-personale .mese-griglia { gap: 0; }
-.mese-personale .mese-griglia.intestazione {
-  background: var(--superficie-2); border-bottom: 1px solid var(--linea); margin: 0;
-}
-.mese-personale .dow-fisso { padding: 6px 0; font-weight: 600; }
-.mese-personale .mese-settimana { margin: 0; }
-.mese-personale .mese-settimana + .mese-settimana .riga-settimana { border-top: 1px solid var(--linea); }
-.mese-personale .riga-settimana {
-  margin: 0; padding: 3px 8px; background: var(--superficie-2);
-  border-bottom: 1px solid var(--linea); align-items: center;
-}
-.mese-personale .riga-settimana h3 { margin: 0; font-size: 12px; }
-.mese-personale .riga-settimana .spia-ore { font-size: 12px; }
-
-.mese-personale .mese-giorno,
-.mese-personale .mese-giorno.riposo,
-.mese-personale .mese-giorno.senza-turno,
-.mese-personale .mese-giorno.disponibile,
-.mese-personale .mese-giorno.oggi {
-  border: 0; border-radius: 0; border-right: 1px solid var(--linea);
-  min-height: 50px; padding: 4px 5px 5px; box-shadow: none;
-  background: var(--superficie);
-}
-.mese-personale .mese-griglia .mese-giorno:last-child { border-right: 0; }
-.mese-personale .mese-giorno .numero { font-size: 12px; }
-.mese-personale .mese-giorno .turno { font-size: 13px; margin-top: 1px; }
-.mese-personale .mese-giorno .fine { font-size: 12px; line-height: 1.1; }
-.mese-personale .mese-giorno.riposo { background: var(--superficie-2); }
-.mese-personale .mese-giorno.riposo .turno { font-size: 12px; }
-.mese-personale .mese-giorno.disponibile { background: var(--prendo-tenue); }
-.mese-personale .mese-giorno.oggi { box-shadow: inset 0 0 0 2px var(--accento); }
-.mese-personale .mese-giorno.mia-richiesta::after { top: 5px; right: 5px; width: 7px; height: 7px; }
-.campione.riposo { border: 1px solid var(--linea); background: var(--superficie-2); }
-.campione.disponibile { border: 1px solid var(--linea); }
-.titolo-mese { color: var(--testo); }
-
-@media (max-width: 359px) {
-  .mese-personale .mese-giorno { padding: 3px 1px 4px; }
-  .mese-personale .mese-giorno .turno { font-size: 12px; }
-}
-
-/* ======================================== il tuo mese, versione leggera
-   La tabella con le bande grigie era corretta ma pesante. Qui ogni giorno è
-   un riquadro suo, con angoli appena arrotondati e un filo chiaro, separato
-   dagli altri da 3px; le intestazioni sono solo testo. Resta diverso dal
-   tabellone del Calendario: celle piccole con il turno come protagonista,
-   contro celle grandi con il numero al centro. */
-:root { --linea: #dfe4eb; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --linea: #2a3850; } }
-:root[data-theme="dark"] { --linea: #2a3850; }
-
-.mese-personale { border: 0; border-radius: 0; overflow: visible; background: none; }
-.mese-personale .mese-griglia { gap: 3px; }
-.mese-personale .mese-griglia.intestazione { background: none; border: 0; margin: 0 0 2px; }
-.mese-personale .dow-fisso { padding: 0; font-weight: 500; }
-.mese-personale .mese-settimana { margin: 0 0 8px; }
-.mese-personale .mese-settimana + .mese-settimana .riga-settimana { border-top: 0; }
-.mese-personale .riga-settimana { background: none; border: 0; padding: 0 2px 3px; }
-.mese-personale .riga-settimana h3 { font-weight: 500; }
-
-.mese-personale .mese-giorno,
-.mese-personale .mese-giorno.riposo,
-.mese-personale .mese-giorno.senza-turno,
-.mese-personale .mese-giorno.disponibile,
-.mese-personale .mese-giorno.oggi {
-  border: 1px solid var(--linea); border-radius: 7px;
-  min-height: 48px; padding: 4px 5px 5px; box-shadow: none;
-  background: var(--superficie);
-}
-.mese-personale .mese-griglia .mese-giorno:last-child { border-right: 1px solid var(--linea); }
-.mese-personale .mese-giorno .turno { font-weight: 600; }
-.mese-personale .mese-giorno.riposo { background: transparent; }
-.mese-personale .mese-giorno.senza-turno { background: transparent; border-color: color-mix(in srgb, var(--linea) 60%, transparent); }
-.mese-personale .mese-giorno.disponibile { background: var(--prendo-tenue); border-color: color-mix(in srgb, var(--prendo) 25%, var(--linea)); }
-.mese-personale .mese-giorno.oggi { border-color: var(--accento); box-shadow: inset 0 0 0 1px var(--accento); }
-.campione.riposo { background: transparent; border: 1px solid var(--linea); border-radius: 4px; }
-.campione.disponibile { border-radius: 4px; }
-
-/* Calendario pubblico: il titolo dice di chi è il mese, il mese si sfoglia
-   sotto. */
-.mese-navigazione { display: flex; align-items: center; justify-content: space-between; margin: 0 0 14px; }
-.mese-navigazione h2 { margin: 0; font-size: 19px; font-weight: 700; }
-
-/* Quante richieste toccano il giorno, fra chi cerca e chi offre: un numero
-   grigio in un cerchio leggero, in alto a destra. Dice "quanto movimento"
-   senza competere con il numero del giorno. */
-.conta-giorno {
-  position: absolute; top: 4px; right: 4px;
-  min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px;
-  display: grid; place-items: center;
-  font-size: 12px; font-weight: 600; line-height: 1; color: var(--testo-tenue);
-  border: 1px solid var(--linea); background: var(--superficie);
-}
-.conta-giorno.in-legenda { position: static; display: inline-grid; }
-@media (max-width: 359px) { .conta-giorno { top: 2px; right: 2px; min-width: 16px; height: 16px; } }
-/* Il conteggio sta sotto il numero, centrato: in alto a destra copriva le
-   cifre del giorno su ogni cella. */
-.mese-pubblico .conta-giorno { position: static; margin-top: 3px; }
-.mese-pubblico .mese-giorno { min-height: 72px; gap: 3px; }
-.mese-pubblico .mese-giorno .quota.vuota { display: none; }
-@media (max-width: 359px) { .mese-pubblico .conta-giorno { position: static; } }
-/* "Il tuo calendario" è il titolo della pagina: un gradino sopra le altre testate. */
-.titolo-mese { font-size: 28px; letter-spacing: -.025em; }
-
-/* La clessidra degli scambi in corso, nell'angolo del giorno. Viola: una tua
-   richiesta o proposta che aspetta. Verde: accordo fatto, da confermare in
-   UKG. Fra l'accordo e l'approvazione il giorno non sembra più fermo. */
-.in-corso { display: inline-grid; place-items: center; color: var(--mio); }
-.in-corso-accordo { color: var(--prendo); }
-.mese-personale .mese-giorno .in-corso { position: absolute; top: 4px; right: 4px; }
-.in-corso.in-legenda { position: static; }
-.giorno-profilo .riga-cambio .in-corso { flex: 0 0 auto; }
-@media (max-width: 359px) { .mese-personale .mese-giorno .in-corso { top: 2px; right: 2px; } }
-
-/* La clessidra in un bollino pieno: una clessidra verde su un giorno
-   disponibile (fondo verde chiaro) quasi spariva. Il bollino ha il colore pieno
-   e l'icona sopra in bianco (scura in tema scuro), e si stacca da ogni fondo. */
-.in-corso {
-  width: 20px; height: 20px; border-radius: 50%;
-  background: var(--mio); color: var(--su-pieno);
-  box-shadow: 0 0 0 2px var(--superficie);
-}
-.in-corso-accordo { background: var(--prendo); color: var(--su-pieno); }
-.in-corso svg { width: 12px; height: 12px; }
-.mese-personale .mese-giorno .in-corso { top: 3px; right: 3px; width: 18px; height: 18px; }
-.mese-personale .mese-giorno .in-corso svg { width: 11px; height: 11px; }
-.giorno-profilo .riga-cambio .in-corso { width: 26px; height: 26px; box-shadow: none; }
-.giorno-profilo .riga-cambio .in-corso svg { width: 15px; height: 15px; }
-@media (max-width: 359px) {
-  .mese-personale .mese-giorno .in-corso { top: 2px; right: 2px; width: 16px; height: 16px; }
-}
-/* Il bollino sta a cavallo dell'angolo, come quello delle notifiche: dentro la
-   cella, su uno schermo stretto, copriva il numero del giorno. */
-.mese-personale .mese-giorno { overflow: visible; }
-.mese-personale .mese-giorno .in-corso { top: -6px; right: -6px; z-index: 1; }
-@media (max-width: 359px) {
-  .mese-personale .mese-giorno .in-corso { top: -5px; right: -5px; }
-}
-.mese-personale .mese-settimana { margin-bottom: 10px; }
-
-/* Di nuovo la clessidra semplice, senza bollino: il segno forte ora è il fondo
-   giallo del giorno da cambiare, che vince sul verde di "disponibile". Il
-   giallo qui è tenue e vive solo nel tuo calendario; l'oro della priorità sta
-   nel Calendario pubblico, come bordo. */
-:root { --da-cambiare: #fbefb8; --da-cambiare-bordo: #e2c869; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --da-cambiare: #3b3315; --da-cambiare-bordo: #7a6526; }
-}
-:root[data-theme="dark"] { --da-cambiare: #3b3315; --da-cambiare-bordo: #7a6526; }
-
-.in-corso {
-  width: auto; height: auto; border-radius: 0; background: none; box-shadow: none;
-  color: var(--mio);
-}
-.in-corso-accordo { background: none; color: var(--prendo); }
-.in-corso svg { width: 13px; height: 13px; }
-.mese-personale .mese-giorno .in-corso { top: 4px; right: 4px; width: auto; height: auto; }
-.mese-personale .mese-giorno .in-corso svg { width: 13px; height: 13px; }
-.giorno-profilo .riga-cambio .in-corso { width: auto; height: auto; }
-.giorno-profilo .riga-cambio .in-corso svg { width: 16px; height: 16px; }
-@media (max-width: 359px) {
-  .mese-personale .mese-giorno .in-corso { top: 2px; right: 2px; width: auto; height: auto; }
-  .mese-personale .mese-giorno .in-corso svg { width: 11px; height: 11px; }
-}
-
-.mese-personale .mese-giorno.da-cambiare,
-.mese-personale .mese-giorno.da-cambiare.disponibile {
-  background: var(--da-cambiare); border-color: var(--da-cambiare-bordo);
-}
-.campione.da-cambiare { background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo); border-radius: 4px; }
-
-/* ===================================== il tuo calendario, un segno per cosa
-   Sei segni in sette colonne strette si leggevano come rumore: due fondi
-   colorati che si sovrapponevano, due clessidre distinte solo dal colore, il
-   verde con due significati. Ora ogni canale dice una cosa sola.
-
-   - Fondo giallo: questo giorno sta cambiando. È l'unico fondo colorato.
-   - Icona in ambra, nell'angolo: a che punto è il cambio, detto dalla forma
-     (clessidra: si cerca o si aspetta; spunta: concordato, manca UKG).
-   - Linea verde in basso: sei disponibile a scambiare. Un'impostazione, non
-     un evento: segno discreto, che non compete con il giallo e convive con
-     lui sullo stesso giorno.
-   - Il riposo si legge dal testo "OFF": niente bordo tratteggiato.
-   - Oggi: il bordo blu. */
-:root { --da-cambiare: #fcefb4; --da-cambiare-bordo: #e6c65c; --da-cambiare-segno: #7a5300; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --da-cambiare: #3d3412; --da-cambiare-bordo: #8a7128; --da-cambiare-segno: #f3cf5e; }
-}
-:root[data-theme="dark"] { --da-cambiare: #3d3412; --da-cambiare-bordo: #8a7128; --da-cambiare-segno: #f3cf5e; }
-
-/* La base: ogni giorno bianco con il filo chiaro, il riposo appena più tenue. */
-.mese-personale .mese-giorno,
-.mese-personale .mese-giorno.riposo,
-.mese-personale .mese-giorno.senza-turno,
-.mese-personale .mese-giorno.disponibile {
-  background: var(--superficie); border: 1px solid var(--linea); box-shadow: none;
-}
-.mese-personale .mese-giorno.riposo,
-.mese-personale .mese-giorno.senza-turno { background: transparent; }
-.mese-personale .mese-giorno.riposo .turno { color: var(--testo-tenue); }
-
-/* Disponibile: la linea in basso. */
-.mese-personale .mese-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
-
-/* Da cambiare: il fondo giallo, che vince su tutto il resto del fondo. */
-.mese-personale .mese-giorno.da-cambiare,
-.mese-personale .mese-giorno.da-cambiare.riposo,
-.mese-personale .mese-giorno.da-cambiare.disponibile {
-  background: var(--da-cambiare); border-color: var(--da-cambiare-bordo);
-}
-.mese-personale .mese-giorno.da-cambiare.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
-
-/* Oggi resta riconoscibile anche quando è giallo. */
-.mese-personale .mese-giorno.oggi { border-color: var(--accento); box-shadow: inset 0 0 0 1px var(--accento); }
-.mese-personale .mese-giorno.oggi.disponibile { box-shadow: inset 0 0 0 1px var(--accento), inset 0 -3px 0 var(--prendo); }
-
-/* Il segno del cambio: un'icona sola per giorno, sempre dello stesso colore. */
-.in-corso,
-.in-corso-richiesta,
-.in-corso-accordo {
-  display: inline-grid; place-items: center;
-  width: auto; height: auto; background: none; box-shadow: none; border-radius: 0;
-  color: var(--da-cambiare-segno);
-}
-.mese-personale .mese-giorno .in-corso { position: absolute; top: 4px; right: 4px; }
-.mese-personale .mese-giorno .in-corso svg { width: 12px; height: 12px; }
-@media (max-width: 359px) {
-  .mese-personale .mese-giorno .in-corso { top: 3px; right: 2px; }
-  .mese-personale .mese-giorno .in-corso svg { width: 10px; height: 10px; }
-}
-
-/* Nel foglio del giorno lo stesso segno, su un tassello giallo come la cella. */
-.giorno-profilo .riga-cambio .in-corso {
-  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px;
-  background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo);
-}
-.giorno-profilo .riga-cambio .in-corso svg { width: 15px; height: 15px; }
-
-/* La legenda mostra le celle come sono, in piccolo. */
-.legenda-personale { gap: 8px 16px; }
-.campione-giorno {
-  display: inline-grid; place-items: center;
-  width: 22px; height: 18px; border-radius: 5px;
-  background: var(--superficie); border: 1px solid var(--linea); color: var(--da-cambiare-segno);
-}
-.campione-giorno.da-cambiare { background: var(--da-cambiare); border-color: var(--da-cambiare-bordo); }
-.campione-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
 
 /* La priorità in Home: una stella nel cerchio e la parola sotto, senza
    numero (è una al mese, il numero diceva sempre 1). Usata, diventa grigia:
@@ -1063,12 +636,154 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .priorita-tasto.usata { color: var(--testo-tenue); }
 .priorita-tasto.usata .priorita-cerchio { border-color: var(--linea); }
 
-/* Cambio rapido: quanti colleghi vanno bene, giorno per giorno. Il bollino
-   sta nell'angolo per non spostare numero e orario; i turni senza nessuno
-   si spengono ma restano toccabili (si può sempre pubblicare). I giorni
-   liberi con un turno da prendere hanno il bordo tratteggiato: si toccano,
-   ma non sono un tuo turno. */
-.cal-turno { position: relative; }
+/* ---------------------------------------------------------------- Profilo */
+
+/* La testata del Profilo è una riga sola: il bollino a sinistra, le azioni a
+   destra. Nome e ruolo stanno nel pannello che apre il bollino. Il bollino è
+   la firma della pagina: grande e con aria sopra. */
+.testata-profilo {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 44px 0 18px; position: relative;
+}
+.testata-profilo + .sezione { margin-top: 22px; }
+.azioni-profilo { position: absolute; top: 12px; right: 0; display: flex; align-items: center; gap: 8px; }
+.testata-profilo .azioni-profilo { position: static; }
+.io { position: relative; }
+.io > summary { list-style: none; cursor: pointer; }
+.io > summary::-webkit-details-marker { display: none; }
+.io-bollino { width: 68px; height: 68px; font-size: 24px; }
+.io[open] .io-bollino { box-shadow: 0 0 0 2px var(--accento); }
+.io-pannello {
+  position: absolute; top: 78px; left: 0; z-index: 20; min-width: 220px;
+  display: grid; gap: 4px; padding: 12px 14px;
+  background: var(--superficie); border: 1px solid var(--bordo);
+  border-radius: 14px; box-shadow: var(--ombra-alta);
+}
+.io-pannello strong { font-size: 16px; }
+.io-pannello span { font-size: 14px; color: var(--testo-tenue); }
+.io-pannello .link-btn { justify-self: start; margin-top: 6px; font-size: 14px; }
+
+/* "Aggiorna calendario" nella testata del Profilo: una pillola con la
+   scritta, perché il tondo senza parole non diceva cosa aggiornava. */
+.tasto-aggiorna {
+  appearance: none; font: inherit; cursor: pointer; position: relative;
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--bordo); background: var(--superficie); color: var(--testo);
+  font-size: 14px; font-weight: 600; white-space: nowrap;
+}
+.tasto-aggiorna svg { color: var(--accento); }
+.tasto-aggiorna:disabled { opacity: .6; cursor: default; }
+.tasto-aggiorna .pallino { position: absolute; top: 4px; right: 6px; }
+@media (max-width: 359px) {
+  .tasto-aggiorna { padding: 0 11px; gap: 5px; font-size: 13px; }
+  .azioni-profilo { gap: 6px; }
+}
+
+/* Tutti i riquadri hanno la stessa testa: titolo a 17px in semibold, e a
+   destra una riga di riepilogo. Si capisce cosa contengono senza aprirli. */
+.riquadro > summary,
+.riquadro-testa {
+  font-size: 17px; font-weight: 600; padding: 17px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.riquadro-testa { padding-bottom: 6px; }
+.riquadro-fisso { padding-bottom: 14px; }
+.riquadro-fisso .testo-tenue { margin: 0; }
+.titolo-riquadro { display: inline-flex; align-items: center; gap: 6px; }
+/* Il giallo vale una cosa sola, la priorità: sta solo sulla stella. */
+.titolo-riquadro svg { fill: var(--oro); stroke: var(--oro); }
+.riquadro-testa .conteggio { margin-left: auto; font-size: 14px; font-weight: 500; color: var(--testo-tenue); }
+.priorita-usata { margin: 6px 0 0; font-weight: 600; }
+.riquadro .avviso-box { margin: 10px 0 14px; font-size: 14px; }
+
+/* Le preferenze: un riquadro, e dentro l'ordine in cui si ragiona. I titoli
+   sono grassetto normale, non maiuscolo largo: su un telefono le maiuscole
+   spaziate affaticano e sanno di modulo. */
+.pref-corpo { padding-top: 14px; }
+.pref-intro { margin: 0; font-size: 15px; line-height: 1.5; }
+.pref-titolo {
+  margin: 22px 0 6px; font-size: 15px; font-weight: 700;
+  text-transform: none; letter-spacing: 0; color: var(--testo);
+}
+.pref-nota { margin: 0 0 4px; }
+.pref-fasce { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.pref-fasce li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  padding: 9px 12px; border-radius: 10px; background: var(--superficie-2); font-size: 15px;
+}
+.pref-fasce li span { color: var(--testo-tenue); font-size: 14px; text-align: right; }
+
+/* "I tuoi turni" è un riquadro come le preferenze. Dentro, le righe non sono
+   altre scatole con ombra: un tono di sfondo basta a staccarle. */
+.turni-corpo { padding: 4px 0 14px; display: grid; gap: 10px; }
+.riquadro.turni .tile {
+  border: 0; box-shadow: none; margin: 0; background: var(--superficie-2);
+}
+
+/* Grazie ricevuti. Il cuore raggiunto prende il colore dell'icona del
+   titolo; quelli da raggiungere sono contorni grigi con l'avanzamento
+   accanto, così si legge a che punto sei senza contare. */
+.grazie-riquadro .titolo-riquadro svg { fill: var(--rosso); stroke: var(--rosso); }
+.grazie-riquadro .btn { margin-top: 12px; }
+.traguardi { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.traguardo { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--testo-tenue); min-height: 36px; }
+.traguardo-segno {
+  width: 28px; height: 28px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; border: 1.5px solid var(--linea);
+}
+.traguardo-segno svg { fill: none; stroke: var(--testo-tenue); opacity: .6; }
+.traguardo.raggiunto .traguardo-segno svg { opacity: 1; }
+.traguardo.raggiunto { color: var(--testo); font-weight: 600; }
+.traguardo.raggiunto .traguardo-segno { border-color: var(--rosso); background: color-mix(in srgb, var(--rosso) 10%, transparent); }
+.traguardo.raggiunto .traguardo-segno svg { fill: var(--rosso); stroke: var(--rosso); }
+.traguardo-avanzamento { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
+.traguardo-testo { display: flex; flex-direction: column; gap: 1px; }
+.traguardo-soglia { font-size: 12px; font-weight: 400; color: var(--testo-tenue); }
+
+/* Il promemoria di un accordo non ancora inserito: una riga che si nota senza
+   gridare, con l'orologio nel colore dell'accento. */
+.promemoria {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--accento);
+}
+.promemoria .icona-in-riga { margin-top: 2px; flex: none; }
+.accordo .promemoria { margin: 8px 0 12px; }
+
+/* "Annulla lo scambio" sotto un accordo: un collegamento, non un pulsante.
+   È l'uscita per quando UKG blocca il cambio, non il passo successivo, e un
+   pulsante pieno accanto a "Cambio inserito" invitava a toccarlo. */
+.link-annulla {
+  appearance: none; border: 0; background: none; font: inherit; cursor: pointer;
+  display: block; margin: 10px auto 0; min-height: 44px; padding: 0 8px;
+  font-size: 14px; color: var(--rosso); text-decoration: underline; text-underline-offset: 3px;
+}
+
+/* --------------------------------------------------- Cambio rapido, i turni
+   Una griglia di settimana in settimana, sette colonne, testo piccolo: i
+   turni si scelgono come su un calendario. */
+.cal-turni { margin: 0 0 8px; }
+.cal-turni-testa, .cal-turni-griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-turni-testa { margin-bottom: 4px; }
+.cal-turni-testa span { font-size: 12px; text-align: center; color: var(--testo-tenue); }
+.cal-turno {
+  appearance: none; font: inherit; color: inherit; cursor: pointer; position: relative;
+  min-height: 44px; padding: 4px 0; border-radius: 9px;
+  border: 1px solid var(--bordo); background: var(--superficie);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+}
+.cal-turno b { font-size: 14px; line-height: 1.1; }
+.cal-turno em { font-style: normal; font-size: 12px; color: var(--testo-tenue); font-variant-numeric: tabular-nums; }
+.cal-turno.vuoto { border-color: transparent; background: none; cursor: default; }
+.cal-turno.vuoto b { font-weight: 400; color: var(--testo-tenue); opacity: .55; }
+.cal-turno.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
+.cal-turno.attivo em { color: inherit; opacity: .85; }
+
+/* Quanti colleghi vanno bene, giorno per giorno. Il bollino sta nell'angolo
+   per non spostare numero e orario; i turni senza nessuno si spengono ma
+   restano toccabili (si può sempre pubblicare). I giorni liberi con un turno
+   da prendere hanno il bordo tratteggiato: si toccano, ma non sono un tuo
+   turno. */
 .cal-conta {
   position: absolute; top: -7px; right: -6px;
   min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; box-sizing: border-box;
@@ -1088,52 +803,25 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .cal-turni-legenda .cal-conta { position: static; display: inline-block; }
 .cal-turni-legenda em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--verde); border: 1px dashed var(--verde); border-radius: 6px; padding: 0 5px; }
 
-/* Grazie ricevuti, nel Profilo. Il cuore raggiunto prende il colore
-   dell'icona del titolo; quelli da raggiungere sono contorni grigi con
-   l'avanzamento accanto, così si legge a che punto sei senza contare. */
-.grazie-riquadro .titolo-riquadro svg { fill: var(--rosso); stroke: var(--rosso); }
-.traguardi { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
-.traguardo { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--testo-tenue); min-height: 28px; }
-.traguardo-segno {
-  width: 28px; height: 28px; border-radius: 50%; flex: none;
-  display: grid; place-items: center; border: 1.5px solid var(--linea);
+/* Le ragioni di un match dietro "Perché": in Rapido le schede erano alte
+   cinque righe di spiegazione, e la decisione si perdeva sotto. */
+.perche-aperto { margin: 4px 0 12px; }
+.perche-aperto > summary {
+  cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accento);
+  min-height: 44px; display: flex; align-items: center; list-style: none;
 }
-.traguardo-segno svg { fill: none; stroke: var(--testo-tenue); opacity: .6; }
-.traguardo.raggiunto .traguardo-segno svg { opacity: 1; }
-.traguardo.raggiunto { color: var(--testo); font-weight: 600; }
-.traguardo.raggiunto .traguardo-segno { border-color: var(--rosso); background: color-mix(in srgb, var(--rosso) 10%, transparent); }
-.traguardo.raggiunto .traguardo-segno svg { fill: var(--rosso); stroke: var(--rosso); }
-.traguardo-avanzamento { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
-.grazie-riquadro .btn { margin-top: 12px; }
-.traguardo-testo { display: flex; flex-direction: column; gap: 1px; }
-.traguardo-soglia { font-size: 12px; font-weight: 400; color: var(--testo-tenue); }
-.traguardo { min-height: 36px; }
+.perche-aperto > summary::-webkit-details-marker { display: none; }
+.perche-aperto > summary::after { content: '›'; margin-left: 6px; transition: transform .15s ease; }
+.perche-aperto[open] > summary::after { transform: rotate(90deg); }
+.perche-aperto .perche { margin-top: 0; }
 
-/* "Aggiorna calendario" nella testata del Profilo: una pillola con la
-   scritta, perché il tondo senza parole non diceva cosa aggiornava. */
-.tasto-aggiorna {
-  appearance: none; font: inherit; cursor: pointer; position: relative;
-  min-height: 44px; padding: 0 14px; border-radius: 999px;
-  display: inline-flex; align-items: center; gap: 7px;
-  border: 1px solid var(--bordo); background: var(--superficie); color: var(--testo);
-  font-size: 14px; font-weight: 600; white-space: nowrap;
-}
-.tasto-aggiorna svg { color: var(--accento); }
-.tasto-aggiorna:disabled { opacity: .6; cursor: default; }
-.tasto-aggiorna .pallino { position: absolute; top: 4px; right: 6px; }
-@media (max-width: 359px) {
-  .tasto-aggiorna { padding: 0 11px; gap: 5px; font-size: 13px; }
-  .azioni-profilo { gap: 6px; }
-}
-
-/* "Annulla lo scambio" sotto un accordo: un collegamento, non un pulsante.
-   È l'uscita per quando UKG blocca il cambio, non il passo successivo, e un
-   pulsante pieno accanto a "Cambio inserito" invitava a toccarlo. */
-.link-annulla {
-  appearance: none; border: 0; background: none; font: inherit; cursor: pointer;
-  display: block; margin: 10px auto 0; min-height: 44px; padding: 0 8px;
-  font-size: 14px; color: var(--rosso); text-decoration: underline; text-underline-offset: 3px;
-}
+/* ------------------------------------------------------------- statistiche
+   L'oro è della priorità: le richieste pubblicate sono un conteggio. */
+.barra-mese.pubblicate { background: var(--accento); }
+.legenda-statistiche span { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; }
+.campione-barra { width: 10px; height: 12px; border-radius: 3px 3px 0 0; display: inline-block; }
+.campione-barra.pubblicate { background: var(--accento); }
+.campione-barra.chiuse { background: var(--testo-tenue); }
 
 /* Password dimenticata: chi l'ha chiesta si vede subito nella lista, e la
    password temporanea è grande, da leggere ad alta voce al banco. */
