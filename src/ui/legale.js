@@ -105,9 +105,11 @@ export function noteLegali({ compatte = false } = {}) {
         <li>quello che si legge qui non si usa altrove.</li>
       </ul>
       <p class="testo-tenue">
-        Chi gestisce il server può reimpostare la password di chi l'ha
-        dimenticata. È un potere sugli account altrui, quindi si usa su
-        richiesta della persona interessata e per nient'altro.
+        Chi ha dimenticato la password la chiede dall'app, e un admin del
+        negozio gliene dà una temporanea, di persona. È un potere sugli account
+        altrui, quindi l'app lo permette solo a chi l'ha chiesta, nelle 48 ore
+        dopo la richiesta; chi gestisce il server può farlo sempre, ma anche
+        lui solo su richiesta della persona interessata.
       </p>
 
       <h3>5. Responsabilità</h3>

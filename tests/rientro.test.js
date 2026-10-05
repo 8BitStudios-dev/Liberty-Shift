@@ -167,3 +167,72 @@ test('un omonimo vero, che l\'ha detto, può iscriversi', async () => {
   await store.iscriviECompleta({ ...ISCRIZIONE, omonimoConfermato: true });
   assert.equal(haCreatoAccount(chiamate), true, 'il controllo non lo ferma');
 });
+
+// --- password dimenticata ------------------------------------------------
+
+/** Un server che risponde solo a quello che serve qui, e registra le chiamate. */
+function serverPassword({ trovati = 1, reimposta = { ok: true, password: 'cambio-123456' }, loginOk = true } = {}) {
+  const chiamate = [];
+  globalThis.fetch = async (url, opz = {}) => {
+    const percorso = String(url);
+    chiamate.push({ percorso, corpo: opz.body ? JSON.parse(opz.body) : null, auth: opz.headers?.Authorization });
+    const risposta = (stato, dati) => ({ ok: stato < 300, status: stato, text: async () => JSON.stringify(dati) });
+    if (percorso.includes('/rpc/chiedi_nuova_password')) return risposta(200, trovati);
+    if (percorso.includes('/functions/v1/Amministrazione')) return risposta(reimposta.ok ? 200 : 403, reimposta);
+    if (percorso.includes('grant_type=password')) {
+      return loginOk
+        ? risposta(200, { access_token: 'tk', refresh_token: 'rf', user: { id: 'id-io' } })
+        : risposta(400, { error_description: 'Invalid login credentials' });
+    }
+    return risposta(404, {});
+  };
+  return chiamate;
+}
+
+test('chiedere una nuova password non serve essere entrati, e manda i nomi ripuliti', async () => {
+  store.reset();
+  const chiamate = serverPassword();
+  const r = await store.chiediNuovaPassword('  Màrco ', 'Casati');
+  assert.equal(r.ok, true);
+  const c = chiamate.find((x) => x.percorso.includes('chiedi_nuova_password'));
+  assert.deepEqual(c.corpo, { nome_slug: 'marco', cognome_slug: 'casati' });
+});
+
+test('una richiesta per un nome che non esiste lo dice', async () => {
+  store.reset();
+  serverPassword({ trovati: 0 });
+  const r = await store.chiediNuovaPassword('Nessuno', 'Qui');
+  assert.match(r.errore, /Non trovo nessun account/);
+});
+
+test('la password temporanea la decide il server, e la richiesta sparisce', async () => {
+  store.reset();
+  const collega = { id: 'id-collega', nome: 'Marco', cognomeIniziale: 'C', contratto: 'FT', daServer: true, preferenze: {}, disponibilita: {} };
+  store.state.users.push(collega);
+  store.state.richiestePassword = { 'id-collega': new Date().toISOString() };
+  const chiamate = serverPassword();
+  const r = await store.reimpostaPassword('id-collega');
+  assert.equal(r.password, 'cambio-123456');
+  const c = chiamate.find((x) => x.percorso.includes('Amministrazione'));
+  assert.deepEqual(c.corpo, { azione: 'reimposta-password', id: 'id-collega' });
+  assert.equal(store.richiestaPassword('id-collega'), null);
+});
+
+test('un rifiuto del server arriva a chi ha toccato il tasto', async () => {
+  store.reset();
+  store.state.users.push({ id: 'id-collega', nome: 'Marco', cognomeIniziale: 'C', contratto: 'FT', daServer: true });
+  serverPassword({ reimposta: { ok: false, errore: 'Questa persona non ha chiesto una nuova password: deve chiederla lei dall\'app.' } });
+  const r = await store.reimpostaPassword('id-collega');
+  assert.match(r.errore, /non ha chiesto/);
+});
+
+test('entrando con la password temporanea il telefono dimentica quella vecchia', async () => {
+  store.reset();
+  serverFinto({ candidati: DUE });
+  await store.accediConNome({ nome: 'Martina', cognome: 'Lovece', password: 'giusta' });
+  serverPassword();
+  const r = await store.entra('cambio-123456');
+  assert.equal(r.ok, true);
+  assert.ok(verificaPassword('cambio-123456', store.state.profilo.credenziali), 'senza rete deve valere la nuova');
+  assert.ok(!verificaPassword('giusta', store.state.profilo.credenziali), 'la vecchia non vale più');
+});

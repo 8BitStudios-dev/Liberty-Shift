@@ -616,10 +616,21 @@ Chi si iscrive con un nome già presente vede un avviso prima di compilare il
 resto (*Esiste già un account con questo nome*), con due strade: rientrare, o
 proseguire se è davvero un omonimo.
 
-**Password dimenticata**: la reimposta chi gestisce l'app, su richiesta della
-persona. Finché il server non c'è, però, l'unica strada resta "Ricomincia da
-capo" nella schermata di accesso, che cancella i dati di quel dispositivo — e la
-schermata lo dice, invece di promettere un aiuto che oggi nessuno può dare.
+**Password dimenticata**: dalla schermata di accesso (o da Rientra, con nome e
+cognome) si tocca *Ho dimenticato la password*. Sul server resta una richiesta
+(`richieste_password`), e gli admin la vedono in Profilo ▸ Amministrazione
+(*Password dimenticate · 1 da reimpostare*). L'admin tocca *Reimposta
+password*: il server genera una password temporanea (`cambio-` e sei cifre),
+l'app la mostra grande una volta sola, e l'admin la dice di persona. Chi la
+riceve entra e la cambia da Impostazioni; il telefono si allinea da solo, così
+senza rete vale la nuova e non la vecchia.
+
+Un admin può farlo solo per chi l'ha chiesto nelle ultime 48 ore, e a
+controllarlo è la funzione `Amministrazione`, non l'app. Il SuperAdmin può
+sempre. Non c'è un link via email perché gli account non hanno un'email vera:
+"Reset password" nella dashboard di Supabase manderebbe un messaggio a un
+indirizzo `.internal` che non esiste. Senza server resta solo "Ricomincia da
+capo".
 
 ### Il portachiavi fa il lavoro di Face ID
 Le tre schermate con una password (creazione, ingresso, cambio) sono **moduli

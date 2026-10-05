@@ -349,9 +349,36 @@ export function profilo() {
       <details class="riquadro">
         <summary><span>🛡️ Amministrazione</span></summary>
         ${me.admin ? '<button class="btn secondario largo" data-act="vai" data-to="#/statistiche">Statistiche</button>' : ''}
-        ${me.superAdmin ? '<button class="btn secondario largo" data-act="vai" data-to="#/iscritti">Gestisci iscritti</button>' : ''}
+        ${tastoIscritti(me)}
       </details>
     </section>` : '')}`;
+}
+
+/**
+ * Una richiesta di nuova password conta per 48 ore: la stessa finestra che
+ * controlla la funzione `Amministrazione`. Qui serve solo a non mostrare un
+ * tasto che il server poi rifiuterebbe.
+ */
+const ORE_RICHIESTA_PASSWORD = 48;
+export function richiestaValida(userId) {
+  const quando = store.richiestaPassword(userId);
+  return Boolean(quando) && Date.now() - Date.parse(quando) < ORE_RICHIESTA_PASSWORD * 3600_000;
+}
+
+/** Quante persone aspettano una password temporanea. */
+export function passwordDaReimpostare() {
+  return store.state.users.filter((u) => u.daServer && richiestaValida(u.id)).length;
+}
+
+/**
+ * Il tasto per gli iscritti, con quante password aspettano: è l'unico modo in
+ * cui un admin scopre che un collega l'ha chiesta.
+ */
+function tastoIscritti(me) {
+  const attese = passwordDaReimpostare();
+  const etichetta = me.superAdmin ? 'Gestisci iscritti' : 'Password dimenticate';
+  if (!me.superAdmin && !attese) return '';
+  return `<button class="btn secondario largo" data-act="vai" data-to="#/iscritti">${etichetta}${attese ? ` · ${attese} da reimpostare` : ''}</button>`;
 }
 
 /**

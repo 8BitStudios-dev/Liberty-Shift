@@ -1,4 +1,4 @@
-import { html, raw, on, toast, sheet, condividi } from './dom.js';
+import { html, raw, on, toast, sheet, condividi, esc } from './dom.js';
 import { store } from '../core/store.js';
 import * as V from './views.js';
 import * as F from './flows.js';
@@ -87,7 +87,7 @@ function apriGuida(chiave, { automatica = false } = {}) {
 }
 
 /** La porta: finché non si entra, non c'è nient'altro da vedere. */
-function schermataAccesso(errore = '') {
+function schermataAccesso(errore = '', avviso = '') {
   return html`
     <div class="accesso">
       <div class="accesso-logo" role="img" aria-label="Liberty Shift"></div>
@@ -100,14 +100,20 @@ function schermataAccesso(errore = '') {
           <input type="password" class="testo" data-campo="password"
                  placeholder="Password" autocomplete="current-password" autofocus>
         </label>
-        ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : errore}</p>` : '')}
+        ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : esc(errore)}</p>` : '')}
+        ${raw(avviso ? `<p class="avviso-box">${esc(avviso)}</p>` : '')}
         <button type="submit" class="btn primario largo" data-act="entra">Entra</button>
       </form>
-      <p class="testo-tenue accesso-nota">
-        Password dimenticata? Chiedi a chi gestisce l'app di reimpostarla.
-        Finché il server non è collegato l'unica strada è ricominciare da capo,
-        e i turni di questo dispositivo vanno persi.
-      </p>
+      ${raw(store.state.profilo?.identificativo ? `
+        <button class="link-btn" data-act="password-dimenticata">Ho dimenticato la password</button>
+        <p class="testo-tenue accesso-nota">
+          Un admin del negozio ti darà una password temporanea: entri con quella
+          e la cambi da Impostazioni.
+        </p>` : `
+        <p class="testo-tenue accesso-nota">
+          Password dimenticata? Senza il server collegato l'unica strada è
+          ricominciare da capo, e i turni di questo dispositivo vanno persi.
+        </p>`)}
       <button class="link-btn" data-act="ricomincia">Ricomincia da capo</button>
     </div>`;
 }
@@ -335,6 +341,36 @@ const AZIONI = {
     app.innerHTML = schermataAccesso(esito.errore);
     app.querySelector('[data-campo="password"]')?.focus();
   },
+  // Dalla porta: il telefono sa già chi sei, basta un tocco.
+  'password-dimenticata': async () => {
+    const me = store.me;
+    const esito = await store.chiediNuovaPassword(me?.nome, me?.cognome);
+    app.innerHTML = esito.errore
+      ? schermataAccesso(esito.errore)
+      : schermataAccesso('', 'Richiesta inviata. Chiedi a un admin del negozio la password temporanea, poi entra qui con quella.');
+  },
+
+  // Dal rientro: nome e cognome li hai appena scritti.
+  'password-dimenticata-rientro': async () => {
+    const b = P.bozzaProfilo;
+    const nome = app.querySelector('[data-campo="nome"]')?.value || b.nome;
+    const cognome = app.querySelector('[data-campo="cognome"]')?.value || b.cognome;
+    Object.assign(b, { nome, cognome });
+    const esito = await store.chiediNuovaPassword(nome, cognome);
+    b.errori = esito.errore ? [esito.errore] : [];
+    b.avviso = esito.errore ? '' : 'Richiesta inviata. Chiedi a un admin del negozio la password temporanea, poi entra qui con quella.';
+    render();
+  },
+
+  'reimposta-password': async (_, el) => {
+    const u = store.user(el.dataset.id);
+    if (!confirm(`Creare una password temporanea per ${u?.nome}? Quella di adesso smette di funzionare.`)) return;
+    const esito = await store.reimpostaPassword(el.dataset.id);
+    if (esito.errore) return toast(esito.errore);
+    render();
+    sheet('Password temporanea', F.passwordTemporanea(u, esito.password));
+  },
+
   esci: () => {
     if (!confirm('Uscire? Per rientrare serve la tua password.')) return;
     store.esci();

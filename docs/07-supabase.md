@@ -281,9 +281,15 @@ rete. La password che conta all'ingresso è quella dell'account, quindi
 cambiarne solo l'impronta locale lasciava la persona con la password nuova
 rifiutata e la vecchia ancora valida.
 
-Password dimenticata: *Authentication ▸ Users ▸* la persona *▸ Reset password*.
-È un potere sugli account altrui, e le note d'uso dicono già il limite — si usa
-su richiesta dell'interessato e per nient'altro.
+Password dimenticata: **non** da *Authentication ▸ Users ▸ Reset password*,
+che manda un'email a un indirizzo `.internal` dove non arriva niente. La
+persona la chiede dall'app (`chiedi_nuova_password`, senza sessione, scrive in
+`richieste_password`), e un admin la reimposta dall'app: la funzione
+`Amministrazione`, azione `reimposta-password`, genera una password
+temporanea e la imposta con la chiave `service_role`. Un admin può farlo solo
+se la richiesta ha meno di 48 ore, il SuperAdmin sempre; la richiesta si
+cancella appena usata. `richieste_password` la leggono solo admin e
+SuperAdmin.
 
 ## Il collaudo, fatto contro il server vero
 

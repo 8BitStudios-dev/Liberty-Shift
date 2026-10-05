@@ -146,6 +146,10 @@ function traduci(stato, corpo) {
   const grezzo = corpo?.errore || corpo?.message || corpo?.error_description
     || corpo?.msg || corpo?.hint || '';
   if (stato === 400 && /invalid login/i.test(grezzo)) return 'Password sbagliata.';
+  // Un rifiuto scritto dalle nostre funzioni (`errore`) dice già il motivo
+  // vero, anche con 401 o 403: coprirlo con "non hai accesso" faceva leggere
+  // a un admin un permesso mancante invece di "non l'ha chiesta".
+  if (corpo?.errore) return corpo.errore;
   // Gli errori sollevati dalle nostre funzioni nel database arrivano col loro
   // SQLSTATE e un messaggio già scritto in italiano: quella è la spiegazione
   // giusta, e coprirla con una frase generica manda a cercare un guasto che
@@ -370,5 +374,19 @@ export async function amministra(azione, id) {
   });
   if (r.errore) return { errore: r.errore };
   if (!r.dati?.ok) return { errore: r.dati?.errore || 'Risposta vuota dal server.' };
-  return { errore: null };
+  return { errore: null, dati: r.dati };
+}
+
+/**
+ * "Ho dimenticato la password": lascia sul server la richiesta che permette a
+ * un admin di generarne una temporanea. Senza sessione, come la ricerca
+ * dell'account: è proprio la password che manca. Restituisce quanti account
+ * corrispondono a nome e cognome (zero: nessuno con quel nome).
+ */
+export async function chiediNuovaPassword(nome, cognome) {
+  const r = await funzione('chiedi_nuova_password', {
+    nome_slug: slug(nome), cognome_slug: slug(cognome),
+  }, { autenticata: false });
+  if (r.errore) return { errore: r.errore };
+  return { errore: null, trovati: Number(r.dati) || 0 };
 }

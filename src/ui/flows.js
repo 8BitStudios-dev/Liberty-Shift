@@ -16,7 +16,7 @@ import {
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo,
 } from './components.js';
 import { icona } from './icone.js';
-import { primaLePrioritarie } from './views.js';
+import { primaLePrioritarie, richiestaValida } from './views.js';
 
 export const draft = {
   tipo: null,
@@ -928,25 +928,40 @@ export function statistiche() {
  * compare: non esiste su Supabase, non c'è niente da promuovere o
  * disattivare.
  */
+/**
+ * Gli iscritti. Il SuperAdmin gestisce tutto: admin, profili attivi e
+ * password. Gli altri admin vedono la lista per una cosa sola, la password
+ * di chi l'ha chiesta: il tasto compare solo lì, e anche se comparisse
+ * altrove il server lo rifiuterebbe.
+ */
 export function gestioneIscritti() {
-  if (!store.me.superAdmin) return vuoto('Sezione riservata', 'Solo il SuperAdmin può gestire gli iscritti.');
+  const io = store.me;
+  if (!io.superAdmin && !io.admin) return vuoto('Sezione riservata', 'Solo gli admin possono vederla.');
+  const superAdmin = Boolean(io.superAdmin);
 
   const me = store.state.currentUserId;
   const iscritti = store.state.users
     .filter((u) => u.daServer && u.id !== me)
-    .sort((a, b) => nomeUtente(a).localeCompare(nomeUtente(b)));
+    // Un admin qui ha una cosa sola da fare: vede solo chi aspetta una password.
+    .filter((u) => superAdmin || richiestaValida(u.id))
+    // In cima chi aspetta una password: è l'unica cosa che ha fretta.
+    .sort((a, b) => (richiestaValida(b.id) - richiestaValida(a.id)) || nomeUtente(a).localeCompare(nomeUtente(b)));
   const numeroAdmin = iscritti.filter((u) => u.admin).length;
+
+  const tastoPassword = (u) => (superAdmin || richiestaValida(u.id)
+    ? `<button class="btn ${richiestaValida(u.id) ? 'primario' : 'secondario'}" data-act="reimposta-password" data-id="${u.id}">Reimposta password</button>`
+    : '');
 
   return html`
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
-      <h1>Gestisci iscritti</h1>
+      <h1>${superAdmin ? 'Gestisci iscritti' : 'Iscritti'}</h1>
     </header>
-    ${raw(iscritti.length ? '' : vuoto(
-    'Ancora nessuno',
-    'I colleghi compariranno qui non appena si saranno iscritti con il codice del negozio.',
-  ))}
-    ${raw(iscritti.length ? html`
+    ${raw(iscritti.length ? '' : (superAdmin
+    ? vuoto('Ancora nessuno', 'I colleghi compariranno qui non appena si saranno iscritti con il codice del negozio.')
+    : vuoto('Nessuna richiesta', 'Quando un collega chiede una nuova password dall\'app, compare qui per 48 ore.')))}
+    ${raw(!superAdmin && iscritti.length ? '<p class="testo-tenue">Puoi reimpostare la password solo a chi l\'ha chiesta dall\'app nelle ultime 48 ore. Dagliela di persona.</p>' : '')}
+    ${raw(superAdmin && iscritti.length ? html`
       <p class="occhiello">${iscritti.length} iscritti, ${numeroAdmin} admin.</p>
       <label class="campo">
         <input type="search" class="testo" data-campo="cerca-iscritto"
@@ -966,14 +981,33 @@ export function gestioneIscritti() {
             </div>
           </div>
         </header>
+        ${raw(richiestaValida(u.id) ? '<p class="tag-password">Ha chiesto una nuova password</p>' : '')}
         <div class="barra-azioni">
-          ${raw(u.admin
+          ${raw(superAdmin ? (u.admin
     ? `<button class="btn secondario" data-act="retrocedi-admin" data-id="${u.id}">Togli admin</button>`
-    : `<button class="btn secondario" data-act="promuovi-admin" data-id="${u.id}">Rendi admin</button>`)}
-          ${raw(u.attivo
+    : `<button class="btn secondario" data-act="promuovi-admin" data-id="${u.id}">Rendi admin</button>`) : '')}
+          ${raw(superAdmin ? (u.attivo
     ? `<button class="btn pericolo" data-act="disattiva-profilo" data-id="${u.id}">Disattiva</button>`
-    : `<button class="btn primario" data-act="riattiva-profilo" data-id="${u.id}">Riattiva</button>`)}
+    : `<button class="btn primario" data-act="riattiva-profilo" data-id="${u.id}">Riattiva</button>`) : '')}
+          ${raw(tastoPassword(u))}
         </div>
       </article>`).join(''))}
     </div>`;
+}
+
+/**
+ * La password temporanea appena creata, grande, da dire a voce.
+ *
+ * Non si manda per messaggio di proposito: chi la riceve deve essere davvero
+ * la persona che l'ha chiesta, e al banco lo si vede.
+ */
+export function passwordTemporanea(u, password) {
+  return html`
+    <p>La nuova password di <strong>${nomeUtente(u)}</strong>:</p>
+    <p class="password-temporanea">${password}</p>
+    <p class="testo-tenue">
+      Dilla di persona, non per messaggio. ${u?.nome} entra con questa e la cambia
+      subito da Impostazioni ▸ Cambia password. Chiudendo questo foglio non la
+      rivedi più.
+    </p>`;
 }

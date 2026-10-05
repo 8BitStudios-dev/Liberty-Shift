@@ -1134,3 +1134,14 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   display: block; margin: 10px auto 0; min-height: 44px; padding: 0 8px;
   font-size: 14px; color: var(--rosso); text-decoration: underline; text-underline-offset: 3px;
 }
+
+/* Password dimenticata: chi l'ha chiesta si vede subito nella lista, e la
+   password temporanea è grande, da leggere ad alta voce al banco. */
+.tag-password {
+  margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--giallo);
+}
+.password-temporanea {
+  margin: 12px 0; padding: 16px; border-radius: 12px; text-align: center;
+  font: 700 26px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em;
+  background: var(--superficie); border: 1px dashed var(--bordo); user-select: all;
+}

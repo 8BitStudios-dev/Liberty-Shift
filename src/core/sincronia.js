@@ -373,7 +373,7 @@ async function svuota(state) {
 export async function scarica(state) {
   if (!collegato()) return { saltato: true };
 
-  const [profili, richieste, proposte, ringraziamenti, disponibilita, notifiche, traguardi] = await Promise.all([
+  const [profili, richieste, proposte, ringraziamenti, disponibilita, notifiche, traguardi, password] = await Promise.all([
     seleziona('profili'),
     seleziona('richieste', { ordine: 'creata_il.desc' }),
     seleziona('proposte'),
@@ -384,6 +384,9 @@ export async function scarica(state) {
     // Come sopra, solo la propria. Se la tabella non c'è ancora (schema non
     // rilanciato) l'errore resta qui e non ferma il resto.
     seleziona('traguardi_visti'),
+    // Solo per gli admin (la policy agli altri non dà righe): chi ha chiesto
+    // una nuova password.
+    seleziona('richieste_password'),
   ]);
 
   const rifiuto = [profili, richieste, proposte, ringraziamenti, disponibilita]
@@ -416,6 +419,12 @@ export async function scarica(state) {
       modo: mia.modo,
       consensoIl: mia.consenso_il || null,
     };
+  }
+
+  if (!password.errore) {
+    state.richiestePassword = Object.fromEntries(
+      (password.dati || []).map((r) => [localeDi(state, r.user_id), r.chiesta_il]),
+    );
   }
 
   // Vince il più alto: un traguardo annunciato su un telefono non deve

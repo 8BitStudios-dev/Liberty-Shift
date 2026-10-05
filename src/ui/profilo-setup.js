@@ -419,12 +419,17 @@ function schermataAccedi() {
 
       <p class="testo-tenue">
         Entrando confermi di aver letto le note d'uso, che hai già accettato
-        iscrivendoti. Password dimenticata? Chiedi a chi gestisce l'app di
-        reimpostarla.
+        iscrivendoti.
       </p>
+      ${raw(b.avviso ? `<p class="avviso-box">${b.avviso}</p>` : '')}
 
       <button type="submit" class="btn primario largo" data-act="accedi-account">Entra</button>
-    </form>`;
+    </form>
+    <button class="link-btn" data-act="password-dimenticata-rientro">Ho dimenticato la password</button>
+    <p class="testo-tenue">
+      Un admin del negozio ti darà una password temporanea: entri con quella e
+      la cambi da Impostazioni.
+    </p>`;
 }
 
 function passoNote() {

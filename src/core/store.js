@@ -10,7 +10,7 @@ import { monthKey, todayISO, addDays, formatDay, appleWeekKey } from './time.js'
 import { serverConfigurato } from './config.js';
 import {
   accedi, registra, iscrivi, identificativoInterno, idUtenteServer, esciDalServer, collegato,
-  scaricaCalendario, cambiaPasswordServer, amministra, candidatiAccesso, seleziona,
+  scaricaCalendario, cambiaPasswordServer, amministra, candidatiAccesso, seleziona, chiediNuovaPassword,
 } from './supabase.js';
 import { parseICS } from './ics.js';
 import { daRiempire, rotazioneVuota } from './rotazione.js';
@@ -955,6 +955,14 @@ export const store = {
     }
 
     const r = await accedi(identificativo, password);
+    if (!r.errore && !localeOk) {
+      // Il server l'ha accettata ma il telefono ricordava un'altra password:
+      // è quella temporanea data da un admin, o una cambiata da un altro
+      // dispositivo. Il telefono si allinea, altrimenti senza rete la password
+      // giusta verrebbe rifiutata e quella vecchia continuerebbe a valere.
+      this.state.profilo.credenziali = creaCredenziali(password);
+      this.commit();
+    }
     if (r.errore) {
       // La rete che manca non è una password sbagliata: distinguerle è la
       // differenza fra "riprova più tardi" e "hai sbagliato a scrivere".
@@ -971,6 +979,38 @@ export const store = {
   esci() {
     chiudiSessione();
     esciDalServer();
+  },
+
+  /** "Ho dimenticato la password": vedi `chiediNuovaPassword` in supabase.js. */
+  async chiediNuovaPassword(nome, cognome) {
+    if (!serverConfigurato()) return { errore: 'Senza il server non c\'è nessuno a cui chiederla.' };
+    if (!(nome || '').trim() || !(cognome || '').trim()) {
+      return { errore: 'Scrivi nome e cognome come li hai usati per iscriverti.' };
+    }
+    const r = await chiediNuovaPassword(nome, cognome);
+    if (r.errore) return { errore: r.errore };
+    if (!r.trovati) return { errore: 'Non trovo nessun account con questo nome e cognome.' };
+    return { ok: true };
+  },
+
+  /**
+   * Una password temporanea per un collega che l'ha chiesta. Decide il
+   * server se si può (admin solo con la richiesta, SuperAdmin sempre): qui
+   * si mostra soltanto il risultato.
+   */
+  async reimpostaPassword(userId) {
+    const u = this.user(userId);
+    if (!u) return { errore: 'Persona non trovata.' };
+    const { errore, dati } = await amministra('reimposta-password', serverDi(this.state, u.id));
+    if (errore) return { errore };
+    if (this.state.richiestePassword) delete this.state.richiestePassword[u.id];
+    this.commit();
+    return { password: dati.password };
+  },
+
+  /** Chi ha chiesto una nuova password e quando (solo per gli admin). */
+  richiestaPassword(userId) {
+    return this.state.richiestePassword?.[userId] || null;
   },
 
   /**

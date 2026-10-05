@@ -158,7 +158,8 @@ Le tre strade che l'admin ha, in ordine di comodità:
 
 | Strada | Cosa serve |
 |---|---|
-| Dashboard Supabase → Authentication → Users → *Reset password* | accesso al progetto |
+| Dall'app, *Reimposta password* (admin solo su richiesta della persona, SuperAdmin sempre) | funzione `Amministrazione` |
+| Dashboard Supabase → Authentication → Users → *Reset password* | **non funziona**: manda un'email a un indirizzo `.internal` |
 | `auth.admin.updateUserById(id, { password })` | chiave `service_role`, **mai** nel browser |
 | `auth.admin.generateLink({ type: 'recovery' })` | idem, e serve un modo per far arrivare il link |
 

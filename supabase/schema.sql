@@ -933,3 +933,54 @@ create policy "ognuno vede solo i propri traguardi"
   on public.traguardi_visti for all to authenticated
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+
+-- ================================================== password dimenticata
+--
+-- Gli account non hanno un'email vera, quindi niente link di recupero: la
+-- password temporanea la genera un admin (funzione `Amministrazione`) e la
+-- dice a voce. Ma un admin non deve poter entrare nell'account di chiunque:
+-- può farlo solo per chi l'ha chiesto, nelle ultime 48 ore. Il SuperAdmin
+-- sempre. La regola la controlla la funzione, non l'app.
+--
+-- La richiesta si fa senza essere entrati (è proprio quello che manca), con
+-- nome e cognome ripuliti come in `candidati_accesso`. Con due omonimi la
+-- ricevono entrambi: l'admin parla con la persona, e sa a chi la sta dando.
+-- Chiedere per qualcun altro non apre niente: la password nuova la dà un
+-- admin, di persona.
+create table if not exists public.richieste_password (
+  user_id    uuid primary key references public.profili(id) on delete cascade,
+  chiesta_il timestamptz not null default now()
+);
+
+alter table public.richieste_password enable row level security;
+
+drop policy if exists "chi ha chiesto una nuova password lo vedono gli admin" on public.richieste_password;
+create policy "chi ha chiesto una nuova password lo vedono gli admin"
+  on public.richieste_password for select to authenticated
+  using (public.e_admin() or exists (
+    select 1 from public.profili p where p.id = (select auth.uid()) and p.super_admin and p.attivo
+  ));
+
+create or replace function public.chiedi_nuova_password(nome_slug text, cognome_slug text)
+returns integer
+language plpgsql security definer set search_path = '' as $$
+declare
+  quanti integer;
+begin
+  if nome_slug !~ '^[a-z0-9-]{1,40}$' or cognome_slug !~ '^[a-z0-9-]{1,60}$' then
+    return 0;
+  end if;
+  insert into public.richieste_password (user_id, chiesta_il)
+  select p.id, now()
+  from auth.users u
+  join public.profili p on p.id = u.id
+  where p.attivo
+    and u.email like nome_slug || '.' || cognome_slug || '.%@liberty-shift.internal'
+  limit 5
+  on conflict (user_id) do update set chiesta_il = excluded.chiesta_il;
+  get diagnostics quanti = row_count;
+  return quanti;
+end $$;
+
+revoke all on function public.chiedi_nuova_password(text, text) from public;
+grant execute on function public.chiedi_nuova_password(text, text) to anon, authenticated;
