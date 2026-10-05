@@ -202,13 +202,24 @@ function render() {
  * lasciarli fuori in silenzio farebbe credere che il calendario sia
  * aggiornato quando su quei giorni non lo è.
  */
-function riassuntoImport({ aggiunti = 0, aggiornati = 0, bloccati = [] }) {
-  const base = `${aggiunti} turni aggiunti, ${aggiornati} aggiornati`;
-  if (!bloccati.length) return base;
-  const giorni = bloccati.map((d) => formatDay(d)).join(', ');
-  return bloccati.length === 1
-    ? `${base}. ${giorni} è in una richiesta aperta: non l'ho toccato`
-    : `${base}. ${giorni} sono in richieste aperte: non li ho toccati`;
+function riassuntoImport({ aggiunti = 0, cambiati = [], bloccati = [] }) {
+  // Si dice cosa è cambiato, non quante righe sono state lette: chi tocca
+  // "Aggiorna calendario" vuole sapere se il suo turno di domani è diverso.
+  const giorni = (lista) => lista.map((d) => formatDay(d).toLowerCase()).join(', ');
+  const parti = [];
+  if (cambiati.length === 1) parti.push(`Cambiato il turno di ${giorni(cambiati)}`);
+  else if (cambiati.length > 1 && cambiati.length <= 3) parti.push(`Cambiati i turni di ${giorni(cambiati)}`);
+  else if (cambiati.length > 3) parti.push(`Cambiati ${cambiati.length} turni`);
+  if (aggiunti === 1) parti.push('aggiunto un turno nuovo');
+  else if (aggiunti > 1) parti.push(`aggiunti ${aggiunti} turni nuovi`);
+  const fermi = bloccati.map((d) => formatDay(d)).join(', ');
+  const nota = bloccati.length === 1
+    ? `${fermi} è cambiato nel calendario, ma è in una tua richiesta aperta: l'ho lasciato com'era`
+    : `${fermi} sono cambiati nel calendario, ma sono in tue richieste aperte: li ho lasciati com'erano`;
+  if (!parti.length) return bloccati.length ? nota : 'Calendario già aggiornato, nessun turno cambiato';
+  const testo = parti.join(' e ');
+  const frase = testo.charAt(0).toUpperCase() + testo.slice(1);
+  return bloccati.length ? `${frase}. ${nota}` : frase;
 }
 
 /**

@@ -451,3 +451,16 @@ test('uno scambio già segnato a mano si conferma senza riannunciarlo', () => {
   assert.deepEqual(esito.scambiChiusi, [], 'era già chiuso: niente avviso né grazie');
   assert.equal(store.giorniInCorso(undefined, '2026-10-04').has('2026-10-20'), false, 'dopo: il giallo se ne va');
 });
+
+// --- "55 aggiornati" a chi non aveva nessun cambio ----------------------
+
+test('un turno riscritto identico non conta come aggiornato', () => {
+  store.reset(seed());
+  const me = store.state.currentUserId;
+  const miei = store.state.shifts.filter((s) => s.userId === me).slice(0, 5);
+  const uguali = miei.map((s) => ({ data: s.data, tipo: s.tipo, start: s.start, end: s.end }));
+  uguali[0] = { ...uguali[0], tipo: 'WORK', start: '06:30', end: '12:00' };
+  const esito = store.importaTurni(uguali);
+  assert.equal(esito.aggiornati, 1);
+  assert.deepEqual(esito.cambiati, [miei[0].data]);
+});

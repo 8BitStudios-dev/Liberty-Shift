@@ -338,7 +338,6 @@ export const store = {
    * cancellare giorni che il calendario non nomina.
    */
   importaTurni(turni, { userId = this.state.currentUserId } = {}) {
-    let aggiornati = 0;
     let aggiunti = 0;
     // I turni già messi sul piatto in una richiesta aperta non si toccano.
     // Il calendario si riscarica da solo ogni sei ore, e senza questo freno
@@ -365,7 +364,6 @@ export const store = {
           cambiati.add(t.data);
         }
         Object.assign(esistente, { tipo: t.tipo, start: t.start, end: t.end });
-        aggiornati += 1;
       } else {
         this.state.shifts.push({
           id: newId('sh'), userId, data: t.data, tipo: t.tipo, start: t.start, end: t.end,
@@ -375,7 +373,11 @@ export const store = {
     }
     const scambiChiusi = userId === this.state.currentUserId ? this.chiudiScambiApprovati(cambiati) : [];
     this.commit();
-    return { aggiunti, aggiornati, bloccati, scambiChiusi };
+    // "Aggiornati" sono solo i turni cambiati davvero: contare anche quelli
+    // riscritti identici diceva "55 aggiornati" a chi non aveva nessun cambio.
+    return {
+      aggiunti, aggiornati: cambiati.size, cambiati: [...cambiati].sort(), bloccati, scambiChiusi,
+    };
   },
 
   /**
