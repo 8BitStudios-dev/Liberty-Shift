@@ -965,20 +965,49 @@ create or replace function public.chiedi_nuova_password(nome_slug text, cognome_
 returns integer
 language plpgsql security definer set search_path = '' as $$
 declare
-  quanti integer;
+  quanti  integer := 0;
+  avvisa  uuid[] := '{}';
+  segreto text;
+  r       record;
 begin
   if nome_slug !~ '^[a-z0-9-]{1,40}$' or cognome_slug !~ '^[a-z0-9-]{1,60}$' then
     return 0;
   end if;
-  insert into public.richieste_password (user_id, chiesta_il)
-  select p.id, now()
-  from auth.users u
-  join public.profili p on p.id = u.id
-  where p.attivo
-    and u.email like nome_slug || '.' || cognome_slug || '.%@liberty-shift.internal'
-  limit 5
-  on conflict (user_id) do update set chiesta_il = excluded.chiesta_il;
-  get diagnostics quanti = row_count;
+  for r in
+    select p.id, rp.chiesta_il as prima
+    from auth.users u
+    join public.profili p on p.id = u.id
+    left join public.richieste_password rp on rp.user_id = p.id
+    where p.attivo
+      and u.email like nome_slug || '.' || cognome_slug || '.%@liberty-shift.internal'
+    limit 5
+  loop
+    insert into public.richieste_password (user_id, chiesta_il) values (r.id, now())
+    on conflict (user_id) do update set chiesta_il = excluded.chiesta_il;
+    quanti := quanti + 1;
+    -- Gli admin si avvisano al massimo una volta l'ora per persona: la
+    -- richiesta si fa senza sessione, e ripeterla non deve far suonare i loro
+    -- telefoni a ripetizione.
+    if r.prima is null or r.prima < now() - interval '1 hour' then
+      avvisa := avvisa || r.id;
+    end if;
+  end loop;
+
+  if cardinality(avvisa) > 0 then
+    select decrypted_secret into segreto from vault.decrypted_secrets where name = 'push_webhook';
+    if segreto is not null then
+      begin
+        perform net.http_post(
+          url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
+          body := jsonb_build_object('type', 'PASSWORD', 'utenti', to_jsonb(avvisa)),
+          headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+        );
+      exception when others then
+        -- La richiesta resta valida anche se l'avviso non parte.
+        raise warning 'chiedi_nuova_password: %', sqlerrm;
+      end;
+    end if;
+  end if;
   return quanti;
 end $$;
 

@@ -12,7 +12,7 @@ import { stripTypeScriptTypes } from 'node:module';
 
 const sorgente = await readFile(new URL('../supabase/functions/send-push/index.ts', import.meta.url), 'utf8');
 const pezzo = sorgente.slice(sorgente.indexOf('const formatData'), sorgente.indexOf('const json ='));
-const codice = `${stripTypeScriptTypes(pezzo)}\nreturn { messaggio, quando };`;
+const codice = `${stripTypeScriptTypes(pezzo)}\nreturn { messaggio, quando, messaggioPassword };`;
 
 /** Una `Date` che alla chiamata senza argomenti risponde sempre `adesso`. */
 function dateFinta(adesso) {
@@ -20,7 +20,7 @@ function dateFinta(adesso) {
     constructor(...args) { super(...(args.length ? args : [adesso])); }
   };
 }
-const { messaggio, quando } = new Function('Date', codice)(dateFinta('2026-10-04T10:00:00Z'));
+const { messaggio, quando, messaggioPassword } = new Function('Date', codice)(dateFinta('2026-10-04T10:00:00Z'));
 
 const MARTINA = 'id-martina';
 const OMAR = 'id-omar';
@@ -132,4 +132,12 @@ test('uno scambio annullato dopo l\'accordo arriva all\'altra parte come "annull
   assert.equal(messaggio('UPDATE', annullata, vecchia, MARTINA, nomi, {}).a, OMAR);
   // Un terzo (un admin, la pulizia) non è un annullamento fra le parti.
   assert.equal(messaggio('UPDATE', annullata, vecchia, 'id-terzo', nomi, {}), null);
+});
+
+test('agli admin arriva chi ha dimenticato la password, per nome', () => {
+  const uno = messaggioPassword(['Marco C.']);
+  assert.equal(uno.title, 'Password dimenticata');
+  assert.match(uno.body, /^Marco C\. ha chiesto una nuova password/);
+  assert.match(uno.body, /di persona/);
+  assert.match(messaggioPassword(['Marco C.', 'Marco R.']).body, /Marco C\. e Marco R\. hanno chiesto/);
 });

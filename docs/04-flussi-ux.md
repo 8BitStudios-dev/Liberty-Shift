@@ -618,7 +618,10 @@ proseguire se è davvero un omonimo.
 
 **Password dimenticata**: dalla schermata di accesso (o da Rientra, con nome e
 cognome) si tocca *Ho dimenticato la password*. Sul server resta una richiesta
-(`richieste_password`), e gli admin la vedono in Profilo ▸ Amministrazione
+(`richieste_password`), agli admin arriva la notifica *Password dimenticata*
+con il nome di chi l'ha chiesta (al massimo una volta l'ora per persona: la
+richiesta si fa senza essere entrati, e ripeterla non deve far suonare i loro
+telefoni a ripetizione), e la trovano in Profilo ▸ Amministrazione
 (*Password dimenticate · 1 da reimpostare*). L'admin tocca *Reimposta
 password*: il server genera una password temporanea (`cambio-` e sei cifre),
 l'app la mostra grande una volta sola, e l'admin la dice di persona. Chi la

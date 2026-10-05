@@ -289,7 +289,9 @@ persona la chiede dall'app (`chiedi_nuova_password`, senza sessione, scrive in
 temporanea e la imposta con la chiave `service_role`. Un admin può farlo solo
 se la richiesta ha meno di 48 ore, il SuperAdmin sempre; la richiesta si
 cancella appena usata. `richieste_password` la leggono solo admin e
-SuperAdmin.
+SuperAdmin. Alla richiesta `chiedi_nuova_password` chiama `send-push` con
+`type: PASSWORD`, che avvisa tutti gli admin attivi e il SuperAdmin (non chi
+l'ha chiesta, se è admin anche lui); per persona, al più una volta l'ora.
 
 ## Il collaudo, fatto contro il server vero
 

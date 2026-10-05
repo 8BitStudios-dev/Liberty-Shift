@@ -189,6 +189,19 @@ function messaggio(
 }
 
 /**
+ * Chi ha dimenticato la password l'ha chiesta dall'app: lo sanno gli admin,
+ * che sono gli unici a poterne dare una temporanea. Nominato per nome, perché
+ * la password va data di persona e l'admin deve sapere a chi.
+ */
+function messaggioPassword(nomiRichiedenti: string[]) {
+  const chi = nomiRichiedenti.join(' e ');
+  return {
+    title: 'Password dimenticata',
+    body: `${chi} ${nomiRichiedenti.length === 1 ? 'ha' : 'hanno'} chiesto una nuova password: puoi dargliela di persona da Profilo, Amministrazione.`,
+  };
+}
+
+/**
  * Manda una notifica a tutti i dispositivi di una persona.
  *
  * L'indirizzo è relativo: il service worker lo risolve sul proprio scope,
@@ -312,7 +325,20 @@ Deno.serve(async (req) => {
   if (!s) return json({ errore: 'Segreti delle notifiche non configurati.' }, 500);
   if (req.headers.get('x-webhook-secret') !== s.push_webhook) return json({ errore: 'non autorizzato' }, 401);
 
-  const { type, record, old_record, autore, destinatario, giorno } = await req.json();
+  const { type, record, old_record, autore, destinatario, giorno, utenti } = await req.json();
+  if (type === 'PASSWORD') {
+    if (!Array.isArray(utenti) || !utenti.length) return json({ inviate: 0, motivo: 'nessuno da nominare' });
+    const richiedenti = await leggi(`profili?id=in.(${utenti.join(',')})&select=id,nome,cognome_iniziale`);
+    if (!richiedenti.length) return json({ inviate: 0, motivo: 'profili non trovati' });
+    const admin = await leggi('profili?attivo=eq.true&or=(admin.eq.true,super_admin.eq.true)&select=id');
+    const { title, body } = messaggioPassword(richiedenti.map((p: { nome: string; cognome_iniziale: string }) => nomeBreve(p)));
+    let inviate = 0;
+    // Un admin che ha dimenticato la sua non si avvisa da solo.
+    for (const a of admin.filter((x: { id: string }) => !utenti.includes(x.id))) {
+      inviate += (await invia(a.id, { title, body, url: '#/iscritti' })).inviate;
+    }
+    return json({ inviate, admin: admin.length });
+  }
   if (type === 'RICHIESTA') {
     if (!record?.autore_id || !record?.cedo_data) return json({ notificati: [], motivo: 'riga incompleta' });
     return json(await avvisaCompatibili(record));
