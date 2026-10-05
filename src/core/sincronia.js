@@ -97,6 +97,7 @@ function propostaDaRiga(state, p) {
     accettataDa: (p.accettata_da || []).map((id) => localeDi(state, id)),
     status: p.stato,
     motivoRifiuto: p.motivo_rifiuto || '',
+    annullataIl: p.annullata_il || null,
     cambioInserito: Boolean(p.cambio_inserito),
     createdAt: p.creata_il,
     turnoOfferto: { data: p.turno_data, start: ora(p.turno_start), end: ora(p.turno_end) },

@@ -461,6 +461,13 @@ Nel trigger la cancellazione si riconosce come `tg_op not in ('INSERT',
 'UPDATE')` invece che col suo nome: scritto così passa anche dal connettore
 Supabase, che sulla parola si blocca.
 
+## Uno scambio annullato dopo l'accordo
+Quando UKG blocca un cambio già concordato, una delle due parti lo annulla
+dall'app: la proposta passa da `ACCORDO` a `RIFIUTATA` con `annullata_il`
+valorizzato. La colonna è quello che distingue un annullamento da un rifiuto:
+`send-push` scrive "Scambio annullato" all'altra parte (chiunque dei due abbia
+annullato), non "Proposta rifiutata" a chi l'aveva fatta.
+
 ## La pulizia, il promemoria e gli accordi
 
 **Chi vede una richiesta con un accordo.** La policy di lettura su `richieste`

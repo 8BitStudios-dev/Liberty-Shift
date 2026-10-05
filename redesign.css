@@ -1125,3 +1125,12 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   .tasto-aggiorna { padding: 0 11px; gap: 5px; font-size: 13px; }
   .azioni-profilo { gap: 6px; }
 }
+
+/* "Annulla lo scambio" sotto un accordo: un collegamento, non un pulsante.
+   È l'uscita per quando UKG blocca il cambio, non il passo successivo, e un
+   pulsante pieno accanto a "Cambio inserito" invitava a toccarlo. */
+.link-annulla {
+  appearance: none; border: 0; background: none; font: inherit; cursor: pointer;
+  display: block; margin: 10px auto 0; min-height: 44px; padding: 0 8px;
+  font-size: 14px; color: var(--rosso); text-decoration: underline; text-underline-offset: 3px;
+}

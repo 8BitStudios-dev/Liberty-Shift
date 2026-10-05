@@ -117,3 +117,19 @@ test('una proposta ritirata da chi l\'ha fatta lo dice a chi l\'aveva ricevuta',
   assert.equal(messaggio('DELETE', proposta(), null, null, nomi, {}), null);
   assert.equal(messaggio('DELETE', proposta(), null, OMAR, nomi, {}), null);
 });
+
+test('uno scambio annullato dopo l\'accordo arriva all\'altra parte come "annullato"', () => {
+  const vecchia = proposta({ stato: 'ACCORDO' });
+  const annullata = proposta({ stato: 'RIFIUTATA', annullata_il: '2026-10-05T10:00:00Z', motivo_rifiuto: 'UKG l\'ha bloccato' });
+  // L'annulla chi aveva ricevuto la proposta: l'avviso va a chi l'aveva fatta.
+  const daOmar = messaggio('UPDATE', annullata, vecchia, OMAR, nomi, {});
+  assert.equal(daOmar.a, MARTINA);
+  assert.equal(daOmar.title, 'Scambio annullato');
+  assert.match(daOmar.body, /Omar R\. ha annullato lo scambio/);
+  assert.match(daOmar.body, /UKG l'ha bloccato/);
+  assert.doesNotMatch(daOmar.body, /rifiutat/);
+  // E viceversa: chi aveva proposto può annullare, e l'avviso va all'altro.
+  assert.equal(messaggio('UPDATE', annullata, vecchia, MARTINA, nomi, {}).a, OMAR);
+  // Un terzo (un admin, la pulizia) non è un annullamento fra le parti.
+  assert.equal(messaggio('UPDATE', annullata, vecchia, 'id-terzo', nomi, {}), null);
+});

@@ -124,6 +124,17 @@ la cancellazione è permessa solo a chi l'ha fatta; prima si riporta la
 richiesta del collega allo stato giusto, perché quella si può aggiornare solo
 finché la proposta che vi lega esiste.
 
+Dopo l'accordo lo scambio si può ancora **annullare**, con un collegamento
+discreto sotto l'accordo ("UKG l'ha bloccato? Annulla lo scambio") e un motivo
+facoltativo. Succede che UKG blocchi un cambio (ore della settimana, riposi,
+vincoli che l'app non vede), e senza questa uscita l'accordo restava giallo
+per un cambio che non ci sarebbe mai stato. Lo può fare chiunque dei due,
+anche dopo "Cambio inserito", finché il calendario non mostra il cambio fatto.
+La richiesta torna aperta in bacheca, perché se UKG ha bloccato quella coppia
+un altro collega può andare bene, e all'altra persona arriva "Scambio
+annullato" con il motivo. Le proposte decadute al momento dell'accordo restano
+chiuse: chi le aveva fatte può riproporre.
+
 Il pulsante "Cambio inserito", invece, di solito non serve nemmeno toccarlo. Ogni volta che l'app riscarica il
 calendario dei turni guarda se è cambiato un giorno di uno scambio concordato:
 se sì, UKG l'ha approvato, e lo scambio si chiude da solo (`chiudiScambiApprovati`

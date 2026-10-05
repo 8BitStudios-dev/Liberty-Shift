@@ -464,3 +464,34 @@ test('un turno riscritto identico non conta come aggiornato', () => {
   assert.equal(esito.aggiornati, 1);
   assert.deepEqual(esito.cambiati, [miei[0].data]);
 });
+
+// --- lo scambio concordato che UKG blocca --------------------------------
+
+test('uno scambio concordato si annulla, e la richiesta torna aperta', () => {
+  const { altro } = scambioConcordato({ tipo: 'ORARIO', giornoSuo: '2026-10-20', giornoMio: '2026-10-20' });
+  assert.equal(store.annullaScambio('pr-ukg', 'UKG l\'ha bloccato'), null);
+  const p = store.state.proposals.find((x) => x.id === 'pr-ukg');
+  assert.equal(p.status, 'RIFIUTATA');
+  assert.ok(p.annullataIl, 'deve dire che è un annullamento, non un rifiuto');
+  assert.equal(p.motivoRifiuto, 'UKG l\'ha bloccato');
+  assert.equal(store.request('rq-ukg').status, STATUS.APERTA);
+  assert.equal(store.giorniInCorso(undefined, '2026-10-04').has('2026-10-20'), false, 'via il giallo');
+  assert.ok(altro);
+});
+
+test('anche dopo "Cambio inserito" si annulla, finché il calendario non mostra il cambio', () => {
+  scambioConcordato({ tipo: 'ORARIO', giornoSuo: '2026-10-20', giornoMio: '2026-10-20', inserito: true });
+  assert.equal(store.annullaScambio('pr-ukg'), null);
+  assert.equal(store.request('rq-ukg').status, STATUS.APERTA, 'da chiusa torna aperta');
+
+  // Con il cambio già nel calendario, UKG l'ha approvato: non si annulla più.
+  scambioConcordato({ tipo: 'ORARIO', giornoSuo: '2026-10-20', giornoMio: '2026-10-20' });
+  store.importaTurni([{ data: '2026-10-20', tipo: 'WORK', start: '12:00', end: '21:00' }]);
+  assert.match(store.annullaScambio('pr-ukg'), /approvato/);
+});
+
+test('uno scambio non concordato non si annulla: si ritira o si rifiuta', () => {
+  scambioConcordato({ tipo: 'ORARIO', giornoSuo: '2026-10-20', giornoMio: '2026-10-20' });
+  store.state.proposals.find((x) => x.id === 'pr-ukg').status = 'IN_ATTESA';
+  assert.match(store.annullaScambio('pr-ukg'), /non è concordato/);
+});

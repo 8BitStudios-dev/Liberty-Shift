@@ -778,6 +778,22 @@ const AZIONI = {
 
   // Si chiede conferma come per cancellare una richiesta: un tocco per
   // sbaglio farebbe sparire una proposta a cui il collega stava per dire sì.
+  'chiedi-annulla': (_, el) => {
+    const w = sheet('Annulla lo scambio', F.formAnnulla(el.dataset.id), {
+      azioni: '<button class="btn pericolo largo" data-act="conferma-annulla">Annulla lo scambio</button>',
+    });
+    w.el.dataset.proposta = el.dataset.id;
+  },
+
+  'conferma-annulla': (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const errore = store.annullaScambio(wrap.dataset.proposta, wrap.querySelector('[data-campo="motivo"]').value);
+    wrap.querySelector('[data-chiudi]').click();
+    if (errore) return toast(errore);
+    toast('Scambio annullato, la richiesta è di nuovo aperta');
+    render();
+  },
+
   'ritira-proposta': (_, el) => {
     const p = store.state.proposals.find((x) => x.id === el.dataset.id);
     const altro = p && store.user(p.aUserId);

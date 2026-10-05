@@ -1,7 +1,7 @@
 // Flussi: creazione richiesta (Cambio Rapido incluso), match, proposta,
 // accettazione bilaterale.
 
-import { html, raw, toast } from './dom.js';
+import { html, raw, toast, esc } from './dom.js';
 import { store } from '../core/store.js';
 import {
   findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
@@ -509,6 +509,7 @@ export function dettaglio(params) {
         ${store.haGiaRingraziato(p.id) ? '' : `<button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">${icona('grazie', { px: 17 })} Ringrazia</button>`}
         <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
       </div>`)}
+          ${raw(tastoAnnulla(p))}
         </div>`
       : coinvolto && !hoAccettato
         ? html`
@@ -718,6 +719,7 @@ function vocebox(v) {
             <button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">${raw(icona('grazie', { px: 17 }))} Ringrazia ${altro.nome}</button>
             <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
           </div>
+          ${raw(tastoAnnulla(p))}
         </div>`
       : p.status === 'ACCORDO'
         ? html`
@@ -726,6 +728,7 @@ function vocebox(v) {
             <p>Hai già ringraziato. Quando avete fatto il cambio nell'app ufficiale, chiudi la richiesta.</p>
             ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             <button class="btn secondario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
+            ${raw(tastoAnnulla(p))}
           </div>`
         : ioHoProposto && p.status !== 'RIFIUTATA'
           ? html`
@@ -747,9 +750,39 @@ function vocebox(v) {
         <div><span>${ioHoProposto ? 'Tu metteresti' : 'Ti darebbe'}</span><strong>${formatDay(offerto?.data)} · ${shiftLabel(offerto)}</strong></div>
       </div>
       ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
-      ${raw(p.motivoRifiuto ? `<p class="nota-utente">Rifiutato: “${p.motivoRifiuto}”</p>` : '')}
+      ${raw(p.annullataIl
+    ? `<p class="nota-utente">Scambio annullato dopo l'accordo${p.motivoRifiuto ? `: “${esc(p.motivoRifiuto)}”` : ''}</p>`
+    : p.motivoRifiuto ? `<p class="nota-utente">Rifiutato: “${esc(p.motivoRifiuto)}”</p>` : '')}
       ${raw(azioni)}
     </article>`;
+}
+
+/**
+ * "Annulla lo scambio", sotto un accordo: un collegamento discreto e non un
+ * pulsante pieno, perché è l'uscita d'emergenza (UKG ha bloccato il cambio) e
+ * non il passo successivo. Sparisce quando il calendario mostra il cambio
+ * fatto: lì UKG l'ha approvato.
+ */
+function tastoAnnulla(p) {
+  if (p.status !== 'ACCORDO' || store.state.scambiConfermati?.includes(p.id)) return '';
+  return `<button class="link-annulla" data-act="chiedi-annulla" data-id="${p.id}">UKG l'ha bloccato? Annulla lo scambio</button>`;
+}
+
+/** Il modulo per annullare uno scambio concordato. */
+export function formAnnulla(proposalId) {
+  const p = store.state.proposals.find((x) => x.id === proposalId);
+  const altro = store.user(p.daUserId === store.state.currentUserId ? p.aUserId : p.daUserId);
+  return html`
+    <p>Annulli lo scambio con <strong>${nomeUtente(altro)}</strong>: riceverà una notifica, e la richiesta torna aperta in bacheca.</p>
+    <label class="campo">
+      <span>Perché? (facoltativo)</span>
+      <textarea data-campo="motivo" rows="2" placeholder="Es. UKG non lo accetta per le ore"></textarea>
+    </label>
+    <div class="chips">
+      ${['UKG l\'ha bloccato', 'Supera le ore della settimana', 'Non abbiamo fatto in tempo'].map((t) => raw(
+    `<button class="chip" data-act="motivo-veloce" data-testo="${t}">${t}</button>`,
+  ))}
+    </div>`;
 }
 
 /** Il modulo per rifiutare: il motivo è facoltativo ma sempre offerto. */

@@ -139,6 +139,12 @@ create table if not exists public.proposte (
 -- database già in piedi la porta questo alter table, non il create qui sopra.
 alter table public.proposte add column if not exists promemoria_il timestamptz;
 
+-- `annullata_il`: uno scambio concordato che una delle due parti ha annullato
+-- prima che UKG lo approvasse (succede che UKG lo blocchi). Lo stato diventa
+-- `RIFIUTATA` come per ogni proposta chiusa, e questa colonna dice a
+-- `send-push` che non è un rifiuto ma un annullamento dopo l'accordo.
+alter table public.proposte add column if not exists annullata_il timestamptz;
+
 create index if not exists proposte_richiesta_idx on public.proposte (richiesta_id);
 
 -- --------------------------------------------------------- disponibilità

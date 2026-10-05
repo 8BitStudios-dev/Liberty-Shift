@@ -710,6 +710,54 @@ export const store = {
   },
 
   /**
+   * Annullare uno scambio già concordato, prima che UKG lo approvi.
+   *
+   * Succede che UKG lo blocchi (ore, riposi, un vincolo che l'app non vede), e
+   * senza questa uscita l'accordo restava lì, giallo, per un cambio che non ci
+   * sarebbe mai stato. Può farlo chiunque dei due: il blocco lo vede chi prova
+   * a inserirlo, e non deve aspettare il permesso dell'altro per dirlo.
+   *
+   * Si può finché il calendario non mostra il cambio fatto: da lì UKG l'ha
+   * approvato, e non c'è più niente da annullare. La proposta si chiude
+   * (`RIFIUTATA` con `annullataIl`, che dice a `send-push` di scrivere
+   * "annullato" e non "rifiutato") e la richiesta torna aperta in bacheca:
+   * se UKG ha bloccato quella coppia, un altro collega può andare bene.
+   */
+  annullaScambio(proposalId, motivo = '') {
+    const p = this.state.proposals.find((x) => x.id === proposalId);
+    if (!p) return 'Scambio non trovato.';
+    const me = this.state.currentUserId;
+    if (p.daUserId !== me && p.aUserId !== me) return 'Non è un tuo scambio.';
+    if (p.status !== 'ACCORDO') return 'Lo scambio non è concordato: non c\'è niente da annullare.';
+    if (this.state.scambiConfermati?.includes(p.id)) {
+      return 'Il calendario mostra già il cambio fatto: UKG l\'ha approvato.';
+    }
+    p.status = 'RIFIUTATA';
+    p.annullataIl = new Date().toISOString();
+    p.rifiutataDa = me;
+    p.motivoRifiuto = (motivo || '').trim();
+    this.rispecchiaProposta(p, {
+      stato: 'RIFIUTATA',
+      annullata_il: p.annullataIl,
+      motivo_rifiuto: p.motivoRifiuto || null,
+    });
+    const r = this.request(p.requestId);
+    if (r) {
+      // nextStatus non tocca una richiesta già in ACCORDO o CHIUSA (dopo
+      // "Cambio inserito"): si riparte da aperta e si ricalcola.
+      r.status = STATUS.APERTA;
+      r.chiusaIl = null;
+      this.aggiornaStato(r);
+      this.rispecchiaRichiesta(r);
+    }
+    const altro = p.daUserId === me ? p.aUserId : p.daUserId;
+    this.notifica(altro, `${this.user(me).nome} ha annullato lo scambio${p.motivoRifiuto ? `: "${p.motivoRifiuto}"` : '.'}`);
+    this.commit();
+    this.spingi();
+    return null;
+  },
+
+  /**
    * Ritirare una proposta che hai fatto, finché l'altra persona non l'ha
    * accettata.
    *

@@ -83,6 +83,7 @@ function quando(giorno: string): string {
 type Proposta = {
   id: string; richiesta_id?: string; da_user_id: string; a_user_id: string; stato: string;
   turno_data: string; motivo_rifiuto?: string | null; motivo_decadenza?: string | null;
+  annullata_il?: string | null;
 };
 
 /**
@@ -135,6 +136,20 @@ function messaggio(
       a: record.a_user_id,
       title: 'Proposta non scelta',
       body: `${nomi[record.da_user_id]} ha scelto un altro scambio per il turno di ${giorno}: la proposta che ti aveva fatto non è più valida.`,
+    };
+  }
+  // Uno scambio concordato annullato da una delle due parti prima che UKG lo
+  // approvasse (`annullata_il`). Può farlo chiunque dei due, quindi va
+  // all'altro, e non dice "rifiutato": nessuno ha detto di no allo scambio.
+  if (type === 'UPDATE' && record.annullata_il && record.stato === 'RIFIUTATA' && old?.stato === 'ACCORDO') {
+    if (autore !== record.da_user_id && autore !== record.a_user_id) return null;
+    const chi = autore === record.da_user_id ? record.da_user_id : record.a_user_id;
+    const altro = chi === record.da_user_id ? record.a_user_id : record.da_user_id;
+    const motivo = record.motivo_rifiuto ? ` "${record.motivo_rifiuto}"` : '';
+    return {
+      a: altro,
+      title: 'Scambio annullato',
+      body: `${nomi[chi]} ha annullato lo scambio del ${giorno}: la richiesta torna aperta.${motivo}`,
     };
   }
   if (type !== 'UPDATE' || record.stato === old?.stato || autore === record.da_user_id) return null;
