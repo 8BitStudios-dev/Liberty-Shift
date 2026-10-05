@@ -375,6 +375,12 @@ invisibile finché non la si chiudeva del tutto. L'ora serve ai cambi, che UKG
 approva durante il giorno; il tetto evita di scaricare lo stesso file a ogni
 sblocco del telefono.
 
+Ad app aperta lo stesso giro parte anche **ogni dieci minuti**, per chi la
+lascia accesa sullo schermo e non esce mai. Il calendario resta al massimo una
+volta l'ora; la bacheca si aggiorna a ogni giro. Il giro salta se stai
+scrivendo o hai un foglio aperto, e un aggiornamento in sottofondo non riporta
+la schermata in cima: chi sta leggendo resta dov'era.
+
 In alto nel Profilo, **Aggiorna calendario** riscarica subito turni e bacheca
 insieme, senza guardare il tetto. Prima era un tondo senza scritta che
 aggiornava solo la bacheca, e i turni stavano in un riquadro chiuso più in

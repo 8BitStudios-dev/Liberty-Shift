@@ -112,8 +112,13 @@ function schermataAccesso(errore = '') {
     </div>`;
 }
 
-function render() {
+// `fermo`: un ridisegno chiesto da un aggiornamento in sottofondo, non da chi
+// usa l'app. Resta dov'era: tornare in cima ogni dieci minuti a chi sta
+// leggendo la bacheca sarebbe peggio di una bacheca vecchia di dieci minuti.
+// (Da `hashchange` arriva un Event, che `fermo` non ce l'ha.)
+function render({ fermo = false } = {}) {
   const { percorso, params } = parseHash();
+  const posizione = fermo ? { app: app.scrollTop, finestra: window.scrollY } : null;
 
   // La porta c'è solo quando c'è una password da chiedere: alla primissima
   // apertura si va dritti alla creazione del profilo.
@@ -163,7 +168,12 @@ function render() {
   };
   const vista = viste[percorso] || V.home;
   app.innerHTML = vista(params);
-  app.scrollTop = 0;
+  if (posizione) {
+    app.scrollTop = posizione.app;
+    window.scrollTo(0, posizione.finestra);
+  } else {
+    app.scrollTop = 0;
+  }
 
   // La guida della sezione, la prima volta che ci si entra.
   if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
@@ -1262,7 +1272,7 @@ sincronizzaSilenziosa();
  */
 async function sincronizzaSilenziosa() {
   const esito = await store.sincronizza();
-  if (!esito.saltato && !esito.errore) render();
+  if (!esito.saltato && !esito.errore) render({ fermo: true });
 }
 
 /**
@@ -1276,7 +1286,7 @@ async function sincronizzaSilenziosa() {
 async function aggiornamentoSilenzioso() {
   const esito = await store.aggiornaCalendario();
   if (esito.saltato || esito.errore) return;
-  render();
+  render({ fermo: true });
   // Silenzioso sì, ma uno scambio chiuso da solo si dice.
   annunciaScambiChiusi(esito);
 }
@@ -1288,7 +1298,8 @@ async function aggiornamentoSilenzioso() {
  * aggiornamenti qui sopra non ripartivano finché non la si chiudeva del tutto.
  * Un cambio approvato in UKG la mattina restava invisibile fino a sera.
  * Il calendario ha già il suo tetto di un'ora; la bacheca al massimo una volta
- * al minuto, per chi passa da un'app all'altra.
+ * al minuto, per chi passa da un'app all'altra. Lo stesso giro parte anche
+ * ogni dieci minuti ad app aperta (sotto).
  */
 let ultimaRipresa = 0;
 function allaRipresa() {
@@ -1300,6 +1311,24 @@ function allaRipresa() {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') allaRipresa();
 });
+
+/**
+ * E mentre resta aperta: ogni dieci minuti, lo stesso giro della ripresa.
+ *
+ * Copre chi la lascia accesa sullo schermo, in magazzino o al banco, e non
+ * esce mai: senza, l'app aspettava un ritorno in primo piano che non
+ * arrivava. Il calendario resta comunque al massimo una volta l'ora.
+ *
+ * Il giro salta se stai scrivendo o hai un foglio aperto: ridisegnare sotto
+ * un campo a metà ti toglierebbe il cursore, e il giro dopo è fra dieci minuti.
+ */
+const OGNI_DIECI_MINUTI = 10 * 60 * 1000;
+setInterval(() => {
+  if (document.visibilityState !== 'visible') return;
+  if (document.querySelector('.sheet-backdrop')) return;
+  if (document.activeElement?.matches?.('input, textarea, select')) return;
+  allaRipresa();
+}, OGNI_DIECI_MINUTI);
 
 // PWA
 //
