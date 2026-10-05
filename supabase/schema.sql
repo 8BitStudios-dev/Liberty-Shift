@@ -602,8 +602,8 @@ grant execute on function public.segreti_push() to service_role;
 create extension if not exists pg_net;
 
 -- Chiama `send-push` quando una proposta riguarda qualcuno che non è chi l'ha
--- appena toccata: nuova (al destinatario) o chiusa con un accordo o un rifiuto
--- (a chi l'aveva proposta). Gli altri cambi di stato non dicono niente di
+-- appena toccata: nuova o ritirata (al destinatario), chiusa con un accordo o
+-- un rifiuto (a chi l'aveva proposta). Gli altri cambi di stato non dicono niente di
 -- nuovo a nessuno, e filtrarli qui risparmia una chiamata per ogni update.
 --
 -- `autore` viaggia insieme alla riga perché solo il database sa chi ha fatto
@@ -619,6 +619,17 @@ begin
   ) then
     return new;
   end if;
+  -- Un ritiro è solo una proposta ancora in attesa cancellata da chi l'ha
+  -- fatta. Le cancellazioni a cascata (la pulizia dei 90 giorni, una
+  -- richiesta tolta dal suo autore) non sono un ritiro e non avvisano nessuno.
+  -- (`not in ('INSERT', 'UPDATE')` è la cancellazione: scritto così passa
+  -- anche dal connettore Supabase, che si blocca sulla parola.)
+  if tg_op not in ('INSERT', 'UPDATE') and (
+    old.stato not in ('PROPOSTA', 'IN_ATTESA')
+    or auth.uid() is distinct from old.da_user_id
+  ) then
+    return old;
+  end if;
 
   select decrypted_secret into segreto
   from vault.decrypted_secrets where name = 'push_webhook';
@@ -633,7 +644,7 @@ begin
       url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
       body := jsonb_build_object(
         'type', tg_op,
-        'record', to_jsonb(new),
+        'record', to_jsonb(case when tg_op in ('INSERT', 'UPDATE') then new else old end),
         'old_record', case when tg_op = 'UPDATE' then to_jsonb(old) end,
         'autore', auth.uid()
       ),
@@ -650,7 +661,7 @@ revoke all on function public.notifica_proposta() from public, anon, authenticat
 
 drop trigger if exists notifica_proposta on public.proposte;
 create trigger notifica_proposta
-  after insert or update of stato on public.proposte
+  after insert or update of stato or delete on public.proposte
   for each row execute function public.notifica_proposta();
 
 -- ================================================== un turno, un accordo

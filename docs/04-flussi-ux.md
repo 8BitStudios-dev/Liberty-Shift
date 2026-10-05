@@ -115,7 +115,11 @@ Una proposta fatta si può **ritirare** finché l'altra persona non l'ha
 accettata: "Ritira la proposta", in Proposte e nel dettaglio della richiesta,
 con una conferma. Si cancella, non si rifiuta: "rifiutata" farebbe partire la
 notifica sbagliata, e un ritiro non è un no di nessuno. Chi l'aveva ricevuta
-la vede sparire alla prossima sincronizzazione, senza notifica. Sul server
+riceve la notifica "Proposta ritirata" e la vede sparire alla prossima
+sincronizzazione. La notifica parte dal trigger `notifica_proposta`, che
+ascolta anche le cancellazioni ma avvisa solo quando a cancellare una
+proposta ancora in attesa è chi l'aveva fatta: le cancellazioni a cascata
+(pulizia dei 90 giorni, richiesta tolta dal suo autore) non sono un ritiro. Sul server
 la cancellazione è permessa solo a chi l'ha fatta; prima si riporta la
 richiesta del collega allo stato giusto, perché quella si può aggiornare solo
 finché la proposta che vi lega esiste.

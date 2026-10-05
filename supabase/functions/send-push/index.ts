@@ -105,6 +105,18 @@ function messaggio(
       body: `Scambio con ${nomi[altro]} ${quando(extra.giorno)} (${formatData(extra.giorno)}): l'hai già inserito nell'app ufficiale?`,
     };
   }
+  // Chi l'aveva fatta l'ha ritirata (trigger `notifica_proposta` sul delete):
+  // lo sa chi la stava per valutare, così non la cerca più. Solo se a
+  // cancellarla è stato proprio chi l'aveva fatta: le cancellazioni a cascata
+  // della pulizia o di una richiesta tolta non sono un ritiro.
+  if (type === 'DELETE') {
+    if (autore !== record.da_user_id) return null;
+    return {
+      a: record.a_user_id,
+      title: 'Proposta ritirata',
+      body: `${nomi[record.da_user_id]} ha ritirato la proposta di scambio per il turno di ${giorno}.`,
+    };
+  }
   if (type === 'INSERT') {
     if (autore === record.a_user_id) return null;
     return {

@@ -107,3 +107,13 @@ test('il motore dentro la funzione è identico a quello dell\'app', async () => 
   }
   assert.deepEqual(diversi, [], `da rigenerare con npm run funzioni: ${diversi.join(', ')}`);
 });
+
+test('una proposta ritirata da chi l\'ha fatta lo dice a chi l\'aveva ricevuta', () => {
+  const m = messaggio('DELETE', proposta(), null, MARTINA, nomi, {});
+  assert.equal(m.a, OMAR);
+  assert.equal(m.title, 'Proposta ritirata');
+  assert.match(m.body, /Martina L\. ha ritirato la proposta/);
+  // Una cancellazione che non fa lei (pulizia, richiesta tolta da Omar) non è un ritiro.
+  assert.equal(messaggio('DELETE', proposta(), null, null, nomi, {}), null);
+  assert.equal(messaggio('DELETE', proposta(), null, OMAR, nomi, {}), null);
+});

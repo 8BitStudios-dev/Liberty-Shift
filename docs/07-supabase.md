@@ -448,6 +448,19 @@ server il turno è la coppia (persona, giorno). Le proposte chiuse così hanno
 ricevute "Proposta non scelta". La funzione è `security definer` perché tocca
 proposte di altre persone, che chi accetta non potrebbe modificare.
 
+## Una proposta ritirata
+Chi ha fatto una proposta la può ritirare finché l'altra persona non l'ha
+accettata: l'app la cancella (policy "si ritira solo la propria proposta").
+Il trigger `notifica_proposta` ascolta anche le cancellazioni, e manda a
+`send-push` la riga cancellata solo se era ancora `PROPOSTA` o `IN_ATTESA` e a
+cancellarla è stato chi l'aveva fatta (`auth.uid() = da_user_id`). Così la
+pulizia dei 90 giorni e una richiesta tolta dal suo autore, che cancellano le
+proposte a cascata, non fanno partire "Proposta ritirata" a nessuno.
+
+Nel trigger la cancellazione si riconosce come `tg_op not in ('INSERT',
+'UPDATE')` invece che col suo nome: scritto così passa anche dal connettore
+Supabase, che sulla parola si blocca.
+
 ## La pulizia, il promemoria e gli accordi
 
 **Chi vede una richiesta con un accordo.** La policy di lettura su `richieste`
