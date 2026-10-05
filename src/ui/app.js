@@ -433,7 +433,13 @@ const AZIONI = {
     if (P.passi()[b.passo - 1]?.name === 'passoChiSei' && !b.modifica && serverConfigurato()
       && !b.omonimoConfermato) {
       b.controllando = true;
-      const { candidati } = await candidatiAccesso(b.nome, b.cognome).finally(() => { b.controllando = false; });
+      const { candidati, errore } = await candidatiAccesso(b.nome, b.cognome).finally(() => { b.controllando = false; });
+      // Se il controllo non riesce non si va avanti alla cieca: era proprio
+      // così che nasceva un secondo account per chi era già iscritto.
+      if (errore) {
+        b.errori = ['Non riesco a controllare se sei già iscritto. Controlla la connessione e riprova.'];
+        return render();
+      }
       if (candidati.length) { b.avvisoOmonimo = true; return render(); }
     }
     b.avvisoOmonimo = false;

@@ -1079,9 +1079,23 @@ export const store = {
    * entrambe riescono si scrive qualcosa in locale. Al contrario, un codice
    * sbagliato lascerebbe sul telefono un profilo che il server non conosce.
    */
-  async iscriviECompleta({ nome, cognome, genere, contratto, oreSettimanali, password, codice, versioneNote }) {
+  async iscriviECompleta({
+    nome, cognome, genere, contratto, oreSettimanali, password, codice, versioneNote, omonimoConfermato,
+  }) {
     if (serverConfigurato()) {
       const cog = (cognome || '').trim();
+      // Secondo controllo, prima di creare l'account: il primo sta nel passo
+      // del nome, ma un controllo saltato là (rete assente, un tocco di
+      // troppo) bastava a far nascere un doppione. Chi è stato iscritto una
+      // volta deve rientrare, non iscriversi; solo un omonimo vero, che l'ha
+      // detto, passa.
+      if (!this.state.profilo?.identificativo && !omonimoConfermato) {
+        const { candidati, errore } = await candidatiAccesso(nome, cognome);
+        if (errore) return { errore: 'Non riesco a controllare se sei già iscritto. Controlla la connessione e riprova.' };
+        if (candidati.length) {
+          return { errore: 'Esiste già un account con questo nome e cognome. Se sei tu, torna al primo passo e scegli "Rientra con la mia password".' };
+        }
+      }
       // Un secondo tentativo dopo un codice sbagliato riusa l'account appena
       // creato: registrarsi di nuovo lascerebbe in giro un account per ogni
       // errore di battitura.

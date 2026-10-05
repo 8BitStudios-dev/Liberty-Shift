@@ -135,3 +135,35 @@ test('la ricerca parte senza sessione e manda i nomi già ripuliti', async () =>
   assert.deepEqual(corpo, { nome_slug: 'jose', cognome_slug: 'd-angelo' });
   assert.match(intestazioni.Authorization, /^Bearer eyJ/, 'con la chiave pubblica, non con una sessione');
 });
+
+// --- Marco, iscritto due volte ----------------------------------------------
+
+const ISCRIZIONE = {
+  nome: 'Martina', cognome: 'Lovece', genere: 'F', contratto: 'PT', oreSettimanali: 25,
+  password: 'giusta', codice: 'R667', versioneNote: 'v1',
+};
+const haCreatoAccount = (chiamate) => chiamate.some((c) => c.includes('/auth/v1/signup'));
+
+test('chi è già iscritto non si iscrive una seconda volta, anche se il primo avviso è saltato', async () => {
+  store.reset();
+  const chiamate = serverFinto({ candidati: DUE });
+  const r = await store.iscriviECompleta(ISCRIZIONE);
+  assert.match(r.errore, /Esiste già un account/);
+  assert.equal(haCreatoAccount(chiamate), false, 'nessun account nuovo');
+  assert.equal(store.state.profilo.completato, false);
+});
+
+test('se il controllo non raggiunge il server non si iscrive alla cieca', async () => {
+  store.reset();
+  const chiamate = serverFinto({ candidati: [], rete: false });
+  const r = await store.iscriviECompleta(ISCRIZIONE);
+  assert.match(r.errore, /Non riesco a controllare/);
+  assert.equal(haCreatoAccount(chiamate), false);
+});
+
+test('un omonimo vero, che l\'ha detto, può iscriversi', async () => {
+  store.reset();
+  const chiamate = serverFinto({ candidati: DUE });
+  await store.iscriviECompleta({ ...ISCRIZIONE, omonimoConfermato: true });
+  assert.equal(haCreatoAccount(chiamate), true, 'il controllo non lo ferma');
+});
