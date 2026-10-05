@@ -133,7 +133,9 @@ anche dopo "Cambio inserito", finché il calendario non mostra il cambio fatto.
 La richiesta torna aperta in bacheca, perché se UKG ha bloccato quella coppia
 un altro collega può andare bene, e all'altra persona arriva "Scambio
 annullato" con il motivo. Le proposte decadute al momento dell'accordo restano
-chiuse: chi le aveva fatte può riproporre.
+chiuse, e sul server vale una proposta per persona per richiesta: chi ne
+aveva una non può riproporre sulla stessa richiesta. Possono farlo gli altri
+colleghi, oppure l'autore la cancella e la ripubblica.
 
 Il pulsante "Cambio inserito", invece, di solito non serve nemmeno toccarlo. Ogni volta che l'app riscarica il
 calendario dei turni guarda se è cambiato un giorno di uno scambio concordato:
