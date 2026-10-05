@@ -12,9 +12,6 @@
   --accento-tenue: #e8f0ff;
   --rosso: #e0454b;
   --verde: #1f9d55;
-  /* La disponibilità dichiarata: si vede senza gridare, e non si confonde
-     col verde di "offre" nelle barre del calendario. */
-  --arancio: #d97008;
   --giallo: #d99b0a;
   --oro: #c8890a;
   --raggio: 16px;
@@ -36,7 +33,6 @@
     --accento-tenue: #16233c;
     --rosso: #ff6b70;
     --verde: #45c281;
-    --arancio: #ffa64d;
     --giallo: #e8b53c;
     --oro: #e8b53c;
     --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
@@ -54,7 +50,6 @@
   --accento-tenue: #16233c;
   --rosso: #ff6b70;
   --verde: #45c281;
-  --arancio: #ffa64d;
   --giallo: #e8b53c;
   --oro: #e8b53c;
   --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
@@ -581,7 +576,6 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 /* I giorni delle settimane a cavallo del mese: ci sono perché la settimana
    Apple non si taglia a metà, ma non sono questo mese. */
 .mese-giorno.fuori { opacity: .35; }
-.mese-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--arancio); }
 
 .giorno-profilo .riga-turno {
   border: 1px solid var(--bordo); border-radius: 12px; background: var(--superficie);

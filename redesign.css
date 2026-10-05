@@ -48,18 +48,24 @@
      sopra 4,5 sia come testo sul chiaro sia come fondo sotto il bianco. */
   --accento: #1d66db;
   --accento-tenue: #e9f1fe;
-  /* I due lati di uno scambio, dal marchio. */
-  --cedo: #1d66db;
-  --cedo-tenue: #e9f1fe;
+  /* I due lati di uno scambio, dal marchio. Il blu di chi cede È l'accento:
+     scritto come alias, così i due non possono divergere per sbaglio. */
+  --cedo: var(--accento);
+  --cedo-tenue: var(--accento-tenue);
   --prendo: #0b7a52;
   --prendo-tenue: #e4f6ee;
+  /* Nome storico di --prendo, ancora usato da styles.css. */
+  --verde: var(--prendo);
   --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
   --rosso: #c0303a;
-  --verde: #0b7a52;
-  --arancio: #b96608;
-  /* Avvisi e match potenziali: un ambra, non l'oro. L'oro vuol dire priorità. */
-  --giallo: #a0520a;
+  /* Avvisi e match potenziali: un ambra, non l'oro. L'oro vuol dire priorità.
+     Si chiamava --giallo, che resta come alias per styles.css. */
+  --ambra: #a0520a;
+  --giallo: var(--ambra);
   --oro: #8a6305;
+  /* Il cuore dei ringraziamenti: rosa, perché il rosso vuol dire errore o
+     "ti aspetta una risposta", e un grazie non è né l'uno né l'altro. */
+  --grazie: #b4366e;
   /* Le tue richieste hanno un colore loro, il viola, che il Calendario non
      usa: un colpo d'occhio basta a capire su quale dei due mesi si è. */
   --mio: #6b46c8;
@@ -70,8 +76,21 @@
   --da-cambiare-segno: #7a5300;
   /* Il testo sopra un fondo pieno di accento. */
   --su-pieno: #ffffff;
+  /* Cinque raggi: contenitori, controlli, celle, tendina, pillole. I 3–6px
+     restano solo ai campioni di legenda, che disegnano una cella in piccolo. */
   --raggio: 18px;
   --raggio-s: 13px;
+  --raggio-cella: 8px;
+  --raggio-sheet: 24px;
+  --raggio-pill: 999px;
+  /* Il ritmo: 12 dentro un gruppo, 16 sotto ogni testata, 28 fra sezioni. */
+  --spazio-gruppo: 12px;
+  --spazio-testata: 16px;
+  --spazio-sezione: 28px;
+  --spazio-card: 18px;
+  --margine-pagina: 18px;
+  /* Il minimo per un pollice, in piedi, con una mano. */
+  --bersaglio: 44px;
   --ombra: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 22px -8px rgba(15, 23, 42, .14);
   --ombra-alta: 0 2px 4px rgba(15, 23, 42, .06), 0 18px 40px -14px rgba(15, 23, 42, .22);
   --tab-h: 66px;
@@ -89,15 +108,16 @@
     --linea: #2a3850;
     --accento: #62a0ff;
     --accento-tenue: #16263f;
-    --cedo: #62a0ff;
-    --cedo-tenue: #16263f;
     --prendo: #45d19a;
     --prendo-tenue: #12302a;
     --rosso: #ff7b80;
-    --verde: #45d19a;
-    --arancio: #ffb066;
-    --giallo: #ffb066;
+    --ambra: #ffb066;
     --oro: #e8c04c;
+    --grazie: #ff8fb8;
+    /* styles.css ridichiara questi due nel suo blocco scuro, che pesa più del
+       :root chiaro: gli alias vanno ripetuti qui. */
+    --verde: var(--prendo);
+    --giallo: var(--ambra);
     --mio: #b39bff;
     --mio-tenue: #261d3d;
     --da-cambiare: #3d3412;
@@ -121,15 +141,14 @@
   --linea: #2a3850;
   --accento: #62a0ff;
   --accento-tenue: #16263f;
-  --cedo: #62a0ff;
-  --cedo-tenue: #16263f;
   --prendo: #45d19a;
   --prendo-tenue: #12302a;
   --rosso: #ff7b80;
-  --verde: #45d19a;
-  --arancio: #ffb066;
-  --giallo: #ffb066;
+  --ambra: #ffb066;
   --oro: #e8c04c;
+  --grazie: #ff8fb8;
+  --verde: var(--prendo);
+  --giallo: var(--ambra);
   --mio: #b39bff;
   --mio-tenue: #261d3d;
   --da-cambiare: #3d3412;
@@ -142,7 +161,7 @@
 
 /* -------------------------------------------------------- tipografia */
 
-#app { padding-left: 18px; padding-right: 18px; }
+#app { padding-left: var(--margine-pagina); padding-right: var(--margine-pagina); }
 
 h1 { font-size: 28px; font-weight: 700; letter-spacing: -.025em; }
 
@@ -166,15 +185,15 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 /* Ritmo. Le distanze fra blocchi erano tredici valori diversi, e la testata
    distava dal contenuto 10, 22 o 30 px secondo la schermata. Ora: 12 dentro
    un gruppo, 28 fra sezioni, 16 sotto ogni testata. */
-.testata { padding: 14px 0 0; margin-bottom: 16px; }
+.testata { padding: 14px 0 0; margin-bottom: var(--spazio-testata); }
 .testata h1 { font-size: 22px; }
 /* Una testata senza tasto a sinistra allinea il titolo a sinistra: centrato
    fra il vuoto e i tasti di destra finiva fuori asse. */
 .testata h1:first-child { text-align: left; }
-.sezione { margin: 28px 0; }
+.sezione { margin: var(--spazio-sezione) 0; }
 .testata + .sezione, .testata + .chips, .testata + .occhiello { margin-top: 0; }
 /* I quattro filtri della Bacheca su una riga sola, anche a 360px. */
-.chips { margin: 0 0 16px; gap: 6px; }
+.chips { margin: 0 0 var(--spazio-testata); gap: 6px; }
 
 /* ---------------------------------------------------- meno riquadri */
 
@@ -182,12 +201,12 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    dentro una cornice. Resta solo nel tema scuro, dove bianco su grigio
    non esiste e serve un filo per staccare la superficie. */
 .card {
-  border: 0; padding: 18px; border-radius: var(--raggio);
-  margin-bottom: 12px; box-shadow: var(--ombra);
+  border: 0; padding: var(--spazio-card); border-radius: var(--raggio);
+  margin-bottom: var(--spazio-gruppo); box-shadow: var(--ombra);
 }
 .tile {
-  border: 0; padding: 18px; box-shadow: var(--ombra);
-  margin-bottom: 12px; border-radius: var(--raggio);
+  border: 0; padding: var(--spazio-card); box-shadow: var(--ombra);
+  margin-bottom: var(--spazio-gruppo); border-radius: var(--raggio);
 }
 .riquadro { border: 0; box-shadow: var(--ombra); padding: 0 16px; margin-bottom: 12px; }
 .tabella-dati, .grazie { border: 0; box-shadow: var(--ombra); }
@@ -221,11 +240,14 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cedo), inset 0 -1px 0 var(--filetto); }
 .riga-richiesta.ruolo-OFFRE { border-left: 0; box-shadow: inset 3px 0 0 var(--prendo), inset 0 -1px 0 var(--filetto); }
 .riga-titolo { font-size: 16px; gap: 8px; }
+/* La stella della priorità prende l'oro, come il filo a sinistra: in
+   currentColor era nera in chiaro e bianca in scuro. */
+.riga-titolo > svg { color: var(--oro); }
 /* La pillola del tipo sta in una riga flex accanto al nome: senza nowrap
    si restringe e manda a capo "cede"/"offre" fuori dal suo box. Dentro c'è
    un'icona SVG: senza flex cadrebbe sulla baseline invece che al centro. */
 .tipo-pill {
-  font-size: 12px; padding: 2px 8px; border-radius: 7px;
+  font-size: 12px; padding: 2px 8px; border-radius: var(--raggio-cella);
   white-space: nowrap; flex: 0 0 auto; align-self: center;
   display: inline-flex; align-items: center; gap: 4px;
 }
@@ -258,7 +280,10 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   padding: 14px; border-radius: var(--raggio-s);
   background: var(--superficie-2);
 }
-.coppia .etichetta { font-size: 12px; letter-spacing: .05em; }
+.coppia .etichetta {
+  font-size: 12px; letter-spacing: .05em;
+  display: inline-flex; align-items: center; gap: 4px;
+}
 .coppia .cedo .etichetta { color: var(--cedo); }
 .coppia .cerco .etichetta { color: var(--prendo); }
 .coppia strong { font-size: 16px; }
@@ -278,7 +303,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 
 /* Il bordo di sinistra come indice di lato, non come decorazione. */
 .card.match.verde { border-left: 4px solid var(--prendo); }
-.card.match.giallo { border-left: 4px solid var(--giallo); }
+.card.match.giallo { border-left: 4px solid var(--ambra); }
 .card.da-fare { border-left: 4px solid var(--accento); }
 .tile.scelta.verde { border-left: 4px solid var(--prendo); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
@@ -299,7 +324,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   background: var(--marchio);
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.marchio { width: 26px; height: 26px; border-radius: 8px; }
+.marchio { width: 26px; height: 26px; border-radius: var(--raggio-cella); }
 .marchio-riga { gap: 9px; margin-bottom: 14px; }
 
 .btn { padding: 15px 20px; border-radius: var(--raggio-s); font-size: 16px; font-weight: 650; }
@@ -310,24 +335,24 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 }
 .btn.secondario { border: 1px solid var(--bordo); }
 /* Bersagli: 44px è il minimo per un pollice, in piedi, con una mano. */
-.btn.piccolo { padding: 9px 14px; font-size: 14px; min-height: 44px; }
+.btn.piccolo { padding: 9px 14px; font-size: 14px; min-height: var(--bersaglio); }
 .btn.largo { margin-top: 14px; }
 
 /* Prima l'.icon-btn portava solo un glifo di testo ("?", "‹"), centrato dal
    line-height. Con un'icona SVG dentro serve un centraggio vero. */
-.icon-btn { width: 44px; height: 44px; font-size: 19px; display: grid; place-items: center; }
+.icon-btn { width: var(--bersaglio); height: var(--bersaglio); font-size: 19px; display: grid; place-items: center; }
 .icon-btn.grande { width: 46px; height: 46px; font-size: 24px; }
 .pill { font-size: 15px; padding: 9px 16px; }
 /* Icona e testo dei filtri sulla stessa riga: l'svg è un blocco, e andava a
    capo sopra l'etichetta raddoppiando l'altezza del chip. */
 .chip {
-  font-size: 15px; padding: 0 16px; min-height: 44px;
+  font-size: 15px; padding: 0 16px; min-height: var(--bersaglio);
   display: inline-flex; align-items: center; gap: 6px;
 }
 .chips .chip { padding: 0 13px; font-size: 14px; }
 .chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
 .link, .link-btn { font-size: 15px; }
-.link-btn { min-height: 44px; display: inline-flex; align-items: center; }
+.link-btn { min-height: var(--bersaglio); display: inline-flex; align-items: center; }
 
 .avatar { width: 40px; height: 40px; font-size: 15px; }
 .avatar.piccolo { width: 34px; height: 34px; font-size: 14px; }
@@ -359,7 +384,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .spia-ore.quadra { color: var(--prendo); }
 .mese-giorno {
   position: relative; min-height: 64px; padding: 6px 2px 5px; gap: 2px;
-  border-radius: 9px; border-color: var(--filetto);
+  border-radius: var(--raggio-cella); border-color: var(--filetto);
 }
 .mese-giorno .numero { font-size: 15px; }
 .mese-giorno .turno { font-size: 12px; }
@@ -372,7 +397,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    torna una linea, perché lì le barre non ci sono. */
 .mese-giorno.disponibile { box-shadow: none; background: var(--prendo-tenue); }
 
-.giorno-rot { min-height: 46px; font-size: 12px; border-radius: 9px; border-color: var(--filetto); }
+.giorno-rot { min-height: 46px; font-size: 12px; border-radius: var(--raggio-cella); border-color: var(--filetto); }
 .giorno-rot .dow { font-size: 12px; }
 
 /* --- il tabellone */
@@ -386,7 +411,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    movimento" senza competere con il numero. */
 .conta-giorno {
   position: absolute; top: 4px; right: 4px;
-  min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px;
+  min-width: 18px; height: 18px; padding: 0 4px; border-radius: var(--raggio-pill);
   display: grid; place-items: center;
   font-size: 12px; font-weight: 600; line-height: 1; color: var(--testo-tenue);
   border: 1px solid var(--linea); background: var(--superficie);
@@ -427,13 +452,16 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .mese-personale .mese-giorno {
   align-items: flex-start; justify-content: flex-start; gap: 0;
   min-width: 0; min-height: 48px; padding: 4px 5px 5px; overflow: visible;
-  border: 1px solid var(--linea); border-radius: 7px;
+  border: 1px solid var(--linea); border-radius: var(--raggio-cella);
   background: var(--superficie); box-shadow: none;
 }
 .mese-personale .mese-griglia .mese-giorno:last-child { border-right: 1px solid var(--linea); }
 .mese-personale .mese-giorno .numero {
   font-size: 12px; font-weight: 600; color: var(--testo-tenue); line-height: 1.2;
 }
+/* 13px è l'unico corpo fuori scala, apposta: è il più grande con cui
+   "11:00" in grassetto sta in una cella da un settimo di schermo. A 14px
+   sforava già a 375px. */
 .mese-personale .mese-giorno .turno {
   font-size: 13px; font-weight: 600; color: var(--testo); margin-top: 1px;
   font-variant-numeric: tabular-nums; line-height: 1.1; letter-spacing: -.01em;
@@ -475,16 +503,19 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .mese-personale .mese-giorno .in-corso svg { width: 12px; height: 12px; }
 /* Nel foglio del giorno lo stesso segno, su un tassello giallo come la cella. */
 .giorno-profilo .riga-cambio .in-corso {
-  flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; box-shadow: none;
+  flex: 0 0 auto; width: 28px; height: 28px; border-radius: var(--raggio-cella); box-shadow: none;
   background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo);
 }
 .giorno-profilo .riga-cambio .in-corso svg { width: 15px; height: 15px; }
 
-/* Sotto i 360px (iPhone SE e simili) gli orari stanno centrati, altrimenti
-   "11:00" diventava "11:0". */
+/* Fino a 374px (iPhone SE e mini) il turno scende a 12px: a 13 "11:00"
+   sforava la cella di mezzo pixel. Sotto i 360px gli orari stanno anche
+   centrati, altrimenti "11:00" diventava "11:0". */
+@media (max-width: 374px) {
+  .mese-personale .mese-giorno .turno { font-size: 12px; letter-spacing: -.02em; }
+}
 @media (max-width: 359px) {
   .mese-personale .mese-giorno { align-items: center; }
-  .mese-personale .mese-giorno .turno { font-size: 12px; letter-spacing: -.02em; }
   .mese-personale .mese-giorno .in-corso { top: 3px; right: 2px; }
   .mese-personale .mese-giorno .in-corso svg { width: 10px; height: 10px; }
 }
@@ -507,7 +538,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .campione.disponibile { box-shadow: none; background: var(--prendo-tenue); border: 1px solid var(--linea); border-radius: 4px; }
 .campione.riposo { background: transparent; border: 1px solid var(--linea); border-radius: 4px; }
 .campione.da-cambiare { background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo); border-radius: 4px; }
-.campione-quota { font-size: 12px; font-weight: 700; padding: 0 5px; border-radius: 999px; background: var(--accento); color: var(--su-pieno); }
+.campione-quota { font-size: 12px; font-weight: 700; padding: 0 5px; border-radius: var(--raggio-pill); background: var(--accento); color: var(--su-pieno); }
 .campione-giorno {
   display: inline-grid; place-items: center;
   width: 22px; height: 18px; border-radius: 5px;
@@ -583,7 +614,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    sola cosa dell'app che va saputa senza aprire niente. */
 .tab .conta {
   position: absolute; top: 2px; right: 4px;
-  min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
+  min-width: 19px; height: 19px; padding: 0 5px; border-radius: var(--raggio-pill);
   background: var(--rosso); color: var(--su-pieno);
   font-size: 12px; font-weight: 700; display: grid; place-items: center;
 }
@@ -593,7 +624,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .vuoto { padding: 40px 22px; }
 .vuoto strong { font-size: 17px; }
 .vuoto p { font-size: 15px; }
-.sheet { border-radius: 24px 24px 0 0; padding: 6px 18px max(env(safe-area-inset-bottom), 18px); }
+.sheet { border-radius: var(--raggio-sheet) var(--raggio-sheet) 0 0; padding: 6px 18px max(env(safe-area-inset-bottom), 18px); }
 .sheet-head h2 { font-size: 19px; }
 #toast { font-size: 15px; padding: 13px 20px; box-shadow: var(--ombra-alta); }
 .elenco { font-size: 16px; }
@@ -607,7 +638,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   display: flex; gap: 12px; align-items: flex-start;
   margin: 14px 0 6px; padding: 16px;
   background: var(--accento-tenue); border: 1px solid var(--accento);
-  border-radius: 18px;
+  border-radius: var(--raggio);
 }
 .invito-icona {
   flex: none; width: 42px; height: 42px; border-radius: 50%;
@@ -628,7 +659,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--oro);
 }
 .priorita-cerchio {
-  width: 44px; height: 44px; border-radius: 50%;
+  width: var(--bersaglio); height: var(--bersaglio); border-radius: 50%;
   display: grid; place-items: center;
   border: 1.5px solid currentColor; background: var(--superficie);
 }
@@ -657,7 +688,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   position: absolute; top: 78px; left: 0; z-index: 20; min-width: 220px;
   display: grid; gap: 4px; padding: 12px 14px;
   background: var(--superficie); border: 1px solid var(--bordo);
-  border-radius: 14px; box-shadow: var(--ombra-alta);
+  border-radius: var(--raggio-s); box-shadow: var(--ombra-alta);
 }
 .io-pannello strong { font-size: 16px; }
 .io-pannello span { font-size: 14px; color: var(--testo-tenue); }
@@ -667,7 +698,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    scritta, perché il tondo senza parole non diceva cosa aggiornava. */
 .tasto-aggiorna {
   appearance: none; font: inherit; cursor: pointer; position: relative;
-  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  min-height: var(--bersaglio); padding: 0 14px; border-radius: var(--raggio-pill);
   display: inline-flex; align-items: center; gap: 7px;
   border: 1px solid var(--bordo); background: var(--superficie); color: var(--testo);
   font-size: 14px; font-weight: 600; white-space: nowrap;
@@ -676,7 +707,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .tasto-aggiorna:disabled { opacity: .6; cursor: default; }
 .tasto-aggiorna .pallino { position: absolute; top: 4px; right: 6px; }
 @media (max-width: 359px) {
-  .tasto-aggiorna { padding: 0 11px; gap: 5px; font-size: 13px; }
+  .tasto-aggiorna { padding: 0 11px; gap: 5px; font-size: 12px; }
   .azioni-profilo { gap: 6px; }
 }
 
@@ -710,7 +741,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .pref-fasce { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
 .pref-fasce li {
   display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-  padding: 9px 12px; border-radius: 10px; background: var(--superficie-2); font-size: 15px;
+  padding: 9px 12px; border-radius: var(--raggio-cella); background: var(--superficie-2); font-size: 15px;
 }
 .pref-fasce li span { color: var(--testo-tenue); font-size: 14px; text-align: right; }
 
@@ -724,7 +755,8 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 /* Grazie ricevuti. Il cuore raggiunto prende il colore dell'icona del
    titolo; quelli da raggiungere sono contorni grigi con l'avanzamento
    accanto, così si legge a che punto sei senza contare. */
-.grazie-riquadro .titolo-riquadro svg { fill: var(--rosso); stroke: var(--rosso); }
+.grazie-riquadro .titolo-riquadro svg { fill: var(--grazie); stroke: var(--grazie); }
+.cuore { color: var(--grazie); }
 .grazie-riquadro .btn { margin-top: 12px; }
 .traguardi { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
 .traguardo { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--testo-tenue); min-height: 36px; }
@@ -735,8 +767,8 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .traguardo-segno svg { fill: none; stroke: var(--testo-tenue); opacity: .6; }
 .traguardo.raggiunto .traguardo-segno svg { opacity: 1; }
 .traguardo.raggiunto { color: var(--testo); font-weight: 600; }
-.traguardo.raggiunto .traguardo-segno { border-color: var(--rosso); background: color-mix(in srgb, var(--rosso) 10%, transparent); }
-.traguardo.raggiunto .traguardo-segno svg { fill: var(--rosso); stroke: var(--rosso); }
+.traguardo.raggiunto .traguardo-segno { border-color: var(--grazie); background: color-mix(in srgb, var(--grazie) 10%, transparent); }
+.traguardo.raggiunto .traguardo-segno svg { fill: var(--grazie); stroke: var(--grazie); }
 .traguardo-avanzamento { margin-left: auto; font-size: 12px; font-variant-numeric: tabular-nums; }
 .traguardo-testo { display: flex; flex-direction: column; gap: 1px; }
 .traguardo-soglia { font-size: 12px; font-weight: 400; color: var(--testo-tenue); }
@@ -755,7 +787,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    pulsante pieno accanto a "Cambio inserito" invitava a toccarlo. */
 .link-annulla {
   appearance: none; border: 0; background: none; font: inherit; cursor: pointer;
-  display: block; margin: 10px auto 0; min-height: 44px; padding: 0 8px;
+  display: block; margin: 10px auto 0; min-height: var(--bersaglio); padding: 0 8px;
   font-size: 14px; color: var(--rosso); text-decoration: underline; text-underline-offset: 3px;
 }
 
@@ -768,7 +800,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .cal-turni-testa span { font-size: 12px; text-align: center; color: var(--testo-tenue); }
 .cal-turno {
   appearance: none; font: inherit; color: inherit; cursor: pointer; position: relative;
-  min-height: 44px; padding: 4px 0; border-radius: 9px;
+  min-height: var(--bersaglio); padding: 4px 0; border-radius: var(--raggio-cella);
   border: 1px solid var(--bordo); background: var(--superficie);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
 }
@@ -785,30 +817,30 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    da prendere hanno il bordo tratteggiato: si toccano, ma non sono un tuo
    turno. */
 .cal-conta {
-  position: absolute; top: -7px; right: -6px;
-  min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; box-sizing: border-box;
-  background: var(--verde); color: #fff;
-  font-size: 10px; font-weight: 700; font-style: normal; line-height: 16px; text-align: center;
+  position: absolute; top: -8px; right: -7px;
+  min-width: 18px; height: 18px; padding: 0 4px; border-radius: var(--raggio-pill); box-sizing: border-box;
+  background: var(--prendo); color: var(--su-pieno);
+  font-size: 12px; font-weight: 700; font-style: normal; line-height: 18px; text-align: center;
   font-variant-numeric: tabular-nums;
 }
 .cal-turno.nessuno { opacity: .5; }
-.cal-turno.libero { border-style: dashed; border-color: var(--verde); background: none; }
-.cal-turno.libero em { color: var(--verde); font-weight: 600; }
-.cal-turno.libero.attivo { border-style: solid; background: var(--verde); border-color: var(--verde); }
+.cal-turno.libero { border-style: dashed; border-color: var(--prendo); background: none; }
+.cal-turno.libero em { color: var(--prendo); font-weight: 600; }
+.cal-turno.libero.attivo { border-style: solid; background: var(--prendo); border-color: var(--prendo); }
 .cal-turno.libero.attivo em { color: inherit; }
 .cal-turno.attivo .cal-conta { background: var(--su-pieno); color: var(--accento); }
-.cal-turno.libero.attivo .cal-conta { color: var(--verde); }
+.cal-turno.libero.attivo .cal-conta { color: var(--prendo); }
 .cal-turni-legenda { margin: 12px 0 0; font-size: 12px; color: var(--testo-tenue); display: flex; gap: 6px 14px; flex-wrap: wrap; }
 .cal-turni-legenda > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
 .cal-turni-legenda .cal-conta { position: static; display: inline-block; }
-.cal-turni-legenda em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--verde); border: 1px dashed var(--verde); border-radius: 6px; padding: 0 5px; }
+.cal-turni-legenda em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--prendo); border: 1px dashed var(--prendo); border-radius: 6px; padding: 0 5px; }
 
 /* Le ragioni di un match dietro "Perché": in Rapido le schede erano alte
    cinque righe di spiegazione, e la decisione si perdeva sotto. */
 .perche-aperto { margin: 4px 0 12px; }
 .perche-aperto > summary {
   cursor: pointer; font-size: 14px; font-weight: 600; color: var(--accento);
-  min-height: 44px; display: flex; align-items: center; list-style: none;
+  min-height: var(--bersaglio); display: flex; align-items: center; list-style: none;
 }
 .perche-aperto > summary::-webkit-details-marker { display: none; }
 .perche-aperto > summary::after { content: '›'; margin-left: 6px; transition: transform .15s ease; }
@@ -826,10 +858,18 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 /* Password dimenticata: chi l'ha chiesta si vede subito nella lista, e la
    password temporanea è grande, da leggere ad alta voce al banco. */
 .tag-password {
-  margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--giallo);
+  margin: 0 0 10px; font-size: 12px; font-weight: 600; color: var(--ambra);
 }
 .password-temporanea {
-  margin: 12px 0; padding: 16px; border-radius: 12px; text-align: center;
+  margin: 12px 0; padding: 16px; border-radius: var(--raggio-s); text-align: center;
   font: 700 26px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em;
   background: var(--superficie); border: 1px dashed var(--bordo); user-select: all;
+}
+
+/* Il fuoco di tutto ciò che si tocca, da tastiera o da VoiceOver: prima ce
+   l'avevano solo i campi. :where() non aggiunge specificità, così un
+   componente che vuole un fuoco suo lo dichiara senza lottare. L'accento sta
+   sopra 4,8:1 su ogni fondo dell'app, in entrambi i temi. */
+:where(button, a, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accento); outline-offset: 2px;
 }

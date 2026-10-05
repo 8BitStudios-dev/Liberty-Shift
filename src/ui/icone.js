@@ -22,6 +22,10 @@ const TRACCIATI = {
   home: '<path d="M3.5 10.6 12 4l8.5 6.6V20H3.5z"/><path d="M9.5 20v-5.5h5V20"/>',
   calendario: '<rect x="3.5" y="5.5" width="17" height="15" rx="3"/><path d="M8 3.5v4M16 3.5v4M3.5 10.6h17"/>',
   scambio: '<path d="M4 9h13M14 6l3 3-3 3M20 15H7M10 12l-3 3 3 3"/>',
+  // Le due metà di `scambio`, centrate: chi cede manda via (→), chi prende
+  // riceve (←). Stanno sulle etichette dei lati, che hanno già il colore.
+  cedo: '<path d="M4 12h13M14 9l3 3-3 3"/>',
+  prendo: '<path d="M20 12H7M10 9l-3 3 3 3"/>',
   proposte: '<path d="M3.5 13.5 6 5.5h12l2.5 8v4.5a1.5 1.5 0 0 1-1.5 1.5H5a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M3.5 13.5h5l1.5 2.5h4l1.5-2.5h5"/>',
   profilo: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/>',
   rapido: '<path d="M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z"/>',

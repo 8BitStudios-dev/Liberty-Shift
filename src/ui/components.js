@@ -88,13 +88,13 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
   const lato = off
     ? html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 OFFRO</span>
+        <span class="etichetta">${raw(icona('prendo', { px: 14, forte: true }))} OFFRO</span>
         <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`
     : html`
       <div class="lato cerco">
-        <span class="etichetta">🟢 CERCO</span>
+        <span class="etichetta">${raw(icona('prendo', { px: 14, forte: true }))} CERCO</span>
         <strong>stesso giorno</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>
       </div>`;
@@ -104,7 +104,7 @@ export function coppiaCedoCerco(request, { compatto = false } = {}) {
       <div class="tipo-cambio">${raw(iconaTipo(request.tipo))} ${meta.label}</div>
       <div class="lati">
         <div class="lato cedo">
-          <span class="etichetta">${off ? '🔵 CERCO' : '🔵 LASCIO'}</span>
+          <span class="etichetta">${raw(icona('cedo', { px: 14, forte: true }))} ${off ? 'CERCO' : 'LASCIO'}</span>
           <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
           <span class="orario">${shiftLabel(cedo)}</span>
           ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}

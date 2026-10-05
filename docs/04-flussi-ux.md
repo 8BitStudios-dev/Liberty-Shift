@@ -241,7 +241,7 @@ la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
 Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un
-segmento per ruolo presente: rosso chi cerca, verde chi offre, bordo oro per la
+segmento per ruolo presente: blu chi cerca, verde chi offre, bordo oro per la
 priorità. Un segmento per ruolo e non uno per richiesta: dal mese serve sapere
 se su quel giorno qualcuno se ne vuole andare, qualcuno vuole venire, o tutte e
 due le cose.
