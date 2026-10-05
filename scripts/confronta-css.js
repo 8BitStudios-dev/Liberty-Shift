@@ -218,12 +218,23 @@ async function schermate(browser, server) {
 }
 
 function selettoriUsati() {
+  // Gira nel browser: non vede le funzioni del modulo, e si porta la sua.
+  const dividi = (lista) => {
+    const pezzi = []; let livello = 0; let pezzo = '';
+    for (const ch of lista) {
+      if (ch === '(') livello++;
+      if (ch === ')') livello--;
+      if (ch === ',' && !livello) { pezzi.push(pezzo); pezzo = ''; } else pezzo += ch;
+    }
+    return [...pezzi, pezzo];
+  };
   const out = [];
   const giro = (regole) => {
     for (const r of regole) {
       if (!r.selectorText) { if (r.cssRules) giro(r.cssRules); continue; }
       for (const sel of dividi(r.selectorText)) {
-        const pulito = sel.replace(/::?(before|after|-webkit-details-marker)/g, '').replace(/:(focus-visible|focus-within|disabled|active|hover)/g, '').trim();
+        const pulito = sel.replace(/::?(before|after|-webkit-details-marker)/g, '')
+          .replace(/:(focus-visible|focus-within|disabled|active|hover)/g, '').replace(/:where\(([^,)]*)[^)]*\)/g, '$1').trim();
         try { if (document.querySelector(pulito || '*')) out.push(sel.trim()); } catch { /* selettore che querySelector non capisce */ }
       }
     }

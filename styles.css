@@ -85,31 +85,15 @@ p { margin: 8px 0; }
 .testo-tenue { color: var(--testo-tenue); font-size: 14px; }
 .meta { color: var(--testo-tenue); font-size: 14px; }
 .occhiello { color: var(--testo-tenue); font-size: 15px; margin: 4px 0 16px; }
-.nota-regola { margin-top: 22px; }
 
 /* -------------------------------------------------- testate e sezioni */
 
 .hero { padding: 18px 0 6px; }
 .hero .saluto { color: var(--testo-tenue); margin: 0; font-size: 15px; }
 .hero h1 { font-size: 32px; }
-.hero .sottotitolo { color: var(--testo-tenue); font-size: 14px; margin: 2px 0 0; }
 .hero-riga { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .hero-azioni { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex: 0 0 auto; }
-.hero-azioni .priorita-chip { margin-top: 0; }
-.guida-profilo { position: absolute; top: 12px; left: 0; }
-.priorita-chip {
-  appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
-  border: 1px solid var(--oro); color: var(--oro); background: none;
-  border-radius: 999px; padding: 5px 12px; margin-top: 8px; flex: 0 0 auto;
-}
 .hero.compatta { text-align: center; padding-top: 24px; position: relative; }
-/* Un contatore in alto a destra: cresce senza occupare una sezione intera. */
-.grazie-chip {
-  position: absolute; top: 12px; right: 0;
-  appearance: none; cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
-  border: 1px solid var(--bordo); background: var(--superficie); color: inherit;
-  border-radius: 999px; padding: 5px 12px;
-}
 
 .testata { display: flex; align-items: center; gap: 10px; padding: 14px 0 12px; }
 .testata h1 { flex: 1; font-size: 22px; text-align: center; }
@@ -147,11 +131,7 @@ p { margin: 8px 0; }
   font-size: 17px; color: var(--testo); cursor: pointer;
   border: 1px solid var(--bordo);
 }
-/* Le frecce di mese: si toccano più spesso di un'icona qualunque, e un
-   pollice le trova più facilmente se sono un po' più grandi delle altre. */
-.icon-btn.grande { width: 44px; height: 44px; font-size: 24px; }
 .link-btn { appearance: none; border: 0; background: none; color: var(--accento); font: inherit; cursor: pointer; padding: 0; }
-.link { color: var(--accento); font-weight: 600; font-size: 14px; }
 
 .barra-azioni { display: flex; gap: 10px; margin-top: 18px; }
 .barra-azioni .btn { flex: 1; }
@@ -185,7 +165,6 @@ p { margin: 8px 0; }
 .card.prioritaria { border-color: var(--oro); box-shadow: 0 0 0 1px var(--oro) inset, var(--ombra); }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .card-head > div { flex: 1; min-width: 0; }
-.card-foot { margin-top: 10px; text-align: right; }
 
 .avatar {
   width: 38px; height: 38px; border-radius: 50%;
@@ -193,7 +172,6 @@ p { margin: 8px 0; }
   display: grid; place-items: center; font-weight: 700; font-size: 14px;
   flex: 0 0 auto;
 }
-.avatar.grande { width: 68px; height: 68px; font-size: 22px; margin: 0 auto 10px; }
 
 .score { font-weight: 700; color: var(--accento); font-variant-numeric: tabular-nums; }
 
@@ -258,20 +236,6 @@ p { margin: 8px 0; }
 .tile em { font-style: normal; color: var(--testo-tenue); font-size: 14px; }
 .tile-icona { font-size: 24px; }
 
-/* Sincronizza (piccolo) a sinistra, proposte ricevute a destra: la seconda
-   perde un quarto della sua larghezza per far posto alla prima. */
-.riga-doppia { display: grid; grid-template-columns: 1fr 3fr; gap: 10px; margin-bottom: 10px; }
-.riga-doppia .tile { margin-bottom: 0; }
-
-.tile-sync {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 4px; width: 100%; padding: 12px 4px; border-radius: var(--raggio);
-  border: 1px solid var(--bordo); background: var(--superficie); box-shadow: var(--ombra);
-  color: inherit; font: inherit; text-align: center; cursor: pointer;
-}
-.tile-sync-icona { position: relative; font-size: 20px; }
-.tile-sync-icona .pallino { position: absolute; top: -2px; right: -6px; }
-.tile-sync-testo { font-size: 12px; line-height: 1.25; color: var(--testo-tenue); }
 /* Il Cambio rapido resta la prima cosa che si vede, ma senza gridare: era un
    rettangolo pieno di colore in cima a una schermata per il resto chiara, e
    attirava l'occhio anche quando si stava cercando altro. */
@@ -282,7 +246,6 @@ p { margin: 8px 0; }
 .tile.cambio-rapido strong { color: var(--accento); }
 .tile.cambio-rapido .tile-icona { opacity: .9; }
 .tile.scelta { padding: 18px; }
-.tile.scelta.rosso { border-left: 4px solid var(--rosso); }
 .tile.scelta.verde { border-left: 4px solid var(--verde); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
 
@@ -302,43 +265,14 @@ p { margin: 8px 0; }
 
 /* --------------------------------------------------------- calendario */
 
-.griglia-intestazione, .griglia-mese { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-/* Righe più alte dei 58px di partenza: sotto la legenda restava sempre un
-   bordo di schermo vuoto, e un mese che riempie lo spazio si legge meglio
-   col pollice sopra ogni giorno. */
-.griglia-mese { grid-auto-rows: minmax(74px, auto); margin-bottom: 4px; }
-.griglia-intestazione { color: var(--testo-tenue); font-size: 14px; text-align: center; margin-bottom: 8px; }
-
-.giorno {
-  /* min-height invece di aspect-ratio: in griglia l'aspect-ratio può far
-     debordare la cella oltre la riga e coprire quello che viene dopo. */
-  min-height: 74px; border: 1px solid var(--bordo); border-radius: 12px;
-  background: var(--superficie); color: inherit; font: inherit;
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  padding: 8px 2px; gap: 2px; cursor: pointer; position: relative;
-}
-.giorno.vuota { border: 0; background: none; }
-.giorno .numero { font-size: 16px; font-weight: 600; }
-.giorno .mio-turno { font-size: 12px; color: var(--testo-tenue); }
-.giorno .indicatori { display: flex; align-items: center; gap: 2px; margin-top: auto; }
-.giorno.oggi { border-color: var(--accento); background: var(--accento-tenue); }
-.giorno small { font-size: 12px; color: var(--testo-tenue); }
-
-.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accento); display: inline-block; }
-.dot.prio { background: var(--oro); }
-
 /* Una barra in fondo alla cella al posto dei pallini: si legge come un
    sottolineato, non come una macchia, e resta leggibile anche piccola. */
 .barre { display: flex; gap: 2px; width: 62%; height: 3px; margin-top: auto; }
 .barre i { flex: 1; border-radius: 2px; }
 .barre .cerca { background: var(--rosso); }
 .barre .offre { background: var(--verde); }
-.giorno.prioritaria { border-color: var(--oro); }
 
-.legenda { font-size: 12px; color: var(--testo-tenue); margin-top: 12px; line-height: 1.9; }
 .barre.in-legenda { display: inline-flex; width: 16px; vertical-align: middle; margin-left: 4px; }
-
-.giorno-dettaglio .tuo-turno { padding-bottom: 8px; border-bottom: 1px solid var(--bordo); }
 
 .gruppo-giorno { margin-top: 18px; }
 .gruppo-giorno h3 {
@@ -357,7 +291,6 @@ p { margin: 8px 0; }
   color: var(--rosso); font-size: 12px; margin: 6px 0 0; text-align: right;
 }
 .riga-richiesta .non-puoi { text-align: left; margin: 2px 0 0; }
-.nota-non-puoi { text-align: right; margin: 2px 0 0; font-size: 12px; }
 
 /* Un riquadro che si apre: usa <details>, così funziona anche senza
    javascript e la freccia la disegna il browser. */
@@ -466,11 +399,6 @@ p { margin: 8px 0; }
 .tag { font-size: 12px; padding: 2px 7px; border-radius: 6px; background: var(--superficie-2); color: var(--testo-tenue); }
 .tag.ok { background: color-mix(in srgb, var(--verde) 18%, transparent); color: var(--verde); }
 
-.badge-conta {
-  background: var(--rosso); color: #fff; font-size: 12px; font-weight: 700;
-  min-width: 22px; height: 22px; border-radius: 999px;
-  display: grid; place-items: center; padding: 0 6px; flex: 0 0 auto;
-}
 .card.da-fare { border-left: 4px solid var(--accento); }
 
 /* Ringraziamenti collezionati */

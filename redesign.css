@@ -341,7 +341,6 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 /* Prima l'.icon-btn portava solo un glifo di testo ("?", "‹"), centrato dal
    line-height. Con un'icona SVG dentro serve un centraggio vero. */
 .icon-btn { width: var(--bersaglio); height: var(--bersaglio); font-size: 19px; display: grid; place-items: center; }
-.icon-btn.grande { width: 46px; height: 46px; font-size: 24px; }
 .pill { font-size: 15px; padding: 9px 16px; }
 /* Icona e testo dei filtri sulla stessa riga: l'svg è un blocco, e andava a
    capo sopra l'etichetta raddoppiando l'altezza del chip. */
@@ -351,17 +350,15 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 }
 .chips .chip { padding: 0 13px; font-size: 14px; }
 .chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
-.link, .link-btn { font-size: 15px; }
-.link-btn { min-height: var(--bersaglio); display: inline-flex; align-items: center; }
+.link-btn { font-size: 15px; min-height: var(--bersaglio); display: inline-flex; align-items: center; }
 
 .avatar { width: 40px; height: 40px; font-size: 15px; }
 .avatar.piccolo { width: 34px; height: 34px; font-size: 14px; }
-.avatar.grande { width: 76px; height: 76px; font-size: 24px; }
 .pallino { width: 10px; height: 10px; }
 
 .hero { padding: 20px 0 8px; }
 .hero h1 { font-size: 34px; }
-.hero .sottotitolo, .hero .saluto { font-size: 15px; }
+.hero .saluto { font-size: 15px; }
 
 /* --------------------------------------------------------- calendario */
 

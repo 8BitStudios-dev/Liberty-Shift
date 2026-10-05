@@ -57,11 +57,17 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 - **Quello che va sul server passa solo da `src/core/sincronia.js`.** È l'unico
   posto che conosce i nomi delle colonne. Una scrittura fatta a mano da un'altra
   parte salta la coda, e senza coda si perde appena manca la rete.
-- **Due griglie non possono chiamarsi quasi uguale.** `.griglia-mese` è il tab
-  Calendario e impone righe da 58px: il mese del Profilo, nato con lo stesso
-  nome, si ritrovava la riga delle iniziali alta due volte e mezzo. Le sue
-  classi cominciano tutte per `mese-`. Un foglio di stile unico non ha
-  compartimenti: il nome è l'unico confine che esiste.
+- **Due griglie non possono chiamarsi quasi uguale.** Il vecchio Calendario
+  era `.griglia-mese` e imponeva righe da 58px: il mese del Profilo, nato con
+  lo stesso nome, si ritrovava la riga delle iniziali alta due volte e mezzo.
+  Oggi i due mesi sono `.mese-pubblico` e `.mese-personale`, con classi che
+  cominciano tutte per `mese-`. Un foglio di stile unico non ha compartimenti:
+  il nome è l'unico confine che esiste.
+- **Un ritocco al CSS si verifica con `npm run confronta-css`**, che confronta
+  la copia di lavoro con `HEAD` su 92 schermate e su un DOM sintetico. Una
+  ripulitura deve dare zero; una modifica voluta, solo le differenze attese.
+  Una classe che sembra morta si cerca dentro `class="…"`, non con `grep -w`:
+  parole come `giorno` o `link` compaiono comunque nel codice.
 - **Un array interpolato dentro `html``` viene escapato**: per una lista già
   montata serve `raw(righe.join(''))`.
 - **Il build controlla la sintassi del bundle** prima di scrivere `dist/`: un
