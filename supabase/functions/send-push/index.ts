@@ -21,6 +21,7 @@
 import webpush from 'npm:web-push@3.6.7';
 import { candidatiCompatibili } from './core/compatibili.js';
 import { RULES } from './core/rules.js';
+import { decifra } from './core/cifratura.js';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -31,7 +32,11 @@ const intestazioni = {
   'Content-Type': 'application/json',
 };
 
-type Segreti = { push_vapid_pubblica: string; push_vapid_privata: string; push_webhook: string };
+type Segreti = {
+  push_vapid_pubblica: string; push_vapid_privata: string; push_webhook: string;
+  // La chiave che decifra i turni delle notifiche compatibili (vedi core/cifratura.js).
+  turni_chiave_privata?: string;
+};
 
 // Letti una volta per istanza: la funzione resta calda per una serie di
 // chiamate, e chiedere a Vault a ogni proposta non serve.
@@ -238,9 +243,24 @@ async function avvisaCompatibili(riga: RigaRichiesta) {
   const oggi = oggiARoma();
   const limite = new Date(Date.now() - RULES.notifiche.giorniFreschezza * 86400000).toISOString();
 
-  const scelte = await leggi(
-    `notifiche_preferenze?modo=eq.compatibili&user_id=neq.${riga.autore_id}&aggiornato_il=gte.${limite}&select=user_id,turni,preferenze`,
+  const righe = await leggi(
+    `notifiche_preferenze?modo=eq.compatibili&user_id=neq.${riga.autore_id}&aggiornato_il=gte.${limite}&select=user_id,dati_cifrati`,
   );
+  // I turni arrivano cifrati: si decifrano qui, solo in memoria e solo per
+  // il confronto. Una riga che non si decifra (chiave cambiata, riga
+  // manomessa) si salta: un avviso perso è meglio di uno sbagliato.
+  const chiave = segreti?.turni_chiave_privata;
+  if (!chiave) return { notificati: [], motivo: 'manca la chiave dei turni in Vault' };
+  const scelte = (await Promise.all(righe.map(async (r: { user_id: string; dati_cifrati: string | null }) => {
+    if (!r.dati_cifrati) return null;
+    try {
+      const { turni, preferenze } = await decifra(r.dati_cifrati, chiave);
+      return { user_id: r.user_id, turni, preferenze };
+    } catch (err) {
+      console.error('send-push: riga non decifrabile', r.user_id, (err as Error).message);
+      return null;
+    }
+  }))).filter(Boolean);
   if (!scelte.length) return { notificati: [], motivo: 'nessuno ha scelto le richieste compatibili' };
 
   const ids = [riga.autore_id, ...scelte.map((s: { user_id: string }) => s.user_id)];

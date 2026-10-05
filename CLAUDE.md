@@ -98,6 +98,11 @@ la documentazione che mente è peggio di quella che manca.
   migrazione che li contiene non parte e non dà errore: si spezza in pezzi
   senza quelle parole, o si incolla in SQL Editor. Dopo, si controlla sempre
   con una query di lettura che sia passata davvero.
+- **I turni delle notifiche compatibili escono cifrati** (`cifratura.js`, in
+  `dati_cifrati`). Le colonne `turni` e `preferenze` di `notifiche_preferenze`
+  devono restare vuote: un campo nuovo con dati di turno va dentro la parte
+  cifrata, non accanto. La chiave privata sta solo nel Vault: non va mai
+  letta, stampata o copiata in una conversazione o nel repository.
 - **`supabase/functions/send-push/core/` è una copia di `src/core/`.** Si
   rigenera con `npm run funzioni` e va ripubblicata la funzione, altrimenti il
   server ragiona con regole vecchie. `notifiche_preferenze` non va mai aperta

@@ -568,6 +568,24 @@ server i turni dei prossimi 28 giorni (solo data, tipo e orari) e le preferenze.
 Stanno in `notifiche_preferenze`: la legge solo il proprietario e `service_role`,
 **mai admin né colleghi**. Tornando a "solo proposte dirette" la riga si svuota.
 
+**Sono cifrati.** Il telefono cifra turni e preferenze prima di mandarli
+(`src/core/cifratura.js`: AES-GCM per i dati, RSA-OAEP per la chiave AES) e li
+scrive in `dati_cifrati`; le colonne `turni` e `preferenze` restano vuote. La
+chiave pubblica sta in `config.js`, la privata nel segreto Vault
+`turni_chiave_privata`, che `send-push` legge da `segreti_push()` e usa solo in
+memoria, per il confronto. Chi apre la tabella, un'esportazione o un backup
+legge testo illeggibile. Il limite, scelto e dichiarato: chi ha accesso pieno al
+progetto può leggere il Vault, quindi non è una cifratura da un capo all'altro.
+Quella spegnerebbe le notifiche compatibili, perché su iPhone ogni push va
+mostrata e il telefono non può scartare da solo quelle che non lo riguardano.
+
+La chiave è stata generata sul server (una funzione usa e getta,
+`chiave-turni`, ora svuotata) e non è mai passata da un repository né da una
+conversazione. Per cambiarla: nuova coppia, la privata nel Vault con
+`vault.update_secret`, la pubblica in `config.js`, e ogni telefono rimanda la
+sua riga alla prima apertura (la firma in `condividiNotifiche` include una
+versione: alzarla forza il nuovo invio).
+
 Quando nasce una richiesta, il trigger `notifica_richiesta` chiama `send-push`
 con `type: RICHIESTA`; la funzione usa il motore vero (`core/`, copia generata
 da `npm run funzioni`) per decidere chi avvisare. Dopo ogni modifica a

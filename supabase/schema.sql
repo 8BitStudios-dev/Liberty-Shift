@@ -597,7 +597,7 @@ create or replace function public.segreti_push() returns jsonb
 language sql security definer set search_path = '' as $$
   select jsonb_object_agg(name, decrypted_secret)
   from vault.decrypted_secrets
-  where name in ('push_vapid_pubblica', 'push_vapid_privata', 'push_webhook');
+  where name in ('push_vapid_pubblica', 'push_vapid_privata', 'push_webhook', 'turni_chiave_privata');
 $$;
 
 revoke all on function public.segreti_push() from public, anon, authenticated;
@@ -984,3 +984,16 @@ end $$;
 
 revoke all on function public.chiedi_nuova_password(text, text) from public;
 grant execute on function public.chiedi_nuova_password(text, text) to anon, authenticated;
+
+
+-- ================================================== turni cifrati
+--
+-- I turni e le preferenze delle notifiche compatibili arrivano cifrati dal
+-- telefono (vedi src/core/cifratura.js) in `dati_cifrati`; le colonne `turni`
+-- e `preferenze` restano vuote. La chiave che decifra è il segreto Vault
+-- `turni_chiave_privata`, e la legge solo `send-push` attraverso
+-- `segreti_push()`. Non sta in questo file né nel repository: si crea una
+-- volta da SQL Editor con
+--   select vault.create_secret('<chiave PKCS8 in base64>', 'turni_chiave_privata');
+-- e la sua metà pubblica va in `chiaveTurniPubblica` di src/core/config.js.
+alter table public.notifiche_preferenze add column if not exists dati_cifrati text;

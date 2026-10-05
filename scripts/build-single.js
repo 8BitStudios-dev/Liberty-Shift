@@ -21,6 +21,7 @@ const MODULI = [
   'src/core/accesso.js',
   'src/core/config.js',
   'src/core/supabase.js',
+  'src/core/cifratura.js',
   'src/core/sincronia.js',
   'src/core/rotazione.js',
   'src/core/statistiche.js',

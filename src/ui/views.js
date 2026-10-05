@@ -559,7 +559,7 @@ export function rigaModoNotifiche(stato = statoNoto()) {
         <span class="conteggio">${modo === 'compatibili' ? 'tutte le compatibili' : 'solo le personali'}</span>
       </summary>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server su una connessione cifrata.'))}
+      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati.'))}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Nel calendario di questo dispositivo non ci sono turni futuri: importali dal Profilo, altrimenti non ti arriva niente.</p>'
     : '')}

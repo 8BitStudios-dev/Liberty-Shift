@@ -13,7 +13,8 @@
 import {
   seleziona, inserisci, aggiorna, salvaSuChiave, elimina, collegato,
 } from './supabase.js';
-import { serverConfigurato } from './config.js';
+import { serverConfigurato, SERVER } from './config.js';
+import { cifra } from './cifratura.js';
 import { todayISO } from './time.js';
 import { turniDaCondividere, preferenzeDaCondividere } from './compatibili.js';
 
@@ -216,9 +217,27 @@ const OPERAZIONI = {
   'proposta.ritira': (d) => elimina('proposte', { eq: { id: d.id } }),
   'ringraziamento.crea': (d) => inserisci('ringraziamenti', d),
   'disponibilita.salva': (d) => salvaSuChiave('disponibilita', d),
-  'notifiche.salva': (d) => salvaSuChiave('notifiche_preferenze', d, 'user_id'),
+  'notifiche.salva': async (d) => salvaSuChiave('notifiche_preferenze', await rigaCifrata(d), 'user_id'),
   'traguardi.salva': (d) => salvaSuChiave('traguardi_visti', d, 'user_id'),
 };
+
+/**
+ * I turni e le preferenze escono cifrati: sul server, nelle colonne in
+ * chiaro, restano vuoti. Si cifra qui, al momento dell'invio, e non quando la
+ * riga entra in coda: la coda sta sul telefono, ed è l'unico punto in cui si
+ * può aspettare la cifratura (che è asincrona) senza rendere asincrono tutto
+ * il resto.
+ */
+async function rigaCifrata(d) {
+  const { turni = [], preferenze = {}, ...resto } = d;
+  if (d.modo !== 'compatibili') return { ...resto, turni: [], preferenze: {}, dati_cifrati: null };
+  return {
+    ...resto,
+    turni: [],
+    preferenze: {},
+    dati_cifrati: await cifra({ turni, preferenze }, SERVER.chiaveTurniPubblica),
+  };
+}
 
 /**
  * Operazioni che sostituiscono la precedente invece di aggiungersi: del
@@ -274,7 +293,10 @@ export function condividiNotifiche(state, { forzato = false, oggi = todayISO() }
   if (!forzato && scelta?.modo !== 'compatibili') return false;
 
   const riga = rigaNotifiche(state, oggi);
-  const firma = JSON.stringify([riga.modo, riga.turni, riga.preferenze]);
+  // La versione dentro la firma: quando cambia il modo in cui i dati escono
+  // (dalla 2 sono cifrati) ogni telefono rimanda la sua riga una volta, e sul
+  // server non resta niente in chiaro.
+  const firma = JSON.stringify([2, riga.modo, riga.turni, riga.preferenze]);
   if (!forzato && scelta.firma === firma) return false;
   // Un dispositivo che non ha mai mandato niente e non ha ancora i turni (un
   // telefono nuovo dopo il rientro) non sa com'è il calendario: mandare una

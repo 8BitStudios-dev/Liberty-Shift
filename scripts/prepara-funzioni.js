@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** I moduli che la funzione importa, direttamente o no. L'ordine non conta. */
-export const MODULI_FUNZIONE = ['rules.js', 'time.js', 'model.js', 'engine.js', 'compatibili.js'];
+export const MODULI_FUNZIONE = ['rules.js', 'time.js', 'model.js', 'engine.js', 'compatibili.js', 'cifratura.js'];
 export const CARTELLA_FUNZIONE = join('supabase', 'functions', 'send-push', 'core');
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

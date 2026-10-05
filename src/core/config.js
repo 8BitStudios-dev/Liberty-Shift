@@ -30,6 +30,13 @@ export const SERVER = {
    * Vault sul server, e solo lì.
    */
   chiaveVapidPubblica: 'BID0iZcecaccRRQh1c49CrIQfIS7Orn_9KGp8dS5OXGXSOxmzTYAkF8ezYtdfAyaD7LM9EvMozT4zVALO3F80H8',
+  /**
+   * La chiave pubblica con cui il telefono cifra i turni che manda per le
+   * notifiche compatibili (vedi `cifratura.js`). Pubblica davvero: serve solo
+   * a cifrare. La privata, che decifra, sta nel Vault (`turni_chiave_privata`)
+   * e la legge solo la funzione `send-push`.
+   */
+  chiaveTurniPubblica: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA34Qwz0t5tjKOzbtyk9BDcAMy5aULLHEv3V286rhz7r/LHYIreix14ma+VDL+Y7VQmJrDhrn1qceC46gxSAxC9PM6BZgGhH+hN3ZtycNamHUyVercbHEQ32IItIO6XychbLazvdGHJOj+/fINZIZCdbiFjdXkS6l06j/CVkj3rHl2joPPsOCI9IEdjB5s3PbIRXStWSV5I+zTOSJDCws9e0TTwjnA/TsZBWyIWz8IKQRikFtJyTcJTkv2VQhDJCIICHn1CwpHf+NR+atHOXfR71PUfjpjiyG8IGcSnnrVMpRw70cwoJ6P9spvY3fjd4ip0TMDnlVJYZgGv3NSWu9lgwIDAQAB',
   chiaveAnon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhZXJlYnRraWJnbXR5dnpuZnZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg3ODE4NzAsImV4cCI6MjEwNDM1Nzg3MH0.icOOSXRX6k3jYmyj66NQg_EMDs5cvvY5etzEvJ7xQfY',
 };
 

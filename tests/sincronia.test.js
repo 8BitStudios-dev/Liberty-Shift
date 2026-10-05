@@ -323,6 +323,31 @@ test('il calendario condiviso sale con l\'upsert sul suo vincolo, non sulla chia
   assert.match(s.percorso, /on_conflict=user_id/);
 });
 
+test('i turni per le notifiche salgono cifrati: nelle colonne in chiaro non resta niente', async () => {
+  const state = statoIscritto();
+  const scritture = serverFinto({ notifiche_preferenze: {} });
+  accoda(state, 'notifiche.salva', {
+    user_id: 'io-sul-server', modo: 'compatibili', consenso_il: '2026-10-04T08:00:00Z',
+    turni: [{ data: '2026-10-20', tipo: 'WORK', start: '12:00', end: '21:00' }],
+    preferenze: { evitaChiusure: true },
+  });
+  await svuotaCoda(state);
+  const s = scritture.find((x) => x.percorso.includes('notifiche_preferenze'));
+  assert.deepEqual(s.corpo.turni, []);
+  assert.deepEqual(s.corpo.preferenze, {});
+  assert.ok(s.corpo.dati_cifrati, 'i dati partono, ma cifrati');
+  assert.doesNotMatch(JSON.stringify(s.corpo), /2026-10-20|12:00|evitaChiusure/);
+});
+
+test('tornando a "solo dirette" la riga si svuota anche della parte cifrata', async () => {
+  const state = statoIscritto();
+  const scritture = serverFinto({ notifiche_preferenze: {} });
+  accoda(state, 'notifiche.salva', { user_id: 'io-sul-server', modo: 'dirette', turni: [], preferenze: {}, consenso_il: null });
+  await svuotaCoda(state);
+  const s = scritture.find((x) => x.percorso.includes('notifiche_preferenze'));
+  assert.equal(s.corpo.dati_cifrati, null);
+});
+
 test('il traguardo annunciato sale sul server e scende su un altro telefono', async () => {
   const state = statoIscritto();
   const scritture = serverFinto({

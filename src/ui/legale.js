@@ -72,8 +72,10 @@ export function noteLegali({ compatte = false } = {}) {
         non solo per le proposte che ti arrivano. Ad app chiusa il telefono non
         può fare quel confronto, quindi in quel caso, e solo in quel caso,
         l'app manda al server i tuoi turni dei prossimi 28 giorni (data, tipo e
-        orari) e le tue preferenze di turno. Li legge solo il server, per quel
-        confronto: non li vedono i colleghi e nemmeno gli admin. Tornando a
+        orari) e le tue preferenze di turno, cifrati dal telefono prima di
+        partire. Sul server restano cifrati: li decifra solo la funzione che fa
+        il confronto, e solo in quel momento. Non li vedono i colleghi né gli
+        admin, e chi apre il database legge un testo illeggibile. Tornando a
         «solo le proposte dirette» vengono cancellati.
       </p>
 
@@ -140,7 +142,7 @@ const VOCI_ACCETTAZIONE = [
   { titolo: 'Non fa nessun cambio turno.', testo: 'Serve a mettersi d\'accordo; il cambio va poi inserito nel sistema ufficiale.' },
   {
     titolo: 'I tuoi turni restano su questo dispositivo.',
-    testo: 'Solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente. Fa eccezione, solo se lo scegli tu, l\'avviso sulle richieste compatibili: in quel caso i turni dei prossimi 28 giorni vanno al server, che li legge solo per quel confronto.',
+    testo: 'Solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente. Fa eccezione, solo se lo scegli tu, l\'avviso sulle richieste compatibili: in quel caso i turni dei prossimi 28 giorni vanno al server cifrati, e li decifra solo il confronto.',
   },
 ];
 
