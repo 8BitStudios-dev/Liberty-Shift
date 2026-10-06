@@ -895,7 +895,10 @@ begin
     perform net.http_post(
       url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
       body := jsonb_build_object('type', 'RICHIESTA', 'record', to_jsonb(new), 'autore', auth.uid()),
-      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto),
+      -- Può avvisare più persone, una dopo l'altra: i 5 secondi di default
+      -- non bastano (vedi chiedi_nuova_password).
+      timeout_milliseconds := 20000
     );
   exception when others then
     raise warning 'notifica_richiesta: %', sqlerrm;
@@ -1012,7 +1015,11 @@ begin
         perform net.http_post(
           url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
           body := jsonb_build_object('type', 'PASSWORD', 'utenti', to_jsonb(avvisa)),
-          headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+          headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto),
+          -- Si avvisano tutti gli admin, uno dopo l'altro: con dieci admin la
+          -- funzione ci ha messo quasi 5 secondi, il limite di default, e la
+          -- chiamata è finita in timeout.
+          timeout_milliseconds := 20000
         );
       exception when others then
         -- La richiesta resta valida anche se l'avviso non parte.
