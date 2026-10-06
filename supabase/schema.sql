@@ -654,7 +654,11 @@ begin
         'old_record', case when tg_op = 'UPDATE' then to_jsonb(old) end,
         'autore', auth.uid()
       ),
-      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto),
+      -- I 5 secondi di default bastano quasi sempre, ma una funzione appena
+      -- svegliata ne ha già spesi quattro e mezzo: meglio aspettare di più che
+      -- perdere l'avviso di un accordo.
+      timeout_milliseconds := 20000
     );
   exception when others then
     -- Stessa ragione di sopra: la notifica si perde, la proposta no.
@@ -811,7 +815,8 @@ begin
             'giorno', r.prossimo,
             'destinatario', persona
           ),
-          headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto)
+          headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto),
+          timeout_milliseconds := 20000
         );
       exception when others then
         raise warning 'promemoria_accordi: %', sqlerrm;
@@ -1076,3 +1081,26 @@ create or replace trigger segna_aggiornamento before update on public.profili
   for each row execute function public.segna_aggiornamento();
 create or replace trigger segna_aggiornamento before update on public.disponibilita
   for each row execute function public.segna_aggiornamento();
+
+
+-- ============================================ protezioni sugli scambi
+--
+-- Il telefono già evita questi casi, ma un telefono con la versione vecchia,
+-- o due telefoni della stessa persona, possono non saperlo. Il database è
+-- l'ultimo posto dove fermarli, e vale per tutti.
+
+-- Una proposta si ritira finché è in attesa. Una già concordata si annulla
+-- (stato RIFIUTATA con annullata_il), non si cancella: cancellarla lasciava
+-- la richiesta in ACCORDO senza la proposta che la teneva in piedi.
+alter policy "si ritira solo la propria proposta" on public.proposte
+  using (da_user_id = auth.uid() and stato in ('PROPOSTA', 'IN_ATTESA'));
+
+-- Un accordo per richiesta: due sì sulla stessa richiesta, da due telefoni
+-- nello stesso momento, non diventano due scambi.
+create unique index if not exists proposte_un_accordo_per_richiesta
+  on public.proposte (richiesta_id) where stato = 'ACCORDO';
+
+-- Una richiesta aperta per tipo e giorno: un secondo tocco su "Pubblica"
+-- da un altro telefono non la raddoppia in bacheca.
+create unique index if not exists richieste_una_aperta_per_giorno
+  on public.richieste (autore_id, tipo, cedo_data) where stato in ('APERTA', 'PROPOSTA', 'IN_ATTESA');

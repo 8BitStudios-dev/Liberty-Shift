@@ -1156,6 +1156,8 @@ const AZIONI = {
    * volta è stata poco fa: chi tocca il tasto ha appena visto qualcosa
    * cambiare.
    */
+  'chiudi-avviso-sincronia': () => { store.state.avvisoSincronia = null; store.commit(); render(); },
+
   sincronizza: async (_, el) => {
     const testo = el.querySelector('.tasto-aggiorna-testo');
     const prima = testo?.textContent;

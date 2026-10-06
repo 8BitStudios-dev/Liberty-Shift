@@ -249,12 +249,17 @@ async function rigaCifrata(d) {
  */
 const SOSTITUISCE = new Set(['notifiche.salva', 'traguardi.salva']);
 
-export function accoda(state, tipo, dati) {
+/**
+ * `gruppo` lega operazioni che hanno senso solo insieme, come le tre di un
+ * accordo (la proposta concordata, le altre che decadono, la richiesta). Se
+ * la prima scopre che sul server la riga non c'è più, le altre non partono.
+ */
+export function accoda(state, tipo, dati, gruppo = null) {
   state.coda = state.coda || [];
   if (SOSTITUISCE.has(tipo)) {
     state.coda = state.coda.filter((op, i) => i === 0 || op.tipo !== tipo);
   }
-  state.coda.push({ tipo, dati, tentativi: 0 });
+  state.coda.push({ tipo, dati, tentativi: 0, ...(gruppo ? { gruppo } : {}) });
 }
 
 // ---------------------------------------------- notifiche sulle compatibili
@@ -356,6 +361,20 @@ export function svuotaCoda(state) {
   return inCorso;
 }
 
+/**
+ * Un'operazione che il server non ha potuto applicare: si toglie dalla coda
+ * con quelle del suo gruppo, si dice cosa è successo, e al prossimo giro la
+ * bacheca riscende intera, così il telefono torna a credere a quello che c'è
+ * davvero.
+ */
+function scartaGruppo(state, op) {
+  state.coda = state.coda.filter((x) => x !== op && !(op.gruppo && x.gruppo === op.gruppo));
+  if (op.gruppo?.startsWith('accordo:')) {
+    state.avvisoSincronia = 'Lo scambio non è stato concordato: nel frattempo la proposta era stata ritirata o un altro scambio era già concordato. La bacheca si è aggiornata.';
+  }
+  state.cursori = {};
+}
+
 async function svuota(state) {
   let fatte = 0;
 
@@ -378,10 +397,24 @@ async function svuota(state) {
     } catch (err) {
       risposta = { errore: `Errore nel telefono (${op.tipo}): ${err?.message || err}` };
     }
-    const { errore, stato } = risposta;
-    // Gli id li generiamo noi: una riga che c'è già è la nostra, arrivata a
-    // destinazione in un tentativo precedente. Insistere sarebbe un blocco.
-    if (errore && stato !== 409) {
+    const { errore, stato, dati } = risposta;
+    const creazione = /\.(crea|salva)$/.test(op.tipo);
+    // Un aggiornamento che non ha toccato nessuna riga (cancellata nel
+    // frattempo, o non più permesso) e un conflitto su un aggiornamento (un
+    // secondo accordo sulla stessa richiesta) non si riprovano: non
+    // riuscirebbero mai. Prima contavano come riusciti, e il telefono restava
+    // convinto di un accordo che sul server non c'era.
+    const perso = op.tipo.endsWith('.aggiorna')
+      && ((!errore && Array.isArray(dati) && dati.length === 0) || (errore && stato === 409));
+    if (perso) {
+      scartaGruppo(state, op);
+      fatte += 1;
+      continue;
+    }
+    // Gli id li generiamo noi: una riga creata che c'è già è la nostra,
+    // arrivata a destinazione in un tentativo precedente. Insistere sarebbe un
+    // blocco. Per una creazione, e solo per quella.
+    if (errore && !(creazione && stato === 409)) {
       op.tentativi += 1;
       op.ultimoErrore = errore;
       return { fatte, errore };

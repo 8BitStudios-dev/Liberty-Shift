@@ -110,6 +110,7 @@ export function home() {
     </header>
 
     ${raw(avvisoCalendarioScaduto())}
+    ${raw(avvisoSincronia())}
     ${raw(avvisoCodaFerma())}
     ${raw(invitoNotifiche())}
 
@@ -423,6 +424,27 @@ function avvisoCalendarioScaduto() {
         <p>Il collegamento è scaduto. Nell'app aziendale apri Iscrizione al calendario, genera un nuovo URL e scansiona il QR.</p>
         <div class="invito-azioni">
           <button class="btn primario" data-act="importa">Ricollega</button>
+        </div>
+      </div>
+    </section>`;
+}
+
+/**
+ * Un'azione che il server non ha potuto applicare (un accordo su una proposta
+ * ritirata un attimo prima): il telefono si è già rimesso a posto, ma chi ha
+ * toccato "Accetta" deve saperlo, altrimenti crede a uno scambio che non c'è.
+ */
+function avvisoSincronia() {
+  const testo = store.state.avvisoSincronia;
+  if (!testo) return '';
+  return html`
+    <section class="invito-notifiche">
+      <span class="invito-icona">${raw(icona('avviso', { px: 24 }))}</span>
+      <div>
+        <strong>Uno scambio non è andato a buon fine</strong>
+        <p>${testo}</p>
+        <div class="invito-azioni">
+          <button class="btn primario" data-act="chiudi-avviso-sincronia">Ho capito</button>
         </div>
       </div>
     </section>`;

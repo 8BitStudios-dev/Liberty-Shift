@@ -624,3 +624,28 @@ Proposte, ringraziamenti, preferenze di notifica, traguardi e richieste di
 password riguardano solo chi le vede e scendono sempre intere. Il tasto
 "Aggiorna calendario" riscarica tutto (`completo`). Le notifiche non c'entrano:
 le manda il server nel momento in cui una riga cambia.
+
+## Protezioni sugli scambi
+
+Il telefono evita già questi casi, ma un telefono con la versione vecchia, o
+due telefoni della stessa persona, possono non saperlo. Il database li ferma
+per tutti:
+
+- **una proposta si ritira solo finché è in attesa** (policy "si ritira solo
+  la propria proposta"): una già concordata si annulla, non si cancella;
+- **un accordo per richiesta** (`proposte_un_accordo_per_richiesta`);
+- **una richiesta aperta per tipo e giorno** per persona
+  (`richieste_una_aperta_per_giorno`).
+
+Nella coda del telefono (`svuota` in `src/core/sincronia.js`) un
+aggiornamento che non tocca nessuna riga, o che va in conflitto (409), non
+conta più come riuscito: si scarta insieme alle operazioni del suo gruppo.
+Un'accettazione è un gruppo solo (la proposta per prima, poi le altre che
+decadono, poi la richiesta): se la proposta era stata ritirata un attimo
+prima, non resta una richiesta "concordata" senza proposta, la Home lo dice
+e la bacheca riscende intera. Il 409 vale come "c'era già" solo per le
+creazioni.
+
+Tutte le chiamate dal database a `send-push` aspettano fino a 20 secondi
+(`timeout_milliseconds`): con il valore di default, 5, una funzione appena
+svegliata che avvisa dieci admin finiva in timeout.

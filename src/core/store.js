@@ -533,7 +533,7 @@ export const store = {
    * va rispecchiato sul server ogni volta che si muove. Sta in un metodo suo
    * perché lo chiamano in cinque, e cinque copie divergerebbero.
    */
-  rispecchiaRichiesta(r) {
+  rispecchiaRichiesta(r, gruppo = null) {
     if (!r?.daServer || !sulServer(this.state)) return;
     accoda(this.state, 'richiesta.aggiorna', {
       id: r.id,
@@ -543,12 +543,12 @@ export const store = {
         chiusa_da_admin: r.chiusaDaAdmin ? serverDi(this.state, r.chiusaDaAdmin) : null,
         admin_motivo: r.motivoAdmin || null,
       },
-    });
+    }, gruppo);
   },
 
-  rispecchiaProposta(p, patch) {
+  rispecchiaProposta(p, patch, gruppo = null) {
     if (!p?.daServer || !sulServer(this.state)) return;
-    accoda(this.state, 'proposta.aggiorna', { id: p.id, patch });
+    accoda(this.state, 'proposta.aggiorna', { id: p.id, patch }, gruppo);
   },
 
   // Una richiesta pubblicata non si modifica (cap. 23): si cancella e si rifà.
@@ -661,15 +661,23 @@ export const store = {
     const me = this.state.currentUserId;
     if (!p.accettataDa.includes(me)) p.accettataDa.push(me);
     const r = this.request(p.requestId);
+    // Prima parte la proposta, poi quello che ne dipende, tutto nello stesso
+    // gruppo: se sul server la proposta non c'è più (ritirata un attimo prima)
+    // le altre non decadono e la richiesta non diventa un accordo fantasma.
+    const gruppo = `accordo:${p.id}`;
+    if (p.accettataDa.length >= 2) p.status = 'ACCORDO';
+    this.rispecchiaProposta(p, {
+      stato: p.status,
+      accettata_da: p.accettataDa.map((u) => serverDi(this.state, u)),
+    }, gruppo);
     if (p.accettataDa.length >= 2) {
-      p.status = 'ACCORDO';
       // Le altre proposte sulla stessa richiesta decadono.
       this.state.proposals
         .filter((x) => x.requestId === p.requestId && x.id !== p.id)
         .forEach((x) => { x.status = 'RIFIUTATA'; });
       this.state.proposals
         .filter((x) => x.requestId === p.requestId && x.id !== p.id)
-        .forEach((x) => this.rispecchiaProposta(x, { stato: 'RIFIUTATA' }));
+        .forEach((x) => this.rispecchiaProposta(x, { stato: 'RIFIUTATA' }, gruppo));
       // Un turno si scambia una volta sola. Le altre proposte in attesa che
       // usano lo stesso turno (quello offerto da chi ha proposto, o quello che
       // l'autore lascia) decadono: è il primo sì a vincere. Sul server lo fa
@@ -689,12 +697,8 @@ export const store = {
     } else {
       this.notifica(p.daUserId === me ? p.aUserId : p.daUserId, `${this.user(me).nome} ha accettato il cambio.`);
     }
-    this.rispecchiaProposta(p, {
-      stato: p.status,
-      accettata_da: p.accettataDa.map((u) => serverDi(this.state, u)),
-    });
     this.aggiornaStato(r);
-    this.rispecchiaRichiesta(r);
+    this.rispecchiaRichiesta(r, gruppo);
     this.commit();
     this.spingi();
   },

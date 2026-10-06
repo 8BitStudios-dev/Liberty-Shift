@@ -478,3 +478,61 @@ test('la stessa richiesta due volte sullo stesso turno non passa', () => {
   assert.ok(richiesta().richiesta);
   assert.match(richiesta().errori[0], /già una richiesta aperta/);
 });
+
+// --- un accordo su una proposta che non c'è più -----------------------------
+
+test('accettare una proposta ritirata un attimo prima non lascia un accordo fantasma', async () => {
+  const state = statoIscritto();
+  const scritte = [];
+  globalThis.fetch = async (url, opzioni = {}) => {
+    const percorso = String(url);
+    if (opzioni.method === 'PATCH') {
+      scritte.push(percorso.split('/rest/v1/')[1]);
+      // La proposta sul server non c'è più: l'aggiornamento non tocca righe.
+      return { ok: true, status: 200, text: async () => '[]' };
+    }
+    return { ok: true, status: 200, text: async () => '[]' };
+  };
+  accoda(state, 'proposta.aggiorna', { id: 'pr-x', patch: { stato: 'ACCORDO' } }, 'accordo:pr-x');
+  accoda(state, 'proposta.aggiorna', { id: 'pr-y', patch: { stato: 'RIFIUTATA' } }, 'accordo:pr-x');
+  accoda(state, 'richiesta.aggiorna', { id: 'rq-x', patch: { stato: 'ACCORDO' } }, 'accordo:pr-x');
+  accoda(state, 'ringraziamento.crea', { id: 'gr-1' });
+  await svuotaCoda(state);
+  assert.equal(scritte.length, 1, 'dopo la prima, le altre del gruppo non partono');
+  assert.deepEqual(state.coda, [], 'il resto della coda passa');
+  assert.match(state.avvisoSincronia, /non è stato concordato/);
+  assert.deepEqual(state.cursori, {}, 'la bacheca riscende intera');
+});
+
+test('un 409 su un aggiornamento non conta come riuscito, su una creazione sì', async () => {
+  const state = statoIscritto();
+  globalThis.fetch = async () => ({ ok: false, status: 409, text: async () => '{"message":"duplicate key"}' });
+  accoda(state, 'richiesta.crea', { id: 'rq-gia' });
+  accoda(state, 'proposta.aggiorna', { id: 'pr-z', patch: { stato: 'ACCORDO' } }, 'accordo:pr-z');
+  await svuotaCoda(state);
+  assert.deepEqual(state.coda, []);
+  assert.match(state.avvisoSincronia, /non è stato concordato/, 'il secondo accordo sulla stessa richiesta lo dice');
+});
+
+test('accettando, la proposta parte per prima e tutto l\'accordo è un gruppo solo', () => {
+  const state = statoIscritto();
+  const me = state.currentUserId;
+  state.users.push({ id: 'u-anna', nome: 'Anna', cognomeIniziale: 'V', contratto: 'PT', preferenze: {}, disponibilita: {} });
+  state.shifts.push({ id: 't-mio', userId: me, data: '2026-10-20', tipo: 'WORK', start: '12:00', end: '21:00' });
+  state.requests.push({
+    id: 'rq-mia', userId: me, tipo: 'ORARIO', status: 'IN_ATTESA', createdAt: '2026-10-01T10:00:00Z', daServer: true,
+    prioritaFinoA: null, cedo: { shiftId: 't-mio', flessibile: false }, cerco: { giorni: ['2026-10-20'] },
+  });
+  for (const id of ['pr-anna', 'pr-altra']) {
+    state.proposals.push({
+      id, requestId: 'rq-mia', daUserId: 'u-anna', aUserId: me, shiftOffertoId: null, messaggio: '',
+      accettataDa: ['u-anna'], status: 'IN_ATTESA', createdAt: '2026-10-02T10:00:00Z', cambioInserito: false, daServer: true,
+    });
+  }
+  globalThis.fetch = async () => { throw new Error('senza rete'); }; // la coda resta lì da guardare
+  store.accetta('pr-anna');
+  const ops = state.coda.map((op) => [op.tipo, op.dati.id, op.gruppo]);
+  assert.deepEqual(ops[0], ['proposta.aggiorna', 'pr-anna', 'accordo:pr-anna']);
+  assert.ok(ops.every(([, , g]) => g === 'accordo:pr-anna'), JSON.stringify(ops));
+  assert.ok(ops.some(([t, id]) => t === 'richiesta.aggiorna' && id === 'rq-mia'));
+});
