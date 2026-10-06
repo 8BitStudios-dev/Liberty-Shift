@@ -239,7 +239,9 @@ export function bacheca(params) {
   const me = store.state.currentUserId;
   const tutte = store.bacheca().filter(FILTRI[filtro].test);
   // Le proprie in cima, separate: senza, chi pubblicava non ritrovava la sua
-  // richiesta e pensava che non fosse partita (e la rifaceva, doppia).
+  // richiesta e pensava che non fosse partita (e la rifaceva, doppia). Stanno
+  // in un riquadro chiuso con il conteggio: si vede che ci sono, ma non
+  // spingono giù quelle dei colleghi, che sono il motivo per aprire la bacheca.
   const mie = tutte.filter((r) => r.userId === me);
   const lista = ordineBacheca(tutte.filter((r) => r.userId !== me));
 
@@ -254,8 +256,13 @@ export function bacheca(params) {
   ))}
     </div>
     ${raw(mie.length ? html`
-      <h2 class="titolo-gruppo">${mie.length === 1 ? 'La tua richiesta' : 'Le tue richieste'}</h2>
-      ${raw(mie.map((r) => cardRichiesta(r)).join(''))}
+      <details class="riquadro mie-richieste" data-riquadro="bacheca-mie" ${raw(riquadriAperti.has('bacheca-mie') ? 'open' : '')}>
+        <summary>
+          <span>${mie.length === 1 ? 'La tua richiesta' : 'Le tue richieste'}</span>
+          <span class="conteggio">${mie.length === 1 ? '1 aperta' : `${mie.length} aperte`}</span>
+        </summary>
+        <div class="mie-corpo">${raw(mie.map((r) => cardRichiesta(r)).join(''))}</div>
+      </details>
       <h2 class="titolo-gruppo">Dei colleghi</h2>` : '')}
     ${raw(lista.length
     ? lista.map((r) => cardRichiesta(r)).join('')

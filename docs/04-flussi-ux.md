@@ -116,8 +116,11 @@ non serve più: le prioritarie stanno già in cima a ogni lista.
 
 In cima, separate, **le tue richieste** ("Tu", senza il rosso di "non puoi
 cambiare"): prima non c'erano, e chi pubblicava non ritrovava la sua
-richiesta, pensava che non fosse partita e la rifaceva. Sotto, "Dei
-colleghi".
+richiesta, pensava che non fosse partita e la rifaceva. Stanno in un
+riquadro **chiuso**, con il conteggio nella testa ("2 aperte"): si vede che
+ci sono senza che spingano giù quelle dei colleghi, che sono il motivo per
+aprire la bacheca. Aperto resta aperto finché non lo si richiude, anche
+quando la schermata si ridisegna. Sotto, "Dei colleghi".
 
 Ordinamento dei colleghi: le prioritarie sopra, poi tutte le altre **in ordine di
 inserimento, dalla prima pubblicata** (`ordineBacheca`). Nessun altro

@@ -901,3 +901,11 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, .45); outline: 3px solid rgba(255, 255, 255, .9);
 }
 .scanner-nota { margin: 0; text-align: center; font-size: 14px; color: rgba(255, 255, 255, .75); }
+
+/* "Le tue richieste" in Bacheca: un riquadro che si apre. Le righe dentro
+   vanno a filo del riquadro, che ha già il suo margine: con il loro padding
+   in più sarebbero rientrate due volte. */
+.riquadro.mie-richieste { margin-bottom: var(--spazio-sezione); }
+.mie-corpo { margin: 0 calc(-1 * 16px); }
+.mie-corpo .riga-richiesta { background: none; border-radius: 0; }
+.mie-corpo .riga-richiesta:last-child { box-shadow: none; }
