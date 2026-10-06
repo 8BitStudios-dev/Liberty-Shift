@@ -15,7 +15,6 @@ export const VERSIONE_GUIDA = '7';
 export const GUIDE = {
   home: {
     titolo: 'La Home',
-    icona: '🏠',
     corpo: () => html`
       <p>Da qui parti, in tre modi.</p>
 
@@ -39,7 +38,6 @@ export const GUIDE = {
 
   rapido: {
     titolo: 'Cambio rapido',
-    icona: '⚡',
     corpo: () => html`
       <p>Il modo più veloce per liberarti un turno.</p>
 
@@ -72,7 +70,6 @@ export const GUIDE = {
 
   aiuta: {
     titolo: 'Aiuta un collega',
-    icona: '🤝',
     corpo: () => html`
       <p>Le richieste che i tuoi turni possono risolvere. Solo quelle.</p>
 
@@ -95,7 +92,6 @@ export const GUIDE = {
 
   nuovo: {
     titolo: 'Nuovo cambio',
-    icona: '＋',
     corpo: () => html`
       <p>Tre passi, e la prima domanda decide tutto.</p>
 
@@ -122,7 +118,6 @@ export const GUIDE = {
 
   calendario: {
     titolo: 'Il Calendario pubblico',
-    icona: '📅',
     corpo: () => html`
       <p>Le richieste dei colleghi, giorno per giorno. Le tue sono nel Profilo.</p>
 
@@ -151,7 +146,6 @@ export const GUIDE = {
 
   bacheca: {
     titolo: 'La Bacheca',
-    icona: '📋',
     corpo: () => html`
       <p>Tutte le richieste aperte. Le prioritarie in cima.</p>
 
@@ -171,7 +165,6 @@ export const GUIDE = {
 
   profilo: {
     titolo: 'Il Profilo',
-    icona: '👤',
     corpo: () => html`
       <h3>Il tuo calendario</h3>
       <p>
