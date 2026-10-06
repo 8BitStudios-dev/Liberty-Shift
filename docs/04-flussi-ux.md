@@ -18,11 +18,12 @@ cui atterrare.
 | `#/bacheca?filtro=TUTTI\|CEDO\|CERCO\|OFF` | richieste degli altri |
 | `#/profilo` | il tuo mese, preferenze, contratto |
 | `#/rapido` | "Cosa vuoi fare?" |
-| `#/nuovo` | wizard in 3 passi |
+| `#/cambio` | cambio partito da un giorno del calendario |
+| `#/nuovo` | wizard in 3 passi (non più in Home) |
 | `#/match?id=` | risultati del matching |
 | `#/richiesta?id=` | dettaglio, proposta, accettazione |
 
-## Cambio Rapido e Nuovo cambio
+## Cambio Rapido e cambio dal calendario
 Sono due cose diverse, e la differenza è quanto lavoro fa l'app al posto tuo.
 
 **⚡ Cambio rapido** non fa domande. Prendi un tuo turno e vedi subito chi
@@ -37,11 +38,31 @@ ma spento. Compaiono anche i giorni in cui non lavori ma un collega lascia un
 turno che potresti prendere tu (bordo tratteggiato, scritta OFF): toccandoli
 si vedono quelle richieste, le stesse di Aiuta un collega per quel giorno.
 
-**Nuovo cambio** parte dalla domanda che conta: *cambio orario o cambio OFF?*
-Le due porte portano a wizard diversi, perché le informazioni necessarie sono
-diverse.
+**Il cambio dal calendario** sostituisce il vecchio Nuovo cambio, che non
+sta più in Home. Si tocca un giorno nel calendario del Profilo, e il foglio
+del giorno offre la domanda giusta per quel giorno:
 
-Dal Cambio rapido si passa a Nuovo cambio con un pulsante, e viceversa.
+- giorno di lavoro → **Cambia orario**: uno o più orari standard, scelti a
+  tocchi. Sono le partenze di `RULES.cambioOrario` con la durata del turno
+  che si ha già (chi cambia non cambia il monte ore): per un Full Time
+  8–17, 9–18, 9:30–18:30, 10–19, 11–20, 12–21. Si pubblica come cambio
+  orario `SPECIFIC` con la lista in `cerco.orari`, e il motore prende
+  l'orario più vicino; il primo resta anche in `start`/`end` per chi ha
+  un'app più vecchia.
+- giorno di lavoro → **Richiedi OFF**: i giorni liberi della stessa
+  settimana sono già scelti come giorni in cui si lavorerebbe.
+- giorno OFF → **Cedi OFF**: si sceglie *un* giorno di lavoro della stessa
+  settimana da avere libero. Esce una normale richiesta di OFF su quel
+  giorno, con il giorno OFF come unico giorno offerto. Un giorno solo:
+  più giorni sarebbero più richieste che offrono lo stesso OFF, e due
+  accordi insieme farebbero lavorare due volte.
+
+Appena c'è una scelta compaiono i colleghi compatibili, come nel Cambio
+rapido (si propone o si pubblica e si avvisa). Se non c'è nessuno, il tasto
+principale diventa **Pubblica in bacheca**; nota e priorità stanno lì.
+
+Il wizard di prima resta raggiungibile da `#/nuovo` per chi ha un
+collegamento salvato, ma niente nell'app ci porta più.
 
 ## I due wizard
 

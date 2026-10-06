@@ -26,6 +26,15 @@ function fineCerco(cerco) {
  * Il giorno non è nel `cerco`: una richiesta può candidare più giorni.
  */
 export function satisfies(cerco, shift) {
+  // Più orari accettabili: vale il più vicino. Ognuno si giudica da solo,
+  // come se la richiesta cercasse solo quello.
+  if (cerco?.mode === WANT_MODE.SPECIFIC && cerco.orari?.length > 1) {
+    return cerco.orari
+      .map((o) => satisfies({
+        ...cerco, start: o.start, end: o.end, orari: null, tolleranza: RULES.cambioOrario.tolleranzaMinuti,
+      }, shift))
+      .reduce((a, b) => (b.score > a.score ? b : a));
+  }
   const reasons = [];
   if (!shift || shift.tipo !== 'WORK') {
     return { score: 0, reasons: ['non è un turno lavorato'] };
@@ -43,11 +52,12 @@ export function satisfies(cerco, shift) {
       const dStart = Math.abs(minutes(shift.start) - minutes(cerco.start));
       const dEnd = Math.abs(fineMinuti(shift) - fineCerco(cerco));
       const scarto = Math.max(dStart, dEnd);
+      const tolleranza = cerco.tolleranza ?? RULES.nearMissMinutes;
       if (scarto === 0) {
         score = 100;
         reasons.push(`orario identico a quello cercato (${cerco.start}–${cerco.end})`);
-      } else if (scarto <= RULES.nearMissMinutes) {
-        score = Math.round(100 - 40 * (scarto / RULES.nearMissMinutes));
+      } else if (scarto <= tolleranza) {
+        score = Math.round(100 - 40 * (scarto / tolleranza));
         reasons.push(`${scarto} minuti di scarto (${shiftLabel(shift)} contro ${cerco.start}–${cerco.end})`);
       } else {
         score = 0;

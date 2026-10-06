@@ -24,8 +24,8 @@ export const GUIDE = {
       <h3>Aiuta un collega</h3>
       <p>Il contrario: chi ha bisogno di un turno che tu hai.</p>
 
-      <h3>Nuovo cambio</h3>
-      <p>Quando vuoi decidere tu le condizioni.</p>
+      <h3>Un cambio preciso</h3>
+      <p>Parte dal tuo calendario, nel Profilo: tocca il giorno che vuoi cambiare.</p>
 
       <h3>I tuoi cambi</h3>
       <p>In cima. Il pallino rosso vuol dire che aspettano una tua risposta.</p>
@@ -64,7 +64,7 @@ export const GUIDE = {
       <p>
         Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Se non
         compare nessuno, nessuno di compatibile c'è ancora: pubblica la
-        richiesta con <strong>Nuovo cambio</strong> e resta in bacheca.
+        richiesta con <strong>Crea la richiesta</strong> e resta in bacheca.
       </p>`,
   },
 
@@ -91,28 +91,40 @@ export const GUIDE = {
   },
 
   nuovo: {
-    titolo: 'Nuovo cambio',
+    titolo: 'Cambiare un turno',
     corpo: () => html`
-      <p>Tre passi, e la prima domanda decide tutto.</p>
+      <p>Si parte dal tuo calendario, nel Profilo: tocca il giorno che vuoi cambiare.</p>
 
-      <h3>Cambio orario</h3>
+      <h3>Cambia orario</h3>
       <p>
-        Stesso giorno, orario diverso. Serve un collega che quel giorno
-        <strong>lavori</strong>: vi scambiate gli orari.
+        Su un giorno in cui lavori. Scegli uno o più orari standard, con le
+        ore del turno che hai: un Full Time vede 8–17, 9–18, 9:30–18:30,
+        10–19, 11–20 e 12–21.
       </p>
-      <p class="esempio">«Mercoledì faccio 12:00–21:00, cerco un turno che finisca prima.»</p>
+      <p class="esempio">«Mercoledì faccio 12:00–21:00, mi andrebbe bene 8–17 o 9–18.»</p>
 
-      <h3>Cambio OFF</h3>
+      <h3>Richiedi OFF</h3>
       <p>
-        Vuoi OFF un giorno intero. In cambio offri un giorno in cui sei a
-        casa, e prendi il turno di chi ti libera.
+        Su un giorno in cui lavori. In cambio offri i giorni in cui sei a casa
+        quella settimana: sono già scelti, togli quelli che non vuoi.
       </p>
-      <p class="esempio">«Voglio OFF sabato, in cambio lavoro lunedì.»</p>
+
+      <h3>Cedi OFF</h3>
+      <p>
+        Su un giorno in cui sei OFF. Scegli quale giorno di lavoro della
+        settimana vuoi libero in cambio: lavori tu al posto di un collega, e
+        lui prende il tuo turno.
+      </p>
+
+      <p>
+        Sotto compaiono subito i colleghi con cui funziona. Se non c'è
+        nessuno, pubblica la richiesta: resta in bacheca finché qualcuno la
+        trova.
+      </p>
 
       <p class="testo-tenue">
-        Compaiono solo i giorni della stessa settimana: da sabato a venerdì,
-        come le settimane dei turni. Una volta pubblicata la richiesta non si
-        modifica, si cancella e si rifà.
+        La settimana va da sabato a venerdì, come quelle dei turni. Una volta
+        pubblicata la richiesta non si modifica, si cancella e si rifà.
       </p>`,
   },
 

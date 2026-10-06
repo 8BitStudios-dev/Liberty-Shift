@@ -8,7 +8,9 @@ import {
   opportunitaPerMe,
 } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
-import { shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno } from '../core/model.js';
+import {
+  shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno, orariStandard,
+} from '../core/model.js';
 import { appleWeekKey, addDays, formatDay, todayISO, MESI } from '../core/time.js';
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
@@ -124,7 +126,7 @@ export function vistaRapida() {
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
     `Per ${formatDay(cedo.data)} non risulta nessun collega con un turno che vada bene. Pubblicare la richiesta la mette comunque in bacheca.`,
-    '<button class="btn primario" data-act="vai" data-to="#/nuovo">Crea la richiesta</button>',
+    html`<button class="btn primario" data-act="cambio-giorno" data-azione="orario" data-data="${cedo.data}">Crea la richiesta</button>`,
   ))}
 `;
 }
@@ -202,6 +204,171 @@ function testataRapido() {
 }
 
 // --------------------------------------------------------- NUOVO CAMBIO
+
+// ------------------------------------------------- CAMBIO DAL CALENDARIO
+
+/**
+ * Il cambio nasce da un giorno del tuo calendario, non da un modulo vuoto.
+ *
+ * Tre domande possibili, secondo il giorno toccato:
+ * - lavori e vuoi un altro orario: scegli uno o più orari standard;
+ * - lavori e vuoi essere OFF: scegli i giorni liberi in cui lavoreresti;
+ * - sei OFF e lo cedi: scegli quale giorno di lavoro vuoi libero in cambio.
+ *
+ * L'ultimo è lo stesso cambio OFF del secondo visto dall'altro capo: si
+ * pubblica come richiesta di OFF sul giorno di lavoro scelto, con il giorno
+ * libero come unico giorno offerto. Un giorno solo, perché più giorni
+ * diventerebbero più richieste sullo stesso OFF, e due accordi insieme
+ * ti farebbero lavorare due volte.
+ */
+export const dalGiorno = {
+  data: null, azione: null, orari: [], giorni: [], cedoShiftId: null, usaPriorita: false, note: '',
+};
+
+export function apriDalGiorno(data, azione) {
+  const me = store.state.currentUserId;
+  const turno = store.state.shifts.find((s) => s.userId === me && s.data === data);
+  Object.assign(dalGiorno, {
+    data, azione, orari: [], giorni: [], cedoShiftId: null, usaPriorita: false, note: '',
+  });
+  if (azione === 'richiedi-off') {
+    dalGiorno.cedoShiftId = turno?.id || null;
+    dalGiorno.giorni = giorniLiberi(me, data, store.state.shifts);
+  }
+  if (azione === 'orario') dalGiorno.cedoShiftId = turno?.id || null;
+}
+
+/** I tuoi giorni di lavoro della stessa settimana, quelli che un OFF può liberare. */
+export function giorniDaLiberare(data) {
+  const me = store.state.currentUserId;
+  const oggi = todayISO();
+  return store.state.shifts
+    .filter((s) => s.userId === me && s.tipo === 'WORK' && s.data !== data && s.data >= oggi
+      && appleWeekKey(s.data) === appleWeekKey(data))
+    .sort((a, b) => a.data.localeCompare(b.data));
+}
+
+/** La richiesta che si pubblicherebbe con le scelte fatte finora. */
+export function bozzaDalGiorno() {
+  const me = store.me;
+  const evitaChiusura = Boolean(me?.preferenze?.evitaChiusure);
+  const base = {
+    id: 'bozza-giorno',
+    userId: me?.id,
+    status: STATUS.APERTA,
+    createdAt: new Date().toISOString(),
+    prioritaFinoA: null,
+    cedo: { shiftId: dalGiorno.cedoShiftId, flessibile: false },
+  };
+  if (dalGiorno.azione === 'orario') {
+    const [primo] = dalGiorno.orari;
+    return {
+      ...base,
+      tipo: TIPO_CAMBIO.ORARIO,
+      cerco: {
+        giorni: [dalGiorno.data], mode: WANT_MODE.SPECIFIC,
+        // Il primo orario resta anche in start/end: è quello che legge chi ha
+        // ancora la versione dell'app di prima, che di orari ne conosce uno.
+        start: primo?.start || '', end: primo?.end || '', orari: dalGiorno.orari,
+        entroLe: '', dalleOre: '', evitaChiusura: false, note: dalGiorno.note,
+      },
+    };
+  }
+  const giorni = dalGiorno.azione === 'cedi-off' ? [dalGiorno.data] : dalGiorno.giorni;
+  return {
+    ...base,
+    tipo: TIPO_CAMBIO.OFF,
+    cerco: {
+      giorni, mode: WANT_MODE.ANY, start: '', end: '', entroLe: '', dalleOre: '', evitaChiusura, note: dalGiorno.note,
+    },
+  };
+}
+
+const TITOLI_GIORNO = {
+  orario: 'Cambia orario',
+  'richiedi-off': 'Richiedi OFF',
+  'cedi-off': 'Cedi OFF',
+};
+
+export function cambioDalGiorno() {
+  const { data, azione } = dalGiorno;
+  if (!data || !TITOLI_GIORNO[azione]) {
+    return vuoto('Scegli un giorno', 'Il cambio parte dal tuo calendario: tocca il giorno che vuoi cambiare.',
+      '<button class="btn primario" data-act="vai" data-to="#/profilo">Vai al calendario</button>');
+  }
+  const testata = html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>${TITOLI_GIORNO[azione]}</h1>
+      <button class="icon-btn" data-act="guida" data-sezione="nuovo" title="Come funziona">?</button>
+    </header>`;
+
+  const turno = store.shift(dalGiorno.cedoShiftId);
+  let domanda;
+  let scelto;
+  if (azione === 'orario') {
+    const orari = orariStandard(turno);
+    const attivo = (o) => dalGiorno.orari.some((x) => x.start === o.start);
+    domanda = html`
+      <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
+      <h2 class="titolo-gruppo">In quale orario vorresti lavorare?</h2>
+      <p class="testo-tenue">Puoi sceglierne più di uno: ti mostriamo chi ha uno qualsiasi di questi.</p>
+      <div class="chips">${raw(orari.map((o) => html`
+        <button class="chip ${attivo(o) ? 'attivo' : ''}" data-act="giorno-orario" data-start="${o.start}" data-end="${o.end}">${o.start}–${o.end}</button>`).join(''))}</div>`;
+    scelto = dalGiorno.orari.length > 0;
+  } else if (azione === 'richiedi-off') {
+    const liberi = giorniLiberi(store.state.currentUserId, data, store.state.shifts);
+    domanda = html`
+      <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
+      <h2 class="titolo-gruppo">In quali giorni lavoreresti in cambio?</h2>
+      <p class="testo-tenue">Sono i tuoi giorni liberi della stessa settimana, da sabato a venerdì.</p>
+      ${raw(liberi.length ? `<div class="chips">${liberi.map((g) => html`
+        <button class="pill ${dalGiorno.giorni.includes(g) ? 'attivo' : ''}" data-act="giorno-libero" data-data="${g}">${formatDay(g)}</button>`).join('')}</div>`
+    : '<p class="motivo-non-puoi">Al momento non puoi cambiare: in questa settimana non hai altri giorni liberi.</p>')}`;
+    scelto = dalGiorno.giorni.length > 0;
+  } else {
+    const lavoro = giorniDaLiberare(data);
+    domanda = html`
+      <p class="occhiello">${formatDay(data, true)} · sei OFF</p>
+      <h2 class="titolo-gruppo">Quale giorno vuoi libero in cambio?</h2>
+      <p class="testo-tenue">Lavori ${formatDay(data)} al posto di un collega, e lui prende il tuo turno del giorno che scegli.</p>
+      ${raw(lavoro.length ? `<div class="chips">${lavoro.map((s) => html`
+        <button class="pill ${dalGiorno.cedoShiftId === s.id ? 'attivo' : ''}" data-act="giorno-da-liberare" data-id="${s.id}">${formatDay(s.data)} · ${shiftLabel(s)}</button>`).join('')}</div>`
+    : '<p class="motivo-non-puoi">Al momento non puoi cambiare: in questa settimana non hai altri turni da lasciare.</p>')}`;
+    scelto = Boolean(dalGiorno.cedoShiftId);
+  }
+
+  if (!scelto) return html`${raw(testata)}${raw(domanda)}`;
+
+  const bozza = bozzaDalGiorno();
+  const errori = validateRequest(bozza, store.shiftsById(), store.state.shifts);
+  const ctx = { ...store.state, requests: store.state.requests.filter((r) => r.id !== bozza.id) };
+  const risultati = errori.length ? [] : findMatches(bozza, ctx);
+  const cedo = store.shift(bozza.cedo.shiftId);
+  const credito = store.creditoPriorita();
+
+  return html`
+    ${raw(testata)}
+    ${raw(domanda)}
+    ${raw(elencoErrori(errori))}
+    ${raw(errori.length ? '' : risultati.length ? html`
+      <h2 class="titolo-gruppo">Colleghi disponibili (${risultati.length})</h2>
+      <p class="testo-tenue">Proponi lo scambio a uno di loro, oppure pubblica la richiesta e aspetta chi risponde.</p>
+      ${raw(risultati.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true, dalGiorno: true })).join(''))}`
+    : vuoto('Nessun collega disponibile per ora', 'Pubblica la richiesta: resta in bacheca, e chi può aiutarti la trova lì.'))}
+
+    ${raw(errori.length ? '' : html`
+      <h2 class="titolo-gruppo">${risultati.length ? 'Oppure pubblica in bacheca' : 'Pubblica in bacheca'}</h2>
+      <label class="campo">
+        <span>Nota (facoltativa)</span>
+        <textarea data-campo="nota-giorno" rows="2" maxlength="200" placeholder="Es. è per una visita medica">${dalGiorno.note}</textarea>
+      </label>
+      <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
+        <input type="checkbox" data-act="priorita-giorno" ${raw(dalGiorno.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
+        <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (${credito} disponibile, dura ${RULES.priority.durationHours}h)</span>
+      </label>
+      <button class="btn ${risultati.length ? 'secondario' : 'primario'} largo" data-act="pubblica-giorno">Pubblica in bacheca</button>`)}`;
+}
 
 export function scelta() {
   return html`

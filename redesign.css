@@ -891,3 +891,6 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    senza flex il cuore di "Ringrazia" finiva sopra la parola. */
 .btn:has(> svg) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .btn.largo:has(> svg) { display: flex; }
+
+/* Il foglio del giorno apre con i tasti del cambio: niente margine sopra. */
+.azioni-giorno { margin: 4px 0 14px; }

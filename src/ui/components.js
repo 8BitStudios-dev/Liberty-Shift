@@ -293,7 +293,7 @@ export function cardMatch(match, opzioni = {}) {
  * dichiarato una disponibilità va avvisato, perché non c'è una richiesta
  * sua su cui proporre.
  */
-function azioneMatch(match, { miaRichiestaId } = {}) {
+function azioneMatch(match, { miaRichiestaId, dalGiorno } = {}) {
   const u = store.user(match.userId);
   if (match.requestId) {
     return html`
@@ -309,6 +309,14 @@ function azioneMatch(match, { miaRichiestaId } = {}) {
     return html`
       <button class="btn secondario" data-act="avvisa" data-user="${match.userId}" data-richiesta="${miaRichiestaId}">
         ${fuori ? `Scrivi a ${u.nome}` : `Avvisa ${u?.nome}`}
+      </button>`;
+  }
+  // Dal calendario la richiesta ha già tutto quello che serve: gli orari e
+  // i giorni scelti, non quelli del solo match trovato.
+  if (dalGiorno) {
+    return html`
+      <button class="btn primario" data-act="pubblica-avvisa-giorno" data-user="${match.userId}">
+        ${fuori ? `Pubblica e scrivi a ${u.nome}` : `Pubblica e avvisa ${u?.nome}`}
       </button>`;
   }
   // Un cambio orario non può pubblicarsi senza dire un orario: "qualsiasi

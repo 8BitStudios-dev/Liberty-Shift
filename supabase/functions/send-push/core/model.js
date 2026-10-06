@@ -140,6 +140,21 @@ export function spostaTurno(nuovoInizio, start, end) {
   return `${String(Math.floor(fine / 60)).padStart(2, '0')}:${String(fine % 60).padStart(2, '0')}`;
 }
 
+/**
+ * Gli orari standard in cui si può chiedere di spostare un turno: le
+ * partenze di `RULES.cambioOrario`, con la durata del turno stesso, tranne
+ * quello che si ha già e quelli che finirebbero dopo l'ultima uscita.
+ */
+export function orariStandard(turno) {
+  if (!turno || turno.tipo !== 'WORK' || isNotturno(turno)) return [];
+  const durata = minutes(turno.end) - minutes(turno.start);
+  const hh = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  return RULES.cambioOrario.inizi
+    .filter((inizio) => inizio !== turno.start)
+    .filter((inizio) => minutes(inizio) + durata <= minutes(RULES.store.ultimaUscita))
+    .map((inizio) => ({ start: inizio, end: hh(minutes(inizio) + durata) }));
+}
+
 /** Questo contratto lavora a settimane che girano? */
 export function usaRotazione(contratto) {
   return Boolean(RULES.contracts[contratto]?.rotazione);
@@ -154,7 +169,9 @@ export function shiftLabel(shift) {
 export function wantLabel(cerco) {
   switch (cerco.mode) {
     case WANT_MODE.SPECIFIC:
-      return `${cerco.start}–${cerco.end}`;
+      return cerco.orari?.length > 1
+        ? cerco.orari.map((o) => `${o.start}–${o.end}`).join(' o ')
+        : `${cerco.start}–${cerco.end}`;
     case WANT_MODE.RANGE: {
       const parti = [];
       if (cerco.entroLe) parti.push(`che finisca entro le ${cerco.entroLe}`);

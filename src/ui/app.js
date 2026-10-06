@@ -159,6 +159,7 @@ function render({ fermo = false } = {}) {
     aiuta: F.aiuta,
     rapido: F.vistaRapida,
     nuovo: F.nuovo,
+    cambio: F.cambioDalGiorno,
     match: F.match,
     richiesta: F.dettaglio,
     statistiche: F.statistiche,
@@ -686,6 +687,61 @@ const AZIONI = {
       usaPriorita: false,
     });
     if (errori) return toast(errori[0]);
+    const persona = store.user(el.dataset.user);
+    const { daAvvisare } = store.avvisa(el.dataset.user, richiesta.id);
+    vai(`#/richiesta?id=${richiesta.id}`);
+    if (!daAvvisare) return toast(`Richiesta pubblicata, ${persona.nome} è stato avvisato`);
+    toast('Richiesta pubblicata');
+    mandaAvviso(richiesta, persona);
+  },
+
+  // Il cambio parte dal calendario: il foglio del giorno si chiude e la
+  // schermata del cambio sa già giorno e domanda.
+  'cambio-giorno': (_, el) => {
+    chiudiSheet();
+    F.apriDalGiorno(el.dataset.data, el.dataset.azione);
+    vai('#/cambio');
+  },
+  'giorno-orario': (_, el) => {
+    const { start, end } = el.dataset;
+    const orari = F.dalGiorno.orari;
+    F.dalGiorno.orari = orari.some((o) => o.start === start)
+      ? orari.filter((o) => o.start !== start)
+      : [...orari, { start, end }].sort((a, b) => a.start.localeCompare(b.start));
+    render({ fermo: true });
+  },
+  'giorno-libero': (_, el) => {
+    const g = el.dataset.data;
+    const giorni = F.dalGiorno.giorni;
+    F.dalGiorno.giorni = giorni.includes(g) ? giorni.filter((x) => x !== g) : [...giorni, g].sort();
+    render({ fermo: true });
+  },
+  'giorno-da-liberare': (_, el) => {
+    F.dalGiorno.cedoShiftId = F.dalGiorno.cedoShiftId === el.dataset.id ? null : el.dataset.id;
+    render({ fermo: true });
+  },
+  'priorita-giorno': (e) => { F.dalGiorno.usaPriorita = e.target.checked; },
+
+  'pubblica-giorno': () => {
+    const bozza = F.bozzaDalGiorno();
+    const { errori, richiesta } = store.creaRichiesta({
+      tipo: bozza.tipo, cedo: bozza.cedo, cerco: bozza.cerco, usaPriorita: F.dalGiorno.usaPriorita,
+    });
+    if (errori) return toast(errori[0]);
+    F.apriDalGiorno(null, null);
+    toast('Richiesta pubblicata in bacheca');
+    vai(`#/richiesta?id=${richiesta.id}`);
+  },
+
+  // Un collega trovato dal calendario non ha una richiesta su cui proporre:
+  // si pubblica la tua, con le scelte fatte, e lo si avvisa.
+  'pubblica-avvisa-giorno': (_, el) => {
+    const bozza = F.bozzaDalGiorno();
+    const { errori, richiesta } = store.creaRichiesta({
+      tipo: bozza.tipo, cedo: bozza.cedo, cerco: bozza.cerco, usaPriorita: F.dalGiorno.usaPriorita,
+    });
+    if (errori) return toast(errori[0]);
+    F.apriDalGiorno(null, null);
     const persona = store.user(el.dataset.user);
     const { daAvvisare } = store.avvisa(el.dataset.user, richiesta.id);
     vai(`#/richiesta?id=${richiesta.id}`);
@@ -1287,6 +1343,7 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
     P.bozzaProfilo.codice = cifre ? `R${cifre}` : '';
     return;
   }
+  if (chiave === 'nota-giorno') { F.dalGiorno.note = el.value; return; }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
   // Con 90+ iscritti un rerender a ogni lettera sposterebbe il cursore come
   // sopra: si nasconde e mostra direttamente le card già disegnate.

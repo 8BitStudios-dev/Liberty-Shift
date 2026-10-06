@@ -133,14 +133,6 @@ export function home() {
         </span>
         <span class="chevron">›</span>
       </button>
-      <button class="tile" data-act="vai" data-to="#/nuovo">
-        <span class="tile-icona">${raw(icona('nuovo'))}</span>
-        <span>
-          <strong>Nuovo cambio</strong>
-          <em>Scegli tu il giorno e l'orario che cerchi</em>
-        </span>
-        <span class="chevron">›</span>
-      </button>
     </section>
 
     <section class="sezione">
@@ -1148,6 +1140,20 @@ function rigaScambio(p) {
  * Il giorno del Profilo: il tuo turno, la disponibilità e le tue richieste
  * su quella data. Solo cose tue: le richieste dei colleghi sono nel Calendario.
  */
+/**
+ * Da qui parte ogni cambio: un giorno di lavoro si sposta d'orario o si
+ * chiede OFF, un giorno OFF si cede. Un giorno passato o senza turno non ha
+ * niente da cambiare.
+ */
+function azioniCambio(data, turno) {
+  if (!turno || data < todayISO()) return '';
+  const tasto = (azione, testo, classe) => html`
+    <button class="btn ${classe}" data-act="cambio-giorno" data-azione="${azione}" data-data="${data}">${testo}</button>`;
+  return turno.tipo === 'WORK'
+    ? `<div class="barra-azioni azioni-giorno">${tasto('orario', 'Cambia orario', 'primario')}${tasto('richiedi-off', 'Richiedi OFF', 'secondario')}</div>`
+    : `<div class="barra-azioni azioni-giorno">${tasto('cedi-off', 'Cedi OFF', 'primario')}</div>`;
+}
+
 export function dettaglioGiornoProfilo(data) {
   const me = store.me;
   const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
@@ -1176,6 +1182,8 @@ export function dettaglioGiornoProfilo(data) {
         </span>
         <span class="chevron">›</span>
       </button>
+
+      ${raw(azioniCambio(data, turno))}
 
       <label class="switch">
         <input type="checkbox" data-act="toggle-disp-giorno" data-data="${data}" ${raw(disponibile ? 'checked' : '')}>

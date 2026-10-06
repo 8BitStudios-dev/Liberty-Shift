@@ -19,6 +19,8 @@ SPECIFIC:  scarto = max(|Δinizio|, |Δfine|)
            scarto == 0           -> 100
            scarto <= 90 min      -> 100 - 40 * (scarto / 90)   (100 -> 60)
            altrimenti            -> 0
+           con più orari (cerco.orari) -> il migliore dei punteggi,
+                                 con tolleranza 15 min invece di 90
 
 RANGE:     dentro i limiti       -> 100
            sforo <= 90 min       -> 70 - 20 * (sforo / 90)     (70 -> 50)

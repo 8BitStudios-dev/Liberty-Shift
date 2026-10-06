@@ -149,6 +149,26 @@ export const RULES = {
     inizi: ['08:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
   },
 
+  /**
+   * Gli orari che si propongono a chi tocca "Cambia orario" sul proprio
+   * calendario.
+   *
+   * Sono partenze, e la durata è quella del turno che si lascia: chi cambia
+   * non cambia il proprio monte ore, ed è la stessa regola con cui il motore
+   * adatta il turno dell'altro. Per un Full Time escono 8–17, 9–18,
+   * 9:30–18:30, 10–19, 11–20 e 12–21; le partenze più tardi esistono solo per
+   * i turni corti, perché un orario che finisce dopo l'ultima uscita si scarta.
+   *
+   * La tolleranza è molto più stretta di `nearMissMinutes`: gli orari
+   * standard distano almeno mezz'ora l'uno dall'altro, quindi con i 90
+   * minuti generali uno che non hai toccato rientrava come "quasi" uno che
+   * hai scelto. Se hai lasciato fuori 9–18, 9–18 non lo vuoi.
+   */
+  cambioOrario: {
+    inizi: ['08:00', '09:00', '09:30', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'],
+    tolleranzaMinuti: 15,
+  },
+
   // Contratti. Non esiste una durata standard del turno, nemmeno per persona:
   // gli stessi Part Time hanno giorni da 5 ore e giorni da 7. Quello che conta
   // è il monte ore settimanale, che sta sull'utente.
