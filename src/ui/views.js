@@ -236,9 +236,12 @@ const FILTRI = {
 
 export function bacheca(params) {
   const filtro = FILTRI[params.filtro] ? params.filtro : 'TUTTI';
-  const lista = ordineBacheca(store.bacheca()
-    .filter((r) => r.userId !== store.state.currentUserId)
-    .filter(FILTRI[filtro].test));
+  const me = store.state.currentUserId;
+  const tutte = store.bacheca().filter(FILTRI[filtro].test);
+  // Le proprie in cima, separate: senza, chi pubblicava non ritrovava la sua
+  // richiesta e pensava che non fosse partita (e la rifaceva, doppia).
+  const mie = tutte.filter((r) => r.userId === me);
+  const lista = ordineBacheca(tutte.filter((r) => r.userId !== me));
 
   return html`
     <header class="testata">
@@ -250,9 +253,13 @@ export function bacheca(params) {
     `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 15 }) : ''}${v.label}</button>`,
   ))}
     </div>
+    ${raw(mie.length ? html`
+      <h2 class="titolo-gruppo">${mie.length === 1 ? 'La tua richiesta' : 'Le tue richieste'}</h2>
+      ${raw(mie.map((r) => cardRichiesta(r)).join(''))}
+      <h2 class="titolo-gruppo">Dei colleghi</h2>` : '')}
     ${raw(lista.length
     ? lista.map((r) => cardRichiesta(r)).join('')
-    : vuoto('Niente da vedere', 'Con questo filtro non ci sono richieste aperte.'))}`;
+    : vuoto('Niente da vedere', 'Con questo filtro non ci sono richieste aperte dei colleghi.'))}`;
 }
 
 // -------------------------------------------------------------- PROFILO

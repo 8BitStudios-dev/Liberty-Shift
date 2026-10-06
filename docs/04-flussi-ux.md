@@ -114,7 +114,12 @@ tipo è utile davvero: se cerchi di liberarti una giornata guardi gli OFF, se
 devi solo spostare un orario guardi gli orari. Un filtro **Priorità** c'era e
 non serve più: le prioritarie stanno già in cima a ogni lista.
 
-Ordinamento: le prioritarie sopra, poi tutte le altre **in ordine di
+In cima, separate, **le tue richieste** ("Tu", senza il rosso di "non puoi
+cambiare"): prima non c'erano, e chi pubblicava non ritrovava la sua
+richiesta, pensava che non fosse partita e la rifaceva. Sotto, "Dei
+colleghi".
+
+Ordinamento dei colleghi: le prioritarie sopra, poi tutte le altre **in ordine di
 inserimento, dalla prima pubblicata** (`ordineBacheca`). Nessun altro
 criterio: chi ha chiesto prima resta prima, anche se tu non puoi
 rispondergli. Le stesse regole valgono nel giorno del Calendario; in "Aiuta un

@@ -159,7 +159,7 @@ export const GUIDE = {
   bacheca: {
     titolo: 'La Bacheca',
     corpo: () => html`
-      <p>Tutte le richieste aperte. Le prioritarie in cima.</p>
+      <p>Tutte le richieste aperte. In alto le tue, così vedi che sono partite; poi quelle dei colleghi, con le prioritarie in cima.</p>
 
       <p>Ogni riga dice chi è e cosa cerca. Toccala per orari, note e proposte.</p>
 

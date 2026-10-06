@@ -224,17 +224,21 @@ export function cardRichiesta(request, giorno = null) {
   const prio = hasPriority(request);
   const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   const ctx = giorno ? ruoloNelGiorno(request, giorno) : null;
+  // Una propria non è "non per me": a una propria non si risponde, e il
+  // rosso di "Al momento non puoi cambiare" lì era solo confusione.
+  const mia = request.userId === store.state.currentUserId;
+  const nonPerMe = !mia && !store.possoRispondere(request);
   return html`
-    <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${store.possoRispondere(request) ? '' : 'non-per-me'}"
+    <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${nonPerMe ? 'non-per-me' : ''} ${mia ? 'mia' : ''}"
             data-act="apri-richiesta" data-id="${request.id}">
       <span class="avatar piccolo">${iniziali(autore)}</span>
       <span class="riga-testo">
         <span class="riga-titolo">
-          ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${nomeUtente(autore)}
+          ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
           <span class="tipo-pill">${raw(iconaTipo(request.tipo, 13))} ${ctx ? ctx.verbo : meta.breve}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
-        ${raw(store.possoRispondere(request) ? '' : `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>`)}
+        ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}
       </span>
       <span class="chevron">›</span>
     </button>`;
