@@ -141,40 +141,39 @@ export function sintesiRichiesta(request) {
  * su metà della lista: un errore senza causa, che gridava più del nome.
  */
 export function motivoNonOfferibile(request, { breve = false } = {}) {
+  // Nella riga basta sapere che non tocca a te: il perché ("non lavori",
+  // "lavori già") letto da solo sembrava un rimprovero sui tuoi turni. Il
+  // dettaglio lo spiega, dopo la stessa frase.
+  if (breve) return 'Al momento non puoi cambiare';
+  return `Al momento non puoi cambiare: ${perche(request)}`;
+}
+
+function perche(request) {
   const me = store.state.currentUserId;
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   const mioIl = (data) => store.state.shifts.find((s) => s.userId === me && s.data === data);
+  const giorno = (d) => formatDay(d).toLowerCase();
 
   if (request.tipo === TIPO_CAMBIO.ORARIO) {
     const mio = mioIl(cedo?.data);
     if (!mio || mio.tipo !== 'WORK') {
-      return breve
-        ? `${formatDay(cedo?.data)} non lavori`
-        : `${formatDay(cedo?.data)} non lavori: in un cambio orario servono due persone in turno.`;
+      return `${giorno(cedo?.data)} non sei in turno, e in un cambio orario servono due persone in turno.`;
     }
-    return breve
-      ? `Il tuo ${shiftLabel(mio)} non è quello che cerca`
-      : `Il tuo ${shiftLabel(mio)} non rientra in quello che cerca (${wantLabel(request.cerco)}).`;
+    return `il tuo ${shiftLabel(mio)} non rientra in quello che cerca (${wantLabel(request.cerco)}).`;
   }
 
   // Cambio OFF: le due condizioni sono essere liberi il giorno che vuole
   // lasciare, e lavorare in uno dei giorni che offre.
   const mioNelSuoGiorno = mioIl(cedo?.data);
   if (mioNelSuoGiorno && mioNelSuoGiorno.tipo === 'WORK') {
-    return breve
-      ? `${formatDay(cedo?.data)} lavori già`
-      : `${formatDay(cedo?.data)} lavori già (${shiftLabel(mioNelSuoGiorno)}): non puoi prendere anche il suo turno.`;
+    return `${giorno(cedo?.data)} sei già in turno (${shiftLabel(mioNelSuoGiorno)}), quindi non puoi prendere anche il suo.`;
   }
   const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
   if (!lavorati.length) {
-    return breve
-      ? `Nei giorni che offre sei a casa`
-      : `Nei giorni che offre (${giorni.map((g) => formatDay(g)).join(', ')}) sei a casa: non hai un turno da dargli in cambio.`;
+    return `nei giorni che offre (${giorni.map(giorno).join(', ')}) sei a casa, quindi non hai un turno da dargli in cambio.`;
   }
-  return breve
-    ? 'I tuoi turni non sono quelli che cerca'
-    : `I tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
+  return `i tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
 }
 
 /** Il ruolo della richiesta nel giorno guardato, col turno ceduto già risolto. */

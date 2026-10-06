@@ -623,7 +623,7 @@ export function formProposta(request, shiftSuggerito) {
     return html`
       <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
       <p class="avviso"><span class="icona-in-riga">${raw(icona('avviso', { px: 16 }))}</span> Non hai niente da offrire su questo cambio.</p>
-      <p class="testo-tenue">${motivoNonOfferibile(request)}</p>`;
+      <p class="motivo-non-puoi">${motivoNonOfferibile(request)}</p>`;
   }
 
   return html`

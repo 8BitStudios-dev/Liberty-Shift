@@ -252,14 +252,14 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   display: inline-flex; align-items: center; gap: 4px;
 }
 
-/* Le righe che non fanno per te: il motivo in grigio al posto di un "non
-   puoi" rosso. Non è un errore, è un fatto sui tuoi turni. La riga resta
-   toccabile, solo più quieta. */
-.riga-richiesta .non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 3px 0 0; }
+/* Le righe che non fanno per te: "Al momento non puoi cambiare" in un rosso
+   spento, a metà fra il rosso e il testo tenue. Si vede, ma non è un errore:
+   è un fatto sui tuoi turni di adesso. La riga resta toccabile, più quieta. */
+.riga-richiesta .non-puoi { color: color-mix(in srgb, var(--rosso) 65%, var(--testo-tenue)); font-size: 14px; margin: 3px 0 0; }
 .riga-richiesta.non-per-me .riga-titolo,
 .riga-richiesta.non-per-me .avatar { opacity: .62; }
 .non-puoi { font-size: 14px; }
-.motivo-non-puoi { color: var(--testo-tenue); font-size: 14px; margin: 8px 0 0; }
+.motivo-non-puoi { color: color-mix(in srgb, var(--rosso) 65%, var(--testo-tenue)); font-size: 14px; margin: 8px 0 0; }
 
 .lista-cambi, .lista-turni { border: 0; box-shadow: var(--ombra); }
 .riga-cambio, .riga-turno {
