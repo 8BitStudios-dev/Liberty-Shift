@@ -243,8 +243,15 @@ export function idUtenteServer() {
  * sparso nelle chiamate perché una query scritta a mano sbaglia la sintassi
  * una volta su tre, e l'errore arriva come 400 senza spiegazioni.
  */
-export function query({ eq = {}, in: dentro = {}, contiene = {}, ordine, limite } = {}) {
+export function query({
+  eq = {}, in: dentro = {}, contiene = {}, ordine, limite, colonne, dalle = {},
+} = {}) {
   const parti = [];
+  // Solo alcune colonne: l'elenco leggero della sincronizzazione chiede id e
+  // ora di modifica, non le righe intere.
+  if (colonne) parti.push(`select=${colonne}`);
+  // "Cambiate da allora": `{ aggiornato_il: '2026-10-06T…' }`.
+  for (const [campo, valore] of Object.entries(dalle)) parti.push(`${campo}=gte.${encodeURIComponent(valore)}`);
   for (const [campo, valore] of Object.entries(eq)) parti.push(`${campo}=eq.${encodeURIComponent(valore)}`);
   for (const [campo, valori] of Object.entries(dentro)) {
     parti.push(`${campo}=in.(${valori.map((v) => encodeURIComponent(v)).join(',')})`);

@@ -427,9 +427,10 @@ test('una proposta già concordata, o di un altro, non si ritira', () => {
 
 test('una proposta ritirata senza rete non torna giù dal server', async () => {
   const state = propostaMiaAdAnna();
-  store.ritiraProposta('pr-mia');
+  // Senza rete: le scritture non passano, quindi il ritiro resta in coda. Il
+  // server finto va messo prima del ritiro, che prova subito a spingere.
   serverFinto({
-    profili: { righe: PROFILI }, richieste: {}, ringraziamenti: {}, disponibilita: {},
+    profili: { righe: PROFILI }, richieste: { rifiuta: true }, ringraziamenti: {}, disponibilita: {},
     proposte: {
       righe: [{
         id: 'pr-mia', richiesta_id: 'rq-anna', da_user_id: 'io-sul-server', a_user_id: 'u-anna',
@@ -438,7 +439,9 @@ test('una proposta ritirata senza rete non torna giù dal server', async () => {
       }],
     },
   });
+  store.ritiraProposta('pr-mia');
   await scarica(state);
+  assert.ok(state.coda.some((op) => op.tipo === 'proposta.ritira'), 'il ritiro è ancora in coda');
   assert.equal(state.proposals.some((p) => p.id === 'pr-mia'), false);
 });
 

@@ -94,6 +94,15 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   stesso vale per le Edge Functions, e lì conta lo slug: vedi
   `docs/07-supabase.md`.
 
+- **Profili, richieste e disponibilità scendono a pezzi** (`scarica` in
+  `src/core/sincronia.js`): dopo il primo scaricamento arrivano solo le righe
+  con `aggiornato_il` più recente del segno salvato (`state.cursori`), più
+  l'elenco degli id che esistono, per togliere quello che è sparito. Una
+  tabella aggiunta a `INCREMENTALI` deve avere la colonna `aggiornato_il` e
+  il trigger `segna_aggiornamento`, altrimenti una modifica non scende mai.
+  Una tabella che cresce con gli iscritti e non è lì si riscarica intera a
+  ogni apertura: con 95 persone è il traffico che sfora il piano gratuito.
+
 ## Documentazione
 
 `docs/` tiene regolamento, motore di matching, data model, flussi UX,

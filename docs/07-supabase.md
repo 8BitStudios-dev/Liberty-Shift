@@ -600,3 +600,27 @@ test verificano che le copie siano identiche, non che siano online.
 Limiti noti: il server non conosce le preferenze dell'autore, i suoi altri turni
 e le richieste altrui, quindi in casi al limite il telefono può rispondere
 diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi.
+
+
+## Sincronizzazione a pezzi e traffico
+
+Il piano gratuito concede 5 GB al mese di dati in uscita, e il database è il
+limite più lontano (pochi MB contro 500). Con 95 iscritti che aprono l'app
+una dozzina di volte al giorno, riscaricare ogni volta tutta la bacheca
+(circa 1 MB a regime) avrebbe superato quella soglia da solo.
+
+Per questo `richieste`, `profili` e `disponibilita` hanno la colonna
+`aggiornato_il`, scritta dal trigger `segna_aggiornamento` a ogni modifica.
+L'app ricorda l'ora più recente che ha visto (`state.cursori`, letta dalle
+righe e non dall'orologio del telefono) e la volta dopo chiede:
+
+- le righe cambiate da allora, meno due minuti di margine;
+- l'elenco degli id che esistono (`select=id`), per togliere quelle sparite:
+  cancellate dalla pulizia, o non più visibili perché diventate un accordo
+  fra altri due (`vedi_richiesta`);
+- a parte, e solo se servono, le righe che esistono ma il telefono non ha.
+
+Proposte, ringraziamenti, preferenze di notifica, traguardi e richieste di
+password riguardano solo chi le vede e scendono sempre intere. Il tasto
+"Aggiorna calendario" riscarica tutto (`completo`). Le notifiche non c'entrano:
+le manda il server nel momento in cui una riga cambia.

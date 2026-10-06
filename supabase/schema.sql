@@ -1045,3 +1045,34 @@ grant execute on function public.chiedi_nuova_password(text, text) to anon, auth
 --   select vault.create_secret('<chiave PKCS8 in base64>', 'turni_chiave_privata');
 -- e la sua metà pubblica va in `chiaveTurniPubblica` di src/core/config.js.
 alter table public.notifiche_preferenze add column if not exists dati_cifrati text;
+
+
+-- ======================================== sincronizzazione incrementale
+--
+-- Ogni telefono si aggiorna spesso (all'apertura, alla ripresa, ogni dieci
+-- minuti), e riscaricare ogni volta tutta la bacheca con 95 iscritti avrebbe
+-- superato da solo i 5 GB di traffico al mese del piano gratuito. Con l'ora
+-- dell'ultima modifica il telefono chiede solo le righe cambiate, più un
+-- elenco leggero (id e ora) di quelle che esistono: quello che sparisce
+-- dall'elenco (cancellato dalla pulizia, o non più visibile perché concordato
+-- fra altri due) si toglie anche dal telefono. Vedi `scarica` in
+-- src/core/sincronia.js.
+--
+-- Fuori dai `create table`, che su un progetto avviato non aggiungono colonne.
+alter table public.richieste add column if not exists aggiornato_il timestamptz not null default now();
+alter table public.profili add column if not exists aggiornato_il timestamptz not null default now();
+alter table public.disponibilita add column if not exists aggiornato_il timestamptz not null default now();
+
+create or replace function public.segna_aggiornamento() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  new.aggiornato_il := now();
+  return new;
+end $$;
+
+create or replace trigger segna_aggiornamento before update on public.richieste
+  for each row execute function public.segna_aggiornamento();
+create or replace trigger segna_aggiornamento before update on public.profili
+  for each row execute function public.segna_aggiornamento();
+create or replace trigger segna_aggiornamento before update on public.disponibilita
+  for each row execute function public.segna_aggiornamento();

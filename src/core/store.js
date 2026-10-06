@@ -161,12 +161,17 @@ export const store = {
   },
 
   /** Manda quello che c'è da mandare, poi riporta a bordo la bacheca. */
-  async sincronizza() {
+  /**
+   * `completo` riscarica tutta la bacheca invece delle sole righe cambiate:
+   * lo chiede il tasto "Aggiorna calendario", che chi lo tocca usa proprio
+   * quando qualcosa non torna.
+   */
+  async sincronizza({ completo = false } = {}) {
     if (!sulServer(this.state)) return { saltato: true };
     // All'apertura la finestra dei 28 giorni può essere scivolata di un giorno
     // anche se nessun turno è cambiato: va rimandata prima di tutto il resto.
     condividiNotifiche(this.state);
-    const esito = await sincronizzaStato(this.state);
+    const esito = await sincronizzaStato(this.state, { completo });
     this.state.ultimoErroreServer = esito.errore || null;
     if (!esito.saltato) this.commit();
     return esito;

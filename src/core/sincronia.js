@@ -395,22 +395,60 @@ async function svuota(state) {
 // -------------------------------------------------------------- discesa
 
 /**
+ * Quanto si riguarda indietro rispetto all'ultima modifica già vista.
+ *
+ * L'ora di modifica la scrive il database all'inizio della transazione: una
+ * scrittura partita un attimo prima del nostro ultimo scaricamento può
+ * diventare visibile un attimo dopo, con un'ora già "vecchia". Due minuti di
+ * sovrapposizione costano qualche riga riscaricata due volte, che non fa
+ * danni, e chiudono quella finestra.
+ */
+const MARGINE_MS = 2 * 60 * 1000;
+
+/** Le tabelle che si scaricano a pezzi: quelle che crescono con gli iscritti. */
+const INCREMENTALI = ['profili', 'richieste', 'disponibilita'];
+
+/**
  * Riporta a bordo la bacheca del server.
  *
- * Quello che era sceso l'ultima volta viene buttato e riscritto: la copia
- * buona è quella appena arrivata, e tenere le due insieme vorrebbe dire
- * decidere ogni volta quale ha ragione. Resta intoccato quello che è nato
- * solo su questo telefono.
+ * La prima volta (e quando lo si chiede con `completo`) scende tutto. Le
+ * volte dopo, per profili, richieste e disponibilità, scendono solo le righe
+ * cambiate dall'ultima volta: con 95 iscritti riscaricare tutto a ogni
+ * apertura costava circa 1 MB, e moltiplicato per un migliaio di
+ * aggiornamenti al giorno superava da solo il traffico del piano gratuito.
+ *
+ * "Solo quello che è cambiato" da solo però non basta: una richiesta può
+ * sparire senza essere modificata, cancellata dalla pulizia o nascosta perché
+ * è diventata un accordo fra altri due (`vedi_richiesta`). Per questo insieme
+ * alle righe cambiate scende l'elenco degli id che esistono, leggero: quello
+ * che non c'è più si toglie, quello che c'è ma il telefono non ha si chiede.
+ *
+ * Proposte, ringraziamenti e le righe personali sono poche per definizione
+ * (ognuno vede solo le sue) e scendono sempre intere. Resta intoccato quello
+ * che è nato solo su questo telefono e quello che la coda non ha ancora
+ * mandato.
  */
-export async function scarica(state) {
+export async function scarica(state, { completo = false } = {}) {
   if (!collegato()) return { saltato: true };
 
-  const [profili, richieste, proposte, ringraziamenti, disponibilita, notifiche, traguardi, password] = await Promise.all([
-    seleziona('profili'),
-    seleziona('richieste', { ordine: 'creata_il.desc' }),
+  const cursori = completo ? {} : { ...(state.cursori || {}) };
+  const dalle = (tabella) => new Date(Date.parse(cursori[tabella]) - MARGINE_MS).toISOString();
+  const cambiate = (tabella, opzioni = {}) => seleziona(tabella, cursori[tabella]
+    ? { ...opzioni, dalle: { aggiornato_il: dalle(tabella) } }
+    : opzioni);
+  const elenco = (tabella) => (cursori[tabella] ? seleziona(tabella, { colonne: 'id' }) : Promise.resolve(null));
+
+  const [
+    profili, profiliEsistenti, richieste, richiesteEsistenti, proposte, ringraziamenti, disponibilita,
+    notifiche, traguardi, password,
+  ] = await Promise.all([
+    cambiate('profili'),
+    elenco('profili'),
+    cambiate('richieste', { ordine: 'creata_il.desc' }),
+    elenco('richieste'),
     seleziona('proposte'),
     seleziona('ringraziamenti'),
-    seleziona('disponibilita'),
+    cambiate('disponibilita'),
     // Solo la propria riga: per tutti gli altri la tabella non ha policy di lettura.
     seleziona('notifiche_preferenze'),
     // Come sopra, solo la propria. Se la tabella non c'è ancora (schema non
@@ -421,20 +459,64 @@ export async function scarica(state) {
     seleziona('richieste_password'),
   ]);
 
-  const rifiuto = [profili, richieste, proposte, ringraziamenti, disponibilita]
-    .find((r) => r.errore);
+  const rifiuto = [profili, profiliEsistenti, richieste, richiesteEsistenti, proposte, ringraziamenti, disponibilita]
+    .find((r) => r?.errore);
   if (rifiuto) return { errore: rifiuto.errore };
+
+  // Una riga che esiste ma non è mai scesa su questo telefono, e che non è
+  // nemmeno fra le cambiate: è diventata visibile senza essere toccata (un
+  // accordo annullato, un permesso da admin appena ricevuto). È raro, e costa
+  // un secondo giro solo quando succede.
+  const completa = async (tabella, scese, esistenti, locali) => {
+    if (!esistenti) return null;
+    // Il mio profilo sul server ha l'id del server, non quello di questo telefono.
+    const qui = new Set([...locali.map((x) => x.id), state.profilo?.idServer]);
+    const arrivate = new Set((scese.dati || []).map((r) => r.id));
+    const mancanti = esistenti.dati.map((r) => r.id).filter((id) => !qui.has(id) && !arrivate.has(id));
+    if (!mancanti.length) return null;
+    const altre = await seleziona(tabella, { in: { id: mancanti } });
+    if (altre.errore) return altre.errore;
+    scese.dati = [...(scese.dati || []), ...(altre.dati || [])];
+    return null;
+  };
+  const mancava = await completa('richieste', richieste, richiesteEsistenti, state.requests)
+    || await completa('profili', profili, profiliEsistenti, state.users);
+  if (mancava) return { errore: mancava };
 
   // Quello che la coda non è ancora riuscita a mandare non esiste sul server,
   // e cancellarlo perché "non è arrivato" vorrebbe dire perderlo davvero.
   const inSospeso = idsInCoda(state);
   const daTenere = (x) => !x[DAL_SERVER] || inSospeso.has(x.id);
 
-  state.users = state.users.filter(daTenere);
-  state.requests = state.requests.filter(daTenere);
+  // Le righe da riscrivere: tutte, se si riparte da zero; altrimenti quelle
+  // cambiate, più quelle sparite dall'elenco del server.
+  const sostituisci = (locali, righe, esistenti, conTurni) => {
+    const nuove = new Set((righe || []).map((r) => r.id));
+    const vive = esistenti ? new Set(esistenti.map((r) => r.id)) : null;
+    const via = new Set();
+    const restano = locali.filter((x) => {
+      if (daTenere(x)) return true;
+      const togli = !vive || nuove.has(x.id) || !vive.has(x.id);
+      if (togli) via.add(x.id);
+      return !togli;
+    });
+    if (conTurni) state.shifts = state.shifts.filter((t) => !(t[DAL_SERVER] && via.has(t.id.slice(4))));
+    return restano;
+  };
+
+  // I profili: il mio resta mio (ne scendono solo i permessi), gli altri si
+  // aggiornano conservando la disponibilità già scesa.
+  const vecchiUtenti = new Map(state.users.filter((u) => u[DAL_SERVER]).map((u) => [u.id, u]));
+  state.users = sostituisci(state.users, profili.dati, profiliEsistenti?.dati);
+
+  // Le proposte scendono intere: si butta la copia di prima, con i turni
+  // agganciati. Le richieste solo dove serve.
+  const ritirate = new Set((state.coda || []).filter((op) => op.tipo === 'proposta.ritira').map((op) => op.dati.id));
+  const proposteVia = new Set(state.proposals.filter((p) => !daTenere(p)).map((p) => p.id));
   state.proposals = state.proposals.filter(daTenere);
+  state.shifts = state.shifts.filter((t) => !(t[DAL_SERVER] && proposteVia.has(t.id.slice(4))));
+  state.requests = sostituisci(state.requests, richieste.dati, richiesteEsistenti?.dati, true);
   state.ringraziamenti = state.ringraziamenti.filter(daTenere);
-  state.shifts = state.shifts.filter((s) => !s[DAL_SERVER] || inSospeso.has(s.id.slice(4)));
 
   const gia = new Set([
     ...state.requests.map((r) => r.id),
@@ -484,7 +566,11 @@ export async function scarica(state) {
       }
       continue;
     }
-    state.users.push(utenteDaRiga(riga));
+    const nuovo = utenteDaRiga(riga);
+    // Uno scaricamento a pezzi non riporta le disponibilità di chi non le ha
+    // cambiate: restano quelle già scese.
+    if (cursori.disponibilita) nuovo.disponibilita = vecchiUtenti.get(riga.id)?.disponibilita || {};
+    state.users.push(nuovo);
   }
 
   for (const riga of disponibilita.dati || []) {
@@ -501,11 +587,11 @@ export async function scarica(state) {
     });
     delete r.turnoCeduto;
     state.requests.push(r);
+    gia.add(riga.id);
   }
 
   // Una proposta ritirata qui ma non ancora cancellata sul server (manca la
   // rete) tornerebbe giù come se niente fosse: si salta finché la coda non passa.
-  const ritirate = new Set((state.coda || []).filter((op) => op.tipo === 'proposta.ritira').map((op) => op.dati.id));
   for (const riga of proposte.dati || []) {
     if (gia.has(riga.id) || ritirate.has(riga.id)) continue;
     const p = propostaDaRiga(state, riga);
@@ -521,19 +607,30 @@ export async function scarica(state) {
     state.ringraziamenti.push(ringraziamentoDaRiga(state, riga));
   }
 
+  // Il segno fino a dove si è arrivati: l'ora di modifica più recente vista,
+  // scritta dal server. L'orologio del telefono non c'entra.
+  const righePer = { profili: profili.dati, richieste: richieste.dati, disponibilita: disponibilita.dati };
+  state.cursori = { ...cursori };
+  for (const tabella of INCREMENTALI) {
+    const ore = (righePer[tabella] || []).map((r) => r.aggiornato_il).filter(Boolean);
+    const piuRecente = [cursori[tabella], ...ore].filter(Boolean)
+      .reduce((a, b) => (a === null || Date.parse(b) > Date.parse(a) ? b : a), null);
+    if (piuRecente) state.cursori[tabella] = piuRecente;
+  }
+
   return {
-    persone: (profili.dati || []).length,
-    richieste: (richieste.dati || []).length,
+    persone: state.users.filter((u) => u[DAL_SERVER]).length,
+    richieste: state.requests.filter((r) => r[DAL_SERVER]).length,
   };
 }
 
 /** Prima si manda quello che c'è da mandare, poi si guarda cosa c'è di nuovo. */
-export async function sincronizza(state) {
+export async function sincronizza(state, { completo = false } = {}) {
   if (!collegato()) return { saltato: true };
   // Una coda in difficoltà non deve impedire di vedere la bacheca: si scarica
   // comunque, e l'errore arriva insieme al resto.
   const coda = await svuotaCoda(state).catch((err) => ({ fatte: 0, errore: String(err?.message || err) }));
-  const giu = await scarica(state);
+  const giu = await scarica(state, { completo });
   return { ...giu, errore: giu.errore || coda.errore, inviate: coda.fatte };
 }
 

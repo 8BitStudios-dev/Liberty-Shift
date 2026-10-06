@@ -1163,7 +1163,7 @@ const AZIONI = {
     el.disabled = true;
     const [cal, sync] = await Promise.all([
       store.aggiornaCalendario({ forzato: true }),
-      store.sincronizza(),
+      store.sincronizza({ completo: true }),
     ]);
     el.disabled = false;
     if (testo) testo.textContent = prima;
