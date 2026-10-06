@@ -165,6 +165,7 @@ function render({ fermo = false } = {}) {
     statistiche: F.statistiche,
     iscritti: F.gestioneIscritti,
     setup: P.schermataProfilo,
+    'primi-turni': P.schermataPrimiTurni,
     impostazioni: V.impostazioni,
     legale: () => html`
       <header class="testata">
@@ -208,8 +209,9 @@ function render({ fermo = false } = {}) {
   // (Cambio Rapido, una richiesta, le proposte...) non restava modo di
   // saltare altrove senza tornare indietro passo per passo. L'unico caso in
   // cui non hanno senso è la primissima apertura, prima che un profilo
-  // esista: non c'è ancora niente su cui atterrare.
-  tabbar.hidden = store.profiloDaCompletare();
+  // esista: non c'è ancora niente su cui atterrare. I primi turni sono
+  // l'ultimo passo di quell'apertura, e la barra ne farebbe un'uscita.
+  tabbar.hidden = store.profiloDaCompletare() || percorso === 'primi-turni';
 }
 
 /**
@@ -515,7 +517,7 @@ const AZIONI = {
 
     if (!b.modifica) store.impostaPreferenze(b.preferenze);
     toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
-    vai('#/home');
+    vai(b.modifica ? '#/home' : '#/primi-turni');
   },
   /**
    * L'invito per un collega: un messaggio fisso, niente da scrivere.

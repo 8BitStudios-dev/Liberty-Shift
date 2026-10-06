@@ -11,6 +11,7 @@ import { RULES, PREFERENZE } from '../core/rules.js';
 import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 import { oreDelContratto, oreAutomatiche } from '../core/model.js';
+import { todayISO } from '../core/time.js';
 import { serverConfigurato } from '../core/config.js';
 import { campoPortachiavi, elencoErrori } from './components.js';
 
@@ -143,6 +144,51 @@ export function schermataProfilo() {
     <div class="progresso"><i style="width:${(passo / totale) * 100}%"></i></div>
     ${raw(elencoErrori(b.errori))}
     ${raw(contenuto)}`;
+}
+
+/**
+ * L'ultimo passo della prima apertura: i turni.
+ *
+ * Viene dopo l'iscrizione e non dentro, perché il calendario si scarica
+ * passando dal server, e il server risponde solo a chi ha già un account. È
+ * comunque parte del percorso: un profilo senza turni non trova nessun cambio,
+ * e scoprirlo da una Home vuota è il modo peggiore.
+ */
+export function schermataPrimiTurni() {
+  const me = store.me;
+  const turni = store.state.shifts.filter((s) => s.userId === me?.id && s.data >= todayISO()).length;
+  return html`
+    ${raw(insegna(2))}
+    <header class="testata"><h1>I tuoi turni</h1></header>
+    <div class="progresso"><i style="width:100%"></i></div>
+
+    <p>
+      L'app trova i cambi confrontando i tuoi turni con quelli dei colleghi:
+      senza turni non può proporti niente. Il modo più comodo è collegare il
+      calendario dei turni che hai già sul telefono.
+    </p>
+
+    <h2 class="titolo-gruppo">Come funziona</h2>
+    <ol class="elenco piccolo">
+      <li>Su iPhone apri Impostazioni ▸ App ▸ Calendario ▸ Account e tocca il
+        calendario dei turni.</li>
+      <li>Copia l'indirizzo: comincia per <code>https://</code> o
+        <code>webcal://</code>.</li>
+      <li>Tocca <strong>Importa dal calendario</strong>, incollalo e poi
+        <strong>Scarica</strong>: vedi i turni riconosciuti prima di importarli.</li>
+    </ol>
+    <p class="testo-tenue">
+      Da lì in poi l'app ricontrolla il calendario da sola ogni volta che la
+      apri, così i cambi approvati arrivano senza fare niente. L'indirizzo resta
+      su questo telefono: chi ce l'ha legge i tuoi turni, quindi non va
+      condiviso.
+    </p>
+
+    ${raw(turni ? html`<p><strong>${turni} ${turni === 1 ? 'turno importato' : 'turni importati'}</strong>: ci siamo.</p>` : '')}
+
+    <button class="btn ${turni ? 'secondario' : 'primario'} largo" data-act="importa">Importa dal calendario</button>
+    <button class="btn ${turni ? 'primario' : 'secondario'} largo" data-act="vai" data-to="#/home">${turni ? 'Inizia' : 'Lo faccio dopo'}</button>
+    <p class="testo-tenue">I turni si possono anche inserire a mano, giorno per giorno, dal calendario del Profilo.</p>`;
 }
 
 /**

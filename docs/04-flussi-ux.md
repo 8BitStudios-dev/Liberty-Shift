@@ -696,10 +696,19 @@ risultati possibili, cioè la password nuova rifiutata e la vecchia ancora
 buona. Meglio un "serve la rete" che un lucchetto al contrario.
 
 ## La prima apertura
-Quattro passi, e non si salta nessuno: **chi sei** (nome, cognome, come
-preferisci essere chiamato), **il contratto** (tipo e monte ore), **la
-password**, **le note d'uso**. Il pulsante finale resta spento finché non si
-dichiara di averle lette.
+Dopo il codice del negozio: **chi sei** (nome, cognome, come preferisci
+essere chiamato), **il contratto** (tipo e monte ore), **le preferenze**,
+**la password**, **le note d'uso**. Il pulsante finale resta spento finché non
+si dichiara di averle lette. Le preferenze sono l'unico passo facoltativo: il
+testo dice che servono solo alle percentuali dei match, che nessuno le vede, e
+che accendono da sole la disponibilità sui turni che si evitano.
+
+Iscritti, si arriva a **I tuoi turni** (`#/primi-turni`), senza barra in basso:
+perché servono, i tre passi per trovare l'indirizzo del calendario su iPhone,
+e il tasto che apre l'import di sempre. Sta dopo l'iscrizione e non dentro
+perché il calendario si scarica passando dal server, che risponde solo a chi
+ha già un account. "Lo faccio dopo" porta in Home; dopo un import il tasto
+principale diventa "Inizia".
 
 La validazione è per passo: mentre scrivi il nome non ti viene detto che manca
 il contratto.
