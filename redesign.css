@@ -894,3 +894,21 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 
 /* Il foglio del giorno apre con i tasti del cambio: niente margine sopra. */
 .azioni-giorno { margin: 4px 0 14px; }
+
+/* Il lettore di QR del calendario: sopra a tutto, anche ai fogli aperti. */
+.scanner {
+  position: fixed; inset: 0; z-index: 1000;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: #0b0d10; color: #fff;
+}
+.scanner-testa { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.scanner-testa .icon-btn { color: #fff; background: rgba(255, 255, 255, .12); }
+.scanner-vista { position: relative; flex: 1; border-radius: 18px; overflow: hidden; background: #000; }
+.scanner-vista video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scanner-mirino {
+  position: absolute; top: 50%; left: 50%; width: min(70vw, 60vh, 320px); aspect-ratio: 1;
+  transform: translate(-50%, -50%); border-radius: 18px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, .45); outline: 3px solid rgba(255, 255, 255, .9);
+}
+.scanner-nota { margin: 0; text-align: center; font-size: 14px; color: rgba(255, 255, 255, .75); }

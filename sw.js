@@ -29,6 +29,8 @@ const ASSET = [
   './src/core/karma.js',
   './src/core/store.js',
   './src/ui/dom.js',
+  './src/ui/jsqr.js',
+  './src/ui/scanner.js',
   './src/ui/icone.js',
   './src/ui/notifiche.js',
   './src/ui/components.js',

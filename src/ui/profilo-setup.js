@@ -12,6 +12,7 @@ import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 import { oreDelContratto, oreAutomatiche } from '../core/model.js';
 import { todayISO } from '../core/time.js';
+import { scannerDisponibile } from './scanner.js';
 import { serverConfigurato } from '../core/config.js';
 import { campoPortachiavi, elencoErrori } from './components.js';
 
@@ -170,13 +171,16 @@ export function schermataPrimiTurni() {
 
     <h2 class="titolo-gruppo">Come funziona</h2>
     <ol class="elenco piccolo">
-      <li>Su iPhone apri Impostazioni ▸ App ▸ Calendario ▸ Account e tocca il
-        calendario dei turni.</li>
-      <li>Copia l'indirizzo: comincia per <code>https://</code> o
-        <code>webcal://</code>.</li>
-      <li>Tocca <strong>Importa dal calendario</strong>, incollalo e poi
-        <strong>Scarica</strong>: vedi i turni riconosciuti prima di importarli.</li>
+      <li>Nell'app aziendale apri <strong>Iscrizione al calendario</strong>:
+        c'è un codice QR con il tuo indirizzo.</li>
+      <li>Tocca <strong>Scansiona il QR</strong> qui sotto e inquadralo: i
+        turni si scaricano da soli, e li vedi prima di importarli.</li>
     </ol>
+    <p class="testo-tenue">
+      Il QR sta sul telefono aziendale? Inquadralo con questo. È sullo stesso
+      telefono? Copia l'indirizzo scritto sopra il QR e incollalo
+      nell'import.
+    </p>
     <p class="testo-tenue">
       Da lì in poi l'app ricontrolla il calendario da sola ogni volta che la
       apri, così i cambi approvati arrivano senza fare niente. L'indirizzo resta
@@ -186,7 +190,8 @@ export function schermataPrimiTurni() {
 
     ${raw(turni ? html`<p><strong>${turni} ${turni === 1 ? 'turno importato' : 'turni importati'}</strong>: ci siamo.</p>` : '')}
 
-    <button class="btn ${turni ? 'secondario' : 'primario'} largo" data-act="importa">Importa dal calendario</button>
+    <button class="btn ${turni ? 'secondario' : 'primario'} largo" data-act="${scannerDisponibile() ? 'importa-qr' : 'importa'}">${scannerDisponibile() ? 'Scansiona il QR' : 'Importa dal calendario'}</button>
+    ${raw(scannerDisponibile() ? '<button class="btn secondario largo" data-act="importa">Incolla l\'indirizzo</button>' : '')}
     <button class="btn ${turni ? 'primario' : 'secondario'} largo" data-act="vai" data-to="#/home">${turni ? 'Inizia' : 'Lo faccio dopo'}</button>
     <p class="testo-tenue">I turni si possono anche inserire a mano, giorno per giorno, dal calendario del Profilo.</p>`;
 }

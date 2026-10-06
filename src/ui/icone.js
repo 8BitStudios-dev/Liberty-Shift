@@ -36,6 +36,7 @@ const TRACCIATI = {
   impostazioni: '<path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.4"/><circle cx="9" cy="16.5" r="2.4"/>',
   avviso: '<path d="M12 4.6 21 19.6H3z"/><path d="M12 10v4M12 16.6h.01"/>',
   orario: '<circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.2 2"/>',
+  qr: '<path d="M4 9V5.5A1.5 1.5 0 0 1 5.5 4H9M15 4h3.5A1.5 1.5 0 0 1 20 5.5V9M20 15v3.5a1.5 1.5 0 0 1-1.5 1.5H15M9 20H5.5A1.5 1.5 0 0 1 4 18.5V15"/><path d="M8.5 8.5h3v3h-3zM12.5 12.5h3v3h-3z"/>',
   importa: '<path d="M12 4v10M8 10.5l4 4 4-4"/><path d="M4.5 17.5V20h15v-2.5"/>',
   rotazione: '<path d="M20 12a8 8 0 1 1-3.4-6.5"/><path d="M20 4.4V10h-5.4"/><path d="M9.5 12h5"/>',
   condividi: '<path d="M8.5 9.5H6.5v10h11v-10h-2"/><path d="M12 14.5V3.5M8.6 6.6 12 3.3l3.4 3.3"/>',

@@ -726,6 +726,21 @@ perché il calendario si scarica passando dal server, che risponde solo a chi
 ha già un account. "Lo faccio dopo" porta in Home; dopo un import il tasto
 principale diventa "Inizia".
 
+### Il QR del calendario
+L'app aziendale, in **Iscrizione al calendario**, mostra l'indirizzo anche
+come codice QR. "Scansiona il QR" (nei primi turni e nel foglio dell'import)
+apre la fotocamera posteriore, legge un fotogramma ogni 250 ms e si chiude da
+sola appena trova un indirizzo, che finisce nel campo e si scarica subito. Il
+lettore è jsQR (`src/ui/jsqr.js`, Apache 2.0, ridotto e copiato nel progetto):
+Safari su iPhone non ha `BarcodeDetector`. Se la fotocamera non c'è o è
+negata, resta la strada di sempre: copiare e incollare.
+
+L'indirizzo **scade** (l'app aziendale ne mostra la data) e chi ne genera uno
+nuovo spegne il vecchio. Quando il calendario risponde 401, 403, 404 o 410,
+`profilo.calendarioScaduto` si accende e la Home mostra "Il calendario non si
+aggiorna più" con il tasto **Ricollega**; un indirizzo nuovo o uno
+scaricamento riuscito lo spengono.
+
 La validazione è per passo: mentre scrivi il nome non ti viene detto che manca
 il contratto.
 

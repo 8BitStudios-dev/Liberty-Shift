@@ -12,6 +12,7 @@ import { RULES, PREFERENZE } from '../core/rules.js';
 import { rotazioneDaCalendario, rotazioneVuota } from '../core/rotazione.js';
 import { parseICS } from '../core/ics.js';
 import * as P from './profilo-setup.js';
+import { scansionaQR, scannerDisponibile } from './scanner.js';
 import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
@@ -991,10 +992,11 @@ const AZIONI = {
   importa: () => {
     const w = sheet('Importa turni', html`
       <p class="testo-tenue">
-        Incolla l'<strong>indirizzo</strong> del calendario dei turni e tocca
-        Scarica. Funziona anche incollando direttamente il contenuto, se ce
-        l'hai già.
+        Nell'app aziendale, <strong>Iscrizione al calendario</strong> mostra
+        un codice QR: inquadralo da qui e i turni si scaricano da soli. Va
+        bene anche incollare l'indirizzo, o il contenuto del calendario.
       </p>
+      ${raw(scannerDisponibile() ? `<button class="btn primario largo" data-act="scansiona-calendario">${icona('qr', { px: 18 })} Scansiona il QR</button>` : '')}
       <details class="riquadro">
         <summary><span>Dove trovo l'indirizzo</span><span class="conteggio">iPhone</span></summary>
         <ol class="elenco piccolo">
@@ -1065,6 +1067,32 @@ const AZIONI = {
     };
     area.addEventListener('input', aggiorna);
     aggiorna();
+  },
+
+  /**
+   * Il QR dell'app aziendale è l'indirizzo del calendario: letto quello, è
+   * come averlo incollato, e si scarica subito senza un altro tocco.
+   */
+  'scansiona-calendario': async (_, el) => {
+    const wrap = el.closest('.sheet-backdrop');
+    const esito = await scansionaQR({ titolo: 'Inquadra il QR del calendario' });
+    if (!esito) return;
+    const box = wrap.querySelector('[data-anteprima]');
+    if (esito.errore) { box.innerHTML = `<p class="avviso">${esito.errore}</p>`; return; }
+    const area = wrap.querySelector('[data-campo="ics"]');
+    area.value = esito;
+    area.dispatchEvent(new Event('input'));
+    if (wrap._indirizzo && serverConfigurato()) {
+      wrap.querySelector('[data-act="scarica-calendario"]').click();
+    } else if (!wrap._indirizzo) {
+      box.innerHTML = '<p class="avviso">Questo QR non contiene l\'indirizzo di un calendario.</p>';
+    }
+  },
+
+  // Dalla prima apertura: lo stesso import, con la fotocamera già aperta.
+  'importa-qr': () => {
+    AZIONI.importa();
+    document.querySelector('[data-act="scansiona-calendario"]')?.click();
   },
 
   /**

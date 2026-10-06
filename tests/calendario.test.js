@@ -56,3 +56,27 @@ test('modificare il profilo non cancella il calendario collegato', () => {
   assert.equal(store.state.profilo.calendarioUrl, 'https://esempio/cal.ics');
   assert.equal(store.state.profilo.calendarioAggiornatoIl, '2026-09-01T08:00:00.000Z');
 });
+
+// --- l'indirizzo dell'app aziendale scade -------------------------------
+
+test('un calendario che non risponde più lo dice, e un nuovo indirizzo lo rimette a posto', async () => {
+  store.reset(seed());
+  store.state.profilo = { ...store.state.profilo, completato: true, calendarioUrl: 'https://sm-cal.apple.com/cal/vecchio' };
+  localStorage.setItem('liberty-shift:sessione-server', JSON.stringify({ access_token: 't' }));
+  const fetchPrima = globalThis.fetch;
+  // La funzione Calendario gira l'errore del calendario: 404 vuol dire che
+  // l'indirizzo non esiste più, scaduto o rigenerato.
+  globalThis.fetch = async () => ({
+    ok: false, status: 502, text: async () => JSON.stringify({ errore: 'Il calendario ha risposto 404.' }),
+  });
+  try {
+    const esito = await store.aggiornaCalendario({ forzato: true });
+    assert.equal(esito.scaduto, true);
+    assert.equal(store.state.profilo.calendarioScaduto, true);
+    store.ricordaCalendario('https://sm-cal.apple.com/cal/nuovo');
+    assert.equal(store.state.profilo.calendarioScaduto, false);
+  } finally {
+    globalThis.fetch = fetchPrima;
+    localStorage.removeItem('liberty-shift:sessione-server');
+  }
+});

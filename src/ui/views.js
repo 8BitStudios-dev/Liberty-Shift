@@ -109,6 +109,7 @@ export function home() {
       </div>
     </header>
 
+    ${raw(avvisoCalendarioScaduto())}
     ${raw(invitoNotifiche())}
 
     <section class="sezione">
@@ -383,6 +384,26 @@ function tastoIscritti(me) {
  * il permesso direttamente, nello stesso tocco. "Non ora" lo nasconde per una
  * settimana, non per sempre: chi ha detto non ora non ha detto mai.
  */
+/**
+ * Il calendario collegato ha smesso di rispondere: l'indirizzo dell'app
+ * aziendale è scaduto o è stato rigenerato. Sta in Home, e non solo nel
+ * Profilo, perché è da qui che ci si accorgerebbe dei turni fermi: troppo tardi.
+ */
+function avvisoCalendarioScaduto() {
+  if (!store.state.profilo?.calendarioScaduto) return '';
+  return html`
+    <section class="invito-notifiche">
+      <span class="invito-icona">${raw(icona('avviso', { px: 24 }))}</span>
+      <div>
+        <strong>Il calendario non si aggiorna più</strong>
+        <p>Il collegamento è scaduto. Nell'app aziendale apri Iscrizione al calendario, genera un nuovo URL e scansiona il QR.</p>
+        <div class="invito-azioni">
+          <button class="btn primario" data-act="importa">Ricollega</button>
+        </div>
+      </div>
+    </section>`;
+}
+
 function invitoNotifiche() {
   const stato = statoNoto();
   if (invitoRimandato()) return '';

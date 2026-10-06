@@ -1296,7 +1296,7 @@ export const store = {
    * calendario di una persona, e sul server non serve a niente e a nessuno.
    */
   ricordaCalendario(url) {
-    this.state.profilo = { ...(this.state.profilo || {}), calendarioUrl: url };
+    this.state.profilo = { ...(this.state.profilo || {}), calendarioUrl: url, calendarioScaduto: false };
     this.commit();
   },
 
@@ -1320,12 +1320,22 @@ export const store = {
     if (!forzato && oreDaAllora < RULES.calendario.oreFraAggiornamenti) return { saltato: true };
 
     const { dati, errore } = await scaricaCalendario(url);
+    // L'indirizzo dell'app aziendale scade dopo qualche settimana, e chi ne
+    // genera uno nuovo spegne il vecchio: in entrambi i casi il calendario
+    // risponde che non c'è più. Senza dirlo, i turni smetterebbero di
+    // aggiornarsi in silenzio e i cambi approvati non arriverebbero più.
+    if (errore && /risposto (401|403|404|410)\b/.test(errore)) {
+      this.state.profilo.calendarioScaduto = true;
+      this.commit();
+      return { errore: 'Il collegamento al calendario non funziona più: rifallo dall\'app aziendale.', scaduto: true };
+    }
     if (errore) return { errore };
 
     const { turni, errore: erroreLettura } = parseICS(dati);
     if (erroreLettura || !turni.length) return { errore: erroreLettura || 'Nessun turno nel calendario.' };
 
     const esito = this.importaTurni(turni);
+    this.state.profilo.calendarioScaduto = false;
     this.state.profilo.calendarioAggiornatoIl = new Date().toISOString();
     this.commit();
     return esito;
