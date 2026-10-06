@@ -155,6 +155,18 @@ export function orariStandard(turno) {
     .map((inizio) => ({ start: inizio, end: hh(minutes(inizio) + durata) }));
 }
 
+/**
+ * Un turno che cade in una fascia che eviti ti rende disponibile a cambiarlo
+ * senza doverlo dire ogni volta: è la stessa cosa che hai già detto una volta
+ * nelle preferenze. Solo i giorni di lavoro: lavorare in un giorno OFF è un
+ * sacrificio che l'app non dà mai per scontato.
+ */
+export function disponibileDallePreferenze(user, shift) {
+  if (shift?.tipo !== 'WORK' || !user?.preferenze) return false;
+  const fasce = fasceDi(shift);
+  return PREFERENZE.some((p) => p.gruppo === 'evita' && user.preferenze[p.key] && fasce.includes(p.fascia));
+}
+
 /** Questo contratto lavora a settimane che girano? */
 export function usaRotazione(contratto) {
   return Boolean(RULES.contracts[contratto]?.rotazione);

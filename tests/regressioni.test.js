@@ -433,14 +433,14 @@ test('nel cambio OFF basta uno dei due giorni, e la disponibilità si toglie sol
   scambioConcordato({ tipo: 'OFF', giornoSuo: '2026-10-21', giornoMio: '2026-10-22' });
   const settimana = '2026-10-17'; // sabato della settimana Apple
   // Disponibile mercoledì 21, giovedì 22 e venerdì 23.
-  store.me.disponibilita = { [settimana]: [false, false, false, false, true, true, true] };
+  for (const g of ['2026-10-21', '2026-10-22', '2026-10-23']) store.scegliDisponibilita(g, true);
   // Il calendario ha già girato il 21 (lavoro dove ero OFF), il 22 non ancora.
   const esito = store.importaTurni([
     turnoICS('2026-10-21', 'WORK', '12:00', '21:00'),
     turnoICS('2026-10-22', 'WORK', '09:30', '18:30'),
   ]);
   assert.equal(esito.scambiChiusi.length, 1);
-  assert.deepEqual(store.me.disponibilita[settimana], [false, false, false, false, false, true, true],
+  assert.deepEqual(store.me.disponibilita[settimana].slice(4), [false, true, true],
     'via solo il 21: il 22 non è cambiato, il 23 non c\'entra');
 });
 

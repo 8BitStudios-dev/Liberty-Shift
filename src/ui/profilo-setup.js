@@ -7,7 +7,7 @@
 
 import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
-import { RULES } from '../core/rules.js';
+import { RULES, PREFERENZE } from '../core/rules.js';
 import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 import { oreDelContratto, oreAutomatiche } from '../core/model.js';
@@ -22,6 +22,7 @@ export const bozzaProfilo = {
   genere: '',
   contratto: '',
   oreSettimanali: null,
+  preferenze: {},
   password: '',
   conferma: '',
   codice: '',
@@ -48,8 +49,8 @@ export function passi() {
   const b = bozzaProfilo;
   if (b.modifica) return [passoChiSei, passoContratto];
   return serverConfigurato()
-    ? [passoCodice, passoChiSei, passoContratto, passoPassword, passoNote]
-    : [passoChiSei, passoContratto, passoPassword, passoNote];
+    ? [passoCodice, passoChiSei, passoContratto, passoPreferenze, passoPassword, passoNote]
+    : [passoChiSei, passoContratto, passoPreferenze, passoPassword, passoNote];
 }
 
 /** Quali errori riguardano il passo che si sta compilando. */
@@ -75,6 +76,7 @@ export function apriProfilo({ modifica = false } = {}) {
     genere: modifica ? me.genere || '' : '',
     contratto: modifica ? me.contratto : '',
     oreSettimanali: modifica ? me.oreSettimanali : null,
+    preferenze: {},
     password: '',
     conferma: '',
     codice: '',
@@ -264,6 +266,40 @@ function passoContratto() {
     <button class="btn primario largo" data-act="profilo-avanti">
       ${b.modifica ? 'Salva' : 'Continua'}
     </button>`;
+}
+
+/**
+ * Le preferenze alla prima apertura, facoltative: chi le salta trova le
+ * stesse voci nel Profilo. Si chiedono qui perché da loro dipende anche la
+ * disponibilità automatica, e un profilo senza preferenze non la ha mai.
+ */
+function passoPreferenze() {
+  const b = bozzaProfilo;
+  const quando = (fascia) => {
+    const f = RULES.fasce[fascia];
+    if (!f) return '';
+    return f.inizioDa ? `inizia fra le ${f.inizioDa} e le ${f.inizioA}`
+      : f.fineDa ? `finisce fra le ${f.fineDa} e le ${f.fineA}`
+        : `finisce dopo le ${f.fineDopo}`;
+  };
+  const gruppo = (chiave, titolo) => html`
+    <h3 class="pref-titolo">${titolo}</h3>
+    ${raw(PREFERENZE.filter((p) => p.gruppo === chiave).map((p) => html`
+      <label class="switch">
+        <input type="checkbox" data-act="profilo-pref" data-key="${p.key}" ${raw(b.preferenze[p.key] ? 'checked' : '')}>
+        <span>${p.label}${raw(quando(p.fascia) ? `<em class="aiuto">${quando(p.fascia)}</em>` : '')}</span>
+      </label>`).join(''))}`;
+  return html`
+    <h2 class="titolo-gruppo">I turni che preferisci</h2>
+    <p class="testo-tenue">
+      Servono solo alle percentuali dei match: le alzano o le abbassano, non
+      escludono niente e nessun collega le vede. In più, nei giorni in cui
+      hai un turno che eviti risulti disponibile a cambiarlo senza doverlo
+      segnare. Puoi saltare questo passo e cambiarle dal Profilo.
+    </p>
+    ${raw(gruppo('evita', 'Turni da evitare'))}
+    ${raw(gruppo('preferisce', 'Turni preferiti'))}
+    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
 
 /**

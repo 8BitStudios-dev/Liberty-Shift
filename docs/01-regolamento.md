@@ -319,9 +319,16 @@ Cambio Rapido deve trovare scambi comodi a cui nessuno aveva pensato, non solo
 confermare chi si era già offerto — aiutare un collega sui suoi turni
 favorevoli vale anche senza che lui abbia dato disponibilità a cambiare.
 
-La disponibilità si dichiara comunque giorno per giorno, dal calendario delle
-due settimane nel Profilo: è un interruttore sul dettaglio del giorno, nello
-stesso posto dove si inserisce il turno.
+La disponibilità si calcola da sola sui giorni di lavoro: un turno che cade in
+una fascia che eviti (le preferenze "Evito…") ti rende disponibile a cambiarlo.
+Dichiararla giorno per giorno era una rottura, e infatti la usava metà degli
+iscritti per pochi giorni in tutto. I giorni OFF non sono mai automatici:
+lavorare in un giorno libero è un sacrificio che l'app non dà per scontato.
+
+L'interruttore sul dettaglio del giorno, nel Profilo, resta per le eccezioni:
+una scelta fatta lì vince sul calcolo (`disponibilitaManuale`), e se coincide
+con quello che il calcolo direbbe non si registra, così quel giorno torna a
+seguire le preferenze. Sul server va solo il risultato, mai le preferenze.
 
 ## R16 — Niente doppio impegno
 Nel cambio OFF puoi offrire solo i giorni in cui sei libero, e la controparte

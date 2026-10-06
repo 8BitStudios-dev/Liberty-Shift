@@ -9,7 +9,7 @@ import {
 import {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
-  applicaPreferenze, concorda, contractOf,
+  applicaPreferenze, concorda, contractOf, disponibileDallePreferenze,
 } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -551,6 +551,36 @@ export function cambioRapido(shiftId, ctx) {
   }, ctx) : [];
 
   return [...orario, ...off].sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+}
+
+/**
+ * La disponibilità di una persona, ricalcolata: per ogni giorno da oggi in
+ * poi vale la scelta fatta a mano su quel giorno, se c'è, altrimenti quella
+ * che viene dalle preferenze. I giorni passati restano com'erano.
+ *
+ * Restituisce solo le settimane cambiate, perché ognuna è una scrittura sul
+ * server: rimandare quelle uguali a ogni salvataggio sarebbe rumore.
+ */
+export function disponibilitaRicalcolata(user, shifts, oggi = todayISO()) {
+  const manuale = user.disponibilitaManuale || {};
+  const miei = shifts.filter((s) => s.userId === user.id && s.data >= oggi);
+  const settimane = new Set([
+    ...miei.map((s) => appleWeekKey(s.data)),
+    ...Object.keys(manuale).filter((k) => addDays(k, 6) >= oggi),
+  ]);
+  const cambiate = {};
+  for (const settimana of settimane) {
+    const prima = user.disponibilita?.[settimana] || Array(7).fill(false);
+    const dopo = prima.map((valore, slot) => {
+      const giorno = addDays(settimana, slot);
+      if (giorno < oggi) return valore;
+      const scelta = manuale[settimana]?.[slot];
+      if (scelta === true || scelta === false) return scelta;
+      return disponibileDallePreferenze(user, miei.find((s) => s.data === giorno));
+    });
+    if (dopo.some((v, i) => v !== Boolean(prima[i]))) cambiate[settimana] = dopo;
+  }
+  return cambiate;
 }
 
 /** Disponibilità dichiarata settimana per settimana (cap. 20). */

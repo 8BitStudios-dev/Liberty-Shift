@@ -110,11 +110,12 @@ test('tornare a "solo dirette" svuota quello che era stato mandato', () => {
   assert.deepEqual(ultima.preferenze, {});
   assert.equal(ultima.consenso_il, null);
 
-  // E da lì in poi non esce più niente, anche cambiando i turni.
-  const prima = store.state.coda.length;
+  // E da lì in poi non esce più niente, anche cambiando i turni. (La
+  // disponibilità può partire lo stesso: è un'altra cosa, e la vedono tutti.)
+  const prima = operazioni().length;
   store.state.shifts.find((s) => s.id === 's1').end = '21:00';
   store.commit();
-  assert.equal(store.state.coda.length, prima);
+  assert.equal(operazioni().length, prima);
 });
 
 test('un telefono nuovo, ancora senza turni, non cancella il calendario già sul server', () => {

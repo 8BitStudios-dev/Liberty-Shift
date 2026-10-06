@@ -8,7 +8,7 @@ import {
   durataOre, isNotturno, fuoriFascia, etichettaFascia, oreDelContratto, oreAutomatiche,
   spostaTurno,
 } from '../core/model.js';
-import { RULES } from '../core/rules.js';
+import { RULES, PREFERENZE } from '../core/rules.js';
 import { rotazioneDaCalendario, rotazioneVuota } from '../core/rotazione.js';
 import { parseICS } from '../core/ics.js';
 import * as P from './profilo-setup.js';
@@ -437,6 +437,14 @@ const AZIONI = {
     b.oreSettimanali = fisse || (ammesse.includes(b.oreSettimanali) ? b.oreSettimanali : null);
     render();
   },
+  // Come nel Profilo: accenderne una spegne la sua opposta.
+  'profilo-pref': (e, el) => {
+    const { preferenze } = P.bozzaProfilo;
+    preferenze[el.dataset.key] = e.target.checked;
+    const opposta = PREFERENZE.find((p) => p.key === el.dataset.key)?.opposta;
+    if (e.target.checked && opposta) preferenze[opposta] = false;
+    render({ fermo: true });
+  },
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
   'profilo-accetta-voce': (e, el) => {
     const b = P.bozzaProfilo;
@@ -505,6 +513,7 @@ const AZIONI = {
       return render();
     }
 
+    if (!b.modifica) store.impostaPreferenze(b.preferenze);
     toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai('#/home');
   },
@@ -636,7 +645,7 @@ const AZIONI = {
 
   'toggle-disp-giorno': (e, el) => {
     const data = el.dataset.data;
-    store.impostaDisponibilita(appleWeekKey(data), slotSettimana(data), e.target.checked);
+    store.scegliDisponibilita(data, e.target.checked);
     render();
   },
 

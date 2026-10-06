@@ -24,11 +24,13 @@ User ──< Shift
 | `superAdmin` | bool | una sola persona per store; promuove/retrocede gli admin e disattiva un profilo |
 | `attivo` | bool | disattivato = fuori dal negozio, reversibile; non è una cancellazione |
 | `preferenze` | `{ preferisceMattina, evitaChiusure, disponibileWeekend }` | pesano sul punteggio |
-| `disponibilita` | `{ [weekKey]: bool[7] }` | slot 0 = sabato |
+| `disponibilita` | `{ [weekKey]: bool[7] }` | slot 0 = sabato; calcolata da turni e preferenze, è quella che va sul server |
+| `disponibilitaManuale` | `{ [weekKey]: (bool\|null)[7] }` | solo sul telefono: le eccezioni scelte a mano, `null` = segue il calcolo |
 | `prioritaUsata` | `{ 'YYYY-MM': n }` | credito consumato per mese |
 
-`weekKey` è la data ISO del sabato: la disponibilità è per settimana, come
-chiesto, non una preferenza permanente.
+`weekKey` è la data ISO del sabato: la disponibilità è per settimana. Le
+preferenze restano sul telefono: sul server arriva solo la disponibilità che
+ne risulta, mai il motivo.
 
 Non c'è nessun campo per la durata del turno: non esiste una durata standard,
 nemmeno per persona. Quando serve — l'adattamento di R9 — si usa la durata

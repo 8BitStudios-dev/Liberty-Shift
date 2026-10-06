@@ -8,6 +8,7 @@ import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
 import {
   hasPriority, shiftLabel, wantLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
+  disponibileDallePreferenze,
 } from '../core/model.js';
 import {
   slotSettimana, opportunitaPerMe, disponibileIl,
@@ -690,9 +691,10 @@ function sezionePreferenze(me) {
       </summary>
       <div class="pref-corpo">
         <p class="pref-intro">
-          Dici all'app che turni preferisci e quali no. Non escludono niente:
-          fanno salire o scendere i match, così in cima trovi quelli che ti
-          vanno bene.
+          Dici all'app che turni preferisci e quali no. Servono solo ai
+          match: li fanno salire o scendere, così in cima trovi quelli che ti
+          vanno bene, e nessun collega le vede. Nei giorni in cui hai un turno
+          che eviti risulti disponibile a cambiarlo, senza segnarlo a mano.
         </p>
         ${raw(legendaFasce())}
         <p class="testo-tenue">
@@ -1192,7 +1194,9 @@ export function dettaglioGiornoProfilo(data) {
         <span>Disponibile a scambiare questo giorno</span>
       </label>
       <p class="testo-tenue">
-        Dichiararlo ti fa comparire fra i match potenziali di chi cerca, anche se tu non hai pubblicato niente.
+        ${disponibile && disponibileDallePreferenze(me, turno)
+    ? 'Acceso da solo: è un turno che eviti. Se quel giorno non vuoi cambiare, spegnilo.'
+    : 'Ti fa salire nei match di chi cerca un cambio. Nei turni che eviti si accende da solo.'}
       </p>
 
       ${raw(mieRichieste.length ? html`

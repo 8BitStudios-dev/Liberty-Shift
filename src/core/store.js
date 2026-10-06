@@ -3,8 +3,10 @@
 // chiamate a un backend non tocca né il motore né la UI.
 
 import { RULES, PREFERENZE, STATUS } from './rules.js';
-import { newId, isExpired, hasPriority, isOpen, usaRotazione } from './model.js';
-import { validateRequest, nextStatus, turnoOfferibile, slotSettimana } from './engine.js';
+import { newId, isExpired, hasPriority, isOpen, usaRotazione, disponibileDallePreferenze } from './model.js';
+import {
+  validateRequest, nextStatus, turnoOfferibile, slotSettimana, disponibilitaRicalcolata,
+} from './engine.js';
 import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
 import { monthKey, todayISO, addDays, formatDay, appleWeekKey } from './time.js';
 import { serverConfigurato } from './config.js';
@@ -177,6 +179,7 @@ export const store = {
 
   commit() {
     this.scadenze();
+    this.allineaDisponibilita();
     // Chi ha acceso le notifiche sulle richieste compatibili ha il calendario
     // anche sul server: ogni volta che cambia lo si rimanda, prima di salvare,
     // così la firma dell'ultimo invio resta scritta insieme al resto.
@@ -419,7 +422,7 @@ export const store = {
       for (const g of toccati) {
         const settimana = appleWeekKey(g);
         const slot = slotSettimana(g);
-        if (this.me.disponibilita?.[settimana]?.[slot]) this.impostaDisponibilita(settimana, slot, false);
+        if (this.me.disponibilita?.[settimana]?.[slot]) this.scegliDisponibilita(g, false);
       }
       if (!giaChiuso) chiusi.push({ proposalId: p.id, altroId: p.daUserId === me ? p.aUserId : p.daUserId });
     }
@@ -886,23 +889,62 @@ export const store = {
     request.status = nextStatus(request, this.state.proposals);
   },
 
-  impostaDisponibilita(weekKey, slot, valore) {
+  /**
+   * La disponibilità segue da sola turni e preferenze: un turno che cade in
+   * una fascia che eviti ti rende disponibile a cambiarlo. Gira a ogni
+   * salvataggio, perché è lì che cambiano turni e preferenze, e scrive sul
+   * server solo le settimane che sono cambiate davvero.
+   *
+   * La prima volta trasforma in scelte manuali i giorni che avevi già
+   * dichiarato a mano, così il calcolo non te li toglie.
+   */
+  allineaDisponibilita() {
     const me = this.me;
-    me.disponibilita = me.disponibilita || {};
-    me.disponibilita[weekKey] = me.disponibilita[weekKey] || Array(7).fill(false);
-    me.disponibilita[weekKey][slot] = valore;
-    // La disponibilità è dichiarata apposta perché i colleghi la vedano: è
-    // l'unico modo che hanno di sapere chi cercare, visto che i turni degli
-    // altri non escono dai loro telefoni.
+    if (!me) return;
+    if (!me.disponibilitaManuale) {
+      me.disponibilitaManuale = {};
+      for (const [settimana, giorni] of Object.entries(me.disponibilita || {})) {
+        me.disponibilitaManuale[settimana] = giorni.map((v, slot) => {
+          const giorno = addDays(settimana, slot);
+          const turno = this.state.shifts.find((s) => s.userId === me.id && s.data === giorno);
+          return v && !disponibileDallePreferenze(me, turno) ? true : null;
+        });
+      }
+    }
+    for (const [settimana, giorni] of Object.entries(disponibilitaRicalcolata(me, this.state.shifts))) {
+      this.scriviDisponibilita(settimana, giorni);
+    }
+  },
+
+  /**
+   * L'interruttore del giorno: una scelta a mano vale più del calcolo. Se
+   * coincide con quello che il calcolo direbbe comunque, non si registra
+   * come eccezione: così, cambiando le preferenze, quel giorno le segue.
+   */
+  scegliDisponibilita(data, valore) {
+    const me = this.me;
+    const settimana = appleWeekKey(data);
+    const slot = slotSettimana(data);
+    const turno = this.state.shifts.find((s) => s.userId === me.id && s.data === data);
+    me.disponibilitaManuale = me.disponibilitaManuale || {};
+    me.disponibilitaManuale[settimana] = me.disponibilitaManuale[settimana] || Array(7).fill(null);
+    me.disponibilitaManuale[settimana][slot] = valore === disponibileDallePreferenze(me, turno) ? null : valore;
+    this.commit();
+    this.spingi();
+  },
+
+  scriviDisponibilita(settimana, giorni) {
+    const me = this.me;
+    me.disponibilita = { ...(me.disponibilita || {}), [settimana]: giorni };
+    // La disponibilità esiste perché i colleghi la vedano: è l'unico segnale
+    // che hanno, visto che i turni degli altri non escono dai loro telefoni.
     if (sulServer(this.state)) {
       accoda(this.state, 'disponibilita.salva', {
         user_id: serverDi(this.state, me.id),
-        settimana: weekKey,
-        giorni: me.disponibilita[weekKey],
+        settimana,
+        giorni,
       });
     }
-    this.commit();
-    this.spingi();
   },
 
   impostaContratto(patch) {
