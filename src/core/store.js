@@ -154,7 +154,7 @@ export const store = {
    */
   spingi() {
     if (!sulServer(this.state)) return;
-    svuotaCoda(this.state).then(({ fatte, errore }) => {
+    svuotaCoda(this.state).catch((err) => ({ fatte: 0, errore: String(err?.message || err) })).then(({ fatte, errore }) => {
       this.state.ultimoErroreServer = errore || null;
       if (fatte || errore) this.commit();
     });
@@ -482,6 +482,11 @@ export const store = {
       { tipo, cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
     );
     if (errori.length) return { errori };
+    // Un secondo tocco su "Pubblica", o una richiesta che sembrava non partita,
+    // creavano due richieste identiche: i colleghi le vedevano doppie.
+    const doppia = this.state.requests.find((r) => isOpen(r) && r.userId === this.state.currentUserId
+      && r.tipo === tipo && r.cedo.shiftId === cedo.shiftId);
+    if (doppia) return { errori: ['Hai già una richiesta aperta di questo tipo su questo turno: la trovi nel giorno del calendario.'] };
     if (usaPriorita && this.creditoPriorita() < 1) {
       return { errori: ['Non hai crediti priorità disponibili questo mese.'] };
     }

@@ -441,3 +441,37 @@ test('una proposta ritirata senza rete non torna giù dal server', async () => {
   await scarica(state);
   assert.equal(state.proposals.some((p) => p.id === 'pr-mia'), false);
 });
+
+// --- la coda che si fermava in silenzio ------------------------------------
+
+test('un errore dentro il telefono non blocca in silenzio: resta scritto e la bacheca scende lo stesso', async () => {
+  const state = statoIscritto();
+  serverFinto({ profili: { righe: PROFILI }, richieste: {}, proposte: {}, ringraziamenti: {}, disponibilita: {} });
+  // Un'operazione che va in errore prima ancora di arrivare al server.
+  accoda(state, 'notifiche.salva', { user_id: 'io-sul-server', modo: 'compatibili', turni: [], preferenze: {} });
+  const { SERVER } = await import('../src/core/config.js');
+  const chiave = SERVER.chiaveTurniPubblica;
+  SERVER.chiaveTurniPubblica = 'non-una-chiave';
+  try {
+    const { sincronizza } = await import('../src/core/sincronia.js');
+    const esito = await sincronizza(state);
+    assert.match(esito.errore, /Errore nel telefono \(notifiche\.salva\)/);
+    assert.equal(state.coda[0].tentativi, 1, 'l\'operazione resta, con il tentativo contato');
+    assert.ok(state.users.some((u) => u.nome === 'Anna'), 'la bacheca è scesa comunque');
+  } finally {
+    SERVER.chiaveTurniPubblica = chiave;
+  }
+});
+
+test('la stessa richiesta due volte sullo stesso turno non passa', () => {
+  statoIscritto();
+  const me = store.state.currentUserId;
+  const turno = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK' && s.data > new Date().toISOString().slice(0, 10)
+    && !store.state.requests.some((r) => r.cedo.shiftId === s.id));
+  const richiesta = () => store.creaRichiesta({
+    tipo: 'ORARIO', cedo: { shiftId: turno.id, flessibile: false },
+    cerco: { giorni: [turno.data], mode: 'SPECIFIC', start: '12:00', end: '21:00' }, usaPriorita: false,
+  });
+  assert.ok(richiesta().richiesta);
+  assert.match(richiesta().errori[0], /già una richiesta aperta/);
+});

@@ -110,6 +110,7 @@ export function home() {
     </header>
 
     ${raw(avvisoCalendarioScaduto())}
+    ${raw(avvisoCodaFerma())}
     ${raw(invitoNotifiche())}
 
     <section class="sezione">
@@ -408,6 +409,31 @@ function avvisoCalendarioScaduto() {
         <p>Il collegamento è scaduto. Nell'app aziendale apri Iscrizione al calendario, genera un nuovo URL e scansiona il QR.</p>
         <div class="invito-azioni">
           <button class="btn primario" data-act="importa">Ricollega</button>
+        </div>
+      </div>
+    </section>`;
+}
+
+/**
+ * Quello che il telefono non riesce a mandare al server, detto in chiaro.
+ *
+ * Una richiesta che resta in coda non la vede nessun collega, e chi l'ha
+ * pubblicata crede il contrario: è peggio di un errore, perché sembra tutto
+ * a posto. Compare solo dopo almeno un tentativo fallito, non per una coda
+ * che sta semplicemente partendo.
+ */
+function avvisoCodaFerma() {
+  const ferme = (store.state.coda || []).filter((op) => op.tentativi > 0);
+  if (!ferme.length) return '';
+  const quante = store.state.coda.length;
+  return html`
+    <section class="invito-notifiche">
+      <span class="invito-icona">${raw(icona('avviso', { px: 24 }))}</span>
+      <div>
+        <strong>${quante === 1 ? 'Una modifica non è ancora arrivata ai colleghi' : `${quante} modifiche non sono ancora arrivate ai colleghi`}</strong>
+        <p>${ferme[0].ultimoErrore || 'Il server non risponde.'}</p>
+        <div class="invito-azioni">
+          <button class="btn primario" data-act="sincronizza">Riprova</button>
         </div>
       </div>
     </section>`;

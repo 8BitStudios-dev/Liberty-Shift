@@ -368,7 +368,17 @@ async function svuota(state) {
       state.coda.shift();
       continue;
     }
-    const { errore, stato } = await esegui(op.dati);
+    // Un errore dentro il telefono (non una risposta del server) non deve
+    // fermare tutto in silenzio: prima si perdeva l'eccezione, la coda
+    // restava bloccata e nessuno lo sapeva, mentre le richieste dietro non
+    // partivano e la bacheca non si aggiornava più.
+    let risposta;
+    try {
+      risposta = await esegui(op.dati);
+    } catch (err) {
+      risposta = { errore: `Errore nel telefono (${op.tipo}): ${err?.message || err}` };
+    }
+    const { errore, stato } = risposta;
     // Gli id li generiamo noi: una riga che c'è già è la nostra, arrivata a
     // destinazione in un tentativo precedente. Insistere sarebbe un blocco.
     if (errore && stato !== 409) {
@@ -520,7 +530,9 @@ export async function scarica(state) {
 /** Prima si manda quello che c'è da mandare, poi si guarda cosa c'è di nuovo. */
 export async function sincronizza(state) {
   if (!collegato()) return { saltato: true };
-  const coda = await svuotaCoda(state);
+  // Una coda in difficoltà non deve impedire di vedere la bacheca: si scarica
+  // comunque, e l'errore arriva insieme al resto.
+  const coda = await svuotaCoda(state).catch((err) => ({ fatte: 0, errore: String(err?.message || err) }));
   const giu = await scarica(state);
   return { ...giu, errore: giu.errore || coda.errore, inviate: coda.fatte };
 }
