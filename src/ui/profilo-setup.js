@@ -290,7 +290,25 @@ function passoChiSei() {
         account, e i colleghi ti vedrebbero due volte.</p>
         <button class="btn primario largo" data-act="ho-gia-account">Rientra con la mia password</button>
         <button class="btn secondario largo" data-act="omonimo-conferma">Sono un'altra persona</button>
-      </div>` : '<button class="btn primario largo" data-act="profilo-avanti">Continua</button>')}`;
+      </div>` : '<button class="btn primario largo" data-act="profilo-avanti">Continua</button>')}
+
+    ${raw(b.modifica ? sezionePassword() : '')}`;
+}
+
+/**
+ * La password, dentro la modifica del profilo: è una cosa del profilo, e una
+ * voce a parte nelle Impostazioni era un posto in più dove cercarla. Chi non
+ * ricorda quella attuale non può cambiarla da sé: la chiede a un admin, come
+ * dalla schermata d'ingresso.
+ */
+function sezionePassword() {
+  if (!serverConfigurato()) return '';
+  return html`
+    <section class="sezione-password">
+      <h2 class="titolo-gruppo">Password</h2>
+      <button class="btn secondario largo" data-act="cambia-password">Cambia password</button>
+      <button class="link-btn" data-act="password-dimenticata-profilo">Ho dimenticato la password</button>
+    </section>`;
 }
 
 function passoContratto() {

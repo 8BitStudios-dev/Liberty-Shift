@@ -744,12 +744,15 @@ scaricamento riuscito lo spengono.
 La validazione è per passo: mentre scrivi il nome non ti viene detto che manca
 il contratto.
 
-Dal Profilo si riapre lo stesso modulo con "Modifica profilo": due passi, senza
-la password (che ha una voce sua) e senza le note già accettate.
+Dal Profilo si riapre lo stesso modulo con "Modifica profilo": due passi,
+senza le note già accettate. In fondo al primo c'è la **password**: "Cambia
+password" (serve quella attuale) e "Ho dimenticato la password", che manda la
+stessa richiesta della schermata d'ingresso agli admin. Chi è dentro l'app ma
+non ricorda quella attuale non ha altro modo di cambiarla.
 
 ## Impostazioni
-Modifica profilo, cambio password e note d'uso stanno dietro una riga sola in
-fondo al Profilo, con l'ingranaggio e senza riquadro. Sono cose che si toccano
+Modifica profilo e note d'uso stanno dietro una riga sola in fondo al
+Profilo, con l'ingranaggio e senza riquadro. Sono cose che si toccano
 tre volte in tutto, e da riquadri grandi quanto quelli dei turni rubavano
 attenzione a quello che invece si guarda ogni giorno. Il ritorno dalle note
 riporta lì, non al Profilo.

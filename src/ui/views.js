@@ -483,7 +483,7 @@ function bollinoIo(me) {
 /**
  * Impostazioni.
  *
- * Nel Profilo queste tre voci occupavano tre riquadri grandi quanto quelli
+ * Nel Profilo queste voci occupavano tre riquadri grandi quanto quelli
  * dei turni, che è lo spazio di cose che si usano ogni giorno. Qui dentro
  * restano raggiungibili senza pesare su quello che si guarda davvero.
  */
@@ -500,15 +500,7 @@ export function impostazioni() {
         <span class="tile-icona">${raw(icona('scrivi'))}</span>
         <span>
           <strong>Modifica profilo</strong>
-          <em>${nomeUtente(me)} · ${RULES.contracts[me.contratto].label} · ${me.oreSettimanali} ore</em>
-        </span>
-        <span class="chevron">›</span>
-      </button>
-      <button class="tile" data-act="cambia-password">
-        <span class="tile-icona">${raw(icona('impostazioni'))}</span>
-        <span>
-          <strong>Cambia password</strong>
-          <em>Serve quella attuale</em>
+          <em>${nomeUtente(me)} · ${RULES.contracts[me.contratto].label} · ${me.oreSettimanali} ore · password</em>
         </span>
         <span class="chevron">›</span>
       </button>

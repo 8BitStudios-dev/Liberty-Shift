@@ -1178,7 +1178,7 @@ export function passwordTemporanea(u, password) {
     <p class="password-temporanea">${password}</p>
     <p class="testo-tenue">
       Dilla di persona, non per messaggio. ${u?.nome} entra con questa e la cambia
-      subito da Impostazioni ▸ Cambia password. Chiudendo questo foglio non la
+      subito da Impostazioni ▸ Modifica profilo ▸ Cambia password. Chiudendo questo foglio non la
       rivedi più.
     </p>`;
 }

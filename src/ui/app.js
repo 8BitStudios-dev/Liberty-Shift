@@ -354,6 +354,26 @@ const AZIONI = {
       : schermataAccesso('', 'Richiesta inviata. Chiedi a un admin del negozio la password temporanea, poi entra qui con quella.');
   },
 
+  // Da dentro l'app: sei entrato, ma quella attuale non la ricordi più e
+  // senza non puoi cambiarla. La richiesta è la stessa della porta; quella di
+  // adesso continua a funzionare finché un admin non ne crea una temporanea.
+  'password-dimenticata-profilo': async (_, el) => {
+    const me = store.me;
+    el.disabled = true;
+    const esito = await store.chiediNuovaPassword(me?.nome, me?.cognome);
+    el.disabled = false;
+    chiudiSheet();
+    if (esito.errore) return toast(esito.errore);
+    sheet('Richiesta inviata', html`
+      <p>Gli admin del negozio hanno ricevuto la tua richiesta.</p>
+      <p class="testo-tenue">
+        La richiesta vale 48 ore: in quel tempo uno di loro ti dà di persona
+        una password temporanea. Fino ad allora puoi continuare a usare l'app.
+        Quando l'hai, cambiala da Modifica profilo con <strong>Cambia
+        password</strong>, scrivendo la temporanea come password attuale.
+      </p>`);
+  },
+
   // Dal rientro: nome e cognome li hai appena scritti.
   'password-dimenticata-rientro': async () => {
     const b = P.bozzaProfilo;
@@ -406,7 +426,8 @@ const AZIONI = {
         </label>
         <button type="submit" class="campo-portachiavi" tabindex="-1" aria-hidden="true"></button>
       </form>
-      <div data-esito></div>`, {
+      <div data-esito></div>
+      <button class="link-btn" data-act="password-dimenticata-profilo">Non ricordi quella attuale?</button>`, {
       azioni: '<button class="btn primario largo" data-act="conferma-password">Cambia</button>',
     });
     setTimeout(() => w.el.querySelector('[data-campo="vecchia"]')?.focus(), 40);
