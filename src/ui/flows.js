@@ -663,6 +663,8 @@ export function dettaglio(params) {
     const da = store.user(p.daUserId);
     const offerto = store.shift(p.shiftOffertoId);
     const coinvolto = p.daUserId === me || p.aUserId === me;
+    // "Ti darebbe" vale solo per chi ha scritto la richiesta: chi ha proposto
+    // legge cosa offre lui, e un collega che passa legge cosa offre l'altro.
     const hoAccettato = p.accettataDa.includes(me);
     const accordo = p.status === 'ACCORDO';
 
@@ -697,7 +699,7 @@ export function dettaglio(params) {
           <span class="avatar">${iniziali(da)}</span>
           <div><strong>${nomeUtente(da)}</strong><div class="meta">ha proposto uno scambio</div></div>
         </header>
-        <p>Ti darebbe <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
+        <p>${p.aUserId === me ? 'Ti darebbe' : p.daUserId === me ? 'Offri' : 'Offre'} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
         ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
         <div class="accettazioni">${raw(p.accettataDa.map((u) => `<span class="tag ok">${nomeUtente(store.user(u))} ha accettato</span>`).join(''))}</div>
         ${raw(azioni)}
@@ -795,8 +797,8 @@ export function formProposta(request, shiftSuggerito) {
   }
 
   return html`
-    <p>Stai proponendo uno scambio a <strong>${nomeUtente(store.user(request.userId))}</strong>.</p>
-    <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
+    <p>Stai proponendo uno scambio a <strong>${nomeUtente(store.user(request.userId))}</strong></p>
+    <div class="card" data-coppia-proposta>${raw(coppiaCedoCerco(request, { compatto: true, mioTurno: opzioni.find((s) => s.id === shiftSuggerito) || opzioni[0] }))}</div>
     <label class="campo">
       <span>Il turno che offri</span>
       <select class="select" data-campo="shift">
@@ -913,10 +915,11 @@ function vocebox(v) {
           <div class="meta">${ioHoProposto ? 'hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
         </div>
       </header>
-      ${raw(coppiaCedoCerco(r, { compatto: true }))}
+      ${raw(coppiaCedoCerco(r, { compatto: true, mioTurno: ioHoProposto ? offerto : null }))}
+      ${raw(ioHoProposto ? '' : html`
       <div class="scambio-secco">
-        <div><span>${ioHoProposto ? 'Tu metteresti' : 'Ti darebbe'}</span><strong>${formatDay(offerto?.data)} · ${shiftLabel(offerto)}</strong></div>
-      </div>
+        <div><span>Ti darebbe</span><strong>${formatDay(offerto?.data)} · ${shiftLabel(offerto)}</strong></div>
+      </div>`)}
       ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
       ${raw(p.annullataIl
     ? `<p class="nota-utente">Scambio annullato dopo l'accordo${p.motivoRifiuto ? `: “${esc(p.motivoRifiuto)}”` : ''}</p>`

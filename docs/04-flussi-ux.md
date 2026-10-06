@@ -132,6 +132,22 @@ offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo. Dopo l'accordo la schermata dice una cosa sola: vai a farlo
 nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
 
+### Il blocco dello scambio parla a chi lo guarda
+Il riquadro con i due lati (blu a sinistra, verde a destra) cambia parole
+secondo chi lo legge, e il blu resta sempre il turno che cede chi guarda:
+
+| Chi guarda | Sinistra (blu) | Destra (verde) |
+| --- | --- | --- |
+| chi ha scritto la richiesta | **lascio** il mio turno | **cerco** quello che voglio (**offro**, nel cambio OFF) |
+| un collega, con il turno che offre (tendina "Proponi lo scambio", Aiuta un collega, Cambio rapido, una proposta già fatta) | **lasci** il tuo turno | **prendi** quello dell'autore, con le ore che faresti davvero |
+| un collega che non ha ancora scelto (dettaglio della richiesta) | **Lorenzo lascia** | **Lorenzo cerca** |
+
+Scritto sempre con le parole dell'autore, il blocco faceva leggere a chi
+proponeva "LASCIO 11:00–20:00" come se fosse il suo turno, con il turno che
+offriva davvero subito sotto. Nella tendina il lato sinistro segue il menu
+"Il turno che offri". Anche sotto una proposta "Ti darebbe" lo legge solo
+l'autore: chi l'ha fatta legge "Offri", gli altri "Offre".
+
 Una proposta fatta si può **ritirare** finché l'altra persona non l'ha
 accettata: "Ritira la proposta", in Proposte e nel dettaglio della richiesta,
 con una conferma. Si cancella, non si rifiuta: "rifiutata" farebbe partire la

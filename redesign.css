@@ -281,7 +281,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   background: var(--superficie-2);
 }
 .coppia .etichetta {
-  font-size: 12px; letter-spacing: .05em;
+  font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
   display: inline-flex; align-items: center; gap: 4px;
 }
 .coppia .cedo .etichetta { color: var(--cedo); }

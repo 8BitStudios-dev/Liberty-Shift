@@ -73,46 +73,74 @@ export function badgeStato(status) {
 /**
  * Il blocco della richiesta: è l'unità visiva di tutta l'app.
  *
- * L'etichetta a sinistra dice cosa cerchi, non solo cosa lasci — nel cambio
+ * Parla a chi lo guarda, come le spiegazioni dei match: all'autore con le
+ * sue parole, a un collega con le sue. Scritto sempre in prima persona
+ * dell'autore, un collega leggeva "LASCIO 11:00–20:00" e lo prendeva per il
+ * proprio turno, con il turno che offriva davvero subito sotto.
+ *
+ * - Chi ha scritto la richiesta: "lascio" e "cerco" (o "offro").
+ * - Un collega di cui si sa il turno in gioco (`mioTurno`): il suo scambio,
+ *   "lasci" il suo turno e "prendi" quello dell'autore, con l'orario che
+ *   farebbe davvero. I colori restano veri: il blu è sempre il turno che
+ *   cede chi guarda.
+ * - Un collega prima di scegliere: la richiesta, ma con il nome di chi
+ *   l'ha scritta ("Lorenzo lascia").
+ *
+ * L'etichetta di sinistra dice cosa cerchi, non solo cosa lasci: nel cambio
  * OFF "lascio" e "offro" leggevano come la stessa cosa (dare via qualcosa),
- * e il punto della richiesta (liberare quel giorno) si perdeva. Nel cambio
- * orario invece "lascio" resta chiaro da solo: quel turno lo lasci per
- * davvero, non lo stai cercando.
+ * e il punto della richiesta (liberare quel giorno) si perdeva.
  */
-export function coppiaCedoCerco(request, { compatto = false } = {}) {
+export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
   const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   const giorni = request.cerco.giorni || [];
   const off = request.tipo === TIPO_CAMBIO.OFF;
+  const mia = request.userId === store.state.currentUserId;
+  const freccia = (nome) => raw(icona(nome, { px: 14, forte: true }));
 
-  const lato = off
-    ? html`
-      <div class="lato cerco">
-        <span class="etichetta">${raw(icona('prendo', { px: 14, forte: true }))} OFFRO</span>
-        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
-        <span class="orario">${wantLabel(request.cerco)}</span>
-      </div>`
-    : html`
-      <div class="lato cerco">
-        <span class="etichetta">${raw(icona('prendo', { px: 14, forte: true }))} CERCO</span>
-        <strong>stesso giorno</strong>
-        <span class="orario">${wantLabel(request.cerco)}</span>
-      </div>`;
-
-  return html`
+  const lati = (sinistra, destra) => html`
     <div class="coppia ${compatto ? 'compatta' : ''}">
       <div class="tipo-cambio">${raw(iconaTipo(request.tipo))} ${meta.label}</div>
       <div class="lati">
-        <div class="lato cedo">
-          <span class="etichetta">${raw(icona('cedo', { px: 14, forte: true }))} ${off ? 'CERCO' : 'LASCIO'}</span>
-          <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
-          <span class="orario">${shiftLabel(cedo)}</span>
-          ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}
-        </div>
+        <div class="lato cedo">${raw(sinistra)}</div>
         <div class="freccia">⇄</div>
-        ${raw(lato)}
+        <div class="lato cerco">${raw(destra)}</div>
       </div>
     </div>`;
+
+  if (!mia && mioTurno) {
+    const perMe = trasformaTurno(cedo, mioTurno);
+    return lati(
+      html`
+        <span class="etichetta">${freccia('cedo')} lasci</span>
+        <strong>${formatDay(mioTurno.data)}</strong>
+        <span class="orario">${shiftLabel(mioTurno)}</span>`,
+      html`
+        <span class="etichetta">${freccia('prendo')} prendi</span>
+        <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
+        <span class="orario">${perMe.trasformato ? `${perMe.start}–${perMe.end}` : shiftLabel(cedo)}</span>
+        ${raw(perMe.trasformato ? html`<div class="nota">${shiftLabel(cedo)} adattato al tuo contratto</div>` : '')}`,
+    );
+  }
+
+  const chi = mia ? '' : `${store.user(request.userId)?.nome || 'chi chiede'} `;
+  const verbo = (io, lei) => (mia ? io : `${chi}${lei}`);
+  return lati(
+    html`
+      <span class="etichetta">${freccia('cedo')} ${off ? verbo('cerco', 'cerca') : verbo('lascio', 'lascia')}</span>
+      <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
+      <span class="orario">${shiftLabel(cedo)}</span>
+      ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}`,
+    off
+      ? html`
+        <span class="etichetta">${freccia('prendo')} ${verbo('offro', 'offre')}</span>
+        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
+        <span class="orario">${wantLabel(request.cerco)}</span>`
+      : html`
+        <span class="etichetta">${freccia('prendo')} ${verbo('cerco', 'cerca')}</span>
+        <strong>stesso giorno</strong>
+        <span class="orario">${wantLabel(request.cerco)}</span>`,
+  );
 }
 
 /**
@@ -410,11 +438,8 @@ export function cardOpportunita({ richiesta, match }) {
   const u = store.user(richiesta.userId);
   const verde = match.tipo === 'MATCH';
   const mioTurno = store.shift(match.shiftOffertoId);
-  // Le due cose che contano: che turno farei io, e che turno farebbe l'altra
-  // persona. Ciascuno con le ore del turno che sta lasciando.
-  const suoCedo = store.shift(richiesta.cedo.shiftId);
-  const perMeT = trasformaTurno(suoCedo, mioTurno);
-  const perMe = { data: suoCedo?.data, orario: perMeT.trasformato ? `${perMeT.start}–${perMeT.end}` : shiftLabel(suoCedo) };
+  // Le due cose che contano: che turno farei io (lo dice il blocco, dal mio
+  // lato) e che turno farebbe l'altra persona, con le ore del turno che lascia.
   const perLei = match.adattato?.trasformato
     ? `${match.adattato.start}–${match.adattato.end}`
     : shiftLabel(mioTurno);
@@ -428,10 +453,9 @@ export function cardOpportunita({ richiesta, match }) {
         </div>
         <span class="score">${match.score}%</span>
       </header>
-      ${raw(coppiaCedoCerco(richiesta, { compatto: true }))}
+      ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
       <div class="scambio-secco">
-        <div><span>Tu faresti</span><strong>${formatDay(perMe.data)} · ${perMe.orario}</strong></div>
         <div><span>${u?.nome} farebbe</span><strong>${formatDay(mioTurno?.data)} · ${perLei}</strong></div>
       </div>
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>

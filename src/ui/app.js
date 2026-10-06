@@ -19,7 +19,7 @@ import { karma, traguardiNuovi } from '../core/karma.js';
 import { scaricaCalendario, candidatiAccesso } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
 import {
-  campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito,
+  campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito, coppiaCedoCerco,
 } from './components.js';
 import { icona, VOCI_TABBAR } from './icone.js';
 import {
@@ -1355,6 +1355,15 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
     return;
   }
   if (chiave === 'nota-giorno') { F.dalGiorno.note = el.value; return; }
+  // Nella tendina "Proponi lo scambio" il blocco parla del turno che offri:
+  // cambiandolo nel menu, cambia anche lì.
+  if (chiave === 'shift') {
+    const wrap = el.closest('.sheet-backdrop');
+    const blocco = wrap?.querySelector('[data-coppia-proposta]');
+    const richiesta = store.request(wrap?.dataset.richiesta);
+    if (blocco && richiesta) blocco.innerHTML = coppiaCedoCerco(richiesta, { compatto: true, mioTurno: store.shift(el.value) });
+    return;
+  }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;
   // Con 90+ iscritti un rerender a ogni lettera sposterebbe il cursore come
   // sopra: si nasconde e mostra direttamente le card già disegnate.
