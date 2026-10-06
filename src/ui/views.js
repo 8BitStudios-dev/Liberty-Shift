@@ -181,7 +181,6 @@ function legendaPersonale() {
     <ul class="legenda-mese legenda-personale">
       <li><span class="campione-giorno da-cambiare">${icona('clessidra', { px: 12, forte: true })}</span>cambio in corso</li>
       <li><span class="campione-giorno da-cambiare">${icona('spunta', { px: 12, forte: true })}</span>concordato, manca UKG</li>
-      <li><span class="campione-giorno disponibile"></span>disponibile a scambiare</li>
     </ul>`;
 }
 
@@ -1018,8 +1017,8 @@ export function mesePubblico(mese) {
 
 /**
  * Il tuo mese, nel Profilo: i tuoi turni, le ore della settimana, la
- * rotazione, i giorni in cui ti sei detto disponibile e quelli toccati da una
- * tua richiesta aperta. Le richieste degli altri stanno nel Calendario.
+ * rotazione e i giorni toccati da una tua richiesta aperta. Le richieste
+ * degli altri stanno nel Calendario.
  */
 export function ilTuoMese(mese = todayISO().slice(0, 7)) {
   const me = store.me;
@@ -1036,7 +1035,6 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
       const stato = !turno ? 'senza-turno' : turno.tipo === 'OFF' ? 'riposo' : 'lavoro';
       return html`
         <button class="mese-giorno ${stato} ${classiGiorno(data, mese, oggi)}
-                       ${disponibileIl(me, data) ? 'disponibile' : ''}
                        ${inCorso.has(data) ? 'da-cambiare' : ''}"
                 data-act="giorno-profilo" data-data="${data}">
           ${raw(inCorso.has(data) ? segnoCambio(inCorso.get(data), 12) : '')}
@@ -1210,15 +1208,6 @@ export function dettaglioGiornoProfilo(data) {
 
       ${raw(azioniCambio(data, turno))}
 
-      <label class="switch">
-        <input type="checkbox" data-act="toggle-disp-giorno" data-data="${data}" ${raw(disponibile ? 'checked' : '')}>
-        <span>Disponibile a scambiare questo giorno</span>
-      </label>
-      <p class="testo-tenue">
-        ${disponibile && disponibileDallePreferenze(me, turno)
-    ? 'Acceso da solo: è un turno che eviti. Se quel giorno non vuoi cambiare, spegnilo.'
-    : 'Ti fa salire nei match di chi cerca un cambio. Nei turni che eviti si accende da solo.'}
-      </p>
 
       ${raw(mieRichieste.length ? html`
         <h3>${mieRichieste.length === 1 ? 'La tua richiesta' : 'Le tue richieste'}</h3>
@@ -1227,5 +1216,15 @@ export function dettaglioGiornoProfilo(data) {
       ${raw(scambi.length ? html`
         <h3>${scambi.length === 1 ? 'Uno scambio in corso' : 'Scambi in corso'}</h3>
         <div class="lista-cambi">${raw(scambi.map((p) => rigaScambio(p)).join(''))}</div>` : '')}
+
+      <label class="switch disponibilita-giorno">
+        <input type="checkbox" data-act="toggle-disp-giorno" data-data="${data}" ${raw(disponibile ? 'checked' : '')}>
+        <span>Disponibile a scambiare questo giorno</span>
+      </label>
+      <p class="testo-tenue">
+        ${disponibile && disponibileDallePreferenze(me, turno)
+    ? 'Acceso da solo: è un turno che eviti. Se quel giorno non vuoi cambiare, spegnilo.'
+    : 'Ti fa salire nei match di chi cerca un cambio. Nei turni che eviti si accende da solo.'}
+      </p>
     </div>`;
 }

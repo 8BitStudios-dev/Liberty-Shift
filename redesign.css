@@ -389,10 +389,6 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .mese-giorno .barre { width: 70%; height: 4px; margin-top: auto; }
 .mese-giorno.oggi { border-color: var(--accento); }
 .mese-giorno.prioritaria { border: 2px solid var(--oro); }
-/* La disponibilità come fondo della cella, non come linea: la linea verde in
-   basso si confondeva con la barra di chi offre. Nel tuo mese, più sotto,
-   torna una linea, perché lì le barre non ci sono. */
-.mese-giorno.disponibile { box-shadow: none; background: var(--prendo-tenue); }
 
 .giorno-rot { min-height: 46px; font-size: 12px; border-radius: var(--raggio-cella); border-color: var(--filetto); }
 .giorno-rot .dow { font-size: 12px; }
@@ -430,8 +426,8 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    - fondo giallo: questo giorno sta cambiando. È l'unico fondo colorato;
    - icona in ambra, nell'angolo: a che punto è il cambio, detto dalla forma
      (clessidra: si cerca o si aspetta; spunta: concordato, manca UKG);
-   - linea verde in basso: sei disponibile a scambiare. Un'impostazione, non
-     un evento: segno discreto, che convive con il giallo;
+   - la disponibilità non si vede: la decidono le preferenze, e si
+     controlla nel foglio del giorno;
    - il riposo si legge dal testo "OFF";
    - oggi: il bordo blu. */
 .mese-personale { border: 0; border-radius: 0; overflow: visible; background: none; }
@@ -470,21 +466,14 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .mese-personale .mese-giorno.senza-turno .turno { color: var(--testo-tenue); font-weight: 400; }
 
 /* L'ordine conta: oggi vince sul bordo del giallo, il giallo vince sul fondo
-   del riposo, e la linea della disponibilità sopravvive al giallo. */
-.mese-personale .mese-giorno.disponibile {
-  background: var(--superficie); border: 1px solid var(--linea);
-  box-shadow: inset 0 -3px 0 var(--prendo);
-}
+   del riposo. */
 .mese-personale .mese-giorno.riposo,
 .mese-personale .mese-giorno.senza-turno { background: transparent; }
 .mese-personale .mese-giorno.da-cambiare,
-.mese-personale .mese-giorno.da-cambiare.riposo,
-.mese-personale .mese-giorno.da-cambiare.disponibile {
+.mese-personale .mese-giorno.da-cambiare.riposo {
   background: var(--da-cambiare); border-color: var(--da-cambiare-bordo);
 }
-.mese-personale .mese-giorno.da-cambiare.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
 .mese-personale .mese-giorno.oggi { border-color: var(--accento); box-shadow: inset 0 0 0 1px var(--accento); }
-.mese-personale .mese-giorno.oggi.disponibile { box-shadow: inset 0 0 0 1px var(--accento), inset 0 -3px 0 var(--prendo); }
 
 /* Il segno del cambio: un'icona sola per giorno, sempre dello stesso colore. */
 .in-corso {
@@ -532,7 +521,6 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .nota-mese { margin: 14px 0 0; }
 .campione { width: 16px; height: 12px; border-radius: 4px; border: 1px solid var(--bordo); background: var(--superficie); }
 .campione.prioritaria { border: 2px solid var(--oro); }
-.campione.disponibile { box-shadow: none; background: var(--prendo-tenue); border: 1px solid var(--linea); border-radius: 4px; }
 .campione.riposo { background: transparent; border: 1px solid var(--linea); border-radius: 4px; }
 .campione.da-cambiare { background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo); border-radius: 4px; }
 .campione-quota { font-size: 12px; font-weight: 700; padding: 0 5px; border-radius: var(--raggio-pill); background: var(--accento); color: var(--su-pieno); }
@@ -542,7 +530,6 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   background: var(--superficie); border: 1px solid var(--linea); color: var(--da-cambiare-segno);
 }
 .campione-giorno.da-cambiare { background: var(--da-cambiare); border-color: var(--da-cambiare-bordo); }
-.campione-giorno.disponibile { box-shadow: inset 0 -3px 0 var(--prendo); }
 
 .giorno-profilo .tile { margin-top: 16px; }
 .giorno-profilo .lista-cambi { margin-top: 4px; }
