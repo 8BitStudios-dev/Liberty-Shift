@@ -1142,14 +1142,16 @@ function rigaScambio(p) {
  */
 /**
  * Da qui parte ogni cambio: un giorno di lavoro si sposta d'orario o si
- * chiede OFF, un giorno OFF si cede. Un giorno passato o senza turno non ha
- * niente da cambiare.
+ * chiede OFF, un giorno in cui non lavori si cede. Un giorno senza turno vale
+ * come OFF, come per il motore (`giorniLiberi`): chi lo cede si impegna a
+ * lavorarci, e se i turni di quella settimana non sono ancora usciti lo sa
+ * lui. Un giorno passato non ha niente da cambiare.
  */
 function azioniCambio(data, turno) {
-  if (!turno || data < todayISO()) return '';
+  if (data < todayISO()) return '';
   const tasto = (azione, testo, classe) => html`
     <button class="btn ${classe}" data-act="cambio-giorno" data-azione="${azione}" data-data="${data}">${testo}</button>`;
-  return turno.tipo === 'WORK'
+  return turno?.tipo === 'WORK'
     ? `<div class="barra-azioni azioni-giorno">${tasto('orario', 'Cambia orario', 'primario')}${tasto('richiedi-off', 'Richiedi OFF', 'secondario')}</div>`
     : `<div class="barra-azioni azioni-giorno">${tasto('cedi-off', 'Cedi OFF', 'primario')}</div>`;
 }

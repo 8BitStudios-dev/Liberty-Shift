@@ -119,3 +119,12 @@ test('pubblicata dal calendario, la richiesta conserva tutti gli orari', () => {
   assert.equal(richiesta.cerco.orari.length, 2);
   assert.equal(richiesta.cerco.mode, WANT_MODE.SPECIFIC);
 });
+
+test('Cedi OFF vale anche su un giorno senza turno', () => {
+  settimana();
+  // giorno(4) non ha turni: per il motore è un giorno libero.
+  F.apriDalGiorno(giorno(4), 'cedi-off');
+  F.dalGiorno.cedoShiftId = 'mio-3';
+  const bozza = F.bozzaDalGiorno();
+  assert.deepEqual(validateRequest(bozza, store.shiftsById(), store.state.shifts), []);
+});

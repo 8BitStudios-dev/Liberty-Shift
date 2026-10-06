@@ -213,7 +213,8 @@ function testataRapido() {
  * Tre domande possibili, secondo il giorno toccato:
  * - lavori e vuoi un altro orario: scegli uno o più orari standard;
  * - lavori e vuoi essere OFF: scegli i giorni liberi in cui lavoreresti;
- * - sei OFF e lo cedi: scegli quale giorno di lavoro vuoi libero in cambio.
+ * - non lavori (OFF o nessun turno) e cedi il giorno: scegli quale giorno di
+ *   lavoro vuoi libero in cambio.
  *
  * L'ultimo è lo stesso cambio OFF del secondo visto dall'altro capo: si
  * pubblica come richiesta di OFF sul giorno di lavoro scelto, con il giorno
@@ -329,7 +330,7 @@ export function cambioDalGiorno() {
   } else {
     const lavoro = giorniDaLiberare(data);
     domanda = html`
-      <p class="occhiello">${formatDay(data, true)} · sei OFF</p>
+      <p class="occhiello">${formatDay(data, true)} · non lavori</p>
       <h2 class="titolo-gruppo">Quale giorno vuoi libero in cambio?</h2>
       <p class="testo-tenue">Lavori ${formatDay(data)} al posto di un collega, e lui prende il tuo turno del giorno che scegli.</p>
       ${raw(lavoro.length ? `<div class="chips">${lavoro.map((s) => html`

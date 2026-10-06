@@ -111,7 +111,7 @@ export const GUIDE = {
 
       <h3>Cedi OFF</h3>
       <p>
-        Su un giorno in cui sei OFF. Scegli quale giorno di lavoro della
+        Su un giorno in cui non lavori, OFF o ancora vuoto. Scegli quale giorno di lavoro della
         settimana vuoi libero in cambio: lavori tu al posto di un collega, e
         lui prende il tuo turno.
       </p>
