@@ -287,8 +287,12 @@ persona la chiede dall'app (`chiedi_nuova_password`, senza sessione, scrive in
 `richieste_password`), e un admin la reimposta dall'app: la funzione
 `Amministrazione`, azione `reimposta-password`, genera una password
 temporanea e la imposta con la chiave `service_role`. Un admin può farlo solo
-se la richiesta ha meno di 48 ore, il SuperAdmin sempre; la richiesta si
-cancella appena usata. `richieste_password` la leggono solo admin e
+se la richiesta ha meno di 48 ore, il SuperAdmin sempre; prima di creare la
+password la funzione prende in carico la richiesta (`gestita_da`,
+`gestita_il`, con `gestita_da is null` nel filtro dell'`update`), così due
+admin insieme non ne creano due. Una richiesta già presa resta lì, per dire
+agli altri chi l'ha fatta; `chiedi_nuova_password` la rimette libera se la
+persona la richiede. `richieste_password` la leggono solo admin e
 SuperAdmin. Alla richiesta `chiedi_nuova_password` chiama `send-push` con
 `type: PASSWORD`, che avvisa tutti gli admin attivi e il SuperAdmin (non chi
 l'ha chiesta, se è admin anche lui); per persona, al più una volta l'ora.

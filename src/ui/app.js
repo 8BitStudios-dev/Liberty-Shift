@@ -390,7 +390,13 @@ const AZIONI = {
     const u = store.user(el.dataset.id);
     if (!confirm(`Creare una password temporanea per ${u?.nome}? Quella di adesso smette di funzionare.`)) return;
     const esito = await store.reimpostaPassword(el.dataset.id);
-    if (esito.errore) return toast(esito.errore);
+    // Se un altro admin è arrivato prima, l'elenco va riscaricato: così il
+    // tasto sparisce e compare chi se n'è occupato.
+    if (esito.errore) {
+      toast(esito.errore);
+      store.sincronizza().then(() => render());
+      return;
+    }
     render();
     sheet('Password temporanea', F.passwordTemporanea(u, esito.password));
   },

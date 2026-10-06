@@ -952,6 +952,15 @@ create table if not exists public.richieste_password (
   chiesta_il timestamptz not null default now()
 );
 
+-- Chi se n'è occupato e quando. La richiesta arriva a tutti gli admin insieme:
+-- il primo che la prende in carico la segna (funzione `Amministrazione`), e
+-- agli altri resta scritto chi l'ha fatto invece di un tasto che ne creerebbe
+-- una seconda, annullando la prima. Fuori dal `create table`, che su un
+-- progetto avviato non aggiunge colonne. Senza chiave esterna apposta: un
+-- admin che non c'è più resta "un altro admin", non porta via la riga.
+alter table public.richieste_password add column if not exists gestita_da uuid;
+alter table public.richieste_password add column if not exists gestita_il timestamptz;
+
 alter table public.richieste_password enable row level security;
 
 drop policy if exists "chi ha chiesto una nuova password lo vedono gli admin" on public.richieste_password;
@@ -974,7 +983,7 @@ begin
     return 0;
   end if;
   for r in
-    select p.id, rp.chiesta_il as prima
+    select p.id, rp.chiesta_il as prima, rp.gestita_da as gestita
     from auth.users u
     join public.profili p on p.id = u.id
     left join public.richieste_password rp on rp.user_id = p.id
@@ -982,13 +991,16 @@ begin
       and u.email like nome_slug || '.' || cognome_slug || '.%@liberty-shift.internal'
     limit 5
   loop
+    -- Una richiesta rifatta è una richiesta nuova: torna libera anche se un
+    -- admin aveva già dato una password (persa, o mai arrivata).
     insert into public.richieste_password (user_id, chiesta_il) values (r.id, now())
-    on conflict (user_id) do update set chiesta_il = excluded.chiesta_il;
+    on conflict (user_id) do update
+      set chiesta_il = excluded.chiesta_il, gestita_da = null, gestita_il = null;
     quanti := quanti + 1;
     -- Gli admin si avvisano al massimo una volta l'ora per persona: la
     -- richiesta si fa senza sessione, e ripeterla non deve far suonare i loro
     -- telefoni a ripetizione.
-    if r.prima is null or r.prima < now() - interval '1 hour' then
+    if r.prima is null or r.prima < now() - interval '1 hour' or r.gestita is not null then
       avvisa := avvisa || r.id;
     end if;
   end loop;

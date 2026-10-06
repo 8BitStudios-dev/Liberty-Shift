@@ -82,16 +82,39 @@ function passwordTemporanea(): string {
  * `richieste_password`) nelle ultime 48 ore: senza questa condizione ogni
  * admin potrebbe entrare nell'account di chiunque, e il potere di cambiare la
  * password degli altri è proprio quello che le note d'uso limitano.
+ *
+ * La richiesta arriva a tutti gli admin insieme, quindi due possono toccare il
+ * tasto nello stesso momento. Prima la si prende in carico, con un solo
+ * `update` che riesce a uno soltanto (`gestita_da is null` si ricontrolla
+ * sulla riga bloccata), e solo dopo si crea la password: il secondo non ne
+ * crea un'altra che annullerebbe la prima, e sa chi se n'è già occupato.
  */
-async function reimpostaPassword(id: string, me: { admin: boolean; super_admin: boolean; attivo: boolean }) {
+async function reimpostaPassword(id: string, me: { id: string; admin: boolean; super_admin: boolean; attivo: boolean }) {
   if (!me.attivo || (!me.admin && !me.super_admin)) return risposta({ errore: 'Solo un admin può farlo.' }, 403);
 
-  if (!me.super_admin) {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/richieste_password?user_id=eq.${id}&select=chiesta_il`, { headers: servizio });
-    const righe = r.ok ? await r.json() : [];
-    const chiesta = righe[0]?.chiesta_il ? Date.parse(righe[0].chiesta_il) : 0;
-    if (!chiesta || Date.now() - chiesta > ORE_RICHIESTA * 3600_000) {
-      return risposta({ errore: 'Questa persona non ha chiesto una nuova password: deve chiederla lei dall\'app.' }, 403);
+  const limite = new Date(Date.now() - ORE_RICHIESTA * 3600_000).toISOString();
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/richieste_password?user_id=eq.${id}&select=chiesta_il,gestita_da,gestita_il`, { headers: servizio });
+  const riga = r.ok ? (await r.json())[0] : null;
+  const aperta = Boolean(riga) && Date.parse(riga.chiesta_il) >= Date.parse(limite);
+
+  if (aperta && riga.gestita_da) return giaGestita(riga);
+  if (!aperta && !me.super_admin) {
+    return risposta({ errore: 'Questa persona non ha chiesto una nuova password: deve chiederla lei dall\'app.' }, 403);
+  }
+
+  if (aperta) {
+    const presa = await fetch(
+      `${SUPABASE_URL}/rest/v1/richieste_password?user_id=eq.${id}&gestita_da=is.null&chiesta_il=gte.${encodeURIComponent(limite)}`,
+      {
+        method: 'PATCH',
+        headers: { ...servizio, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        body: JSON.stringify({ gestita_da: me.id, gestita_il: new Date().toISOString() }),
+      },
+    );
+    const prese = presa.ok ? await presa.json() : [];
+    if (!prese.length) {
+      const ora = await fetch(`${SUPABASE_URL}/rest/v1/richieste_password?user_id=eq.${id}&select=gestita_da,gestita_il`, { headers: servizio });
+      return giaGestita(ora.ok ? (await ora.json())[0] : null);
     }
   }
 
@@ -101,11 +124,32 @@ async function reimpostaPassword(id: string, me: { admin: boolean; super_admin: 
     headers: { ...servizio, 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
   });
-  if (!cambio.ok) return risposta({ errore: 'La password non è stata cambiata.' }, 502);
+  if (!cambio.ok) {
+    // La password non è cambiata: la richiesta torna libera per un altro.
+    if (aperta) {
+      await fetch(`${SUPABASE_URL}/rest/v1/richieste_password?user_id=eq.${id}&gestita_da=eq.${me.id}`, {
+        method: 'PATCH',
+        headers: { ...servizio, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gestita_da: null, gestita_il: null }),
+      });
+    }
+    return risposta({ errore: 'La password non è stata cambiata.' }, 502);
+  }
+  return risposta({ ok: true, password, gestitaIl: new Date().toISOString() });
+}
 
-  // La richiesta è servita: chiusa, non vale per una seconda volta.
-  await fetch(`${SUPABASE_URL}/rest/v1/richieste_password?user_id=eq.${id}`, { method: 'DELETE', headers: servizio });
-  return risposta({ ok: true, password });
+/** Qualcun altro è arrivato prima: si dice chi e quando, non si crea niente. */
+async function giaGestita(riga: { gestita_da?: string; gestita_il?: string } | null) {
+  const chi = riga?.gestita_da ? await profiloDi(riga.gestita_da, 'nome,cognome_iniziale') : null;
+  const nome = chi ? `${chi.nome} ${chi.cognome_iniziale}.` : 'un altro admin';
+  const ora = riga?.gestita_il
+    ? new Date(riga.gestita_il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })
+    : null;
+  return risposta({
+    errore: `Se n'è già occupato ${nome}${ora ? ` alle ${ora}` : ''}: la password temporanea c'è già. Se l'ha persa, la richiede dall'app.`,
+    gestitaDa: riga?.gestita_da || null,
+    gestitaIl: riga?.gestita_il || null,
+  }, 409);
 }
 
 Deno.serve(async (req) => {
@@ -129,7 +173,7 @@ Deno.serve(async (req) => {
   if (corpo.id === io) return risposta({ errore: 'Non puoi farlo su te stesso.' }, 400);
 
   if (corpo.azione === 'reimposta-password') {
-    const chi = await profiloDi(io, 'admin,super_admin,attivo');
+    const chi = await profiloDi(io, 'id,admin,super_admin,attivo');
     if (!chi) return risposta({ errore: 'Solo un admin può farlo.' }, 403);
     if (!await profiloDi(corpo.id, 'id')) return risposta({ errore: 'Persona non trovata.' }, 404);
     return reimpostaPassword(corpo.id, chi);

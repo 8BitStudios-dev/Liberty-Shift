@@ -1045,14 +1045,25 @@ export const store = {
     if (!u) return { errore: 'Persona non trovata.' };
     const { errore, dati } = await amministra('reimposta-password', serverDi(this.state, u.id));
     if (errore) return { errore };
-    if (this.state.richiestePassword) delete this.state.richiestePassword[u.id];
+    const prima = this.richiestaPassword(u.id);
+    if (prima) {
+      this.state.richiestePassword[u.id] = {
+        ...prima, gestitaDa: this.state.currentUserId, gestitaIl: dati.gestitaIl || new Date().toISOString(),
+      };
+    }
     this.commit();
     return { password: dati.password };
   },
 
-  /** Chi ha chiesto una nuova password e quando (solo per gli admin). */
+  /**
+   * Chi ha chiesto una nuova password, quando, e chi se n'è occupato (solo
+   * per gli admin). Una data sola è il formato di prima, salvato sui
+   * telefoni che non hanno ancora riscaricato la bacheca.
+   */
   richiestaPassword(userId) {
-    return this.state.richiestePassword?.[userId] || null;
+    const r = this.state.richiestePassword?.[userId];
+    if (!r) return null;
+    return typeof r === 'string' ? { chiestaIl: r, gestitaDa: null, gestitaIl: null } : r;
   },
 
   /**

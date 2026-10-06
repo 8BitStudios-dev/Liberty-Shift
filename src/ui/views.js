@@ -353,9 +353,19 @@ export function profilo() {
  * tasto che il server poi rifiuterebbe.
  */
 const ORE_RICHIESTA_PASSWORD = 48;
+const inTempo = (r) => Boolean(r) && Date.now() - Date.parse(r.chiestaIl) < ORE_RICHIESTA_PASSWORD * 3600_000;
+
+/** Una richiesta ancora da fare: nelle 48 ore, e nessun admin l'ha presa. */
 export function richiestaValida(userId) {
-  const quando = store.richiestaPassword(userId);
-  return Boolean(quando) && Date.now() - Date.parse(quando) < ORE_RICHIESTA_PASSWORD * 3600_000;
+  const r = store.richiestaPassword(userId);
+  return inTempo(r) && !r.gestitaDa;
+}
+
+/** Chi se n'è già occupato, e quando: agli altri admin resta scritto. */
+export function richiestaGestita(userId) {
+  const r = store.richiestaPassword(userId);
+  if (!inTempo(r) || !r.gestitaDa) return null;
+  return { chi: store.user(r.gestitaDa), il: r.gestitaIl };
 }
 
 /** Quante persone aspettano una password temporanea. */

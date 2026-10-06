@@ -18,7 +18,7 @@ import {
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
 } from './components.js';
 import { icona } from './icone.js';
-import { primaLePrioritarie, richiestaValida } from './views.js';
+import { primaLePrioritarie, richiestaValida, richiestaGestita } from './views.js';
 
 export const draft = {
   tipo: null,
@@ -1114,12 +1114,15 @@ export function gestioneIscritti() {
   const iscritti = store.state.users
     .filter((u) => u.daServer && u.id !== me)
     // Un admin qui ha una cosa sola da fare: vede solo chi aspetta una password.
-    .filter((u) => superAdmin || richiestaValida(u.id))
+    // Restano anche le richieste già prese da un altro, per sapere che è fatta.
+    .filter((u) => superAdmin || richiestaValida(u.id) || richiestaGestita(u.id))
     // In cima chi aspetta una password: è l'unica cosa che ha fretta.
     .sort((a, b) => (richiestaValida(b.id) - richiestaValida(a.id)) || nomeUtente(a).localeCompare(nomeUtente(b)));
   const numeroAdmin = iscritti.filter((u) => u.admin).length;
 
-  const tastoPassword = (u) => (superAdmin || richiestaValida(u.id)
+  // Una richiesta già presa non ha più tasto, nemmeno per il SuperAdmin: è
+  // proprio il secondo tocco che creerebbe una password nuova sopra la prima.
+  const tastoPassword = (u) => (!richiestaGestita(u.id) && (superAdmin || richiestaValida(u.id))
     ? `<button class="btn ${richiestaValida(u.id) ? 'primario' : 'secondario'}" data-act="reimposta-password" data-id="${u.id}">Reimposta password</button>`
     : '');
 
@@ -1153,6 +1156,7 @@ export function gestioneIscritti() {
           </div>
         </header>
         ${raw(richiestaValida(u.id) ? '<p class="tag-password">Ha chiesto una nuova password</p>' : '')}
+        ${raw(etichettaGestita(u.id))}
         <div class="barra-azioni">
           ${raw(superAdmin ? (u.admin
     ? `<button class="btn secondario" data-act="retrocedi-admin" data-id="${u.id}">Togli admin</button>`
@@ -1164,6 +1168,15 @@ export function gestioneIscritti() {
         </div>
       </article>`).join(''))}
     </div>`;
+}
+
+/** "Fatto da Marco B. alle 10:42": chi se n'è già occupato. */
+function etichettaGestita(userId) {
+  const g = richiestaGestita(userId);
+  if (!g) return '';
+  const chi = g.chi?.id === store.state.currentUserId ? 'te' : (g.chi ? nomeUtente(g.chi) : 'un altro admin');
+  const ora = g.il ? new Date(g.il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+  return html`<p class="tag-password gestita">Password temporanea già data da ${chi}${ora ? ` alle ${ora}` : ''}</p>`;
 }
 
 /**

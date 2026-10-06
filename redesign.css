@@ -844,6 +844,8 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .tag-password {
   margin: 0 0 10px; font-size: 12px; font-weight: 600; color: var(--ambra);
 }
+/* Già fatta da un altro admin: un'informazione, non più un compito. */
+.tag-password.gestita { color: var(--testo-tenue); font-weight: 500; }
 .password-temporanea {
   margin: 12px 0; padding: 16px; border-radius: var(--raggio-s); text-align: center;
   font: 700 26px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .04em;

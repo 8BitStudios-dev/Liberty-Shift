@@ -445,7 +445,13 @@ export async function scarica(state) {
 
   if (!password.errore) {
     state.richiestePassword = Object.fromEntries(
-      (password.dati || []).map((r) => [localeDi(state, r.user_id), r.chiesta_il]),
+      (password.dati || []).map((r) => [localeDi(state, r.user_id), {
+        chiestaIl: r.chiesta_il,
+        // Chi se n'è già occupato: agli altri admin resta scritto, al posto
+        // del tasto che creerebbe una seconda password.
+        gestitaDa: r.gestita_da ? localeDi(state, r.gestita_da) : null,
+        gestitaIl: r.gestita_il || null,
+      }]),
     );
   }
 

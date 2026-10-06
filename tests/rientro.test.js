@@ -205,7 +205,7 @@ test('una richiesta per un nome che non esiste lo dice', async () => {
   assert.match(r.errore, /Non trovo nessun account/);
 });
 
-test('la password temporanea la decide il server, e la richiesta sparisce', async () => {
+test('la password temporanea la decide il server, e la richiesta resta segnata come presa', async () => {
   store.reset();
   const collega = { id: 'id-collega', nome: 'Marco', cognomeIniziale: 'C', contratto: 'FT', daServer: true, preferenze: {}, disponibilita: {} };
   store.state.users.push(collega);
@@ -215,7 +215,18 @@ test('la password temporanea la decide il server, e la richiesta sparisce', asyn
   assert.equal(r.password, 'cambio-123456');
   const c = chiamate.find((x) => x.percorso.includes('Amministrazione'));
   assert.deepEqual(c.corpo, { azione: 'reimposta-password', id: 'id-collega' });
-  assert.equal(store.richiestaPassword('id-collega'), null);
+  // Non sparisce: agli altri admin resta scritto chi l'ha fatta, al posto
+  // del tasto che ne creerebbe una seconda.
+  assert.equal(store.richiestaPassword('id-collega').gestitaDa, store.state.currentUserId);
+});
+
+test('arrivare secondo non crea una seconda password, e dice chi è arrivato prima', async () => {
+  store.reset();
+  store.state.users.push({ id: 'id-collega', nome: 'Marco', cognomeIniziale: 'C', contratto: 'FT', daServer: true });
+  serverPassword({ reimposta: { errore: 'Se n\'è già occupato Sara P. alle 10:42: la password temporanea c\'è già. Se l\'ha persa, la richiede dall\'app.' } });
+  const r = await store.reimpostaPassword('id-collega');
+  assert.equal(r.password, undefined);
+  assert.match(r.errore, /già occupato Sara P\. alle 10:42/);
 });
 
 test('un rifiuto del server arriva a chi ha toccato il tasto', async () => {
