@@ -523,8 +523,11 @@ dei dati, e vive in `riquadriAperti` dentro `dom.js`.
 ## L'ordine del Profilo
 Dall'alto: **il tuo mese**, che è la cosa che si guarda ogni giorno e stava
 sotto due sezioni di configurazione; poi tre pulsanti quadrati in fila,
-**Sincronizza turni**, **Preferenze** e **Notifiche**; poi la priorità e i
-grazie.
+**Sincronizza turni**, **Preferenze** e **Notifiche**; poi i grazie.
+
+La priorità nel Profilo non c'è più: aveva un riquadro suo che ripeteva quello
+che la stella in Home dice già (c'è o l'hai usata). Quando l'hai usata, la
+data sta nella tendina che si apre toccando la stella.
 
 I tre pulsanti hanno preso il posto di tre riquadri apribili uno sotto
 l'altro. Ognuno dice già com'è messo ("17 turni", "3 attive", "spente") e
@@ -535,8 +538,8 @@ indietro di un tocco. L'interruttore delle notifiche è passato da
 Impostazioni al pannello Notifiche, accanto a cosa ricevere: separati, la
 scelta di cosa ricevere era una domanda a metà.
 
-I ringraziamenti hanno un riquadro loro, **Grazie ricevuti**, sotto la
-priorità. Prima erano un contatore in alto a destra che a zero spariva, e
+I ringraziamenti hanno un riquadro loro, **Grazie ricevuti**, sotto i tre
+pulsanti. Prima erano un contatore in alto a destra che a zero spariva, e
 sembrava che non esistessero più. Il riquadro c'è sempre: a zero dice come si
 arriva al primo grazie.
 

@@ -1344,7 +1344,9 @@ const AZIONI = {
         <li>Si sceglie al momento della pubblicazione: non si può aggiungere dopo.</li>
         <li>Se cancelli la richiesta, la priorità usata non ti viene restituita.</li>
       </ul>
-      <p class="testo-tenue">Priorità disponibili adesso: ${store.creditoPriorita()}.</p>`);
+      ${raw(store.creditoPriorita() > 0
+    ? '<p class="testo-tenue">Questo mese ce l\'hai ancora.</p>'
+    : V.usoPriorita())}`);
   },
 
   'modifica-turno': (_, el) => {

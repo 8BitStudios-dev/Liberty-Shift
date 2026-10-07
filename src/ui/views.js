@@ -276,13 +276,15 @@ export function bacheca(params) {
 // -------------------------------------------------------------- PROFILO
 
 /**
- * Quando hai usato la priorità del mese, se l'hai usata.
+ * Quando hai usato la priorità del mese, se l'hai usata. Sta nella tendina
+ * che si apre dalla stella in Home: il riquadro del Profilo che la mostrava
+ * ripeteva quello che la stella dice già.
  *
  * La data si ricava dalla richiesta che la porta: il credito non torna se la
  * richiesta si cancella, quindi senza richiesta resta solo il fatto che è
  * stata usata.
  */
-function usoPriorita() {
+export function usoPriorita() {
   if (store.creditoPriorita() > 0) return '';
   const mese = monthKey(todayISO());
   const usata = store.state.requests
@@ -296,7 +298,6 @@ function usoPriorita() {
 export function profilo() {
   const me = store.me;
   const settimana = appleWeekKey(todayISO());
-  const credito = store.creditoPriorita();
 
   return html`
     <header class="testata-profilo">
@@ -318,17 +319,6 @@ export function profilo() {
 
     <section class="sezione">
       ${raw(scorciatoieProfilo(me))}
-    </section>
-
-    <section class="sezione">
-      <div class="riquadro riquadro-fisso">
-        <div class="riquadro-testa">
-          <span class="titolo-riquadro">Priorità ${raw(icona('priorita', { px: 16 }))}</span>
-          <span class="conteggio">${credito} di ${RULES.priority.creditsPerMonth} disponibile</span>
-        </div>
-        <p class="testo-tenue">Per ${MESI[Number(monthKey(todayISO()).slice(5)) - 1].toLowerCase()}. Dura ${RULES.priority.durationHours} ore e dà visibilità, non precedenza.</p>
-        ${raw(usoPriorita())}
-      </div>
     </section>
 
     <section class="sezione">
