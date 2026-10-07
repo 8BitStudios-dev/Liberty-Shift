@@ -671,14 +671,7 @@ export function dettaglio(params) {
     const azioni = accordo
       ? html`
         <div class="accordo">
-          <strong>${raw(icona('spunta', { px: 18, forte: true }))} Scambio concordato</strong>
-          <p>Ora inserisci il cambio in UKG: questa app non lo fa al posto tuo.</p>
-          ${raw(p.cambioInserito
-    ? '<span class="tag">cambio inserito</span>'
-    : `<div class="barra-azioni">
-        ${store.haGiaRingraziato(p.id) ? '' : `<button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">${icona('grazie', { px: 17 })} Ringrazia</button>`}
-        <button class="btn secondario" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
-      </div>`)}
+          ${raw(passoAccordo(p, coinvolto))}
           ${raw(tastoAnnulla(p))}
         </div>`
       : coinvolto && !hoAccettato
@@ -934,6 +927,46 @@ function vocebox(v) {
  * non il passo successivo. Sparisce quando il calendario mostra il cambio
  * fatto: lì UKG l'ha approvato.
  */
+/**
+ * A che punto è uno scambio concordato, in tre passi.
+ *
+ * Concordato: va inserito in UKG, e il tasto lo dice. Segnato come inserito:
+ * manca la prova, cioè il turno cambiato nel calendario dei turni di chi
+ * guarda, e qui si può andarlo a controllare subito. Confermato: il
+ * calendario lo mostra. Prima il secondo passo era solo un'etichetta
+ * "cambio inserito" sotto la frase del primo, e sembrava che mancasse un tasto.
+ *
+ * Il controllo guarda solo il calendario di chi ha il telefono in mano: i
+ * turni degli altri non escono dal loro telefono. L'altra persona fa lo
+ * stesso controllo dal suo.
+ */
+function passoAccordo(p, coinvolto) {
+  const titolo = (testo) => `<strong>${icona('spunta', { px: 18, forte: true })} ${testo}</strong>`;
+  if (store.state.scambiConfermati?.includes(p.id)) {
+    return `${titolo('Cambio confermato')}
+      <p>Il tuo calendario dei turni mostra lo scambio: UKG l'ha approvato.</p>`;
+  }
+  if (p.cambioInserito) {
+    if (!coinvolto) return `${titolo('Cambio inserito in UKG')}`;
+    const r = store.request(p.requestId);
+    const giorni = [...new Set([store.shift(r?.cedo.shiftId)?.data, store.shift(p.shiftOffertoId)?.data].filter(Boolean))]
+      .map((g) => formatDay(g)).join(' e ');
+    const conCalendario = Boolean(store.state.profilo?.calendarioUrl);
+    return `${titolo('Cambio inserito in UKG')}
+      <p>${conCalendario
+    ? `Manca solo la conferma: quando nel tuo calendario dei turni ${giorni ? `${giorni} cambia` : 'il turno cambia'}, lo scambio si chiude da solo. UKG può metterci un po' ad approvarlo.`
+    : 'Senza il calendario dei turni collegato non posso controllare che UKG l\'abbia approvato: collegalo dal Profilo.'}</p>
+      ${conCalendario ? `<button class="btn secondario largo" data-act="controlla-scambio" data-id="${p.id}">Controlla il calendario adesso</button>` : ''}`;
+  }
+  if (!coinvolto) return `${titolo('Scambio concordato')}<p>Manca l'inserimento in UKG.</p>`;
+  return `${titolo('Scambio concordato')}
+    <p>Ora inserisci il cambio in UKG: questa app non lo fa al posto tuo. Quando l'hai fatto, dillo qui.</p>
+    <div class="barra-azioni">
+      <button class="btn primario" data-act="cambio-inserito" data-id="${p.id}">Ho inserito il cambio in UKG</button>
+      ${store.haGiaRingraziato(p.id) ? '' : `<button class="btn secondario" data-act="chiedi-grazie" data-id="${p.id}">${icona('grazie', { px: 17 })} Ringrazia</button>`}
+    </div>`;
+}
+
 function tastoAnnulla(p) {
   if (p.status !== 'ACCORDO' || store.state.scambiConfermati?.includes(p.id)) return '';
   return `<button class="link-annulla" data-act="chiedi-annulla" data-id="${p.id}">UKG l'ha bloccato? Annulla lo scambio</button>`;

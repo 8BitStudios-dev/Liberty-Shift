@@ -90,3 +90,32 @@ test('la Home mostra il promemoria sull\'accordo vicino', async () => {
   accordo({ mio: addDays(oggi, 15), suo: addDays(oggi, 15) });
   assert.doesNotMatch(home(), /l'hai già inserito/);
 });
+
+test('lo scambio concordato dice a che punto è: da inserire, inserito, confermato', async () => {
+  const { dettaglio } = await import('../src/ui/flows.js');
+  const pagina = () => dettaglio({ id: 'rq' });
+
+  accordo({ mio: addDays(oggi, 3), suo: addDays(oggi, 3) });
+  store.state.profilo = { ...store.state.profilo, completato: true, calendarioUrl: 'https://esempio/cal.ics' };
+  assert.match(pagina(), /data-act="cambio-inserito"/);
+  assert.match(pagina(), /Ho inserito il cambio in UKG/);
+
+  store.state.proposals[0].cambioInserito = true;
+  assert.doesNotMatch(pagina(), /data-act="cambio-inserito"/, 'non si segna due volte');
+  assert.match(pagina(), /data-act="controlla-scambio"/);
+  assert.match(pagina(), /Manca solo la conferma/);
+  assert.doesNotMatch(pagina(), /Ora inserisci il cambio/, 'non chiede di fare quello che è già fatto');
+
+  store.state.scambiConfermati = ['pr'];
+  assert.match(pagina(), /Cambio confermato/);
+  assert.doesNotMatch(pagina(), /controlla-scambio|chiedi-annulla/);
+});
+
+test('senza calendario collegato non promette un controllo che non può fare', async () => {
+  const { dettaglio } = await import('../src/ui/flows.js');
+  accordo({ mio: addDays(oggi, 3), suo: addDays(oggi, 3), cambioInserito: true });
+  store.state.profilo = { ...store.state.profilo, completato: true, calendarioUrl: null };
+  const pagina = dettaglio({ id: 'rq' });
+  assert.match(pagina, /collegalo dal Profilo/);
+  assert.doesNotMatch(pagina, /controlla-scambio/);
+});

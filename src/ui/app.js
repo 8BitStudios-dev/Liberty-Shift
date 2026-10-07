@@ -251,6 +251,30 @@ function riassuntoImport({ aggiunti = 0, cambiati = [], bloccati = [] }) {
  * sopra un foglio già aperto: due fogli di fila sarebbero un interrogatorio.
  * Restituisce true se ha detto qualcosa.
  */
+/**
+ * Il calendario dei turni conferma lo scambio? Lo riscarica subito e lo dice.
+ *
+ * Senza calendario collegato non c'è niente da guardare: lo scambio resta
+ * segnato come inserito, e basta.
+ */
+async function controllaScambio(proposalId, { appenaSegnato = false } = {}) {
+  if (!store.state.profilo?.calendarioUrl) {
+    render();
+    return toast(appenaSegnato ? 'Segnato come inserito' : 'Nessun calendario collegato');
+  }
+  const esito = await store.aggiornaCalendario({ forzato: true });
+  render();
+  if (esito.errore) return toast(esito.errore);
+  if (esito.saltato) return toast(appenaSegnato ? 'Segnato come inserito' : 'Non sei collegato allo store');
+  if (store.state.scambiConfermati?.includes(proposalId)) {
+    if (!annunciaScambiChiusi(esito)) toast('Confermato: il tuo calendario mostra lo scambio');
+    return;
+  }
+  toast(appenaSegnato
+    ? 'Segnato. Il tuo calendario non lo mostra ancora: lo ricontrollo da solo'
+    : 'Il tuo calendario non lo mostra ancora: UKG può metterci un po\'');
+}
+
 function annunciaScambiChiusi(esito) {
   const chiusi = esito?.scambiChiusi || [];
   if (!chiusi.length) return false;
@@ -911,7 +935,18 @@ const AZIONI = {
     toast(errori ? errori[0] : 'Grazie inviato');
     render();
   },
-  'cambio-inserito': (_, el) => { store.cambioInserito(el.dataset.id); toast('Richiesta chiusa'); vai('#/home'); },
+  // Segnato a mano, poi subito il calendario: se UKG l'ha già approvato lo si
+  // sa adesso, invece che al prossimo giro fra un'ora.
+  'cambio-inserito': async (_, el) => {
+    store.cambioInserito(el.dataset.id);
+    render();
+    await controllaScambio(el.dataset.id, { appenaSegnato: true });
+  },
+  'controlla-scambio': async (_, el) => {
+    el.disabled = true;
+    el.textContent = 'Controllo…';
+    await controllaScambio(el.dataset.id);
+  },
 
   // Si chiede conferma come per cancellare una richiesta: un tocco per
   // sbaglio farebbe sparire una proposta a cui il collega stava per dire sì.

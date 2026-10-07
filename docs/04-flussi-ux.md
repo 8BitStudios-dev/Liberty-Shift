@@ -139,8 +139,22 @@ si passa da dieci a cento richieste, e il motore la sa già calcolare.
 ## Proposta e accordo
 Il pulsante "Proponi uno scambio" compare **solo se hai davvero qualcosa da
 offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
-per l'accordo. Dopo l'accordo la schermata dice una cosa sola: vai a farlo
-nell'app ufficiale. Il pulsante "Cambio inserito" chiude la pratica.
+per l'accordo. Dopo l'accordo il riquadro dello scambio va per passi
+(`passoAccordo` in `flows.js`):
+
+1. **Scambio concordato**: inseriscilo in UKG, poi tocca "Ho inserito il
+   cambio in UKG". Il tocco chiude la richiesta e riscarica subito il
+   calendario dei turni.
+2. **Cambio inserito in UKG**: manca la conferma. Il riquadro dice quali
+   giorni devono cambiare nel tuo calendario e offre "Controlla il calendario
+   adesso". Senza calendario collegato lo dice, invece di promettere un
+   controllo che non può fare.
+3. **Cambio confermato**: il tuo calendario mostra lo scambio.
+
+Il controllo guarda solo il calendario di chi ha il telefono in mano: i turni
+degli altri non escono dal loro telefono, e l'altra persona fa lo stesso
+controllo dal suo. Prima il secondo passo era solo un'etichetta "cambio
+inserito" sotto la frase del primo, e sembrava che mancasse un tasto.
 
 ### Il blocco dello scambio parla a chi lo guarda
 Il riquadro con i due lati (blu a sinistra, verde a destra) cambia parole
