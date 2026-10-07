@@ -29,12 +29,14 @@ export const primaLePrioritarie = (opportunita) => [
 ];
 
 /**
- * L'ordine della Bacheca: le prioritarie sopra, poi tutte le altre in ordine
- * di inserimento, dalla prima pubblicata. Nessun altro criterio: chi ha
- * chiesto prima resta prima, anche se tu non puoi rispondergli.
+ * L'ordine della Bacheca: le prioritarie sopra, poi tutte le altre dalla più
+ * recente. Dalla prima pubblicata, la richiesta appena arrivata finiva in
+ * fondo, sotto lo schermo: chi la cercava non la trovava, e chi l'aveva
+ * pubblicata la rifaceva pensando che non fosse partita. Nessun altro
+ * criterio: resta in lista anche quella a cui tu non puoi rispondere.
  */
 export const ordineBacheca = (lista) => [...lista].sort(
-  (a, b) => (hasPriority(b) - hasPriority(a)) || a.createdAt.localeCompare(b.createdAt),
+  (a, b) => (hasPriority(b) - hasPriority(a)) || b.createdAt.localeCompare(a.createdAt),
 );
 
 export function home() {

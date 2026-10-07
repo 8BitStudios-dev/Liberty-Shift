@@ -1126,6 +1126,12 @@ export const store = {
       return { errore: erroreProfilo || 'Il tuo profilo non risulta nello store.' };
     }
 
+    // Un telefono che ricorda già un'altra persona riparte da zero. Tenere i
+    // suoi turni, la sua coda e le sue richieste sotto il nome nuovo vorrebbe
+    // dire mandarle al server come se fossero di chi è appena entrato.
+    const precedente = this.state.profilo?.idServer;
+    if (precedente && precedente !== idServer) this.state = statoIniziale();
+
     Object.assign(this.me, {
       nome: riga.nome,
       cognome: cognome.trim(),

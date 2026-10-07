@@ -180,3 +180,18 @@ test('"completo" riscarica tutto, anche con il segno già messo', async () => {
   assert.equal(log.chiamate.some((c) => c.includes('aggiornato_il=gte')), false);
   assert.deepEqual(state.requests.map((r) => r.id).sort(), ['rq-1', 'rq-2']);
 });
+
+test('una chiamata che non risponde mai non ferma la sincronizzazione', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  store.reset();
+  store.state.profilo = { ...store.state.profilo, completato: true, idServer: 'io-sul-server' };
+  // Come su iPhone quando l'app va in background a metà di una richiesta:
+  // nessuna risposta, nessun errore, finché qualcuno non la interrompe.
+  globalThis.fetch = (url, opzioni = {}) => new Promise((_, rifiuta) => {
+    opzioni.signal?.addEventListener('abort', () => rifiuta(new Error('interrotta')));
+  });
+  const giro = scarica(store.state);
+  t.mock.timers.tick(25000);
+  const esito = await giro;
+  assert.match(esito.errore, /irraggiungibile/);
+});

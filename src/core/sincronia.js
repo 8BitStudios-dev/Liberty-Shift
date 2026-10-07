@@ -657,12 +657,23 @@ export async function scarica(state, { completo = false } = {}) {
   };
 }
 
+/** Quanto la bacheca aspetta la coda prima di scaricare comunque. */
+const ATTESA_CODA_MS = 60000;
+
 /** Prima si manda quello che c'è da mandare, poi si guarda cosa c'è di nuovo. */
 export async function sincronizza(state, { completo = false } = {}) {
   if (!collegato()) return { saltato: true };
   // Una coda in difficoltà non deve impedire di vedere la bacheca: si scarica
   // comunque, e l'errore arriva insieme al resto.
-  const coda = await svuotaCoda(state).catch((err) => ({ fatte: 0, errore: String(err?.message || err) }));
+  // E non deve nemmeno poterla fermare: se un giro resta appeso, dopo un
+  // minuto si scarica lo stesso. Quello che è ancora in coda non si tocca
+  // (vedi `daTenere` in `scarica`), quindi scaricare in parallelo non perde niente.
+  let timer;
+  const coda = await Promise.race([
+    svuotaCoda(state).catch((err) => ({ fatte: 0, errore: String(err?.message || err) })),
+    new Promise((risolvi) => { timer = setTimeout(() => risolvi({ fatte: 0, errore: null }), ATTESA_CODA_MS); }),
+  ]);
+  clearTimeout(timer);
   const giu = await scarica(state, { completo });
   return { ...giu, errore: giu.errore || coda.errore, inviate: coda.fatte };
 }

@@ -122,10 +122,12 @@ ci sono senza che spingano giù quelle dei colleghi, che sono il motivo per
 aprire la bacheca. Aperto resta aperto finché non lo si richiude, anche
 quando la schermata si ridisegna. Sotto, "Dei colleghi".
 
-Ordinamento dei colleghi: le prioritarie sopra, poi tutte le altre **in ordine di
-inserimento, dalla prima pubblicata** (`ordineBacheca`). Nessun altro
-criterio: chi ha chiesto prima resta prima, anche se tu non puoi
-rispondergli. Le stesse regole valgono nel giorno del Calendario; in "Aiuta un
+Ordinamento dei colleghi: le prioritarie sopra, poi tutte le altre **dalla
+più recente** (`ordineBacheca`). Fino a ottobre 2026 andavano dalla prima
+pubblicata, per dare la precedenza a chi aveva chiesto prima, ma la richiesta
+appena arrivata finiva in fondo, sotto lo schermo: i colleghi non la vedevano
+e chi l'aveva pubblicata la rifaceva. Nessun altro criterio: resta in lista
+anche quella a cui tu non puoi rispondere. Le stesse regole valgono nel giorno del Calendario; in "Aiuta un
 collega" le prioritarie stanno sopra e, a pari priorità, l'ordine è per
 percentuale. In Home, "Ultime richieste" mostra le tre più recenti, prioritarie
 prima.

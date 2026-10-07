@@ -247,3 +247,25 @@ test('entrando con la password temporanea il telefono dimentica quella vecchia',
   assert.ok(verificaPassword('cambio-123456', store.state.profilo.credenziali), 'senza rete deve valere la nuova');
   assert.ok(!verificaPassword('giusta', store.state.profilo.credenziali), 'la vecchia non vale più');
 });
+
+test('un telefono che ricordava un\'altra persona riparte da zero, coda compresa', async () => {
+  store.reset();
+  store.state.profilo = { ...store.state.profilo, completato: true, idServer: 'id-lorenzo' };
+  store.state.shifts.push({ id: 's1', userId: store.state.currentUserId, data: '2026-10-20', tipo: 'WORK', start: '10:00', end: '19:00' });
+  store.state.coda = [{ tipo: 'richiesta.crea', dati: { id: 'rq-di-lorenzo' }, tentativi: 0 }];
+  serverFinto({ candidati: DUE });
+  const r = await store.accediConNome({ nome: 'Martina', cognome: 'Lovece', password: 'giusta' });
+  assert.equal(r.ok, true);
+  assert.equal(store.state.profilo.idServer, 'id-seconda');
+  assert.equal(store.state.shifts.length, 0, 'i turni di prima non diventano di Martina');
+  assert.equal(store.state.coda.length, 0, 'e niente parte a nome suo');
+});
+
+test('la stessa persona che rientra tiene i suoi turni', async () => {
+  store.reset();
+  store.state.profilo = { ...store.state.profilo, idServer: 'id-seconda' };
+  store.state.shifts.push({ id: 's1', userId: store.state.currentUserId, data: '2026-10-20', tipo: 'WORK', start: '10:00', end: '19:00' });
+  serverFinto({ candidati: DUE });
+  await store.accediConNome({ nome: 'Martina', cognome: 'Lovece', password: 'giusta' });
+  assert.equal(store.state.shifts.length, 1);
+});

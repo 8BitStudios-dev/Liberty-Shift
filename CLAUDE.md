@@ -94,6 +94,13 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   stesso vale per le Edge Functions, e lì conta lo slug: vedi
   `docs/07-supabase.md`.
 
+- **Ogni chiamata al server ha un tetto di 20 secondi** (`chiama` in
+  `src/core/supabase.js`). Su iPhone una richiesta partita mentre l'app va in
+  background può restare appesa per ore, senza risposta né errore: la coda la
+  aspettava e con lei ogni sincronizzazione, e un telefono ha smesso di
+  scaricare per un pomeriggio intero senza nessun avviso. Un `fetch` nuovo
+  passa da `chiama`, non si scrive a parte.
+
 - **Profili, richieste e disponibilità scendono a pezzi** (`scarica` in
   `src/core/sincronia.js`): dopo il primo scaricamento arrivano solo le righe
   con `aggiornato_il` più recente del segno salvato (`state.cursori`), più

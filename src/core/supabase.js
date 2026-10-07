@@ -85,6 +85,9 @@ const intestazioni = (token, percorso) => ({
   'Content-Type': 'application/json',
 });
 
+/** Oltre questo, una chiamata si dà per persa: meglio riprovare che aspettare. */
+const LIMITE_CHIAMATA_MS = 20000;
+
 /**
  * Una chiamata al server, con l'errore già tradotto.
  *
@@ -100,21 +103,33 @@ async function chiama(percorso, opzioni = {}, { autenticata = true, riprovato = 
     return { dati: null, errore: 'Sessione scaduta: rientra con la tua password.' };
   }
 
+  // Un tetto a ogni chiamata, corpo compreso. Su iPhone una richiesta partita
+  // mentre l'app va in background può restare appesa per ore senza né
+  // risposta né errore: la coda la aspettava, e con lei ogni sincronizzazione
+  // dopo. Un telefono ha smesso di scaricare alle 10 e alle 15 non vedeva
+  // ancora le richieste nuove, senza nessun avviso.
+  const freno = new AbortController();
+  const timer = setTimeout(() => freno.abort(), LIMITE_CHIAMATA_MS);
   let risposta;
+  let testo;
   try {
     risposta = await fetch(`${SERVER.url}${percorso}`, {
       ...opzioni,
+      signal: freno.signal,
       headers: {
         ...intestazioni(autenticata ? sessione.access_token : null, percorso),
         ...(opzioni.headers || {}),
       },
     });
+    testo = await risposta.text();
   } catch {
-    // Nessuna risposta affatto: rete assente, o server irraggiungibile.
+    // Nessuna risposta affatto, o arrivata a metà: rete assente, server
+    // irraggiungibile, o una chiamata rimasta appesa oltre il tetto.
     return { dati: null, errore: 'Server irraggiungibile. Riprova quando hai campo.' };
+  } finally {
+    clearTimeout(timer);
   }
 
-  const testo = await risposta.text();
   const corpo = testo ? sicuroJSON(testo) : null;
 
   // Il token dura un'ora, l'app resta aperta per giorni: la prima chiamata
