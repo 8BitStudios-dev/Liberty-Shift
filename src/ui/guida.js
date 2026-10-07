@@ -192,7 +192,13 @@ export const GUIDE = {
         tue richieste. Le richieste dei colleghi sono nel Calendario.
       </p>
 
-      <h3>I tuoi turni</h3>
+      <p>
+        Sotto il calendario ci sono tre pulsanti: <strong>Sincronizza turni</strong>,
+        <strong>Preferenze</strong> e <strong>Notifiche</strong>. Ognuno dice già
+        com'è messo, e toccandolo si apre sotto.
+      </p>
+
+      <h3>Sincronizza turni</h3>
       <p>Dal calendario dei turni, o a mano dal mese qui sopra. Restano su questo telefono.</p>
       <p class="testo-tenue">
         Se sei Part Time e le tue settimane girano ad A, B, C, dillo una volta
@@ -205,6 +211,12 @@ export const GUIDE = {
         <li><strong>Da evitare</strong>: quei turni scendono molto in classifica;</li>
         <li><strong>Preferiti</strong>: salgono di qualche punto, nient'altro.</li>
       </ul>
+
+      <h3>Notifiche</h3>
+      <p>
+        Si accendono da qui, e poi scegli cosa ricevere: solo le proposte che ti
+        riguardano, o anche ogni richiesta che i tuoi turni possono risolvere.
+      </p>
 
       <h3>Grazie ricevuti</h3>
       <p>

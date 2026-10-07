@@ -731,12 +731,44 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 }
 .pref-fasce li span { color: var(--testo-tenue); font-size: 14px; text-align: right; }
 
-/* "I tuoi turni" è un riquadro come le preferenze. Dentro, le righe non sono
-   altre scatole con ombra: un tono di sfondo basta a staccarle. */
-.turni-corpo { padding: 4px 0 14px; display: grid; gap: 10px; }
-.riquadro.turni .tile {
-  border: 0; box-shadow: none; margin: 0; background: var(--superficie-2);
+/* I tre pulsanti sotto il calendario: Sincronizza turni, Preferenze,
+   Notifiche. Quadrati, una riga sola, ciascuno con il suo stato in due
+   parole. Quello aperto prende il fondo dell'accento, e il suo pannello si
+   apre subito sotto. */
+.scorciatoie { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.scorciatoia {
+  appearance: none; font: inherit; color: var(--testo); cursor: pointer;
+  /* Alto almeno quanto è largo (un terzo della colonna, meno i due spazi), ma
+     libero di allungarsi: a 340px "Sincronizza turni" va su due righe, e un
+     quadrato rigido tagliava l'icona. Se uno si allunga, la griglia allunga
+     anche gli altri due. Il contenuto parte dall'alto, così le tre icone
+     stanno sulla stessa linea. */
+  min-height: calc((min(100vw, 560px) - 2 * var(--margine-pagina) - 20px) / 3);
+  padding: 16px 6px 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px;
+  text-align: center; background: var(--superficie); border: 1px solid transparent;
+  border-radius: var(--raggio); box-shadow: var(--ombra);
 }
+.scorciatoia-icona { color: var(--accento); margin-bottom: 4px; }
+.scorciatoia strong { font-size: 14px; font-weight: 650; line-height: 1.2; }
+.scorciatoia em { font-style: normal; font-size: 12px; line-height: 1.25; color: var(--testo-tenue); }
+.scorciatoia.attiva { background: var(--accento-tenue); border-color: var(--accento); }
+/* In scuro le card hanno il filo: i quadrati anche, come le tile. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scorciatoia:not(.attiva) { border-color: var(--bordo); }
+}
+:root[data-theme="dark"] .scorciatoia:not(.attiva) { border-color: var(--bordo); }
+
+.riquadro.pannello-profilo { margin: 12px 0 0; padding-top: 14px; }
+/* Dentro il pannello le righe non sono altre scatole con ombra: un tono di
+   sfondo basta a staccarle. */
+.turni-corpo { padding: 0 0 14px; display: grid; gap: 10px; }
+.riquadro.pannello-profilo .tile {
+  border: 0; box-shadow: none; margin: 0 0 10px; background: var(--superficie-2);
+}
+.turni-corpo .tile { margin: 0; }
+.pannello-preferenze .pref-corpo { padding-top: 0; }
+.pannello-notifiche .pref-titolo:first-of-type { margin-top: 18px; }
 
 /* Grazie ricevuti. Il cuore raggiunto prende il colore dell'icona del
    titolo; quelli da raggiungere sono contorni grigi con l'avanzamento

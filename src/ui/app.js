@@ -667,6 +667,14 @@ const AZIONI = {
     render();
   },
 
+  // I tre pulsanti del Profilo: uno aperto alla volta, e lo stesso tocco lo
+  // richiude. La pagina resta dov'era, perché il pannello si apre sotto.
+  'pannello-profilo': (_, el) => {
+    const chiave = el.dataset.pannello;
+    V.pannelloProfilo.aperto = V.pannelloProfilo.aperto === chiave ? null : chiave;
+    render({ fermo: true });
+  },
+
   // Cosa ricevere. Tornare a "solo dirette" è immediato: i turni sul server
   // vengono cancellati. Passare a "compatibili" non lo è: i turni lasciano il
   // telefono, e prima si dice cosa esce, dove va e chi lo legge. Finché non si

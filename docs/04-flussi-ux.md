@@ -521,9 +521,19 @@ I riquadri aperti restano aperti dopo una modifica. È stato della finestra, non
 dei dati, e vive in `riquadriAperti` dentro `dom.js`.
 
 ## L'ordine del Profilo
-Dall'alto: le proposte ricevute, poi **il tuo mese** — è la cosa che si
-guarda ogni giorno, e stava sotto due sezioni di configurazione — poi i turni,
-le preferenze, la priorità, il contratto.
+Dall'alto: **il tuo mese**, che è la cosa che si guarda ogni giorno e stava
+sotto due sezioni di configurazione; poi tre pulsanti quadrati in fila,
+**Sincronizza turni**, **Preferenze** e **Notifiche**; poi la priorità e i
+grazie.
+
+I tre pulsanti hanno preso il posto di tre riquadri apribili uno sotto
+l'altro. Ognuno dice già com'è messo ("17 turni", "3 attive", "spente") e
+toccandolo apre il suo pannello subito sotto, uno alla volta; lo stesso tocco
+lo richiude. Il pannello sta nella pagina e non in una tendina perché gli
+interruttori dentro ridisegnano la schermata, e una tendina resterebbe
+indietro di un tocco. L'interruttore delle notifiche è passato da
+Impostazioni al pannello Notifiche, accanto a cosa ricevere: separati, la
+scelta di cosa ricevere era una domanda a metà.
 
 I ringraziamenti hanno un riquadro loro, **Grazie ricevuti**, sotto la
 priorità. Prima erano un contatore in alto a destra che a zero spariva, e

@@ -317,18 +317,7 @@ export function profilo() {
     </section>
 
     <section class="sezione">
-      <details class="riquadro turni" data-riquadro="turni" ${raw(riquadriAperti.has('turni') ? 'open' : '')}>
-        <summary>
-          <span>I tuoi turni</span>
-          <span class="conteggio">${raw(contaTurni())}</span>
-        </summary>
-        <div class="turni-corpo">${raw(sezioneTurni())}</div>
-      </details>
-    </section>
-
-    <section class="sezione">
-      ${raw(sezionePreferenze(me))}
-      ${raw(rigaModoNotifiche())}
+      ${raw(scorciatoieProfilo(me))}
     </section>
 
     <section class="sezione">
@@ -560,7 +549,9 @@ function bollinoIo(me) {
  *
  * Nel Profilo queste voci occupavano tre riquadri grandi quanto quelli
  * dei turni, che è lo spazio di cose che si usano ogni giorno. Qui dentro
- * restano raggiungibili senza pesare su quello che si guarda davvero.
+ * restano raggiungibili senza pesare su quello che si guarda davvero. Le
+ * notifiche no: sono passate al loro pulsante nel Profilo, accanto a cosa
+ * ricevere, che senza l'interruttore lì vicino era una domanda a metà.
  */
 export function impostazioni() {
   const me = store.me;
@@ -596,32 +587,69 @@ export function impostazioni() {
           </span>
           <span class="chevron">›</span>
         </button>` : '')}
-      ${raw(rigaNotifiche())}
     </section>
     <p class="versione-app">Ver: ${VERSIONE_APP}</p>`;
 }
 
 /**
- * Gestione notifiche: solo le proposte dirette, o anche quelle
- * compatibili con i tuoi turni.
+ * I tre pulsanti sotto il calendario: turni, preferenze, notifiche.
  *
- * Compare solo a notifiche accese: scegliere cosa ricevere quando non se ne
+ * Erano tre riquadri apribili uno sotto l'altro, con l'interruttore delle
+ * notifiche nascosto in Impostazioni. Tre quadrati in fila stanno in una riga
+ * e dicono già com'è messo ciascuno; il contenuto si apre sotto, uno alla
+ * volta. Sta nella pagina e non in una tendina perché gli interruttori dentro
+ * ridisegnano la schermata: una tendina resterebbe indietro di un tocco.
+ */
+export const pannelloProfilo = { aperto: null };
+
+function scorciatoieProfilo(me) {
+  const aperto = pannelloProfilo.aperto;
+  const tasto = (chiave, nomeIcona, titolo, stato) => html`
+    <button class="scorciatoia ${chiave === aperto ? 'attiva' : ''}" data-act="pannello-profilo"
+            data-pannello="${chiave}" aria-expanded="${chiave === aperto ? 'true' : 'false'}">
+      <span class="scorciatoia-icona">${raw(icona(nomeIcona, { px: 26 }))}</span>
+      <strong>${titolo}</strong>
+      <em>${stato}</em>
+    </button>`;
+  const attive = PREFERENZE.filter((p) => me.preferenze[p.key]).length;
+  const corpo = {
+    turni: () => `<div class="turni-corpo">${sezioneTurni()}</div>`,
+    preferenze: () => corpoPreferenze(me),
+    notifiche: () => corpoNotifiche(),
+  }[aperto];
+  return html`
+    <div class="scorciatoie">
+      ${raw(tasto('turni', 'aggiorna', 'Sincronizza turni', contaTurni()))}
+      ${raw(tasto('preferenze', 'orario', 'Preferenze', attive ? `${attive} attiv${attive === 1 ? 'a' : 'e'}` : 'nessuna'))}
+      ${raw(tasto('notifiche', 'notifiche', 'Notifiche', statoNotificheBreve()))}
+    </div>
+    ${raw(corpo ? `<div class="riquadro pannello-profilo pannello-${aperto}">${corpo()}</div>` : '')}`;
+}
+
+/** Lo stato delle notifiche in due parole, per il pulsante. */
+export function statoNotificheBreve(stato = statoNoto()) {
+  switch (stato) {
+    case STATO.ATTIVE: return store.modoNotifiche() === 'compatibili' ? 'tutte le compatibili' : 'solo personali';
+    case STATO.DA_ATTIVARE: return 'spente';
+    case STATO.BLOCCATE: return 'bloccate';
+    case STATO.DA_INSTALLARE: return 'dalla Home';
+    case STATO.NON_SUPPORTATE: return 'non supportate';
+    default: return 'non disponibili';
+  }
+}
+
+/**
+ * Il pannello delle notifiche: accenderle, e poi cosa ricevere.
+ *
+ * Cosa ricevere compare solo a notifiche accese: scegliere quando non se ne
  * riceve nessuna sarebbe una domanda senza risposta. La seconda scelta è
  * l'unica cosa dell'app che manda i turni al server, e per questo non si
  * accende con un tocco: si apre un foglio che dice cosa esce e chi lo legge.
  */
-export function rigaModoNotifiche(stato = statoNoto()) {
-  if (stato === STATO.DA_ATTIVARE) {
-    return html`
-      <div class="riquadro riquadro-fisso">
-        <div class="riquadro-testa">
-          <span class="titolo-riquadro">Gestione notifiche</span>
-        </div>
-        <p class="testo-tenue">Puoi ricevere solo le proposte dirette a te o quelle che potresti coprire. Puoi scegliere dopo aver attivato le notifiche.</p>
-        <button class="btn primario largo" data-act="attiva-notifiche">Attiva le notifiche</button>
-      </div>`;
-  }
-  if (stato !== STATO.ATTIVE) return '';
+export function corpoNotifiche(stato = statoNoto()) {
+  const accensione = rigaNotifiche(stato)
+    || '<p class="testo-tenue">Le notifiche arrivano a chi è iscritto al negozio: dopo l\'iscrizione si accendono da qui.</p>';
+  if (stato !== STATO.ATTIVE) return accensione;
   const modo = store.modoNotifiche();
   const opzione = (valore, titolo, testo) => html`
     <label class="switch">
@@ -634,17 +662,13 @@ export function rigaModoNotifiche(stato = statoNoto()) {
     </label>`;
   const turniQui = store.state.shifts.some((s) => s.userId === store.state.currentUserId && s.data >= todayISO());
   return html`
-    <details class="riquadro" data-riquadro="modo-notifiche" ${raw(riquadriAperti.has('modo-notifiche') ? 'open' : '')}>
-      <summary>
-        <span>Gestione notifiche</span>
-        <span class="conteggio">${modo === 'compatibili' ? 'tutte le compatibili' : 'solo le personali'}</span>
-      </summary>
+    ${raw(accensione)}
+    <h3 class="pref-titolo">Cosa ricevere</h3>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
       ${raw(opzione('compatibili', 'Anche le richieste che puoi coprire', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che potresti coprire con i tuoi turni, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati.'))}
       ${raw(modo === 'compatibili' && !turniQui
-    ? '<p class="avviso-box">Su questo telefono non ci sono turni nei prossimi giorni: importali dal Profilo, altrimenti non riceverai avvisi.</p>'
-    : '')}
-    </details>`;
+    ? '<p class="avviso-box">Su questo telefono non ci sono turni nei prossimi giorni: importali da Sincronizza turni, altrimenti non riceverai avvisi.</p>'
+    : '')}`;
 }
 
 /**
@@ -680,8 +704,7 @@ export function consensoCompatibili() {
  * impostazioni del telefono se le ha bloccate, la Home su iPhone. Un
  * interruttore spento e basta lascerebbe a lei indovinare quale dei tre.
  */
-function rigaNotifiche() {
-  const stato = statoNoto();
+function rigaNotifiche(stato = statoNoto()) {
   if (!stato || stato === STATO.SENZA_SERVER) return '';
   const riga = (em, interruttore = '') => html`
     <label class="tile ${interruttore ? 'switch-tile' : ''}">
@@ -739,11 +762,9 @@ function bottoneSync() {
  * terzo riquadro in fondo: per capire cosa voleva dire "Evito le aperture"
  * bisognava scendere, aprire, risalire. Ora è un tocco solo, e dentro l'ordine
  * è quello in cui si ragiona: come funziona, cosa vuol dire ogni fascia, e
- * solo dopo le scelte.
- *
- * Chiuso, il profilo resta leggibile e dice quante ne hai attive.
+ * solo dopo le scelte. Quante ne hai attive lo dice il pulsante.
  */
-function sezionePreferenze(me) {
+function corpoPreferenze(me) {
   const gruppi = [
     {
       key: 'evita',
@@ -756,7 +777,6 @@ function sezionePreferenze(me) {
       nota: 'Quel turno sale un po\' nel match. Non esclude niente.',
     },
   ];
-  const attive = PREFERENZE.filter((p) => me.preferenze[p.key]).length;
 
   const scelte = gruppi.map((g) => html`
     <h3 class="pref-titolo">${g.titolo}</h3>
@@ -771,11 +791,6 @@ function sezionePreferenze(me) {
       </label>`).join(''))}`).join('');
 
   return html`
-    <details class="riquadro preferenze" data-riquadro="preferenze" ${raw(riquadriAperti.has('preferenze') ? 'open' : '')}>
-      <summary>
-        <span>Le tue preferenze</span>
-        <span class="conteggio">${attive ? `${attive} attiv${attive === 1 ? 'a' : 'e'}` : 'nessuna'}</span>
-      </summary>
       <div class="pref-corpo">
         <p class="pref-intro">
           Indica i turni che preferisci e quelli che vuoi evitare. Servono solo
@@ -789,8 +804,7 @@ function sezionePreferenze(me) {
           si disattiva.
         </p>
         ${raw(scelte)}
-      </div>
-    </details>`;
+      </div>`;
 }
 
 /** Cosa vuol dire ciascuna fascia, con gli orari veri. */
@@ -807,12 +821,12 @@ function legendaFasce() {
     <ul class="pref-fasce">${raw(righe)}</ul>`;
 }
 
-/** Quanti turni hai nei prossimi 28 giorni: chiuso, il riquadro dice se sei a posto. */
+/** Quanti turni hai nelle prossime 4 settimane: sul pulsante, in due parole, dice se sei a posto. */
 function contaTurni() {
   const oggi = todayISO();
   const fine = addDays(oggi, 27);
   const n = store.state.shifts.filter((s) => s.userId === store.state.currentUserId && s.data >= oggi && s.data <= fine).length;
-  return n ? `${n} nei prossimi 28 giorni` : 'nessuno inserito';
+  return n ? `${n} turni` : 'nessuno';
 }
 
 /**

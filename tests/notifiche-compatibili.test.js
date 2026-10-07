@@ -18,7 +18,7 @@ globalThis.document = { addEventListener() {} };
 
 const { store } = await import('../src/core/store.js');
 const { addDays, todayISO } = await import('../src/core/time.js');
-const { rigaModoNotifiche, consensoCompatibili } = await import('../src/ui/views.js');
+const { corpoNotifiche, statoNotificheBreve, consensoCompatibili } = await import('../src/ui/views.js');
 const { STATO } = await import('../src/ui/notifiche.js');
 const { schermataNuoveNote } = await import('../src/ui/profilo-setup.js');
 const { VERSIONE_NOTE } = await import('../src/ui/legale.js');
@@ -146,19 +146,25 @@ test('senza iscrizione al negozio non c\'è niente da scegliere', () => {
 
 test('la scelta compare a notifiche accese, e prima invita ad accenderle', () => {
   iscritto();
-  assert.match(rigaModoNotifiche(STATO.DA_ATTIVARE), /Attiva le notifiche/, 'chi non le ha accese deve trovare la strada, non un vuoto');
-  assert.equal(rigaModoNotifiche(STATO.BLOCCATE), '');
+  // Il pannello Notifiche del Profilo: spente, c'è l'interruttore e non la scelta.
+  const spente = corpoNotifiche(STATO.DA_ATTIVARE);
+  assert.match(spente, /data-act="notifiche"/, 'chi non le ha accese deve trovare la strada, non un vuoto');
+  assert.doesNotMatch(spente, /Cosa ricevere/);
+  assert.equal(statoNotificheBreve(STATO.DA_ATTIVARE), 'spente');
+  const bloccate = corpoNotifiche(STATO.BLOCCATE);
+  assert.match(bloccate, /Bloccate dal browser/);
+  assert.doesNotMatch(bloccate, /Cosa ricevere/);
 
-  const dirette = rigaModoNotifiche(STATO.ATTIVE);
+  const dirette = corpoNotifiche(STATO.ATTIVE);
   assert.match(dirette, /Solo le richieste personali/);
   assert.match(dirette, /Anche le richieste che puoi coprire/);
   assert.match(dirette, /value="dirette"\s+checked/);
-  assert.match(dirette, /solo le personali/);
+  assert.equal(statoNotificheBreve(STATO.ATTIVE), 'solo personali');
 
   store.impostaModoNotifiche('compatibili');
-  const compatibili = rigaModoNotifiche(STATO.ATTIVE);
+  const compatibili = corpoNotifiche(STATO.ATTIVE);
   assert.match(compatibili, /value="compatibili"\s+checked/);
-  assert.match(compatibili, /tutte le compatibili/);
+  assert.equal(statoNotificheBreve(STATO.ATTIVE), 'tutte le compatibili');
   assert.doesNotMatch(compatibili, /\[object Object\]/);
 });
 
@@ -166,7 +172,7 @@ test('chi sceglie "compatibili" senza turni nel calendario lo viene a sapere', (
   iscritto();
   store.impostaModoNotifiche('compatibili');
   store.state.shifts = [];
-  assert.match(rigaModoNotifiche(STATO.ATTIVE), /non ci sono turni nei prossimi giorni/);
+  assert.match(corpoNotifiche(STATO.ATTIVE), /non ci sono turni nei prossimi giorni/);
 });
 
 test('il consenso dice cosa esce, dove va, chi lo legge e come tornare indietro', () => {
