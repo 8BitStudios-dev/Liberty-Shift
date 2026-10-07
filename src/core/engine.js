@@ -458,7 +458,12 @@ export function turnoOfferibile(request, shift, shifts, shiftsById) {
     }
   }
 
-  const s = satisfies(request.cerco, shift);
+  // Si guarda il turno come lo riceverebbe chi ha chiesto, adattato alle sue
+  // ore: è quello che fa la ricerca dei colleghi (matchOrario, matchOff).
+  // Col turno grezzo il 15:00–20:00 di un Part Time non era mai l'11:00–20:00
+  // che un Full Time cerca, anche se per lui diventa proprio quello: la lista
+  // mostrava lo scambio al 65% e il tasto Proponi lo rifiutava.
+  const s = satisfies(request.cerco, turnoAdattato(shift, mioCedo));
   if (s.score === 0) return { ok: false, motivo: `Non è quello che cerca: ${s.reasons[0]}.` };
   return { ok: true };
 }

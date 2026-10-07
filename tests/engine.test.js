@@ -762,3 +762,21 @@ test('un Full Time e un Part Time con lo stesso inizio non si scambiano turni ug
   };
   assert.deepEqual(findMatches(richiesta, ctx), []);
 });
+
+test('un Part Time può proporre il turno che, adattato, è quello che il Full Time cerca', () => {
+  // Lorenzo (FT) lascia 10:00–19:00 e cerca 11:00–20:00. Alessandro (PT) ha
+  // 15:00–20:00, che per Lorenzo diventa 11:00–20:00: la lista lo mostrava,
+  // il tasto Proponi diceva "non hai niente da offrire".
+  const lorenzo = { id: 'lorenzo', nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} };
+  const alessandro = { id: 'alessandro', nome: 'Alessandro', cognomeIniziale: 'B', contratto: 'PT', oreSettimanali: 25, preferenze: {}, disponibilita: {}, prioritaUsata: {} };
+  const suo = { id: 'sh-l', userId: 'lorenzo', data: '2026-10-10', tipo: 'WORK', start: '10:00', end: '19:00' };
+  const mio = { id: 'sh-a', userId: 'alessandro', data: '2026-10-10', tipo: 'WORK', start: '15:00', end: '20:00' };
+  const r = {
+    id: 'rq', userId: 'lorenzo', status: 'APERTA', tipo: TIPO_CAMBIO.ORARIO, createdAt: '2026-10-07T10:00:00Z',
+    cedo: { shiftId: 'sh-l', flessibile: false },
+    cerco: { giorni: ['2026-10-10'], mode: WANT_MODE.SPECIFIC, start: '11:00', end: '20:00' },
+  };
+  const ctx = { users: [lorenzo, alessandro], shifts: [suo, mio], requests: [r], proposals: [], currentUserId: 'alessandro' };
+  assert.ok(findMatches(r, ctx).some((m) => m.userId === 'alessandro'), 'la lista lo trova');
+  assert.equal(turnoOfferibile(r, mio, ctx.shifts, { 'sh-l': suo, 'sh-a': mio }).ok, true, 'e il tasto lo accetta');
+});
