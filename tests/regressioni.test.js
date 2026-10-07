@@ -615,25 +615,51 @@ test('la conferma del calendario parte per il server una volta, senza turni', ()
 
 // --- la pausa di mezz'ora --------------------------------------------------
 
-test('la pausa di mezz\'ora non entra nel monte ore', async () => {
+test('la pausa di mezz\'ora non entra nel monte ore, per chi ce l\'ha nel contratto', async () => {
   const { oreRetribuite, pausaBreve } = await import('../src/core/model.js');
   const t = (start, end) => ({ tipo: 'WORK', start, end });
-  assert.equal(oreRetribuite(t('14:30', '20:00')), 5, '5 lavorate più mezz\'ora di pausa');
-  assert.equal(oreRetribuite(t('14:00', '20:30')), 6, 'fino alle 20:30, 6 lavorate');
-  assert.equal(oreRetribuite(t('15:00', '20:00')), 5, 'senza pausa');
-  assert.equal(oreRetribuite(t('10:00', '19:00')), 8, 'Full Time, un\'ora di pausa');
-  assert.equal(oreRetribuite(t('11:00', '18:00')), 6, '7 ore in calendario, un\'ora di pausa');
-  assert.equal(pausaBreve(t('14:30', '20:00')), true);
-  assert.equal(pausaBreve(t('15:00', '20:00')), false);
+  const conPausa = { contratto: 'PT', pausaMezzora: true };
+  const senzaPausa = { contratto: 'PT', pausaMezzora: false };
+  const fullTime = { contratto: 'FT', pausaMezzora: true };
+  assert.equal(oreRetribuite(t('14:30', '20:00'), conPausa), 5, '5 lavorate più mezz\'ora di pausa');
+  assert.equal(oreRetribuite(t('14:00', '20:30'), conPausa), 6, 'fino alle 20:30, 6 lavorate');
+  assert.equal(oreRetribuite(t('14:30', '20:00'), senzaPausa), 5.5, 'senza la pausa nel contratto è tutto lavoro');
+  assert.equal(oreRetribuite(t('14:30', '20:00'), fullTime), 5.5, 'un Full Time non ha la mezz\'ora');
+  assert.equal(oreRetribuite(t('10:00', '19:00'), fullTime), 8, 'Full Time, l\'ora di pausa dentro le 9');
+  assert.equal(oreRetribuite(t('11:00', '18:00'), conPausa), 6, '7 ore in calendario, un\'ora di pausa');
+  assert.equal(pausaBreve(t('14:30', '20:00'), conPausa), true);
+  assert.equal(pausaBreve(t('14:30', '20:00')), false, 'senza sapere di chi è, nessuna pausa');
 });
 
 test('due turni con le stesse ore lavorate si scambiano così come sono, pausa compresa', async () => {
   const { trasformaTurno } = await import('../src/core/model.js');
-  const conPausa = { tipo: 'WORK', start: '14:30', end: '20:00' };
-  const senza = { tipo: 'WORK', start: '10:00', end: '15:00' };
+  const persone = {
+    martina: { id: 'martina', contratto: 'PT', pausaMezzora: true },
+    jesse: { id: 'jesse', contratto: 'PT', pausaMezzora: false },
+    lorenzo: { id: 'lorenzo', contratto: 'FT' },
+  };
+  const trova = (id) => persone[id];
+  const conPausa = { userId: 'martina', tipo: 'WORK', start: '14:30', end: '20:00' };
+  const senza = { userId: 'jesse', tipo: 'WORK', start: '10:00', end: '15:00' };
   // Chi riceve il turno con la pausa se la tiene, e viceversa.
-  assert.equal(trasformaTurno(conPausa, senza).trasformato, false);
-  assert.equal(trasformaTurno(senza, conPausa).trasformato, false);
+  assert.equal(trasformaTurno(conPausa, senza, trova).trasformato, false);
+  assert.equal(trasformaTurno(senza, conPausa, trova).trasformato, false);
   // Con un Full Time l'adattamento resta.
-  assert.equal(trasformaTurno({ tipo: 'WORK', start: '10:00', end: '19:00' }, conPausa).trasformato, true);
+  assert.equal(trasformaTurno({ userId: 'lorenzo', tipo: 'WORK', start: '10:00', end: '19:00' }, conPausa, trova).trasformato, true);
+  // Se Martina non avesse la pausa nel contratto, 5 ore e mezza contro 5 si adattano.
+  persone.martina.pausaMezzora = false;
+  assert.equal(trasformaTurno(conPausa, senza, trova).trasformato, true);
+});
+
+test('la pausa di mezz\'ora si sceglie nel profilo, vale solo per i Part Time e va al server', () => {
+  store.reset();
+  store.state.profilo = { ...store.state.profilo, completato: true, idServer: 'io-srv' };
+  store.state.coda = [];
+  store.completaProfilo({ nome: 'Martina', cognome: 'Lovece', contratto: 'PT', oreSettimanali: 25, pausaMezzora: true });
+  assert.equal(store.me.pausaMezzora, true);
+  const op = store.state.coda.filter((o) => o.tipo === 'profilo.pausa').at(-1);
+  assert.deepEqual(op.dati, { id: 'io-srv', valore: true });
+  // Un Full Time non ce l'ha: la sua pausa è già dentro le 9 ore.
+  store.completaProfilo({ nome: 'Martina', cognome: 'Lovece', contratto: 'FT', oreSettimanali: 40, pausaMezzora: true });
+  assert.equal(store.me.pausaMezzora, false);
 });

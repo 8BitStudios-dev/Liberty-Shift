@@ -90,6 +90,7 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
     contratto: p.contratto,
     genere: p.genere || 'X',
     oreSettimanali: p.ore_settimanali,
+    pausaMezzora: Boolean(p.pausa_mezzora),
     preferenze,
     disponibilita,
     prioritaUsata: {},

@@ -139,6 +139,13 @@ create table if not exists public.proposte (
 -- database già in piedi la porta questo alter table, non il create qui sopra.
 alter table public.proposte add column if not exists promemoria_il timestamptz;
 
+-- `pausa_mezzora`: un Part Time che ha nel contratto la pausa pranzo di
+-- mezz'ora. I suoi turni durano mezz'ora in più (14:30–20:00 per 5 ore), e
+-- quella mezz'ora non è lavoro. Serve anche ai colleghi: quando prendono un
+-- suo turno, la pausa passa a loro. Si scrive dal profilo (la policy
+-- "ognuno modifica il proprio profilo" lo permette).
+alter table public.profili add column if not exists pausa_mezzora boolean not null default false;
+
 -- `confermata_il`: quando il telefono di una delle due parti ha visto nel suo
 -- calendario dei turni che UKG ha approvato lo scambio. Non porta nessun
 -- turno, solo l'ora: serve ad avvisare l'altra parte (`notifica_proposta`).

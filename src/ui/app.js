@@ -504,6 +504,7 @@ const AZIONI = {
     render({ fermo: true });
   },
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
+  'profilo-pausa': (e) => { P.bozzaProfilo.pausaMezzora = e.target.checked; },
   'profilo-accetta-voce': (e, el) => {
     const b = P.bozzaProfilo;
     b.accettazioni[Number(el.dataset.indice)] = e.target.checked;

@@ -109,7 +109,7 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } =
     </div>`;
 
   if (!mia && mioTurno) {
-    const perMe = trasformaTurno(cedo, mioTurno);
+    const perMe = trasformaTurno(cedo, mioTurno, personaDi);
     return lati(
       html`
         <span class="etichetta">${freccia('cedo')} lasci</span>
@@ -293,6 +293,9 @@ function riassuntoMatch(match, u, turno, opzioni) {
  * decide UKG quando approva il cambio, e può non coincidere. Va detto lì
  * dove l'orario compare, non in una pagina di aiuto.
  */
+/** Chi è chi, per l'adattamento dei turni: la pausa di mezz'ora dipende dalla persona. */
+export const personaDi = (id) => store.user(id);
+
 export const TESTO_STIMA = 'Orario stimato: quello definitivo lo decide UKG.';
 export const notaStima = () => `<p class="nota-stima">${TESTO_STIMA}</p>`;
 const adattamento = (match) => Boolean(match?.adattato?.trasformato || match?.adattatoControparte?.trasformato);
@@ -303,7 +306,7 @@ const adattamento = (match) => Boolean(match?.adattato?.trasformato || match?.ad
  * perché in calendario sembra mezz'ora di lavoro in più.
  */
 export const TESTO_PAUSA = 'La pausa di mezz\'ora resta al turno e passa a chi lo riceve, salvo modifiche di PPO o dei lead.';
-export const notaPausa = (turni) => (turni.some((s) => pausaBreve(s)) ? `<p class="nota-stima">${TESTO_PAUSA}</p>` : '');
+export const notaPausa = (turni) => (turni.some((s) => pausaBreve(s, personaDi(s?.userId))) ? `<p class="nota-stima">${TESTO_PAUSA}</p>` : '');
 
 export function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);

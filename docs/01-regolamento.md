@@ -241,10 +241,15 @@ invece si misura sulle ore pagate.
 **Assunzione**: la pausa è di un'ora e scatta oltre le sei ore di turno
 (`RULES.pausa`). Un Part Time con turni da cinque ore non la fa.
 
-**La pausa di mezz'ora.** Chi fa turni da 5 o 6 ore può scegliere una pausa
-di mezz'ora: in calendario il turno dura mezz'ora in più (14:30–20:00,
-14:00–20:30), ma le ore lavorate restano 5 o 6. Quella mezz'ora non è
-straordinario e non entra nel monte ore (`RULES.pausa.breve`, `pausaBreve`).
+**La pausa di mezz'ora.** Un Part Time può avere nel contratto una pausa
+pranzo di mezz'ora: lo dice nel profilo ("Nel contratto ho la pausa pranzo di
+mezz'ora", campo `pausaMezzora`, `pausa_mezzora` sul server). I suoi turni
+durano mezz'ora in più (14:30–20:00, 14:00–20:30), ma le ore lavorate restano
+5 o 6: quella mezz'ora non è straordinario e non entra nel monte ore
+(`RULES.pausa.breve`, `pausaBreve`). I Full Time non hanno la scelta: la loro
+ora di pausa è già dentro il turno da 9. La pausa si riconosce dalla persona,
+non solo dalla durata: un turno da 5 ore e mezza di chi non l'ha nel
+contratto resta tutto lavoro.
 
 Nello scambio la pausa **resta al turno** e passa a chi lo riceve, salvo
 modifiche di PPO o dei lead. Per questo l'adattamento confronta prima le ore

@@ -1150,7 +1150,7 @@ function lettera(me, settimana) {
  * tornano, così l'occhio cerca le settimane senza spunta.
  */
 function spiaOre(me, settimana) {
-  const fatte = oreSettimana(me.id, settimana, store.state.shifts);
+  const fatte = oreSettimana(me.id, settimana, store.state.shifts, me);
   const attese = me.oreSettimanali;
   const quadra = fatte === attese;
   return html`

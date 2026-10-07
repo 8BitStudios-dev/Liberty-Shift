@@ -20,6 +20,7 @@ User ──< Shift
 | `nome`, `cognomeIniziale` | string | nella UI non compare mai il cognome intero |
 | `contratto` | `'FT' \| 'PT'` | etichetta |
 | `oreSettimanali` | 20, 25, 30 o 40 | monte ore, guida l'avviso su R17 |
+| `pausaMezzora` | bool | solo Part Time: pausa pranzo di mezz'ora nel contratto (`pausa_mezzora`). Il turno dura mezz'ora in più, che non conta nel monte ore e passa con il turno a chi lo riceve |
 | `admin` | bool | può chiudere/rimuovere la richiesta di chiunque e vedere le statistiche |
 | `superAdmin` | bool | una sola persona per store; promuove/retrocede gli admin e disattiva un profilo |
 | `attivo` | bool | disattivato = fuori dal negozio, reversibile; non è una cancellazione |

@@ -249,7 +249,7 @@ function hhmm(min) {
  * giorni da 5 ore e giorni da 7. La durata di riferimento è sempre quella
  * concreta del turno che si lascia.
  */
-export function trasformaTurno(riceve, cede) {
+export function trasformaTurno(riceve, cede, trova = null) {
   if (!riceve || riceve.tipo === 'OFF') {
     return { start: riceve?.start, end: riceve?.end, trasformato: false };
   }
@@ -264,7 +264,7 @@ export function trasformaTurno(riceve, cede) {
   // Stesse ore lavorate, presenza diversa: la differenza è la pausa di
   // mezz'ora, che resta al turno e passa a chi lo riceve. Il turno si
   // scambia così com'è.
-  if (Math.abs(oreRetribuite(riceve) - oreRetribuite(cede)) < 0.01) return base;
+  if (Math.abs(oreRetribuite(riceve, trova?.(riceve.userId)) - oreRetribuite(cede, trova?.(cede.userId))) < 0.01) return base;
 
   // Le notti sono casi particolari: si segnalano, non si accorciano d'ufficio.
   if (isNotturno(riceve) || isNotturno(cede)) {
@@ -300,8 +300,8 @@ export function trasformaTurno(riceve, cede) {
 }
 
 /** Il turno adattato, nella forma di uno Shift, per darlo in pasto al motore. */
-export function turnoAdattato(riceve, cede) {
-  const t = trasformaTurno(riceve, cede);
+export function turnoAdattato(riceve, cede, trova = null) {
+  const t = trasformaTurno(riceve, cede, trova);
   if (!t.trasformato) return riceve;
   return { ...riceve, start: t.start, end: t.end };
 }
@@ -314,29 +314,30 @@ export function turnoAdattato(riceve, cede) {
  * stato nel proprio. Il monte ore del contratto invece si misura sulle ore
  * pagate, ed è un'altra cosa.
  */
-export function oreRetribuite(shift) {
+export function oreRetribuite(shift, persona = null) {
   const presenza = durataOre(shift);
-  if (pausaBreve(shift)) return presenza - RULES.pausa.breve.minuti / 60;
+  if (pausaBreve(shift, persona)) return presenza - RULES.pausa.breve.minuti / 60;
   if (presenza <= RULES.pausa.oltreOre) return presenza;
   return presenza - RULES.pausa.minuti / 60;
 }
 
 /**
- * Il turno ha la pausa di mezz'ora? Lo dice la sua durata: 5 o 6 ore
- * lavorate più mezz'ora (vedi `RULES.pausa.breve`). Un turno da 7 ore resta
- * 6 lavorate con l'ora di pausa normale.
+ * Il turno ha la pausa di mezz'ora? Solo se è di un Part Time che l'ha nel
+ * contratto (l'ha detto nel profilo, `pausaMezzora`) e se il turno ne ha la
+ * forma: 5 o 6 ore lavorate più mezz'ora. I Full Time hanno già l'ora di
+ * pausa dentro le 9 ore. Senza sapere di chi è il turno, nessuna pausa.
  */
-export function pausaBreve(shift) {
-  if (shift?.tipo !== 'WORK') return false;
+export function pausaBreve(shift, persona = null) {
+  if (shift?.tipo !== 'WORK' || persona?.contratto !== 'PT' || !persona?.pausaMezzora) return false;
   const lavorate = durataOre(shift) - RULES.pausa.breve.minuti / 60;
   return RULES.pausa.breve.oreLavorate.some((ore) => Math.abs(lavorate - ore) < 0.01);
 }
 
 /** Ore retribuite da una persona in una settimana Apple. */
-export function oreSettimana(userId, weekKey, shifts) {
+export function oreSettimana(userId, weekKey, shifts, persona = null) {
   return shifts
     .filter((s) => s.userId === userId && s.tipo === 'WORK' && appleWeekKey(s.data) === weekKey)
-    .reduce((tot, s) => tot + oreRetribuite(s), 0);
+    .reduce((tot, s) => tot + oreRetribuite(s, persona), 0);
 }
 
 /**
@@ -346,10 +347,11 @@ export function oreSettimana(userId, weekKey, shifts) {
  * quando c'è di mezzo un OFF: lì una persona lavora un turno in meno e
  * l'altra uno in più.
  */
-export function impattoMonteOre(user, cedo, ricevuto, shifts) {
+export function impattoMonteOre(user, cedo, ricevuto, shifts, trova = null) {
   const weekKey = appleWeekKey(cedo.data);
-  const prima = oreSettimana(user.id, weekKey, shifts);
-  const dopo = prima - oreRetribuite(cedo) + oreRetribuite(turnoAdattato(ricevuto, cedo));
+  const prima = oreSettimana(user.id, weekKey, shifts, user);
+  const dopo = prima - oreRetribuite(cedo, user)
+    + oreRetribuite(turnoAdattato(ricevuto, cedo, trova), trova?.(ricevuto.userId));
   const contratto = user.oreSettimanali;
   const cambia = Math.abs(dopo - prima) > 0.01;
   if (!cambia || !contratto) return { cambia: false, prima, dopo };

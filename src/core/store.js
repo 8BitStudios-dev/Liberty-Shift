@@ -227,7 +227,7 @@ export const store = {
   turniOfferibili(request) {
     const byId = this.shiftsById();
     return this.shiftsOf(this.state.currentUserId, { soloFuturi: true })
-      .filter((s) => turnoOfferibile(request, s, this.state.shifts, byId).ok);
+      .filter((s) => turnoOfferibile(request, s, this.state.shifts, byId, (id) => this.user(id)).ok);
   },
   /**
    * Va detto «al momento non puoi cambiare» su questa richiesta?
@@ -683,7 +683,7 @@ export const store = {
     // modulo, così nessuna scorciatoia della UI la aggira.
     const offerto = this.shift(shiftOffertoId);
     if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido.'] };
-    const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById());
+    const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById(), (id) => this.user(id));
     if (!verifica.ok) return { errori: [verifica.motivo] };
 
     const proposta = {
@@ -1199,6 +1199,7 @@ export const store = {
       admin: Boolean(riga.admin),
       superAdmin: Boolean(riga.super_admin),
       attivo: riga.attivo !== false,
+      pausaMezzora: Boolean(riga.pausa_mezzora),
     });
     const credenziali = creaCredenziali(password);
     this.state.profilo = {
@@ -1250,7 +1251,7 @@ export const store = {
    * sbagliato lascerebbe sul telefono un profilo che il server non conosce.
    */
   async iscriviECompleta({
-    nome, cognome, genere, contratto, oreSettimanali, password, codice, versioneNote, omonimoConfermato,
+    nome, cognome, genere, contratto, oreSettimanali, pausaMezzora, password, codice, versioneNote, omonimoConfermato,
   }) {
     if (serverConfigurato()) {
       const cog = (cognome || '').trim();
@@ -1293,16 +1294,18 @@ export const store = {
       });
       if (isc.errore) return { errore: isc.errore };
 
-      this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote });
+      this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, pausaMezzora, password, versioneNote });
       // L'identificativo lo conserva il dispositivo: la persona non lo sa e
       // non deve saperlo, ma senza non si potrebbe più rientrare.
       this.state.profilo.identificativo = identificativo;
       this.state.profilo.idServer = idUtenteServer();
+      // Solo adesso il server sa chi sei: la pausa scelta nel profilo parte ora.
+      this.impostaPausa(Boolean(pausaMezzora));
       this.commit();
       return { ok: true };
     }
 
-    this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote });
+    this.completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, pausaMezzora, password, versioneNote });
     return { ok: true };
   },
 
@@ -1339,7 +1342,20 @@ export const store = {
    * Non crea un utente nuovo: riscrive quello corrente, così i turni inseriti
    * prima di completarlo restano appesi alla persona giusta.
    */
-  completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, password, versioneNote }) {
+  /**
+   * La pausa pranzo di mezz'ora nel contratto (solo Part Time). Va anche sul
+   * server: serve ai colleghi, perché quando prendono un tuo turno la pausa
+   * passa a loro (vedi `pausaBreve`).
+   */
+  impostaPausa(valore) {
+    const me = this.me;
+    me.pausaMezzora = me.contratto === 'PT' && Boolean(valore);
+    if (sulServer(this.state)) {
+      accoda(this.state, 'profilo.pausa', { id: this.state.profilo.idServer, valore: me.pausaMezzora });
+    }
+  },
+
+  completaProfilo({ nome, cognome, genere, contratto, oreSettimanali, pausaMezzora, password, versioneNote }) {
     const me = this.me;
     const cog = (cognome || '').trim();
     Object.assign(me, {
@@ -1352,6 +1368,7 @@ export const store = {
       contratto: contratto || me.contratto,
       oreSettimanali: Number(oreSettimanali) || me.oreSettimanali,
     });
+    this.impostaPausa(Boolean(pausaMezzora));
     this.allineaRotazione();
     const credenziali = password
       ? creaCredenziali(password)

@@ -178,7 +178,16 @@ const maiuscola = (s) => s.charAt(0).toUpperCase() + s.slice(1);
  * l'altra persona) non si spiega più: chi guarda vuole sapere cosa succede a
  * lui, non i conti di qualcun altro.
  */
-function verificheIncrociate(coppie, shifts, chiGuarda) {
+/**
+ * Chi è chi, per id. Serve all'adattamento: la pausa di mezz'ora di un turno
+ * dipende da chi lo fa (vedi `pausaBreve`), non solo dai suoi orari.
+ */
+function personeDi(ctx) {
+  const per = new Map(ctx.users.map((u) => [u.id, u]));
+  return (id) => per.get(id);
+}
+
+function verificheIncrociate(coppie, shifts, chiGuarda, trova) {
   const reasons = [];
   const avvisi = [];
   let penalita = 0;
@@ -187,10 +196,10 @@ function verificheIncrociate(coppie, shifts, chiGuarda) {
     const io = chi.id === chiGuarda;
     // Le preferenze pesano sul turno che quella persona riceverebbe davvero,
     // cioè quello già adattato alle sue ore.
-    const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede), { io });
+    const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede, trova), { io });
     bonus += pref.bonus;
     if (pref.bonus) reasons.push(io ? maiuscola(pref.reasons[0]) : `${chi.nome} ${pref.reasons[0]}`);
-    const t = trasformaTurno(riceve, cede);
+    const t = trasformaTurno(riceve, cede, trova);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
       // Un Full Time ha sempre turni da 9h: dirlo è più semplice (e più
@@ -199,12 +208,12 @@ function verificheIncrociate(coppie, shifts, chiGuarda) {
       if (io) {
         reasons.push(contractOf(chi).ore.length === 1
           ? `Sei ${chi.contratto} quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`
-          : `Lasci ${String(oreRetribuite(cede)).replace('.', ',')}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
+          : `Lasci ${String(oreRetribuite(cede, chi)).replace('.', ',')}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
       }
     }
     if (t.avviso) avvisi.push(io ? t.avviso : `${nome(chi)}: ${t.avviso}`);
     if (cede) {
-      const ore = impattoMonteOre(chi, cede, riceve, shifts);
+      const ore = impattoMonteOre(chi, cede, riceve, shifts, trova);
       if (ore.avviso) avvisi.push(io ? `${ore.avviso}.` : `${nome(chi)}: ${ore.avviso}.`);
     }
   }
@@ -227,6 +236,7 @@ export function findMatches(request, ctx) {
  * essere libero: al contrario, serve che l'altro sia in turno.
  */
 function matchOrario(request, ctx) {
+  const trova = personeDi(ctx);
   const idx = indexShifts(ctx.shifts);
   const autore = ctx.users.find((u) => u.id === request.userId);
   const mioCedo = idx.byId[request.cedo.shiftId];
@@ -242,13 +252,13 @@ function matchOrario(request, ctx) {
 
     // Quello che riceverei non è il turno com'è, ma con le ore del turno che
     // sto lasciando: chi cambia non cambia il proprio monte ore.
-    const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo));
+    const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo, trova));
 
     // Un Full Time 09:30–18:30 e un Part Time 09:30–14:30 si scambierebbero
     // ciascuno il turno adattato alle proprie ore, cioè il proprio: dopo lo
     // scambio nessuno ha cambiato niente. Proporlo è un'occasione finta.
     const stesso = (a, b) => a.start === b.start && a.end === b.end;
-    if (stesso(turnoAdattato(suo, mioCedo), mioCedo) || stesso(turnoAdattato(mioCedo, suo), suo)) continue;
+    if (stesso(turnoAdattato(suo, mioCedo, trova), mioCedo) || stesso(turnoAdattato(mioCedo, suo, trova), suo)) continue;
     if (perMe.score === 0) continue;
 
     // Ha chiesto lui stesso un cambio orario quel giorno?
@@ -262,19 +272,19 @@ function matchOrario(request, ctx) {
     let origine;
     const reasons = [];
     if (suaRichiesta) {
-      const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo));
+      const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo, trova));
       if (perLui.score === 0) continue;
       score = Math.round((perMe.score + perLui.score) / 2);
       origine = 'RICHIESTA';
       // perMe dice se quello che riceverebbe l'autore (il turno di u, adattato
       // alle sue ore) soddisfa quello che l'autore cerca.
-      const perAutoreAdattato = turnoAdattato(suo, mioCedo);
+      const perAutoreAdattato = turnoAdattato(suo, mioCedo, trova);
       reasons.push(
         `${ioSonoU ? 'Hai' : `${nome(u)} ha`} ${shiftLabel(suo)} quel giorno, che per ${ioSonoAutore ? 'te' : nome(autore)} diventa ${perAutoreAdattato.start}–${perAutoreAdattato.end}: ${perMe.reasons[0]}`,
       );
       // Simmetrico: quello che riceverebbe u (il turno che cedo, adattato
       // alle sue ore) soddisfa quello che u stesso cerca nella sua richiesta.
-      const perUAdattato = turnoAdattato(mioCedo, suo);
+      const perUAdattato = turnoAdattato(mioCedo, suo, trova);
       const ilTurnoDiAutore = ioSonoAutore ? `il tuo turno ${shiftLabel(mioCedo)}` : `${shiftLabel(mioCedo)} di ${nome(autore)}`;
       reasons.push(
         `${ioSonoU ? 'Cerchi' : `${nome(u)} cerca`} ${wantLabel(suaRichiesta.cerco)}: ${ilTurnoDiAutore}, per ${ioSonoU ? 'te' : nome(u)}, diventa ${perUAdattato.start}–${perUAdattato.end}`,
@@ -296,7 +306,7 @@ function matchOrario(request, ctx) {
       reasons.push(ioSonoU ? `Hai ${shiftLabel(suo)} quel giorno` : `${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
     }
 
-    const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
+    const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
     score = clamp(Math.round(score - v.penalita + v.bonus), 0,
       origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
     if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
@@ -310,11 +320,11 @@ function matchOrario(request, ctx) {
       requestId: suaRichiesta?.id || null,
       shiftOffertoId: suo.id,
       data: giorno,
-      adattato: trasformaTurno(suo, mioCedo),
+      adattato: trasformaTurno(suo, mioCedo, trova),
       // Quello che riceverebbe l'altra parte, non il turno com'è: senza
       // questo la scheda mostrava a entrambi lo stesso orario grezzo, come
       // se lo scambio non cambiasse niente.
-      adattatoControparte: trasformaTurno(mioCedo, suo),
+      adattatoControparte: trasformaTurno(mioCedo, suo, trova),
       prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
       reasons: [...reasons, ...v.reasons],
       avvisi: v.avvisi,
@@ -330,6 +340,7 @@ function matchOrario(request, ctx) {
  * dei giorni che offro: ci scambiamo le due giornate intere.
  */
 function matchOff(request, ctx) {
+  const trova = personeDi(ctx);
   const idx = indexShifts(ctx.shifts);
   const autore = ctx.users.find((u) => u.id === request.userId);
   const mioCedo = idx.byId[request.cedo.shiftId];
@@ -349,7 +360,7 @@ function matchOff(request, ctx) {
       const suo = idx.get(u.id, giorno);
       if (!suo || suo.tipo !== 'WORK') continue;
 
-      const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo));
+      const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo, trova));
       if (perMe.score === 0) continue;
 
       const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
@@ -364,7 +375,7 @@ function matchOff(request, ctx) {
       let origine;
       const reasons = [];
       if (suaRichiesta) {
-        const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo));
+        const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo, trova));
         if (perLui.score === 0) continue;
         score = Math.round((perMe.score + perLui.score) / 2);
         origine = 'RICHIESTA';
@@ -401,7 +412,7 @@ function matchOff(request, ctx) {
         ? `Lavoreresti ${formatDay(giorno)} al posto di ${nome(u)}: ${perMe.reasons[0]}`
         : `${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto ${ioSonoU ? 'tuo' : 'suo'}: ${perMe.reasons[0]}`);
 
-      const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId);
+      const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
       score = clamp(Math.round(score - v.penalita + v.bonus), 0,
         origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
       if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
@@ -419,8 +430,8 @@ function matchOff(request, ctx) {
         requestId: suaRichiesta?.id || null,
         shiftOffertoId: suo.id,
         data: giorno,
-        adattato: trasformaTurno(suo, mioCedo),
-        adattatoControparte: trasformaTurno(mioCedo, suo),
+        adattato: trasformaTurno(suo, mioCedo, trova),
+        adattatoControparte: trasformaTurno(mioCedo, suo, trova),
         prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
         reasons: [...reasons, ...v.reasons],
         avvisi: v.avvisi,
@@ -436,7 +447,7 @@ function matchOff(request, ctx) {
  * candidati per un cambio OFF), l'orario deve soddisfare quello che chiedono,
  * e su un cambio OFF chi offre dev'essere libero il giorno da liberare.
  */
-export function turnoOfferibile(request, shift, shifts, shiftsById) {
+export function turnoOfferibile(request, shift, shifts, shiftsById, trova = null) {
   const mioCedo = shiftsById[request.cedo.shiftId];
   if (!shift || shift.tipo !== 'WORK' || !mioCedo) return { ok: false, motivo: 'Turno non valido.' };
   if (shift.userId === request.userId) return { ok: false, motivo: 'È un tuo turno.' };
@@ -463,7 +474,7 @@ export function turnoOfferibile(request, shift, shifts, shiftsById) {
   // Col turno grezzo il 15:00–20:00 di un Part Time non era mai l'11:00–20:00
   // che un Full Time cerca, anche se per lui diventa proprio quello: la lista
   // mostrava lo scambio al 65% e il tasto Proponi lo rifiutava.
-  const s = satisfies(request.cerco, turnoAdattato(shift, mioCedo));
+  const s = satisfies(request.cerco, turnoAdattato(shift, mioCedo, trova));
   if (s.score === 0) return { ok: false, motivo: `Non è quello che cerca: ${s.reasons[0]}.` };
   return { ok: true };
 }

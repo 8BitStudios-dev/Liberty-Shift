@@ -16,7 +16,7 @@ import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/stat
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
-  notaStima, notaPausa,
+  notaStima, notaPausa, personaDi,
 } from './components.js';
 import { icona } from './icone.js';
 import { primaLePrioritarie, richiestaValida, richiestaGestita } from './views.js';
@@ -552,7 +552,7 @@ function campiOrarioPreciso(giorno) {
     .sort((a, b) => a.start.localeCompare(b.start));
 
   const righe = turni.map((s) => {
-    const t = trasformaTurno(s, mioCedo);
+    const t = trasformaTurno(s, mioCedo, personaDi);
     const scelto = draft.cerco.start === t.start && draft.cerco.end === t.end;
     return html`
       <button class="riga-turno ${scelto ? 'scelto' : ''}" data-act="scegli-orario"
@@ -567,7 +567,7 @@ function campiOrarioPreciso(giorno) {
     ${raw(turni.length ? `
       <p class="testo-tenue">Gli altri turni di quel giorno. L'orario a destra è quello che faresti tu, con il tuo contratto.</p>
       <div class="lista-turni">${righe}</div>
-      ${turni.some((s) => trasformaTurno(s, mioCedo).trasformato) ? notaStima() : ''}` : '')}
+      ${turni.some((s) => trasformaTurno(s, mioCedo, personaDi).trasformato) ? notaStima() : ''}` : '')}
     <label class="switch">
       <input type="checkbox" data-act="orario-manuale" ${raw(draft.orarioManuale ? 'checked' : '')}>
       <span>Nessuno di questi, scrivo io l'orario</span>
@@ -798,7 +798,7 @@ export function formProposta(request, shiftSuggerito) {
       <span>Il turno che offri</span>
       <select class="select" data-campo="shift">
         ${opzioni.map((s) => {
-    const t = trasformaTurno(s, suoCedo);
+    const t = trasformaTurno(s, suoCedo, personaDi);
     const etichetta = t.trasformato
       ? `${formatDay(s.data)} · ${shiftLabel(s)} → farebbe ${t.start}–${t.end}`
       : `${formatDay(s.data)} · ${shiftLabel(s)}`;
@@ -806,7 +806,7 @@ export function formProposta(request, shiftSuggerito) {
   })}
       </select>
     </label>
-    ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo).trasformato)
+    ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo, personaDi).trasformato)
     ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe.</p>${notaStima()}`
     : '')}
     ${raw(notaPausa([suoCedo, ...opzioni]))}

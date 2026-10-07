@@ -58,6 +58,8 @@ function utenteDaRiga(r) {
     contratto: r.contratto,
     genere: r.genere || 'X',
     oreSettimanali: r.ore_settimanali,
+    // Serve anche a chi riceve un suo turno: la pausa di mezz'ora passa con lui.
+    pausaMezzora: Boolean(r.pausa_mezzora),
     admin: Boolean(r.admin),
     superAdmin: Boolean(r.super_admin),
     attivo: r.attivo !== false,
@@ -220,6 +222,7 @@ const OPERAZIONI = {
   'disponibilita.salva': (d) => salvaSuChiave('disponibilita', d),
   'notifiche.salva': async (d) => salvaSuChiave('notifiche_preferenze', await rigaCifrata(d), 'user_id'),
   'traguardi.salva': (d) => salvaSuChiave('traguardi_visti', d, 'user_id'),
+  'profilo.pausa': (d) => aggiorna('profili', { eq: { id: d.id } }, { pausa_mezzora: d.valore }),
 };
 
 /**
@@ -248,7 +251,7 @@ async function rigaCifrata(d) {
  * Si sostituisce tutto tranne la testa della coda: se è in corso proprio ora,
  * toglierla farebbe togliere (`shift`) l'operazione sbagliata quando finisce.
  */
-const SOSTITUISCE = new Set(['notifiche.salva', 'traguardi.salva']);
+const SOSTITUISCE = new Set(['notifiche.salva', 'traguardi.salva', 'profilo.pausa']);
 
 /**
  * `gruppo` lega operazioni che hanno senso solo insieme, come le tre di un

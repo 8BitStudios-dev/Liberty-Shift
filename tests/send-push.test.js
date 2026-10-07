@@ -175,6 +175,9 @@ test('la stima scatta solo se le due durate sono diverse', () => {
   // Un riposo non ha orari: niente da adattare.
   assert.equal(durataDiversa({ turno_start: null, turno_end: null }, { cedo_start: '10:00:00', cedo_end: '19:00:00' }), false);
   assert.equal(durataDiversa({ turno_start: '15:00:00', turno_end: '20:00:00' }, undefined), false);
-  // La pausa di mezz'ora non conta: 14:30–20:00 sono 5 ore lavorate come 15:00–20:00.
-  assert.equal(durataDiversa({ turno_start: '14:30:00', turno_end: '20:00:00' }, { cedo_start: '15:00:00', cedo_end: '20:00:00' }), false);
+  // La pausa di mezz'ora di chi l'ha nel contratto non conta: 14:30–20:00 sono
+  // 5 ore lavorate come 15:00–20:00. Senza la pausa nel contratto, sì.
+  const conPausa = { contratto: 'PT', pausaMezzora: true };
+  assert.equal(durataDiversa({ turno_start: '14:30:00', turno_end: '20:00:00' }, { cedo_start: '15:00:00', cedo_end: '20:00:00' }, conPausa, undefined), false);
+  assert.equal(durataDiversa({ turno_start: '14:30:00', turno_end: '20:00:00' }, { cedo_start: '15:00:00', cedo_end: '20:00:00' }), true);
 });

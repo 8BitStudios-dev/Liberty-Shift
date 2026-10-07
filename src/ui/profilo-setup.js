@@ -78,6 +78,7 @@ export function apriProfilo({ modifica = false } = {}) {
     genere: modifica ? me.genere || '' : '',
     contratto: modifica ? me.contratto : '',
     oreSettimanali: modifica ? me.oreSettimanali : null,
+    pausaMezzora: modifica ? Boolean(me.pausaMezzora) : false,
     preferenze: {},
     password: '',
     conferma: '',
@@ -393,7 +394,26 @@ function campoOre(b) {
           <button class="pill ${b.oreSettimanali === h ? 'attivo' : ''}"
                   data-act="profilo-ore" data-valore="${h}">${h} ore</button>`).join(''))}
       </div>
-    </div>`;
+    </div>
+    ${raw(campoPausa(b))}`;
+}
+
+/**
+ * La pausa di mezz'ora, solo per i Part Time: i Full Time hanno già l'ora di
+ * pausa dentro il turno da 9. Chi ce l'ha nel contratto ha turni di mezz'ora
+ * più lunghi in calendario (14:30–20:00 per 5 ore): senza saperlo l'app la
+ * contava come straordinario, e negli scambi accorciava il turno di troppo.
+ */
+function campoPausa(b) {
+  if (b.contratto !== 'PT') return '';
+  return html`
+    <label class="switch">
+      <input type="checkbox" data-act="profilo-pausa" ${raw(b.pausaMezzora ? 'checked' : '')}>
+      <span>
+        Nel contratto ho la pausa pranzo di mezz'ora
+        <em class="aiuto">I tuoi turni durano mezz'ora in più (per esempio 14:30–20:00 per 5 ore): quella mezz'ora non conta nelle ore della settimana.</em>
+      </span>
+    </label>`;
 }
 
 /**

@@ -96,13 +96,17 @@ type Proposta = {
 /**
  * Il turno offerto e quello ceduto hanno ore lavorate diverse? Allora uno dei
  * due si adatta, e l'orario mostrato è una stima. Si contano le ore lavorate,
- * non la durata in calendario: la pausa di mezz'ora resta al turno e passa a
- * chi lo riceve, quindi da sola non adatta niente (`oreRetribuite`, la stessa
- * regola dell'app). Senza orari (un riposo) non c'è niente da adattare.
+ * non la durata in calendario: la pausa di mezz'ora (di un Part Time che l'ha
+ * nel contratto) resta al turno e passa a chi lo riceve, quindi da sola non
+ * adatta niente (`oreRetribuite`, la stessa regola dell'app). Senza orari
+ * (un riposo) non c'è niente da adattare.
  */
+type Persona = { contratto?: string; pausaMezzora?: boolean } | undefined;
 function durataDiversa(
   proposta: { turno_start?: string | null; turno_end?: string | null },
   richiesta?: { cedo_start?: string | null; cedo_end?: string | null },
+  chiOffre?: Persona,
+  chiCede?: Persona,
 ): boolean {
   const turno = (start?: string | null, end?: string | null) => (start && end
     ? { tipo: 'WORK', start: start.slice(0, 5), end: end.slice(0, 5) }
@@ -110,7 +114,7 @@ function durataDiversa(
   const offerto = turno(proposta.turno_start, proposta.turno_end);
   const ceduto = turno(richiesta?.cedo_start, richiesta?.cedo_end);
   if (!offerto || !ceduto) return false;
-  return Math.abs(oreRetribuite(offerto) - oreRetribuite(ceduto)) > 0.01;
+  return Math.abs(oreRetribuite(offerto, chiOffre) - oreRetribuite(ceduto, chiCede)) > 0.01;
 }
 
 /**
@@ -316,7 +320,7 @@ async function avvisaCompatibili(riga: RigaRichiesta) {
   const ids = [riga.autore_id, ...scelte.map((s: { user_id: string }) => s.user_id)];
   const elenco = ids.join(',');
   const profili = await leggi(
-    `profili?id=in.(${elenco})&select=id,nome,cognome_iniziale,contratto,ore_settimanali,genere,attivo`,
+    `profili?id=in.(${elenco})&select=id,nome,cognome_iniziale,contratto,ore_settimanali,genere,attivo,pausa_mezzora`,
   );
   const autore = profili.find((p: { id: string }) => p.id === riga.autore_id);
   if (!autore) return { notificati: [], motivo: 'autore non trovato' };
@@ -383,7 +387,7 @@ Deno.serve(async (req) => {
   if (!record?.da_user_id || !record?.a_user_id) return json({ inviate: 0, motivo: 'riga incompleta' });
 
   const profili = await leggi(
-    `profili?id=in.(${record.da_user_id},${record.a_user_id})&select=id,nome,cognome_iniziale,attivo`,
+    `profili?id=in.(${record.da_user_id},${record.a_user_id})&select=id,nome,cognome_iniziale,attivo,contratto,pausa_mezzora`,
   );
   const nomi: Record<string, string> = Object.fromEntries(
     [record.da_user_id, record.a_user_id].map((id) => [id, nomeBreve(profili.find((p: { id: string }) => p.id === id))]),
@@ -397,9 +401,15 @@ Deno.serve(async (req) => {
   // ore diverse) si adattano: l'orario che l'app ha mostrato è una stima, e
   // chi riceve "accettata" deve saperlo prima di inserirlo in UKG. È la
   // stessa condizione di `trasformaTurno` in core/model.js.
-  const stima = type === 'UPDATE' && record.stato === 'ACCORDO' && record.richiesta_id
-    ? durataDiversa(record, (await leggi(`richieste?id=eq.${record.richiesta_id}&select=cedo_start,cedo_end`))[0])
-    : false;
+  const persona = (id?: string) => {
+    const p = profili.find((x: { id: string }) => x.id === id);
+    return p ? { contratto: p.contratto, pausaMezzora: Boolean(p.pausa_mezzora) } : undefined;
+  };
+  let stima = false;
+  if (type === 'UPDATE' && record.stato === 'ACCORDO' && record.richiesta_id) {
+    const richiesta = (await leggi(`richieste?id=eq.${record.richiesta_id}&select=cedo_start,cedo_end,autore_id`))[0];
+    stima = durataDiversa(record, richiesta, persona(record.da_user_id), persona(richiesta?.autore_id));
+  }
 
   const m = messaggio(type, record, old_record, autore || null, nomi, { destinatario, giorno, altraScelta, stima });
   if (!m) return json({ inviate: 0, motivo: 'niente da notificare' });
