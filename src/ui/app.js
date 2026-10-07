@@ -218,11 +218,10 @@ function render({ fermo = false } = {}) {
 /**
  * Com'è andato un import, detto in una riga.
  *
- * I giorni saltati vanno nominati: sono turni già offerti ai colleghi, e
- * lasciarli fuori in silenzio farebbe credere che il calendario sia
- * aggiornato quando su quei giorni non lo è.
+ * Le richieste e le proposte chiuse perché il calendario le ha smentite
+ * vanno nominate: sparirebbero dalla bacheca senza un perché.
  */
-function riassuntoImport({ aggiunti = 0, cambiati = [], bloccati = [] }) {
+function riassuntoImport({ aggiunti = 0, cambiati = [], richiesteChiuse = [], proposteRitirate = [] }) {
   // Si dice cosa è cambiato, non quante righe sono state lette: chi tocca
   // "Aggiorna calendario" vuole sapere se il suo turno di domani è diverso.
   const giorni = (lista) => lista.map((d) => formatDay(d).toLowerCase()).join(', ');
@@ -232,14 +231,19 @@ function riassuntoImport({ aggiunti = 0, cambiati = [], bloccati = [] }) {
   else if (cambiati.length > 3) parti.push(`Cambiati ${cambiati.length} turni`);
   if (aggiunti === 1) parti.push('aggiunto un turno nuovo');
   else if (aggiunti > 1) parti.push(`aggiunti ${aggiunti} turni nuovi`);
-  const fermi = bloccati.map((d) => formatDay(d)).join(', ');
-  const nota = bloccati.length === 1
-    ? `${fermi} è cambiato nel calendario, ma è in una tua richiesta aperta: l'ho lasciato com'era`
-    : `${fermi} sono cambiati nel calendario, ma sono in tue richieste aperte: li ho lasciati com'erano`;
-  if (!parti.length) return bloccati.length ? nota : 'Calendario già aggiornato, nessun turno cambiato';
+  // Il calendario vince: quello che ci era appoggiato sopra si chiude, e va
+  // detto, altrimenti la richiesta sparisce dalla bacheca senza un perché.
+  const note = [];
+  if (richiesteChiuse.length) {
+    note.push(`${richiesteChiuse.length === 1 ? 'Ho chiuso la tua richiesta' : 'Ho chiuso le tue richieste'} su ${giorni(richiesteChiuse)}: il turno non è più quello di prima, rifalla se ti serve ancora`);
+  }
+  if (proposteRitirate.length) {
+    note.push(`${proposteRitirate.length === 1 ? 'Ho ritirato la tua proposta' : 'Ho ritirato le tue proposte'} su ${giorni(proposteRitirate)}: il turno che offrivi è cambiato`);
+  }
+  if (!parti.length) return note.length ? note.join('. ') : 'Calendario già aggiornato, nessun turno cambiato';
   const testo = parti.join(' e ');
   const frase = testo.charAt(0).toUpperCase() + testo.slice(1);
-  return bloccati.length ? `${frase}. ${nota}` : frase;
+  return [frase, ...note].join('. ');
 }
 
 /**
@@ -1512,8 +1516,10 @@ async function aggiornamentoSilenzioso() {
   const esito = await store.aggiornaCalendario();
   if (esito.saltato || esito.errore) return;
   render({ fermo: true });
-  // Silenzioso sì, ma uno scambio chiuso da solo si dice.
-  annunciaScambiChiusi(esito);
+  // Silenzioso sì, ma uno scambio chiuso da solo si dice, e così una tua
+  // richiesta chiusa perché il calendario ha cambiato quel turno.
+  if (annunciaScambiChiusi(esito)) return;
+  if (esito.richiesteChiuse?.length || esito.proposteRitirate?.length) toast(riassuntoImport(esito));
 }
 
 /**

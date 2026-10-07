@@ -21,9 +21,9 @@ const { STATUS } = await import('../src/core/rules.js');
 
 const evento = (righe) => `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${righe}\r\nEND:VCALENDAR`;
 
-// --- il calendario che riscriveva un turno già offerto -----------------
+// --- il calendario del link vince sempre -----------------------------
 
-test('un turno legato a una richiesta aperta non viene riscritto dall\'import', () => {
+test('il calendario vince anche su un turno offerto in una richiesta aperta', () => {
   store.reset(seed());
   const me = store.state.currentUserId;
   const mio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK');
@@ -40,14 +40,29 @@ test('un turno legato a una richiesta aperta non viene riscritto dall\'import', 
     cerco: { giorni: [] },
   });
 
-  const orarioDiPrima = mio.start;
   const esito = store.importaTurni([
     { data: mio.data, tipo: 'WORK', start: '06:30', end: '12:00' },
   ]);
 
-  assert.equal(store.shift(mio.id).start, orarioDiPrima, 'il turno offerto è stato riscritto');
-  assert.deepEqual(esito.bloccati, [mio.data]);
-  assert.equal(esito.aggiornati, 0);
+  // Il calendario del link vince sempre: il turno si aggiorna, e la
+  // richiesta che offriva quello vecchio si chiude invece di mentire.
+  assert.equal(store.shift(mio.id).start, '06:30');
+  assert.equal(store.request('rq-prova').status, STATUS.CHIUSA);
+  assert.deepEqual(esito.richiesteChiuse, [mio.data]);
+  assert.equal(esito.aggiornati, 1);
+});
+
+test('lo stesso turno riletto identico non chiude niente', () => {
+  store.reset(seed());
+  const me = store.state.currentUserId;
+  const mio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK' && s.data > new Date().toISOString().slice(0, 10));
+  store.state.requests.push({
+    id: 'rq-ferma', userId: me, createdAt: new Date().toISOString(), status: STATUS.APERTA,
+    prioritaFinoA: null, tipo: 'ORARIO', cedo: { shiftId: mio.id, flessibile: false }, cerco: { giorni: [] },
+  });
+  const esito = store.importaTurni([{ data: mio.data, tipo: mio.tipo, start: mio.start, end: mio.end }]);
+  assert.equal(store.request('rq-ferma').status, STATUS.APERTA);
+  assert.deepEqual(esito.richiesteChiuse, []);
 });
 
 test('un giorno libero si aggiorna comunque, se nessuno lo sta offrendo', () => {
@@ -59,7 +74,7 @@ test('un giorno libero si aggiorna comunque, se nessuno lo sta offrendo', () => 
   ]);
   assert.equal(store.shift(mio.id).start, '06:30');
   assert.equal(esito.aggiornati, 1);
-  assert.deepEqual(esito.bloccati, []);
+  assert.deepEqual(esito.richiesteChiuse, []);
 });
 
 // --- le ferie lunghe che diventavano un giorno solo --------------------

@@ -344,29 +344,24 @@ export const store = {
    * Importa i turni letti da un calendario. Sostituisce quelli già presenti
    * nelle stesse date e lascia stare tutto il resto: un import non deve mai
    * cancellare giorni che il calendario non nomina.
+   *
+   * Fra il calendario del link e quello dell'app vince sempre il link: è
+   * quello che dice UKG. Prima un giorno dentro una richiesta aperta restava
+   * com'era, per non cambiare l'orario sotto gli occhi dei colleghi: così
+   * però la bacheca offriva un turno che non esisteva più. Ora il turno si
+   * aggiorna, e quello che ci era appoggiato sopra si chiude: la richiesta
+   * aperta su quel giorno (una richiesta pubblicata non si modifica, si
+   * rifà) e la proposta ancora in attesa che offriva quel giorno. Uno scambio
+   * già concordato no: lì il cambiamento è proprio la conferma di UKG.
    */
   importaTurni(turni, { userId = this.state.currentUserId } = {}) {
     let aggiunti = 0;
-    // I turni già messi sul piatto in una richiesta aperta non si toccano.
-    // Il calendario si riscarica da solo ogni sei ore, e senza questo freno
-    // l'orario di un turno offerto ai colleghi cambierebbe sotto il loro naso
-    // dopo che l'hanno letto. Il giorno si salta e lo si dice.
-    const impegnati = new Set(
-      this.state.requests.filter(isOpen).map((r) => r.cedo.shiftId),
-    );
-    const bloccati = [];
     // I miei giorni che il calendario ha davvero cambiato: servono a capire se
-    // UKG ha approvato uno scambio (vedi chiudiScambiApprovati).
+    // UKG ha approvato uno scambio (vedi chiudiScambiApprovati) e cosa non sta
+    // più in piedi.
     const cambiati = new Set();
     for (const t of turni) {
       const esistente = this.state.shifts.find((s) => s.userId === userId && s.data === t.data);
-      if (esistente && impegnati.has(esistente.id)) {
-        // Uguale a com'era: non c'è niente da riscrivere e niente da dire.
-        const identico = esistente.tipo === t.tipo && esistente.start === t.start
-          && esistente.end === t.end;
-        if (!identico) bloccati.push(t.data);
-        continue;
-      }
       if (esistente) {
         if (esistente.tipo !== t.tipo || esistente.start !== t.start || esistente.end !== t.end) {
           cambiati.add(t.data);
@@ -380,12 +375,44 @@ export const store = {
       }
     }
     const scambiChiusi = userId === this.state.currentUserId ? this.chiudiScambiApprovati(cambiati) : [];
+    const superate = userId === this.state.currentUserId ? this.chiudiSuperate(cambiati) : { richieste: [], proposte: [] };
     this.commit();
     // "Aggiornati" sono solo i turni cambiati davvero: contare anche quelli
     // riscritti identici diceva "55 aggiornati" a chi non aveva nessun cambio.
     return {
-      aggiunti, aggiornati: cambiati.size, cambiati: [...cambiati].sort(), bloccati, scambiChiusi,
+      aggiunti,
+      aggiornati: cambiati.size,
+      cambiati: [...cambiati].sort(),
+      richiesteChiuse: superate.richieste,
+      proposteRitirate: superate.proposte,
+      scambiChiusi,
     };
+  },
+
+  /**
+   * Quello che il calendario ha appena smentito: le mie richieste aperte e le
+   * mie proposte in attesa su un giorno che è cambiato. Restituisce i giorni,
+   * per dirlo a chi ha aggiornato.
+   */
+  chiudiSuperate(cambiati) {
+    const richieste = [];
+    const proposte = [];
+    if (!cambiati.size) return { richieste, proposte };
+    const me = this.state.currentUserId;
+    for (const r of this.state.requests.filter((x) => x.userId === me && isOpen(x))) {
+      const giorno = this.shift(r.cedo.shiftId)?.data;
+      if (giorno && cambiati.has(giorno)) {
+        this.cancellaRichiesta(r.id);
+        richieste.push(giorno);
+      }
+    }
+    const inAttesa = this.state.proposals.filter((p) => p.daUserId === me
+      && p.status !== 'ACCORDO' && p.status !== 'RIFIUTATA');
+    for (const p of inAttesa) {
+      const giorno = this.shift(p.shiftOffertoId)?.data;
+      if (giorno && cambiati.has(giorno) && !this.ritiraProposta(p.id)) proposte.push(giorno);
+    }
+    return { richieste: [...new Set(richieste)].sort(), proposte: [...new Set(proposte)].sort() };
   },
 
   /**
