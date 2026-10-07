@@ -149,7 +149,11 @@ per l'accordo. Dopo l'accordo il riquadro dello scambio va per passi
    giorni devono cambiare nel tuo calendario e offre "Controlla il calendario
    adesso". Senza calendario collegato lo dice, invece di promettere un
    controllo che non può fare.
-3. **Cambio confermato**: il tuo calendario mostra lo scambio.
+3. **Cambio confermato**: il tuo calendario mostra lo scambio. Il telefono
+   che se ne accorge per primo scrive sul server solo l'ora della conferma
+   (`confermata_il`, nessun turno), e all'altra parte arriva la notifica
+   "Scambio approvato da UKG", con l'invito a ringraziare, anche ad app
+   chiusa. Parte una volta sola (trigger `notifica_conferma`).
 
 Il controllo guarda solo il calendario di chi ha il telefono in mano: i turni
 degli altri non escono dal loro telefono, e l'altra persona fa lo stesso

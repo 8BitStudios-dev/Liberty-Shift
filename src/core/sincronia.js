@@ -100,6 +100,7 @@ function propostaDaRiga(state, p) {
     motivoRifiuto: p.motivo_rifiuto || '',
     annullataIl: p.annullata_il || null,
     cambioInserito: Boolean(p.cambio_inserito),
+    confermataIl: p.confermata_il || null,
     createdAt: p.creata_il,
     turnoOfferto: { data: p.turno_data, start: ora(p.turno_start), end: ora(p.turno_end) },
   };

@@ -141,3 +141,19 @@ test('agli admin arriva chi ha dimenticato la password, per nome', () => {
   assert.match(uno.body, /dal tuo Profilo/);
   assert.match(messaggioPassword(['Marco C.', 'Marco R.']).body, /Marco C\. e Marco R\. hanno chiesto/);
 });
+
+test('UKG ha approvato: lo sa l\'altra parte, una volta sola', () => {
+  const prima = proposta({ stato: 'ACCORDO', cambio_inserito: true, confermata_il: null });
+  const dopo = proposta({ stato: 'ACCORDO', cambio_inserito: true, confermata_il: '2026-10-07T15:00:00Z' });
+  // Il telefono di Martina ha visto il cambio: la notifica va a Omar.
+  const m = messaggio('UPDATE', dopo, prima, MARTINA, nomi);
+  assert.equal(m.a, OMAR);
+  assert.equal(m.title, 'Scambio approvato da UKG');
+  assert.match(m.body, /ringrazia Martina L\./);
+  // Al contrario, va a Martina.
+  assert.equal(messaggio('UPDATE', dopo, prima, OMAR, nomi).a, MARTINA);
+  // Già confermata: niente di nuovo da dire.
+  assert.equal(messaggio('UPDATE', dopo, dopo, OMAR, nomi), null);
+  // Chi non fa parte dello scambio non può far partire niente.
+  assert.equal(messaggio('UPDATE', dopo, prima, 'estraneo', nomi), null);
+});

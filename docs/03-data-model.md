@@ -95,6 +95,7 @@ lista, che è il genere di cosa che poi si paga.
 | `accettataDa` | `userId[]` | l'accordo scatta a 2 |
 | `status` | `IN_ATTESA \| ACCORDO \| RIFIUTATA` | |
 | `cambioInserito` | bool | premuto "Cambio inserito" |
+| `confermataIl` | timestamp \| null | quando un telefono delle due parti ha visto lo scambio nel suo calendario dei turni (`confermata_il` sul server): avvisa l'altra parte |
 
 Niente chat: un messaggio per proposta, punto.
 

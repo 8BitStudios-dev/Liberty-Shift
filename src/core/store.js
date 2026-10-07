@@ -472,6 +472,13 @@ export const store = {
       const toccati = [...new Set(giorni)].filter((g) => cambiati.has(g));
       if (!toccati.length) continue;
       this.state.scambiConfermati.push(p.id);
+      // Sul server va solo l'ora della conferma, nessun turno: all'altra parte
+      // arriva la notifica "UKG ha approvato", anche ad app chiusa. Se l'ha
+      // già vista il suo telefono, la conferma c'è e non si riscrive.
+      if (!p.confermataIl) {
+        p.confermataIl = new Date().toISOString();
+        this.rispecchiaProposta(p, { confermata_il: p.confermataIl });
+      }
       const giaChiuso = p.cambioInserito;
       if (!giaChiuso) this.cambioInserito(p.id);
       for (const g of toccati) {

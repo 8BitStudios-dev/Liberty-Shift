@@ -584,3 +584,31 @@ test('lo scambio concordato si chiude quando il giorno ceduto sparisce dal calen
   assert.ok(store.state.scambiConfermati.includes('pr-martina'), 'UKG l\'ha approvato');
   assert.equal(esito.scambiChiusi.length, 1);
 });
+
+test('la conferma del calendario parte per il server una volta, senza turni', () => {
+  store.reset();
+  const me = store.state.currentUserId;
+  store.state.profilo = { ...store.state.profilo, idServer: 'io-srv' };
+  store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-22', tipo: 'WORK', start: '08:00', end: '13:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ]);
+  const mio22 = store.state.shifts.find((s) => s.userId === me && s.data === '2030-10-22');
+  store.state.requests.push({
+    id: 'rq-x', daServer: true, userId: 'marco', createdAt: new Date().toISOString(), status: STATUS.ACCORDO, tipo: 'OFF',
+    cedo: { shiftId: mio22.id, flessibile: false }, cerco: { giorni: ['2030-10-22'] },
+  });
+  store.state.proposals.push({
+    id: 'pr-x', daServer: true, requestId: 'rq-x', daUserId: me, aUserId: 'marco', shiftOffertoId: mio22.id,
+    accettataDa: [me, 'marco'], status: 'ACCORDO', cambioInserito: true, createdAt: new Date().toISOString(),
+  });
+  store.state.coda = [];
+  store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ]);
+  const conferme = store.state.coda.filter((op) => op.tipo === 'proposta.aggiorna' && op.dati.patch.confermata_il);
+  assert.equal(conferme.length, 1);
+  assert.deepEqual(Object.keys(conferme[0].dati.patch), ['confermata_il'], 'solo l\'ora, nessun turno');
+});

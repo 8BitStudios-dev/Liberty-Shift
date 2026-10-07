@@ -115,6 +115,19 @@ function messaggio(
   // lo sa chi la stava per valutare, così non la cerca più. Solo se a
   // cancellarla è stato proprio chi l'aveva fatta: le cancellazioni a cascata
   // della pulizia o di una richiesta tolta non sono un ritiro.
+  // Il telefono di uno dei due ha visto nel suo calendario dei turni che UKG
+  // ha approvato lo scambio. All'altro lo si dice anche ad app chiusa: se si
+  // era dimenticato di segnarlo, lo scopre adesso, e può ringraziare.
+  // Arriva una volta sola: la conferma passa da vuota a piena una volta.
+  if (type === 'UPDATE' && record.confermata_il && !old?.confermata_il) {
+    if (autore !== record.da_user_id && autore !== record.a_user_id) return null;
+    const altro = autore === record.da_user_id ? record.a_user_id : record.da_user_id;
+    return {
+      a: altro,
+      title: 'Scambio approvato da UKG',
+      body: `UKG ha approvato il vostro scambio del ${giorno}. Se ti va, ringrazia ${nomi[autore]} dall'app.`,
+    };
+  }
   if (type === 'DELETE') {
     if (autore !== record.da_user_id) return null;
     return {

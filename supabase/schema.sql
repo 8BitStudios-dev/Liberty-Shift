@@ -139,6 +139,11 @@ create table if not exists public.proposte (
 -- database già in piedi la porta questo alter table, non il create qui sopra.
 alter table public.proposte add column if not exists promemoria_il timestamptz;
 
+-- `confermata_il`: quando il telefono di una delle due parti ha visto nel suo
+-- calendario dei turni che UKG ha approvato lo scambio. Non porta nessun
+-- turno, solo l'ora: serve ad avvisare l'altra parte (`notifica_proposta`).
+alter table public.proposte add column if not exists confermata_il timestamptz;
+
 -- `annullata_il`: uno scambio concordato che una delle due parti ha annullato
 -- prima che UKG lo approvasse (succede che UKG lo blocchi). Lo stato diventa
 -- `RIFIUTATA` come per ogni proposta chiusa, e questa colonna dice a
@@ -619,10 +624,14 @@ language plpgsql security definer set search_path = '' as $$
 declare
   segreto text;
 begin
-  if tg_op = 'UPDATE' and (
-    new.stato is not distinct from old.stato
-    or new.stato not in ('ACCORDO', 'RIFIUTATA')
-  ) then
+  -- La conferma di UKG vista da un telefono avvisa l'altra parte: passa anche
+  -- se lo stato non cambia, una volta sola (da vuota a piena).
+  if tg_op = 'UPDATE'
+    and not (old.confermata_il is null and new.confermata_il is not null)
+    and (
+      new.stato is not distinct from old.stato
+      or new.stato not in ('ACCORDO', 'RIFIUTATA')
+    ) then
     return new;
   end if;
   -- Un ritiro è solo una proposta ancora in attesa cancellata da chi l'ha
@@ -673,6 +682,14 @@ drop trigger if exists notifica_proposta on public.proposte;
 create trigger notifica_proposta
   after insert or update of stato or delete on public.proposte
   for each row execute function public.notifica_proposta();
+
+-- La conferma di UKG ha un trigger suo, solo sul passaggio da vuota a piena:
+-- così parte una volta, e aggiungerlo non tocca quello qui sopra.
+create or replace trigger notifica_conferma
+  after update of confermata_il on public.proposte
+  for each row
+  when (old.confermata_il is null and new.confermata_il is not null)
+  execute function public.notifica_proposta();
 
 -- ================================================== un turno, un accordo
 --
