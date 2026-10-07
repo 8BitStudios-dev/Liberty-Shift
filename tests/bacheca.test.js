@@ -29,3 +29,37 @@ test('la richiesta appena pubblicata sta in cima, sotto le prioritarie', () => {
   ]);
   assert.deepEqual(lista.map((r) => r.id), ['prioritaria', 'nuova', 'media', 'vecchia']);
 });
+
+test('fra contratti diversi l\'orario adattato dice che è una stima', async () => {
+  const { store } = await import('../src/core/store.js');
+  const { cardOpportunita, TESTO_STIMA } = await import('../src/ui/components.js');
+  const { findMatches } = await import('../src/core/engine.js');
+  store.reset();
+  const io = store.state.currentUserId;
+  Object.assign(store.me, { nome: 'Alessandro', cognomeIniziale: 'B', contratto: 'PT', oreSettimanali: 25 });
+  store.state.users.push({ id: 'lorenzo', nome: 'Lorenzo', cognomeIniziale: 'B', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} });
+  store.state.shifts.push(
+    { id: 'sh-l', userId: 'lorenzo', data: '2030-10-12', tipo: 'WORK', start: '10:00', end: '19:00' },
+    { id: 'sh-a', userId: io, data: '2030-10-12', tipo: 'WORK', start: '15:00', end: '20:00' },
+  );
+  const richiesta = {
+    id: 'rq', userId: 'lorenzo', status: 'APERTA', tipo: 'ORARIO', createdAt: '2030-10-01T10:00:00Z',
+    cedo: { shiftId: 'sh-l', flessibile: false },
+    cerco: { giorni: ['2030-10-12'], mode: 'SPECIFIC', start: '11:00', end: '20:00' },
+  };
+  store.state.requests.push(richiesta);
+  const match = findMatches(richiesta, { ...store.state, currentUserId: io }).find((m) => m.userId === io);
+  assert.ok(match, 'Alessandro compare');
+  assert.ok(cardOpportunita({ richiesta, match }).includes(TESTO_STIMA));
+
+  // Stesse ore, niente da stimare: l'avviso non c'è.
+  store.state.shifts.find((s) => s.id === 'sh-a').start = '11:00';
+  store.state.shifts.find((s) => s.id === 'sh-l').end = '16:00';
+  richiesta.cerco = { ...richiesta.cerco, start: '11:00', end: '16:00' };
+  store.state.shifts.find((s) => s.id === 'sh-l').start = '10:00';
+  store.state.shifts.find((s) => s.id === 'sh-l').end = '15:00';
+  store.state.shifts.find((s) => s.id === 'sh-a').end = '16:00';
+  const pari = findMatches(richiesta, { ...store.state, currentUserId: io }).find((m) => m.userId === io);
+  assert.ok(pari, 'stesse ore, compare lo stesso');
+  assert.equal(cardOpportunita({ richiesta, match: pari }).includes(TESTO_STIMA), false);
+});

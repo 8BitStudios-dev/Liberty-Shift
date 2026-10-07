@@ -16,6 +16,7 @@ import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/stat
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
+  notaStima,
 } from './components.js';
 import { icona } from './icone.js';
 import { primaLePrioritarie, richiestaValida, richiestaGestita } from './views.js';
@@ -565,7 +566,8 @@ function campiOrarioPreciso(giorno) {
   return html`
     ${raw(turni.length ? `
       <p class="testo-tenue">Gli altri turni di quel giorno. L'orario a destra è quello che faresti tu, con il tuo contratto.</p>
-      <div class="lista-turni">${righe}</div>` : '')}
+      <div class="lista-turni">${righe}</div>
+      ${turni.some((s) => trasformaTurno(s, mioCedo).trasformato) ? notaStima() : ''}` : '')}
     <label class="switch">
       <input type="checkbox" data-act="orario-manuale" ${raw(draft.orarioManuale ? 'checked' : '')}>
       <span>Nessuno di questi, scrivo io l'orario</span>
@@ -805,7 +807,7 @@ export function formProposta(request, shiftSuggerito) {
       </select>
     </label>
     ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo).trasformato)
-    ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe davvero.</p>`
+    ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe.</p>${notaStima()}`
     : '')}
     <label class="campo">
       <span>Messaggio (facoltativo)</span>

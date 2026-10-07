@@ -119,7 +119,7 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } =
         <span class="etichetta">${freccia('prendo')} prendi</span>
         <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
         <span class="orario">${perMe.trasformato ? `${perMe.start}–${perMe.end}` : shiftLabel(cedo)}</span>
-        ${raw(perMe.trasformato ? html`<div class="nota">${shiftLabel(cedo)} adattato al tuo contratto</div>` : '')}`,
+        ${raw(perMe.trasformato ? html`<div class="nota">${shiftLabel(cedo)} adattato al tuo contratto: ${TESTO_STIMA.charAt(0).toLowerCase() + TESTO_STIMA.slice(1)}</div>` : '')}`,
     );
   }
 
@@ -286,6 +286,17 @@ function riassuntoMatch(match, u, turno, opzioni) {
     </div>`;
 }
 
+/**
+ * Quando un turno si adatta a un contratto diverso (un Full Time e un Part
+ * Time, o due Part Time con ore diverse), l'orario che l'app mostra è un
+ * calcolo suo: tiene l'inizio o la fine e taglia il resto. Quello vero lo
+ * decide UKG quando approva il cambio, e può non coincidere. Va detto lì
+ * dove l'orario compare, non in una pagina di aiuto.
+ */
+export const TESTO_STIMA = 'Orario stimato: quello definitivo lo decide UKG.';
+export const notaStima = () => `<p class="nota-stima">${TESTO_STIMA}</p>`;
+const adattamento = (match) => Boolean(match?.adattato?.trasformato || match?.adattatoControparte?.trasformato);
+
 export function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);
   const turno = store.shift(match.shiftOffertoId);
@@ -305,6 +316,7 @@ export function cardMatch(match, opzioni = {}) {
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
       ${raw(riassuntoMatch(match, u, turno, opzioni))}
+      ${raw(adattamento(match) ? notaStima() : '')}
       ${raw(opzioni.compatta ? html`
         <details class="perche-aperto">
           <summary>Perché${match.avvisi.length ? ' · un avviso' : ''}</summary>
@@ -462,6 +474,7 @@ export function cardOpportunita({ richiesta, match }) {
       <div class="scambio-secco">
         <div><span>${u?.nome} farebbe</span><strong>${formatDay(mioTurno?.data)} · ${perLei}</strong></div>
       </div>
+      ${raw(adattamento(match) ? notaStima() : '')}
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
       ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
