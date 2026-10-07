@@ -81,7 +81,7 @@ const richiestaOff = (giorni, cerco = {}) => ({
 test('un cambio OFF a cavallo di due settimane Apple viene rifiutato', () => {
   const s = shift('2026-09-18', '11:00', '20:00'); // venerdì
   const errori = validateRequest(richiestaOff(['2026-09-19']), { x: s });
-  assert.ok(errori.some((e) => e.includes('Settimane Apple diverse')));
+  assert.ok(errori.some((e) => e.includes('stessa settimana')));
 });
 
 test('un cambio orario nello stesso giorno è la cosa normale, non un errore', () => {
@@ -105,7 +105,7 @@ test('un cambio orario non può spostarsi su un altro giorno', () => {
 test('in un cambio orario "qualsiasi turno" non vuol dire niente', () => {
   const s = shift('2026-09-18', '16:00', '21:00');
   const errori = validateRequest(richiestaOrario('2026-09-18', { mode: WANT_MODE.ANY }), { x: s });
-  assert.ok(errori.some((e) => e.includes('qualsiasi turno')));
+  assert.ok(errori.some((e) => e.includes('che orario cerchi')));
 });
 
 test('nel cambio OFF si possono offrire solo i giorni in cui si è liberi', () => {
@@ -549,7 +549,7 @@ test('la stessa richiesta OFF cambia ruolo a seconda del giorno che si guarda', 
   assert.equal(mercoledi.ruolo, 'OFFRE');
   // Guardando il 14 non si legge il 16, e viceversa: ogni giorno parla di sé.
   assert.equal(lunedi.sintesi, mercoledi.sintesi);
-  assert.match(lunedi.sintesi, /offre di lavorare questo giorno/);
+  assert.match(lunedi.sintesi, /lavorerebbe questo giorno/);
   assert.doesNotMatch(lunedi.sintesi, /1[46]/);
 });
 

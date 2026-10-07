@@ -19,7 +19,7 @@ export const GUIDE = {
       <p>Da qui parti, in tre modi.</p>
 
       <h3>Cambio rapido</h3>
-      <p>Scegli un tuo turno, vedi chi può prenderlo. Nessuna domanda.</p>
+      <p>Scegli un tuo turno e vedi subito chi può prenderlo.</p>
 
       <h3>Aiuta un collega</h3>
       <p>Il contrario: chi ha bisogno di un turno che tu hai.</p>
@@ -63,7 +63,7 @@ export const GUIDE = {
 
       <p>
         Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Se non
-        compare nessuno, nessuno di compatibile c'è ancora: pubblica la
+        compare nessuno, per ora non c'è un collega adatto: pubblica la
         richiesta con <strong>Crea la richiesta</strong> e resta in bacheca.
       </p>`,
   },
@@ -71,12 +71,12 @@ export const GUIDE = {
   aiuta: {
     titolo: 'Aiuta un collega',
     corpo: () => html`
-      <p>Le richieste che i tuoi turni possono risolvere. Solo quelle.</p>
+      <p>Le richieste che puoi coprire con i tuoi turni. Solo quelle.</p>
 
       <p>
         Per ognuna vedi <strong>cosa faresti tu</strong> e cosa farebbe l'altra
         persona, già con gli orari giusti. La percentuale dice quanto lo scambio
-        combacia per tutti e due.
+        va bene a tutti e due.
       </p>
 
       <p class="esempio">
@@ -85,8 +85,8 @@ export const GUIDE = {
       </p>
 
       <p class="testo-tenue">
-        Se è vuota non è un errore: vuol dire che oggi nessuna richiesta torna
-        con i turni che hai. Aggiorna i turni dal Profilo e ricontrolla.
+        Se è vuota non è un errore: vuol dire che oggi nessuna richiesta è
+        compatibile con i tuoi turni. Aggiorna i turni dal Profilo e ricontrolla.
       </p>`,
   },
 
@@ -141,7 +141,7 @@ export const GUIDE = {
           verde: qualcuno offre un turno o una giornata;</li>
         <li>bordo oro: c'è una priorità;</li>
         <li>il numero nel cerchio grigio: quante richieste toccano quel giorno, fra chi cerca e chi offre;</li>
-        <li>la percentuale: c'è una richiesta che puoi risolvere, e quanto combacia.</li>
+        <li>la percentuale: c'è una richiesta che puoi coprire, e quanto va bene a tutti e due.</li>
       </ul>
 
       <h3>Aprendo un giorno</h3>
@@ -185,11 +185,10 @@ export const GUIDE = {
         sta cambiando, e l'icona nell'angolo dice a che punto: clessidra se cerchi
         ancora qualcuno o aspetti una risposta, spunta se è concordato e manca
         solo la conferma in UKG. Quando il calendario dei turni mostra il cambio
-        fatto, lo scambio si chiude da solo e il giallo sparisce. La linea verde
-        in basso è un giorno in cui ti sei detto disponibile a scambiare.
+        fatto, lo scambio si chiude da solo e il giallo sparisce.
       </p>
       <p class="testo-tenue">
-        Tocca un giorno per correggere il turno, darti disponibile o vedere le
+        Tocca un giorno per correggere il turno, segnarti disponibile o vedere le
         tue richieste. Le richieste dei colleghi sono nel Calendario.
       </p>
 

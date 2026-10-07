@@ -138,6 +138,6 @@ test('agli admin arriva chi ha dimenticato la password, per nome', () => {
   const uno = messaggioPassword(['Marco C.']);
   assert.equal(uno.title, 'Password dimenticata');
   assert.match(uno.body, /^Marco C\. ha chiesto una nuova password/);
-  assert.match(uno.body, /di persona/);
+  assert.match(uno.body, /dal tuo Profilo/);
   assert.match(messaggioPassword(['Marco C.', 'Marco R.']).body, /Marco C\. e Marco R\. hanno chiesto/);
 });

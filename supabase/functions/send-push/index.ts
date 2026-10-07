@@ -108,7 +108,7 @@ function messaggio(
     return {
       a: io,
       title: 'Hai inserito il cambio?',
-      body: `Scambio con ${nomi[altro]} ${quando(extra.giorno)} (${formatData(extra.giorno)}): l'hai già inserito nell'app ufficiale?`,
+      body: `Scambio con ${nomi[altro]} ${quando(extra.giorno)} (${formatData(extra.giorno)}): l'hai già inserito in UKG?`,
     };
   }
   // Chi l'aveva fatta l'ha ritirata (trigger `notifica_proposta` sul delete):
@@ -162,7 +162,7 @@ function messaggio(
     return {
       a: record.da_user_id,
       title: 'Proposta accettata',
-      body: `${nomi[record.a_user_id]} ha accettato lo scambio del ${giorno}. Ricordati di inserirlo nell'app ufficiale.`,
+      body: `${nomi[record.a_user_id]} ha accettato lo scambio del ${giorno}. Ricordati di inserirlo in UKG.`,
     };
   }
   if (record.stato === 'RIFIUTATA') {
@@ -197,7 +197,7 @@ function messaggioPassword(nomiRichiedenti: string[]) {
   const chi = nomiRichiedenti.join(' e ');
   return {
     title: 'Password dimenticata',
-    body: `${chi} ${nomiRichiedenti.length === 1 ? 'ha' : 'hanno'} chiesto una nuova password: puoi dargliela di persona da Profilo, Amministrazione.`,
+    body: `${chi} ${nomiRichiedenti.length === 1 ? 'ha' : 'hanno'} chiesto una nuova password: puoi dargliene una nuova dal tuo Profilo.`,
   };
 }
 

@@ -119,7 +119,7 @@ export function validaProfilo() {
     if (problema) errori.push(problema);
   }
   if (!b.modifica && serverConfigurato() && !b.codice.trim()) {
-    errori.push('Serve il codice del negozio.');
+    errori.push('Serve il codice dello store.');
   }
   if (!b.accettate) errori.push('Serve la presa visione delle note.');
   return errori;
@@ -278,8 +278,8 @@ function passoChiSei() {
                   data-act="profilo-genere" data-valore="${g.key}">${g.label}</button>`).join(''))}
       </div>
       <p class="testo-tenue">
-        Serve alle concordanze: «si è dichiarata disponibile» invece di
-        «dichiarato». Se preferisci non dirlo, l'app usa forme neutre.
+        Ci serve per scriverti al maschile o al femminile («ti sei dichiarata
+        disponibile»). Se preferisci non dirlo, usiamo forme neutre.
       </p>
     </div>
 
@@ -328,8 +328,8 @@ function passoContratto() {
     ${raw(campoOre(b))}
 
     <p class="testo-tenue">
-      Le ore del tuo contratto non limitano con chi puoi scambiare. Ti verranno
-      assegnate le ore che ti spettano.
+      Puoi scambiare con chiunque, qualunque contratto abbia: nello scambio
+      ognuno tiene le sue ore.
     </p>
 
     <button class="btn primario largo" data-act="profilo-avanti">
@@ -361,8 +361,8 @@ function passoPreferenze() {
   return html`
     <h2 class="titolo-gruppo">I turni che preferisci</h2>
     <p class="testo-tenue">
-      Servono solo alle percentuali dei match: le alzano o le abbassano, non
-      escludono niente e nessun collega le vede. In più, nei giorni in cui
+      Servono solo a mettere in cima gli scambi che ti vanno bene e agiscono
+      sulle percentuali di match. Non escludono niente e nessun collega le vede. In più, nei giorni in cui
       hai un turno che eviti risulti disponibile a cambiarlo senza doverlo
       segnare. Puoi saltare questo passo e cambiarle dal Profilo.
     </p>
@@ -438,8 +438,8 @@ function passoPassword() {
 
       <p class="testo-tenue">
         Non viene salvata da nessuna parte: l'app conserva solo un'impronta che
-        permette di riconoscerla. Se la dimentichi, chi gestisce l'app può
-        reimpostarla. Se il telefono ti propone di salvarla nel portachiavi,
+        permette di riconoscerla. Se la dimentichi, un admin dello store te ne
+        dà una nuova. Se il telefono ti propone di salvarla nel portachiavi,
         accetta: la volta dopo entri con Face ID.
       </p>
 
@@ -457,13 +457,13 @@ function passoPassword() {
 function passoCodice() {
   const b = bozzaProfilo;
   return html`
-    <h2 class="titolo-gruppo">Il codice del negozio</h2>
+    <h2 class="titolo-gruppo">Il codice dello store</h2>
 
     <label class="campo-codice">
       <span class="prefisso-codice" aria-hidden="true">R</span>
       <input type="text" class="testo" data-campo="codice" value="${b.codice.replace(/^R/i, '')}"
              inputmode="numeric" autocomplete="off" maxlength="6"
-             aria-label="Codice del negozio, le cifre dopo la R" autofocus>
+             aria-label="Codice dello store, le cifre dopo la R" autofocus>
     </label>
     <p class="testo-tenue aiuto-codice">Scrivi le cifre che seguono la R.</p>
 
@@ -528,7 +528,7 @@ function schermataAccedi() {
     </form>
     <button class="link-btn" data-act="password-dimenticata-rientro">Ho dimenticato la password</button>
     <p class="testo-tenue">
-      Un admin del negozio ti darà una password temporanea: entri con quella e
+      Un admin dello store ti darà una password temporanea: entri con quella e
       la cambi da Impostazioni.
     </p>`;
 }

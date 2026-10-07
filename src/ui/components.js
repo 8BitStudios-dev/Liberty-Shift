@@ -186,16 +186,16 @@ function perche(request) {
   if (request.tipo === TIPO_CAMBIO.ORARIO) {
     const mio = mioIl(cedo?.data);
     if (!mio || mio.tipo !== 'WORK') {
-      return `${giorno(cedo?.data)} non sei in turno, e in un cambio orario servono due persone in turno.`;
+      return `${giorno(cedo?.data)} non lavori: per scambiarvi l'orario dovete lavorare tutti e due.`;
     }
-    return `il tuo ${shiftLabel(mio)} non rientra in quello che cerca (${wantLabel(request.cerco)}).`;
+    return `il tuo ${shiftLabel(mio)} non è tra gli orari che cerca (${wantLabel(request.cerco)}).`;
   }
 
   // Cambio OFF: le due condizioni sono essere liberi il giorno che vuole
   // lasciare, e lavorare in uno dei giorni che offre.
   const mioNelSuoGiorno = mioIl(cedo?.data);
   if (mioNelSuoGiorno && mioNelSuoGiorno.tipo === 'WORK') {
-    return `${giorno(cedo?.data)} sei già in turno (${shiftLabel(mioNelSuoGiorno)}), quindi non puoi prendere anche il suo.`;
+    return `${giorno(cedo?.data)} lavori già (${shiftLabel(mioNelSuoGiorno)}), quindi non puoi prendere anche il suo turno.`;
   }
   const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
   if (!lavorati.length) {
@@ -275,7 +275,7 @@ function riassuntoMatch(match, u, turno, opzioni) {
 
   return html`
     <div class="turno-offerto">
-      <strong>${formatDay(opzioni.mioCedo.data)} diventi OFF</strong> — ${u?.nome} prende il tuo turno ·
+      <strong>${formatDay(opzioni.mioCedo.data)} sei libero</strong>: ${u?.nome} prende il tuo turno ·
       <strong>${shiftLabel(opzioni.mioCedo)}</strong>
     </div>
     <div class="turno-ceduto">
@@ -381,8 +381,8 @@ export function messaggioAvviso(richiesta, destinatario) {
   const cedo = store.shift(richiesta.cedo.shiftId);
   const giorni = (richiesta.cerco.giorni || []).map((g) => formatDay(g)).join(', ');
   const cosa = richiesta.tipo === TIPO_CAMBIO.OFF
-    ? `vorrei OFF ${formatDay(cedo.data)} e in cambio lavoro uno fra: ${giorni}`
-    : `cedo il turno di ${formatDay(cedo.data)} (${shiftLabel(cedo)}) e cerco un altro turno dello stesso giorno`;
+    ? `vorrei libero ${formatDay(cedo.data)}, in cambio lavoro ${giorni}`
+    : `lascio il turno di ${formatDay(cedo.data)} (${shiftLabel(cedo)}) e cerco un altro orario lo stesso giorno`;
   return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
     + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `
     + `Se ti va di scambiare, rispondi qui o dall'app: ${indirizzoApp()}`;
@@ -399,7 +399,7 @@ export function messaggioAvviso(richiesta, destinatario) {
  */
 export function messaggioInvito() {
   return `Ciao, ti passo Liberty Shift, l'app che usiamo per organizzare i cambi turno. `
-    + `Apri il link, metti il codice del negozio e crea il tuo profilo: `
+    + `Apri il link, metti il codice dello store e crea il tuo profilo: `
     + `${indirizzoApp()}`;
 }
 
@@ -482,6 +482,6 @@ export function testoPromemoria(promemoria) {
   return html`
     <p class="promemoria">
       <span class="icona-in-riga">${raw(icona('orario', { px: 16 }))}</span>
-      ${promemoria.quando.charAt(0).toUpperCase() + promemoria.quando.slice(1)}: l'hai già inserito nell'app ufficiale?
+      ${promemoria.quando.charAt(0).toUpperCase() + promemoria.quando.slice(1)}: l'hai già inserito in UKG?
     </p>`;
 }

@@ -41,7 +41,7 @@ export function satisfies(cerco, shift) {
   }
 
   if (cerco.evitaChiusura && isClosing(shift)) {
-    return { score: 0, reasons: ['è un turno di chiusura, escluso dalla richiesta'] };
+    return { score: 0, reasons: ['è una chiusura, e chi chiede le ha escluse'] };
   }
 
   let score = 0;
@@ -58,10 +58,10 @@ export function satisfies(cerco, shift) {
         reasons.push(`orario identico a quello cercato (${cerco.start}–${cerco.end})`);
       } else if (scarto <= tolleranza) {
         score = Math.round(100 - 40 * (scarto / tolleranza));
-        reasons.push(`${scarto} minuti di scarto (${shiftLabel(shift)} contro ${cerco.start}–${cerco.end})`);
+        reasons.push(`${scarto} minuti di differenza (${shiftLabel(shift)} invece di ${cerco.start}–${cerco.end})`);
       } else {
         score = 0;
-        reasons.push('orario troppo lontano da quello richiesto');
+        reasons.push('orario troppo diverso da quello cercato');
       }
       break;
     }
@@ -81,7 +81,7 @@ export function satisfies(cerco, shift) {
         score = sforo <= RULES.nearMissMinutes
           ? Math.round(70 - 20 * (sforo / RULES.nearMissMinutes))
           : 0;
-        if (score > 0) reasons.push(`fuori fascia di ${sforo} minuti, ma vicino`);
+        if (score > 0) reasons.push(`sfora di ${sforo} minuti, ma è vicino`);
         else reasons.push('fuori dalla fascia oraria richiesta');
       }
       break;
@@ -117,7 +117,7 @@ export function validateRequest(request, shiftsById, shifts = null) {
       errori.push('Il cambio orario resta nello stesso giorno. Per cambiare giornata serve un cambio OFF.');
     }
     if (cerco.mode === WANT_MODE.ANY) {
-      errori.push('In un cambio orario "qualsiasi turno" non dice niente: indica un orario o una fascia.');
+      errori.push('Per un cambio orario serve sapere che orario cerchi.');
     }
   }
 
@@ -129,7 +129,7 @@ export function validateRequest(request, shiftsById, shifts = null) {
       }
       if (!sameAppleWeek(mio.data, g)) {
         errori.push(
-          `Settimane Apple diverse: ${formatDay(mio.data)} e ${formatDay(g)} non sono scambiabili. La settimana va da sabato a venerdì.`,
+          `Non puoi scambiare ${formatDay(mio.data)} con ${formatDay(g)}: si scambiano solo giorni della stessa settimana, da sabato a venerdì.`,
         );
       }
       if (shifts) {

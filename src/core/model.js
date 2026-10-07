@@ -413,7 +413,7 @@ export function ruoloNelGiorno(request, giorno, cedo) {
       verbo: 'offre OFF',
       // Solo il giorno che si sta guardando: gli altri che la richiesta offre
       // hanno una casella loro, ed è lì che vanno letti.
-      sintesi: `offre di lavorare questo giorno · in cambio vuole OFF ${formatDay(cedo?.data)}`,
+      sintesi: `lavorerebbe questo giorno · in cambio vuole libero ${formatDay(cedo?.data)}`,
     };
   }
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };

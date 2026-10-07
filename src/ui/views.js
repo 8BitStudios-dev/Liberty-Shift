@@ -132,8 +132,8 @@ export function home() {
         <span>
           <strong>Aiuta un collega</strong>
           <em>${aiutabili
-    ? `${aiutabili} ${aiutabili === 1 ? 'richiesta che puoi risolvere' : 'richieste che puoi risolvere'}`
-    : 'Chi ha bisogno di un turno che tu hai'}</em>
+    ? `${aiutabili} ${aiutabili === 1 ? 'richiesta che puoi coprire' : 'richieste che puoi coprire'}`
+    : 'Colleghi a cui puoi dare una mano'}</em>
         </span>
         <span class="chevron">›</span>
       </button>
@@ -223,8 +223,8 @@ export function calendario(params) {
  * da fuori sono la stessa cosa, un turno che si può prendere.
  */
 const GRUPPI_GIORNO = [
-  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono OFF questo giorno. Se tu sei a casa, puoi prendere il loro turno.' },
-  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate messi a disposizione: qui si prende.' },
+  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno libero. Se tu non lavori, puoi prendere il loro turno.' },
+  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate che i colleghi lasciano: puoi prenderli tu.' },
 ];
 
 // -------------------------------------------------------------- BACHECA
@@ -309,7 +309,7 @@ export function profilo() {
       ${raw(legendaPersonale())}
       ${raw(ilTuoMese())}
       <p class="testo-tenue nota-mese">
-        Tocca un giorno per il tuo turno, la disponibilità e le tue richieste.
+        Tocca un giorno per vedere o cambiare il turno e le tue richieste.
       </p>
     </section>
 
@@ -613,7 +613,7 @@ export function rigaModoNotifiche(stato = statoNoto()) {
         <div class="riquadro-testa">
           <span class="titolo-riquadro">Gestione notifiche</span>
         </div>
-        <p class="testo-tenue">Solo le personali o tutte quelle che i tuoi turni possono soddisfare: si sceglie dopo aver attivato le notifiche.</p>
+        <p class="testo-tenue">Puoi ricevere solo le proposte dirette a te o quelle che potresti coprire. Puoi scegliere dopo aver attivato le notifiche.</p>
         <button class="btn primario largo" data-act="attiva-notifiche">Attiva le notifiche</button>
       </div>`;
   }
@@ -636,9 +636,9 @@ export function rigaModoNotifiche(stato = statoNoto()) {
         <span class="conteggio">${modo === 'compatibili' ? 'tutte le compatibili' : 'solo le personali'}</span>
       </summary>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Tutte le richieste che i miei turni possono soddisfare', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che il tuo calendario può risolvere, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati.'))}
+      ${raw(opzione('compatibili', 'Anche le richieste che puoi coprire', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che potresti coprire con i tuoi turni, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati.'))}
       ${raw(modo === 'compatibili' && !turniQui
-    ? '<p class="avviso-box">Nel calendario di questo dispositivo non ci sono turni futuri: importali dal Profilo, altrimenti non ti arriva niente.</p>'
+    ? '<p class="avviso-box">Su questo telefono non ci sono turni nei prossimi giorni: importali dal Profilo, altrimenti non riceverai avvisi.</p>'
     : '')}
     </details>`;
 }
@@ -651,13 +651,12 @@ export function rigaModoNotifiche(stato = statoNoto()) {
 export function consensoCompatibili() {
   return html`
     <p>
-      Quando un collega pubblica una richiesta che il tuo calendario può
-      risolvere, ti mando una notifica. Altrimenti resti con le sole proposte
-      dirette.
+      Ti avviso quando un collega pubblica una richiesta che potresti coprire
+      con i tuoi turni. Se non lo attivi, ricevi solo le proposte fatte a te.
     </p>
     <p>
-      Ad app chiusa il telefono non può confrontare niente, quindi il
-      confronto lo fa il server. Per questo l'app gli manda
+      Quando l'app è chiusa il telefono non può fare il confronto, quindi lo
+      fa il server. Per questo l'app gli manda
       <strong>i tuoi turni dei prossimi ${RULES.notifiche.giorniCondivisi} giorni</strong>
       (data, tipo e orari) <strong>e le tue preferenze di turno</strong>.
     </p>
@@ -745,12 +744,12 @@ function sezionePreferenze(me) {
     {
       key: 'evita',
       titolo: 'Turni da evitare',
-      nota: `Abbassano il punteggio di ${RULES.evitaPenalty} punti: di solito basta a far sparire il turno, ma non è un divieto. Se il resto del match è forte, resta visibile.`,
+      nota: 'Quel turno scende molto nel match e di solito sparisce. Non è un divieto: se per il resto lo scambio è ottimo, lo vedi lo stesso.',
     },
     {
       key: 'preferisce',
       titolo: 'Turni preferiti',
-      nota: `Alzano il punteggio di ${RULES.preferenzaBonus} punti, e non escludono niente.`,
+      nota: 'Quel turno sale un po\' nel match. Non esclude niente.',
     },
   ];
   const attive = PREFERENZE.filter((p) => me.preferenze[p.key]).length;
@@ -775,15 +774,15 @@ function sezionePreferenze(me) {
       </summary>
       <div class="pref-corpo">
         <p class="pref-intro">
-          Dici all'app che turni preferisci e quali no. Servono solo ai
-          match: li fanno salire o scendere, così in cima trovi quelli che ti
-          vanno bene, e nessun collega le vede. Nei giorni in cui hai un turno
-          che eviti risulti disponibile a cambiarlo, senza segnarlo a mano.
+          Indica i turni che preferisci e quelli che vuoi evitare. Servono solo
+          a mettere in cima gli scambi che preferisci e agiscono sulle
+          percentuali di match, nessun collega le vede. Nei giorni in cui hai
+          un turno che eviti risulti già disponibile a cambiarlo.
         </p>
         ${raw(legendaFasce())}
         <p class="testo-tenue">
-          Due preferenze opposte non possono stare accese insieme: attivandone
-          una, l'altra si spegne da sola.
+          Due preferenze opposte non stanno insieme: se ne attivi una, l'altra
+          si disattiva.
         </p>
         ${raw(scelte)}
       </div>
@@ -825,7 +824,7 @@ function sezioneTurni() {
       <span class="tile-icona">${raw(icona('importa'))}</span>
       <span>
         <strong>Importa da calendario</strong>
-        <em>Dal calendario dei turni sottoscritto: l'app legge orari, riposi e ferie</em>
+        <em>Dal calendario dei turni che hai sul telefono: legge orari, riposi e ferie</em>
       </span>
       <span class="chevron">›</span>
     </button>
@@ -1288,7 +1287,7 @@ export function dettaglioGiornoProfilo(data) {
       <p class="testo-tenue">
         ${disponibile && disponibileDallePreferenze(me, turno)
     ? 'Acceso da solo: è un turno che eviti. Se quel giorno non vuoi cambiare, spegnilo.'
-    : 'Ti fa salire nei match di chi cerca un cambio. Nei turni che eviti si accende da solo.'}
+    : 'Chi cerca un cambio ti trova più in alto nei match. Nei turni che eviti è già acceso.'}
       </p>
     </div>`;
 }

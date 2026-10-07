@@ -108,12 +108,12 @@ function schermataAccesso(errore = '', avviso = '') {
       ${raw(store.state.profilo?.identificativo ? `
         <button class="link-btn" data-act="password-dimenticata">Ho dimenticato la password</button>
         <p class="testo-tenue accesso-nota">
-          Un admin del negozio ti darà una password temporanea: entri con quella
+          Un admin dello store ti darà una password temporanea: entri con quella
           e la cambi da Impostazioni.
         </p>` : `
         <p class="testo-tenue accesso-nota">
           Password dimenticata? Senza il server collegato l'unica strada è
-          ricominciare da capo, e i turni di questo dispositivo vanno persi.
+          ricominciare da capo, e i turni di questo telefono vanno persi.
         </p>`)}
       <button class="link-btn" data-act="ricomincia">Ricomincia da capo</button>
     </div>`;
@@ -256,7 +256,7 @@ function annunciaScambiChiusi(esito) {
   if (!chiusi.length) return false;
   const nomi = [...new Set(chiusi.map((c) => store.user(c.altroId)?.nome).filter(Boolean))];
   toast(chiusi.length === 1
-    ? `UKG ha approvato lo scambio${nomi[0] ? ` con ${nomi[0]}` : ''}: chiuso`
+    ? `UKG ha approvato lo scambio${nomi[0] ? ` con ${nomi[0]}` : ''}`
     : `UKG ha approvato ${chiusi.length} scambi: chiusi`);
   const daRingraziare = chiusi.find((c) => !store.haGiaRingraziato(c.proposalId));
   // Il controllo sta dentro l'attesa: il foglio da cui si è appena importato
@@ -351,7 +351,7 @@ const AZIONI = {
     const esito = await store.chiediNuovaPassword(me?.nome, me?.cognome);
     app.innerHTML = esito.errore
       ? schermataAccesso(esito.errore)
-      : schermataAccesso('', 'Richiesta inviata. Chiedi a un admin del negozio la password temporanea, poi entra qui con quella.');
+      : schermataAccesso('', 'Richiesta inviata. Chiedi a un admin dello store la password temporanea, poi entra qui con quella.');
   },
 
   // Da dentro l'app: sei entrato, ma quella attuale non la ricordi più e
@@ -365,7 +365,7 @@ const AZIONI = {
     chiudiSheet();
     if (esito.errore) return toast(esito.errore);
     sheet('Richiesta inviata', html`
-      <p>Gli admin del negozio hanno ricevuto la tua richiesta.</p>
+      <p>Gli admin dello store hanno ricevuto la tua richiesta.</p>
       <p class="testo-tenue">
         La richiesta vale 48 ore: in quel tempo uno di loro ti dà di persona
         una password temporanea. Fino ad allora puoi continuare a usare l'app.
@@ -382,7 +382,7 @@ const AZIONI = {
     Object.assign(b, { nome, cognome });
     const esito = await store.chiediNuovaPassword(nome, cognome);
     b.errori = esito.errore ? [esito.errore] : [];
-    b.avviso = esito.errore ? '' : 'Richiesta inviata. Chiedi a un admin del negozio la password temporanea, poi entra qui con quella.';
+    b.avviso = esito.errore ? '' : 'Richiesta inviata. Chiedi a un admin dello store la password temporanea, poi entra qui con quella.';
     render();
   },
 
@@ -407,7 +407,7 @@ const AZIONI = {
     render();
   },
   ricomincia: () => {
-    if (!confirm('Cancellare tutto e ricominciare? I turni e le richieste di questo dispositivo vanno persi.')) return;
+    if (!confirm('Cancellare tutto e ricominciare? I turni e le richieste di questo telefono vanno persi.')) return;
     store.esci();
     store.reset();
     location.hash = '#/home';
@@ -646,11 +646,11 @@ const AZIONI = {
   'modo-notifiche': (e, el) => {
     if (el.value === 'dirette') {
       const { errori } = store.impostaModoNotifiche('dirette');
-      toast(errori ? errori[0] : 'Solo le richieste personali: i tuoi turni sono stati tolti dal server');
+      toast(errori ? errori[0] : 'Ricevi solo le proposte fatte a te. I tuoi turni sono stati tolti dal server.');
       return render();
     }
     render();
-    sheet('Notifiche per tutte le richieste che posso soddisfare', V.consensoCompatibili(), {
+    sheet('Notifiche per le richieste che puoi coprire', V.consensoCompatibili(), {
       azioni: '<button class="btn primario largo" data-act="consenso-compatibili">Acconsento e attiva</button>'
         + '<button class="btn secondario largo" data-chiudi>Resta com\'è</button>',
     });
@@ -659,7 +659,7 @@ const AZIONI = {
   'consenso-compatibili': (_, el) => {
     el.closest('.sheet-backdrop').querySelector('[data-chiudi]').click();
     const { errori } = store.impostaModoNotifiche('compatibili');
-    toast(errori ? errori[0] : 'Fatto: ricevi le notifiche di tutte le richieste che i tuoi turni possono soddisfare');
+    toast(errori ? errori[0] : 'Fatto: ti avviso per ogni richiesta che puoi coprire');
     render();
   },
 
@@ -1037,8 +1037,8 @@ const AZIONI = {
           informazioni.
         </p>
         <p class="testo-tenue">
-          Tieni l'indirizzo da parte: chi ce l'ha legge i tuoi turni. L'app lo
-          conserva su questo dispositivo, e da lì in poi ricontrolla il
+          Non condividere l'indirizzo: chi ce l'ha può vedere i tuoi turni.
+          L'app lo conserva su questo telefono, e da lì in poi ricontrolla il
           calendario da sola ogni volta che la apri.
         </p>
       </details>
@@ -1174,7 +1174,7 @@ const AZIONI = {
     if (errore) return toast(errore);
     if (annunciaScambiChiusi(cal)) return;
     if (cal.saltato && sync.saltato) {
-      return toast(store.state.profilo?.calendarioUrl ? 'Non sei collegato al negozio' : 'Nessun calendario collegato');
+      return toast(store.state.profilo?.calendarioUrl ? 'Non sei collegato allo store' : 'Nessun calendario collegato');
     }
     toast(cal.saltato ? 'Bacheca aggiornata' : riassuntoImport(cal));
   },
@@ -1216,14 +1216,12 @@ const AZIONI = {
         <h3>Come le ho capite</h3>
         <p class="testo-tenue">
           Controlla che siano giuste: se sono sfasate di una settimana, l'app
-          riempirebbe i mesi con turni credibili e sbagliati. Nel calendario
+          riempirebbe i mesi con turni sbagliati. Nel calendario
           del Profilo trovi la lettera accanto a ogni settimana.
         </p>
         ${V.riepilogoRotazione()}` : '')}
       <p class="testo-tenue">
-        Riempie solo i giorni ancora vuoti. Dove un turno c'è già vince quello:
-        il calendario dei turni resta la verità, e una previsione che copre un
-        turno vero è una bugia che si scopre in negozio.
+        Riempie solo i giorni vuoti: dove c'è già un turno, resta quello.
       </p>
       ${raw(attiva ? '<button class="link-btn" data-act="rotazione-dimentica">Dimentica la rotazione</button>' : '')}`, {
       azioni: attiva
@@ -1293,11 +1291,11 @@ const AZIONI = {
       <ul class="elenco">
         <li>Hai <strong>1 priorità al mese</strong>, dura <strong>48 ore</strong>.</li>
         <li>La richiesta va in cima alla bacheca ed è evidenziata nel calendario.</li>
-        <li>Serve a farsi vedere, non dà nessun diritto in più: nessuno è obbligato ad accettare.</li>
+        <li>Ti dà visibilità, non precedenza: nessuno è obbligato ad accettare.</li>
         <li>Si sceglie al momento della pubblicazione: non si può aggiungere dopo.</li>
-        <li>Se cancelli la richiesta il credito non torna indietro.</li>
+        <li>Se cancelli la richiesta, la priorità usata non ti viene restituita.</li>
       </ul>
-      <p class="testo-tenue">Credito disponibile adesso: ${store.creditoPriorita()}.</p>`);
+      <p class="testo-tenue">Priorità disponibili adesso: ${store.creditoPriorita()}.</p>`);
   },
 
   'modifica-turno': (_, el) => {

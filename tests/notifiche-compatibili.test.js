@@ -151,7 +151,7 @@ test('la scelta compare a notifiche accese, e prima invita ad accenderle', () =>
 
   const dirette = rigaModoNotifiche(STATO.ATTIVE);
   assert.match(dirette, /Solo le richieste personali/);
-  assert.match(dirette, /Tutte le richieste che i miei turni possono soddisfare/);
+  assert.match(dirette, /Anche le richieste che puoi coprire/);
   assert.match(dirette, /value="dirette"\s+checked/);
   assert.match(dirette, /solo le personali/);
 
@@ -166,7 +166,7 @@ test('chi sceglie "compatibili" senza turni nel calendario lo viene a sapere', (
   iscritto();
   store.impostaModoNotifiche('compatibili');
   store.state.shifts = [];
-  assert.match(rigaModoNotifiche(STATO.ATTIVE), /non ci sono turni futuri/);
+  assert.match(rigaModoNotifiche(STATO.ATTIVE), /non ci sono turni nei prossimi giorni/);
 });
 
 test('il consenso dice cosa esce, dove va, chi lo legge e come tornare indietro', () => {

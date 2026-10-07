@@ -678,7 +678,7 @@ export async function sincronizza(state, { completo = false } = {}) {
  * Meglio dire subito che non è andata.
  */
 export async function salvaDispositivoPush(state, iscrizione) {
-  if (!sulServer(state)) return { errore: 'Per le notifiche serve essere iscritti al negozio.' };
+  if (!sulServer(state)) return { errore: 'Per le notifiche serve essere iscritti allo store.' };
   const { errore } = await salvaSuChiave('push_subscriptions', {
     user_id: state.profilo.idServer,
     endpoint: iscrizione.endpoint,

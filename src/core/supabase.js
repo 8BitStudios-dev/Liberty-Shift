@@ -339,7 +339,7 @@ export async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSet
   // L'errore del database arriva come frase inglese con dentro il messaggio
   // che abbiamo scritto noi: quello che conta è che la persona legga il
   // motivo vero, non "PGRST202".
-  if (r.errore && /codice/i.test(r.errore)) return { dati: null, errore: 'Codice del negozio sbagliato.' };
+  if (r.errore && /codice/i.test(r.errore)) return { dati: null, errore: 'Codice dello store sbagliato.' };
   return r;
 }
 

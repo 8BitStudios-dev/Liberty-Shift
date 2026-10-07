@@ -75,7 +75,7 @@ test('in uno scambio di giornate conta il prossimo giorno ancora da venire', () 
 test('la domanda si disegna uguale ovunque, e non c\'è se non serve', () => {
   assert.equal(testoPromemoria(null), '');
   const testo = testoPromemoria({ giorno: addDays(oggi, 1), quando: 'domani' });
-  assert.match(testo, /Domani: l'hai già inserito nell'app ufficiale\?/);
+  assert.match(testo, /Domani: l'hai già inserito in UKG\?/);
   assert.doesNotMatch(testo, /\[object Object\]/);
 });
 
@@ -85,7 +85,7 @@ test('la Home mostra il promemoria sull\'accordo vicino', async () => {
   store.state.profilo = { ...store.state.profilo, completato: true };
   const pagina = home();
   assert.match(pagina, /Scambio concordato/);
-  assert.match(pagina, /l'hai già inserito nell'app ufficiale\?/);
+  assert.match(pagina, /l'hai già inserito in UKG\?/);
 
   accordo({ mio: addDays(oggi, 15), suo: addDays(oggi, 15) });
   assert.doesNotMatch(home(), /l'hai già inserito/);

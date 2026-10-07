@@ -114,18 +114,18 @@ export function vistaRapida() {
 
     ${raw(gruppo(
     `${iconaTipo(TIPO_CAMBIO.ORARIO, 17)} Cambio orario (${orario.length})`,
-    `Restano ${formatDay(cedo.data)}, cambiate solo l'orario.`,
+    'Lavorate tutti e due quel giorno: vi scambiate solo l\'orario.',
     orario,
   ))}
     ${raw(gruppo(
     `${iconaTipo(TIPO_CAMBIO.OFF, 17)} Cambio OFF (${off.length})`,
-    'Ti danno OFF quella giornata, tu lavori in un giorno in cui sei a casa.',
+    'Scambi il tuo OFF con un giorno lavorativo.',
     off,
   ))}
 
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
-    `Per ${formatDay(cedo.data)} non risulta nessun collega con un turno che vada bene. Pubblicare la richiesta la mette comunque in bacheca.`,
+    `Per ${formatDay(cedo.data)} al momento nessun collega ha un turno adatto. Pubblica la richiesta: resta in bacheca e qualcuno può risponderti.`,
     html`<button class="btn primario" data-act="cambio-giorno" data-azione="orario" data-data="${cedo.data}">Crea la richiesta</button>`,
   ))}
 `;
@@ -313,7 +313,7 @@ export function cambioDalGiorno() {
     domanda = html`
       <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
       <h2 class="titolo-gruppo">In quale orario vorresti lavorare?</h2>
-      <p class="testo-tenue">Puoi sceglierne più di uno: ti mostriamo chi ha uno qualsiasi di questi.</p>
+      <p class="testo-tenue">Puoi sceglierne più di uno: vedrai i colleghi che hanno almeno uno di questi orari.</p>
       <div class="chips">${raw(orari.map((o) => html`
         <button class="chip ${attivo(o) ? 'attivo' : ''}" data-act="giorno-orario" data-start="${o.start}" data-end="${o.end}">${o.start}–${o.end}</button>`).join(''))}</div>`;
     scelto = dalGiorno.orari.length > 0;
@@ -366,7 +366,7 @@ export function cambioDalGiorno() {
       </label>
       <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
         <input type="checkbox" data-act="priorita-giorno" ${raw(dalGiorno.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
-        <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (${credito} disponibile, dura ${RULES.priority.durationHours}h)</span>
+        <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (te ne resta ${credito}, dura ${RULES.priority.durationHours} ore)</span>
       </label>
       <button class="btn ${risultati.length ? 'secondario' : 'primario'} largo" data-act="pubblica-giorno">Pubblica in bacheca</button>`)}`;
 }
@@ -598,9 +598,9 @@ function passoRiepilogo() {
 
     <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
       <input type="checkbox" data-act="priorita" ${raw(draft.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
-      <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (${credito} disponibile, dura ${RULES.priority.durationHours}h)</span>
+      <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (te ne resta ${credito}, dura ${RULES.priority.durationHours} ore)</span>
     </label>
-    <p class="testo-tenue">La priorità non si può aggiungere dopo e non torna indietro se cancelli la richiesta.</p>
+    <p class="testo-tenue">La priorità si sceglie adesso: non si aggiunge dopo, e se cancelli la richiesta non ti viene restituita.</p>
 
     ${raw(elencoErrori(errori))}
     ${raw(elencoErrori(draft.errori))}
@@ -646,7 +646,7 @@ export function match(params) {
     'Nessun collega ha un turno compatibile su quel giorno. La richiesta resta in bacheca.',
     '<button class="btn secondario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
   ))}
-    <p class="testo-tenue">I match nascono dal calendario e dalle preferenze di tutti; una richiesta pubblicata o una disponibilità dichiarata valgono di più, ma non sono più necessarie per comparire.</p>`;
+    <p class="testo-tenue">La percentuale di match deriva dalle preferenze e dai turni di tutti. Chi ha pubblicato una richiesta o si è detto disponibile sale più in alto.</p>`;
 }
 
 // ---------------------------------------------------- DETTAGLIO RICHIESTA
@@ -672,7 +672,7 @@ export function dettaglio(params) {
       ? html`
         <div class="accordo">
           <strong>${raw(icona('spunta', { px: 18, forte: true }))} Scambio concordato</strong>
-          <p>Ora effettua il cambio nell'app ufficiale dei turni. Questa app non lo fa al posto tuo.</p>
+          <p>Ora inserisci il cambio in UKG: questa app non lo fa al posto tuo.</p>
           ${raw(p.cambioInserito
     ? '<span class="tag">cambio inserito</span>'
     : `<div class="barra-azioni">
@@ -689,9 +689,9 @@ export function dettaglio(params) {
           </div>`
         : p.daUserId === store.state.currentUserId && p.status !== 'RIFIUTATA'
           ? html`
-            <p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>
+            <p class="testo-tenue">Manca la risposta dell'altra persona.</p>
             <button class="btn secondario largo" data-act="ritira-proposta" data-id="${p.id}">Ritira la proposta</button>`
-          : html`<p class="testo-tenue">In attesa dell'altra accettazione (${p.accettataDa.length}/2).</p>`;
+          : html`<p class="testo-tenue">Manca la risposta dell'altra persona.</p>`;
 
     return html`
       <article class="card proposta">
@@ -818,7 +818,7 @@ export function formProposta(request, shiftSuggerito) {
       <span>Messaggio (facoltativo)</span>
       <textarea data-campo="messaggio" rows="2" placeholder="Es. per me va bene anche 12–20"></textarea>
     </label>
-    <p class="testo-tenue">Proponendo accetti già da parte tua: serve anche l'accettazione dell'altra persona.</p>`;
+    <p class="testo-tenue">Proponendo hai già detto sì: lo scambio è fatto quando accetta anche l'altra persona.</p>`;
 }
 
 export function pubblica() {
@@ -883,7 +883,7 @@ function vocebox(v) {
       ? html`
         <div class="accordo">
           <strong>${raw(icona('spunta', { px: 18, forte: true }))} Scambio concordato</strong>
-          <p>Ora fate il cambio nell'app ufficiale dei turni.</p>
+          <p>Ora inserite il cambio in UKG.</p>
           ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
           <div class="barra-azioni">
             <button class="btn primario" data-act="chiedi-grazie" data-id="${p.id}">${raw(icona('grazie', { px: 17 }))} Ringrazia ${altro.nome}</button>
@@ -895,7 +895,7 @@ function vocebox(v) {
         ? html`
           <div class="accordo">
             <strong>${raw(icona('spunta', { px: 18, forte: true }))} Scambio concordato</strong>
-            <p>Hai già ringraziato. Quando avete fatto il cambio nell'app ufficiale, chiudi la richiesta.</p>
+            <p>Hai già ringraziato. Quando il cambio è in UKG, chiudi la richiesta.</p>
             ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             <button class="btn secondario largo" data-act="cambio-inserito" data-id="${p.id}">Cambio inserito</button>
             ${raw(tastoAnnulla(p))}
@@ -1033,14 +1033,14 @@ export function aiuta() {
       <button class="icon-btn" data-act="guida" data-sezione="aiuta" title="Come funziona">?</button>
     </header>
     <p class="occhiello">
-      Richieste aperte che i tuoi turni possono risolvere davvero. Le altre non
-      compaiono: non servirebbe a nessuno.
+      Le richieste che puoi coprire con i tuoi turni. Le altre non compaiono:
+      non servirebbe a nessuno.
     </p>
     ${raw(mie.length
     ? primaLePrioritarie(mie).map((o) => cardOpportunita(o)).join('')
     : vuoto(
       'Niente da fare, per ora',
-      'Nessuna richiesta aperta torna con i turni che hai in calendario. Se il calendario non è aggiornato, il posto per farlo è il Profilo.',
+      'Per ora nessuna richiesta è compatibile con i tuoi turni. Se il calendario non è aggiornato, aggiornalo dal Profilo.',
       '<button class="btn primario" data-act="vai" data-to="#/profilo">Aggiorna i turni</button>',
     ))}`;
 }
@@ -1132,7 +1132,7 @@ export function gestioneIscritti() {
       <h1>${superAdmin ? 'Gestisci iscritti' : 'Iscritti'}</h1>
     </header>
     ${raw(iscritti.length ? '' : (superAdmin
-    ? vuoto('Ancora nessuno', 'I colleghi compariranno qui non appena si saranno iscritti con il codice del negozio.')
+    ? vuoto('Ancora nessuno', 'I colleghi compariranno qui non appena si saranno iscritti con il codice dello store.')
     : vuoto('Nessuna richiesta', 'Quando un collega chiede una nuova password dall\'app, compare qui per 48 ore.')))}
     ${raw(!superAdmin && iscritti.length ? '<p class="testo-tenue">Puoi reimpostare la password solo a chi l\'ha chiesta dall\'app nelle ultime 48 ore. Dagliela di persona.</p>' : '')}
     ${raw(superAdmin && iscritti.length ? html`

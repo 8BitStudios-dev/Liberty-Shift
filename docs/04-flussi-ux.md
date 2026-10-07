@@ -541,8 +541,8 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
   sta cambiando (l'unico fondo colorato), un'**icona** nell'angolo per dire a
   che punto è, distinta dalla forma e non dal colore (clessidra: una tua
   richiesta aperta o una proposta che aspetta; spunta: concordato, manca la
-  conferma in UKG), e una **linea verde in basso** per i giorni in cui sei
-  disponibile a scambiare. Il giallo resta fino al giorno stesso, anche dopo
+  conferma in UKG). La disponibilità a scambiare non ha un segno sul mese:
+  segue le preferenze, e si vede aprendo il giorno. Il giallo resta fino al giorno stesso, anche dopo
   "Cambio inserito": l'approvazione arriva da UKG, e senza un segno fra
   l'accordo e il nuovo calendario dei turni il giorno sembrava fermo
   (`giorniInCorso` nello store). Se ne va prima solo quando il calendario

@@ -493,7 +493,7 @@ export const store = {
       && r.tipo === tipo && r.cedo.shiftId === cedo.shiftId);
     if (doppia) return { errori: ['Hai già una richiesta aperta di questo tipo su questo turno: la trovi nel giorno del calendario.'] };
     if (usaPriorita && this.creditoPriorita() < 1) {
-      return { errori: ['Non hai crediti priorità disponibili questo mese.'] };
+      return { errori: ['Hai già usato la priorità di questo mese.'] };
     }
 
     const me = this.me;
@@ -693,7 +693,7 @@ export const store = {
           x.motivoDecadenza = 'TURNO_IMPEGNATO';
           this.aggiornaStato(this.request(x.requestId));
         });
-      [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo nell\'app ufficiale.'));
+      [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo in UKG.'));
     } else {
       this.notifica(p.daUserId === me ? p.aUserId : p.daUserId, `${this.user(me).nome} ha accettato il cambio.`);
     }
@@ -1123,7 +1123,7 @@ export const store = {
     const riga = dati?.[0];
     if (erroreProfilo || !riga) {
       esciDalServer();
-      return { errore: erroreProfilo || 'Il tuo profilo non risulta nel negozio.' };
+      return { errore: erroreProfilo || 'Il tuo profilo non risulta nello store.' };
     }
 
     Object.assign(this.me, {
@@ -1254,7 +1254,7 @@ export const store = {
    * mandato.
    */
   impostaModoNotifiche(modo) {
-    if (!sulServer(this.state)) return { errori: ['Per le notifiche serve essere iscritti al negozio.'] };
+    if (!sulServer(this.state)) return { errori: ['Per le notifiche serve essere iscritti allo store.'] };
     if (modo !== 'dirette' && modo !== 'compatibili') return { errori: ['Scelta non valida.'] };
     const prima = this.state.profilo.notifiche;
     this.state.profilo.notifiche = modo === 'compatibili'
