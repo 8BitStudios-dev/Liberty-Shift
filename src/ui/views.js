@@ -15,6 +15,7 @@ import {
 } from '../core/engine.js';
 import { RULES, PREFERENZE, TIPO_CAMBIO } from '../core/rules.js';
 import { karma } from '../core/karma.js';
+import { VERSIONE_APP } from '../core/config.js';
 import { letteraDi, rotazioneVuota } from '../core/rotazione.js';
 import {
   formatDay, todayISO, appleWeekKey, addDays, toDate, MESI, GIORNI, weekday, monthKey,
@@ -596,7 +597,8 @@ export function impostazioni() {
           <span class="chevron">›</span>
         </button>` : '')}
       ${raw(rigaNotifiche())}
-    </section>`;
+    </section>
+    <p class="versione-app">Ver: ${VERSIONE_APP}</p>`;
 }
 
 /**

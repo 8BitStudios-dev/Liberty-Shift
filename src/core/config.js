@@ -44,3 +44,13 @@ export const SERVER = {
 export function serverConfigurato() {
   return Boolean(SERVER.url && SERVER.chiaveAnon);
 }
+
+/**
+ * Il numero di versione, in fondo alle Impostazioni.
+ *
+ * Serve a capire al volo se un telefono ha preso l'ultima pubblicazione. Le
+ * ultime cifre sono il numero della cache in `sw.js`, che cambia a ogni
+ * pubblicazione: un test controlla che i due vadano insieme, così non si
+ * può alzare l'uno e dimenticare l'altro.
+ */
+export const VERSIONE_APP = '1.0.052';

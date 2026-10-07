@@ -911,3 +911,12 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .mie-corpo { margin: 0 calc(-1 * 16px); }
 .mie-corpo .riga-richiesta { background: none; border-radius: 0; }
 .mie-corpo .riga-richiesta:last-child { box-shadow: none; }
+
+/* Il numero di versione in fondo alle Impostazioni: c'è per chi lo cerca,
+   non deve farsi notare da chi non lo cerca. */
+.versione-app {
+  margin: 28px 0 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--testo-tenue);
+}

@@ -49,6 +49,10 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 - **Il file unico non ha una cartella `public/` accanto.** Un'immagine
   referenziata come `<img src="./public/...">` si vede solo sul sito: quello
   che deve stare in entrambi va incorporato nel CSS come data URI.
+- **A ogni pubblicazione si alzano insieme la cache di `sw.js` e
+  `VERSIONE_APP` in `src/core/config.js`** (v52 ↔ `1.0.052`). Il numero si
+  vede in fondo alle Impostazioni ed è come si capisce se un telefono ha preso
+  l'ultima versione; un test fallisce se i due non coincidono.
 - **`sw.js` elenca i file a mano.** Aggiungendo un modulo va aggiunto anche lì,
   altrimenti offline l'app si apre a metà. Due test lo verificano.
 - **Nell'ICS il `DTEND` di una giornata intera è escluso.** Ferie dal 10 al 15
