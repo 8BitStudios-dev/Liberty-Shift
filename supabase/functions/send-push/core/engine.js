@@ -182,6 +182,11 @@ const maiuscola = (s) => s.charAt(0).toUpperCase() + s.slice(1);
  * Chi è chi, per id. Serve all'adattamento: la pausa di mezz'ora di un turno
  * dipende da chi lo fa (vedi `pausaBreve`), non solo dai suoi orari.
  */
+/** Il collega ha già una richiesta aperta che cede il suo turno di quel giorno? */
+function haGiaChiesto(ctx, idx, userId, giorno) {
+  return ctx.requests.some((r) => r.userId === userId && isOpen(r) && idx.byId[r.cedo.shiftId]?.data === giorno);
+}
+
 function personeDi(ctx) {
   const per = new Map(ctx.users.map((u) => [u.id, u]));
   return (id) => per.get(id);
@@ -264,6 +269,10 @@ function matchOrario(request, ctx) {
     // Ha chiesto lui stesso un cambio orario quel giorno?
     const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
       && r.tipo === TIPO_CAMBIO.ORARIO && idx.byId[r.cedo.shiftId]?.data === giorno);
+    // Un collega che su quel giorno ha già chiesto qualcosa di preciso (il
+    // giorno libero, un altro orario) si incontra solo attraverso la sua
+    // richiesta: proporgli altro dal calendario ignorerebbe quello che ha detto.
+    if (!suaRichiesta && haGiaChiesto(ctx, idx, u.id, giorno)) continue;
 
     const ioSonoU = u.id === ctx.currentUserId;
     const ioSonoAutore = autore.id === ctx.currentUserId;
@@ -367,6 +376,10 @@ function matchOff(request, ctx) {
         && r.tipo === TIPO_CAMBIO.OFF
         && idx.byId[r.cedo.shiftId]?.data === giorno
         && (r.cerco.giorni || []).includes(mioCedo.data));
+      // Come nel cambio orario: se il collega ha già una richiesta sul turno
+      // che gli si chiede (Marco lascia il suo 22 cercando un orario più
+      // tardi), non gli si propone di cederlo per intero.
+      if (!suaRichiesta && haGiaChiesto(ctx, idx, u.id, giorno)) continue;
 
       const ioSonoU = u.id === ctx.currentUserId;
       const ioSonoAutore = autore.id === ctx.currentUserId;

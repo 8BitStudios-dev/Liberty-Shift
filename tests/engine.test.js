@@ -780,3 +780,25 @@ test('un Part Time può proporre il turno che, adattato, è quello che il Full T
   assert.ok(findMatches(r, ctx).some((m) => m.userId === 'alessandro'), 'la lista lo trova');
   assert.equal(turnoOfferibile(r, mio, ctx.shifts, { 'sh-l': suo, 'sh-a': mio }).ok, true, 'e il tasto lo accetta');
 });
+
+test('a chi ha già chiesto qualcosa su quel giorno non si propone altro dal calendario', () => {
+  // Marco lascia il suo 22 08:00–17:00 cercando un orario dopo le 11. Martina
+  // vuole libero il 18: l'app non deve proporle di prendersi tutto il 22 di
+  // Marco, che non ha chiesto di cederlo per intero.
+  const martina = { id: 'martina', nome: 'Martina', cognomeIniziale: 'L', contratto: 'PT', oreSettimanali: 25, preferenze: {}, disponibilita: {}, prioritaUsata: {} };
+  const marco = { id: 'marco', nome: 'Marco', cognomeIniziale: 'C', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} };
+  const suo18 = { id: 'm18', userId: 'martina', data: '2026-10-18', tipo: 'WORK', start: '09:30', end: '14:30' };
+  const marco22 = { id: 'c22', userId: 'marco', data: '2026-10-22', tipo: 'WORK', start: '08:00', end: '17:00' };
+  const richiestaMarco = {
+    id: 'rq-marco', userId: 'marco', status: 'APERTA', tipo: TIPO_CAMBIO.ORARIO, createdAt: '2026-10-05T08:00:00Z',
+    cedo: { shiftId: 'c22', flessibile: false }, cerco: { giorni: ['2026-10-22'], mode: WANT_MODE.RANGE, dalleOre: '11:00' },
+  };
+  const bozza = {
+    id: 'bozza', userId: 'martina', status: 'APERTA', tipo: TIPO_CAMBIO.OFF, createdAt: '2026-10-07T22:00:00Z',
+    cedo: { shiftId: 'm18', flessibile: false }, cerco: { giorni: ['2026-10-22'], mode: WANT_MODE.ANY },
+  };
+  const ctx = { users: [martina, marco], shifts: [suo18, marco22], requests: [richiestaMarco], proposals: [], currentUserId: 'martina' };
+  assert.equal(findMatches(bozza, ctx).some((m) => m.userId === 'marco'), false);
+  // Senza la sua richiesta, il calendario lo propone come prima.
+  assert.equal(findMatches(bozza, { ...ctx, requests: [] }).some((m) => m.userId === 'marco'), true);
+});
