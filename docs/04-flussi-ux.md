@@ -577,7 +577,7 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
   in un cerchio grigio quante richieste toccano il giorno, il bordo oro della
   priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
   giorno: chi puoi aiutare, poi Cercano e Offrono.
-- **Profilo**: tu. I tuoi turni, le ore della settimana, la rotazione, il
+- **Profilo**: tu. I tuoi turni, la rotazione, il
   segni dei giorni, uno per significato: il **fondo giallo** per un giorno che
   sta cambiando (l'unico fondo colorato), un'**icona** nell'angolo per dire a
   che punto è, distinta dalla forma e non dal colore (clessidra: una tua
@@ -622,11 +622,13 @@ monte ore. Le righe a cavallo del mese restano intere, con i giorni dell'altro
 mese sbiaditi: tagliarle per far quadrare il bordo avrebbe spezzato l'unica
 riga su cui il monte ore ha senso.
 
-Accanto a ogni settimana ci sono le ore inserite contro quelle del contratto,
-`40/40`, con la spunta solo quando tornano. Ha preso il posto della frase che
-spiegava la pausa pranzo: quella la si legge una volta e poi ingombra, mentre
-il dato che si guarda davvero è se le ore quadrano. Senza spunta l'occhio va da
-solo alle settimane da sistemare.
+Le settimane sono al massimo cinque: quando un mese ne tocca sei, se ne va
+quella più in alto, già passata (`settimaneMax` in `grigliaMese`).
+
+Il conteggio delle ore accanto a ogni settimana (`40/40`) c'è stato e non c'è
+più: occupava spazio e, con le pause e gli scambi di mezzo, era un dato che
+nessuno guardava. Il controllo sulle ore resta dove serve, negli avvisi dello
+scambio (R17).
 
 La disponibilità è il **fondo verde chiaro** della cella, non una linea. La
 linea arancione che c'era prima, una volta che i calendari sono diventati uno,

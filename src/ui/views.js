@@ -7,7 +7,7 @@ import {
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
 import {
-  hasPriority, shiftLabel, wantLabel, isOpen, etichettaFascia, oreSettimana, usaRotazione,
+  hasPriority, shiftLabel, wantLabel, isOpen, etichettaFascia, usaRotazione,
   disponibileDallePreferenze,
 } from '../core/model.js';
 import {
@@ -1018,8 +1018,12 @@ function settimaneDel(mese) {
 }
 
 /** La griglia comune ai due mesi: intestazione, una riga per settimana, la cella la decide chi chiama. */
-function grigliaMese(mese, { cella, testaSettimana, classe }) {
+function grigliaMese(mese, { cella, testaSettimana, classe, settimaneMax = null }) {
   const settimane = settimaneDel(mese);
+  // Un mese può toccare sei settimane: quando sono troppe si tolgono da
+  // sopra quelle già finite, che sono le meno utili da guardare.
+  const oggi = todayISO();
+  while (settimaneMax && settimane.length > settimaneMax && addDays(settimane[0], 6) < oggi) settimane.shift();
   const intestazione = Array.from({ length: 7 }, (_, i) => html`
     <span class="dow-fisso">${GIORNI[weekday(addDays(settimane[0], i))]}</span>`).join('');
   const righe = settimane.map((wk) => html`
@@ -1098,9 +1102,10 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
 
   return grigliaMese(mese, {
     classe: 'mese-personale',
+    // Cinque settimane bastano: la sesta, quando c'è, è una settimana passata.
+    settimaneMax: 5,
     testaSettimana: (wk) => html`
-      <h3>${toDate(wk).getUTCDate()}/${wk.slice(5, 7)} → ${toDate(addDays(wk, 6)).getUTCDate()}/${addDays(wk, 6).slice(5, 7)} ${raw(lettera(me, wk))}</h3>
-      ${raw(spiaOre(me, wk))}`,
+      <h3>${toDate(wk).getUTCDate()}/${wk.slice(5, 7)} → ${toDate(addDays(wk, 6)).getUTCDate()}/${addDays(wk, 6).slice(5, 7)} ${raw(lettera(me, wk))}</h3>`,
     cella: (data) => {
       const turno = store.state.shifts.find((s) => s.userId === me.id && s.data === data);
       const stato = !turno ? 'senza-turno' : turno.tipo === 'OFF' ? 'riposo' : 'lavoro';
@@ -1129,24 +1134,6 @@ function lettera(me, settimana) {
     ? letteraDi(me.rotazione, settimana)
     : null;
   return l ? html`<span class="lettera-rot">${l}</span>` : '';
-}
-
-/**
- * Le ore della settimana contro quelle del contratto, in due cifre.
- *
- * Al posto della frase che spiegava la pausa pranzo: quella spiegazione la
- * si legge una volta e poi ingombra. Qui resta il solo dato che si guarda
- * davvero — tornano o non tornano — e il segno di spunta compare solo quando
- * tornano, così l'occhio cerca le settimane senza spunta.
- */
-function spiaOre(me, settimana) {
-  const fatte = oreSettimana(me.id, settimana, store.state.shifts, me);
-  const attese = me.oreSettimanali;
-  const quadra = fatte === attese;
-  return html`
-    <span class="spia-ore ${quadra ? 'quadra' : ''}" title="Ore pagate, pausa esclusa">
-      ${raw(quadra ? '✓ ' : '')}${fatte}/${attese}
-    </span>`;
 }
 
 /**

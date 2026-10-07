@@ -349,18 +349,14 @@ export function cambioDalGiorno() {
   const cedo = store.shift(bozza.cedo.shiftId);
   const credito = store.creditoPriorita();
 
+  // La nota e la priorità valgono per tutti e due i tasti (pubblicare da
+  // soli o pubblicare e scrivere a un collega): stanno prima, così il tasto
+  // della bacheca resta subito sotto le schede, dove lo si cerca.
   return html`
     ${raw(testata)}
     ${raw(domanda)}
     ${raw(elencoErrori(errori))}
-    ${raw(errori.length ? '' : risultati.length ? html`
-      <h2 class="titolo-gruppo">Colleghi disponibili (${risultati.length})</h2>
-      <p class="testo-tenue">Proponi lo scambio a uno di loro, oppure pubblica la richiesta e aspetta chi risponde.</p>
-      ${raw(risultati.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true, dalGiorno: true })).join(''))}`
-    : vuoto('Nessun collega disponibile per ora', 'Pubblica la richiesta: resta in bacheca, e chi può aiutarti la trova lì.'))}
-
     ${raw(errori.length ? '' : html`
-      <h2 class="titolo-gruppo">${risultati.length ? 'Oppure pubblica in bacheca' : 'Pubblica in bacheca'}</h2>
       <label class="campo">
         <span>Nota (facoltativa)</span>
         <textarea data-campo="nota-giorno" rows="2" maxlength="200" placeholder="Es. è per una visita medica">${dalGiorno.note}</textarea>
@@ -368,7 +364,13 @@ export function cambioDalGiorno() {
       <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
         <input type="checkbox" data-act="priorita-giorno" ${raw(dalGiorno.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
         <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (te ne resta ${credito}, dura ${RULES.priority.durationHours} ore)</span>
-      </label>
+      </label>`)}
+    ${raw(errori.length ? '' : risultati.length ? html`
+      <h2 class="titolo-gruppo">Colleghi disponibili (${risultati.length})</h2>
+      <p class="testo-tenue">Proponi lo scambio a uno di loro, oppure pubblica la richiesta e aspetta chi risponde.</p>
+      ${raw(risultati.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true, dalGiorno: true })).join(''))}`
+    : vuoto('Nessun collega disponibile per ora', 'Pubblica la richiesta: resta in bacheca, e chi può aiutarti la trova lì.'))}
+    ${raw(errori.length ? '' : html`
       <button class="btn ${risultati.length ? 'secondario' : 'primario'} largo" data-act="pubblica-giorno">Pubblica in bacheca</button>`)}`;
 }
 

@@ -63,3 +63,15 @@ test('fra contratti diversi l\'orario adattato dice che è una stima', async () 
   assert.ok(pari, 'stesse ore, compare lo stesso');
   assert.equal(cardOpportunita({ richiesta, match: pari }).includes(TESTO_STIMA), false);
 });
+
+test('il calendario del Profilo mostra al massimo cinque settimane, senza il conteggio ore', async () => {
+  const { store } = await import('../src/core/store.js');
+  const { ilTuoMese } = await import('../src/ui/views.js');
+  store.reset();
+  // Agosto 2025 tocca sei settimane (dal 26/07 al 05/09): la prima, già
+  // passata, se ne va.
+  const pagina = ilTuoMese('2025-08');
+  assert.equal(pagina.split('class="mese-settimana"').length - 1, 5);
+  assert.doesNotMatch(pagina, /26\/07/);
+  assert.doesNotMatch(pagina, /spia-ore/);
+});
