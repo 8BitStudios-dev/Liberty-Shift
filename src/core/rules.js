@@ -125,8 +125,15 @@ export const RULES = {
    *
    * **Assunzione**: la soglia oltre la quale scatta la pausa. Sei ore è il
    * valore di partenza; un Part Time con turni da 5 ore non la fa.
+   *
+   * `breve`: chi fa turni da 5 o 6 ore può scegliere una pausa di mezz'ora.
+   * In calendario il turno dura mezz'ora in più (14:30–20:00, 14:00–20:30),
+   * ma le ore lavorate restano 5 o 6: quella mezz'ora non è straordinario e
+   * non entra nel monte ore. Nello scambio la pausa resta al turno e passa a
+   * chi lo riceve (salvo modifiche di PPO o dei lead): due turni con le
+   * stesse ore lavorate si scambiano così come sono, senza adattamento.
    */
-  pausa: { oltreOre: 6, minuti: 60 },
+  pausa: { oltreOre: 6, minuti: 60, breve: { minuti: 30, oreLavorate: [5, 6] } },
 
   /**
    * Gli orari che ricorrono davvero nel piano turni dello store.

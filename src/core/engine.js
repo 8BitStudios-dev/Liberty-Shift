@@ -8,7 +8,7 @@ import {
 } from './time.js';
 import {
   isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
-  fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, durataOre,
+  fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, oreRetribuite,
   applicaPreferenze, concorda, contractOf, disponibileDallePreferenze,
 } from './model.js';
 
@@ -199,7 +199,7 @@ function verificheIncrociate(coppie, shifts, chiGuarda) {
       if (io) {
         reasons.push(contractOf(chi).ore.length === 1
           ? `Sei ${chi.contratto} quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`
-          : `Lasci ${durataOre(cede)}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
+          : `Lasci ${String(oreRetribuite(cede)).replace('.', ',')}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
       }
     }
     if (t.avviso) avvisi.push(io ? t.avviso : `${nome(chi)}: ${t.avviso}`);

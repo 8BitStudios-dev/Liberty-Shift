@@ -612,3 +612,28 @@ test('la conferma del calendario parte per il server una volta, senza turni', ()
   assert.equal(conferme.length, 1);
   assert.deepEqual(Object.keys(conferme[0].dati.patch), ['confermata_il'], 'solo l\'ora, nessun turno');
 });
+
+// --- la pausa di mezz'ora --------------------------------------------------
+
+test('la pausa di mezz\'ora non entra nel monte ore', async () => {
+  const { oreRetribuite, pausaBreve } = await import('../src/core/model.js');
+  const t = (start, end) => ({ tipo: 'WORK', start, end });
+  assert.equal(oreRetribuite(t('14:30', '20:00')), 5, '5 lavorate più mezz\'ora di pausa');
+  assert.equal(oreRetribuite(t('14:00', '20:30')), 6, 'fino alle 20:30, 6 lavorate');
+  assert.equal(oreRetribuite(t('15:00', '20:00')), 5, 'senza pausa');
+  assert.equal(oreRetribuite(t('10:00', '19:00')), 8, 'Full Time, un\'ora di pausa');
+  assert.equal(oreRetribuite(t('11:00', '18:00')), 6, '7 ore in calendario, un\'ora di pausa');
+  assert.equal(pausaBreve(t('14:30', '20:00')), true);
+  assert.equal(pausaBreve(t('15:00', '20:00')), false);
+});
+
+test('due turni con le stesse ore lavorate si scambiano così come sono, pausa compresa', async () => {
+  const { trasformaTurno } = await import('../src/core/model.js');
+  const conPausa = { tipo: 'WORK', start: '14:30', end: '20:00' };
+  const senza = { tipo: 'WORK', start: '10:00', end: '15:00' };
+  // Chi riceve il turno con la pausa se la tiene, e viceversa.
+  assert.equal(trasformaTurno(conPausa, senza).trasformato, false);
+  assert.equal(trasformaTurno(senza, conPausa).trasformato, false);
+  // Con un Full Time l'adattamento resta.
+  assert.equal(trasformaTurno({ tipo: 'WORK', start: '10:00', end: '19:00' }, conPausa).trasformato, true);
+});

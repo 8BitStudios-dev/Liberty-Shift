@@ -12,7 +12,7 @@ import { stripTypeScriptTypes } from 'node:module';
 
 const sorgente = await readFile(new URL('../supabase/functions/send-push/index.ts', import.meta.url), 'utf8');
 const pezzo = sorgente.slice(sorgente.indexOf('const formatData'), sorgente.indexOf('const json ='));
-const codice = `${stripTypeScriptTypes(pezzo)}\nreturn { messaggio, quando, messaggioPassword };`;
+const codice = `${stripTypeScriptTypes(pezzo)}\nreturn { messaggio, quando, messaggioPassword, durataDiversa };`;
 
 /** Una `Date` che alla chiamata senza argomenti risponde sempre `adesso`. */
 function dateFinta(adesso) {
@@ -20,7 +20,8 @@ function dateFinta(adesso) {
     constructor(...args) { super(...(args.length ? args : [adesso])); }
   };
 }
-const { messaggio, quando, messaggioPassword } = new Function('Date', codice)(dateFinta('2026-10-04T10:00:00Z'));
+const { oreRetribuite } = await import('../src/core/model.js');
+const { messaggio, quando, messaggioPassword, durataDiversa } = new Function('Date', 'oreRetribuite', codice)(dateFinta('2026-10-04T10:00:00Z'), oreRetribuite);
 
 const MARTINA = 'id-martina';
 const OMAR = 'id-omar';
@@ -156,4 +157,24 @@ test('UKG ha approvato: lo sa l\'altra parte, una volta sola', () => {
   assert.equal(messaggio('UPDATE', dopo, dopo, OMAR, nomi), null);
   // Chi non fa parte dello scambio non può far partire niente.
   assert.equal(messaggio('UPDATE', dopo, prima, 'estraneo', nomi), null);
+});
+
+test('"Proposta accettata" fra turni di durata diversa avvisa che l\'orario è una stima', () => {
+  const prima = proposta({ stato: 'IN_ATTESA' });
+  const dopo = proposta({ stato: 'ACCORDO' });
+  const conStima = messaggio('UPDATE', dopo, prima, OMAR, nomi, { stima: true });
+  assert.match(conStima.body, /Ricordati di inserirlo in UKG\. L'orario adattato è una stima/);
+  const senza = messaggio('UPDATE', dopo, prima, OMAR, nomi, {});
+  assert.doesNotMatch(senza.body, /stima/);
+});
+
+test('la stima scatta solo se le due durate sono diverse', () => {
+  // Lorenzo (FT) cede 10:00–19:00, Alessandro (PT) offre 15:00–20:00.
+  assert.equal(durataDiversa({ turno_start: '15:00:00', turno_end: '20:00:00' }, { cedo_start: '10:00:00', cedo_end: '19:00:00' }), true);
+  assert.equal(durataDiversa({ turno_start: '11:00:00', turno_end: '20:00:00' }, { cedo_start: '10:00:00', cedo_end: '19:00:00' }), false);
+  // Un riposo non ha orari: niente da adattare.
+  assert.equal(durataDiversa({ turno_start: null, turno_end: null }, { cedo_start: '10:00:00', cedo_end: '19:00:00' }), false);
+  assert.equal(durataDiversa({ turno_start: '15:00:00', turno_end: '20:00:00' }, undefined), false);
+  // La pausa di mezz'ora non conta: 14:30–20:00 sono 5 ore lavorate come 15:00–20:00.
+  assert.equal(durataDiversa({ turno_start: '14:30:00', turno_end: '20:00:00' }, { cedo_start: '15:00:00', cedo_end: '20:00:00' }), false);
 });

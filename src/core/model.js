@@ -261,6 +261,10 @@ export function trasformaTurno(riceve, cede) {
 
   const durataTarget = durataOre(cede);
   if (!durataTarget || Math.abs(durataAttuale - durataTarget) < 0.01) return base;
+  // Stesse ore lavorate, presenza diversa: la differenza è la pausa di
+  // mezz'ora, che resta al turno e passa a chi lo riceve. Il turno si
+  // scambia così com'è.
+  if (Math.abs(oreRetribuite(riceve) - oreRetribuite(cede)) < 0.01) return base;
 
   // Le notti sono casi particolari: si segnalano, non si accorciano d'ufficio.
   if (isNotturno(riceve) || isNotturno(cede)) {
@@ -312,8 +316,20 @@ export function turnoAdattato(riceve, cede) {
  */
 export function oreRetribuite(shift) {
   const presenza = durataOre(shift);
+  if (pausaBreve(shift)) return presenza - RULES.pausa.breve.minuti / 60;
   if (presenza <= RULES.pausa.oltreOre) return presenza;
   return presenza - RULES.pausa.minuti / 60;
+}
+
+/**
+ * Il turno ha la pausa di mezz'ora? Lo dice la sua durata: 5 o 6 ore
+ * lavorate più mezz'ora (vedi `RULES.pausa.breve`). Un turno da 7 ore resta
+ * 6 lavorate con l'ora di pausa normale.
+ */
+export function pausaBreve(shift) {
+  if (shift?.tipo !== 'WORK') return false;
+  const lavorate = durataOre(shift) - RULES.pausa.breve.minuti / 60;
+  return RULES.pausa.breve.oreLavorate.some((ore) => Math.abs(lavorate - ore) < 0.01);
 }
 
 /** Ore retribuite da una persona in una settimana Apple. */

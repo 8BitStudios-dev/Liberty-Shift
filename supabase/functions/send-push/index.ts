@@ -22,6 +22,7 @@ import webpush from 'npm:web-push@3.6.7';
 import { candidatiCompatibili } from './core/compatibili.js';
 import { RULES } from './core/rules.js';
 import { decifra } from './core/cifratura.js';
+import { oreRetribuite } from './core/model.js';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -88,8 +89,29 @@ function quando(giorno: string): string {
 type Proposta = {
   id: string; richiesta_id?: string; da_user_id: string; a_user_id: string; stato: string;
   turno_data: string; motivo_rifiuto?: string | null; motivo_decadenza?: string | null;
-  annullata_il?: string | null;
+  annullata_il?: string | null; confermata_il?: string | null;
+  turno_start?: string | null; turno_end?: string | null;
 };
+
+/**
+ * Il turno offerto e quello ceduto hanno ore lavorate diverse? Allora uno dei
+ * due si adatta, e l'orario mostrato è una stima. Si contano le ore lavorate,
+ * non la durata in calendario: la pausa di mezz'ora resta al turno e passa a
+ * chi lo riceve, quindi da sola non adatta niente (`oreRetribuite`, la stessa
+ * regola dell'app). Senza orari (un riposo) non c'è niente da adattare.
+ */
+function durataDiversa(
+  proposta: { turno_start?: string | null; turno_end?: string | null },
+  richiesta?: { cedo_start?: string | null; cedo_end?: string | null },
+): boolean {
+  const turno = (start?: string | null, end?: string | null) => (start && end
+    ? { tipo: 'WORK', start: start.slice(0, 5), end: end.slice(0, 5) }
+    : null);
+  const offerto = turno(proposta.turno_start, proposta.turno_end);
+  const ceduto = turno(richiesta?.cedo_start, richiesta?.cedo_end);
+  if (!offerto || !ceduto) return false;
+  return Math.abs(oreRetribuite(offerto) - oreRetribuite(ceduto)) > 0.01;
+}
 
 /**
  * Chi avvisare e con che parole. Nessuno se chi ha fatto la modifica è
@@ -97,7 +119,8 @@ type Proposta = {
  */
 function messaggio(
   type: string, record: Proposta, old: Proposta | null, autore: string | null,
-  nomi: Record<string, string>, extra: { destinatario?: string; giorno?: string; altraScelta?: boolean } = {},
+  nomi: Record<string, string>,
+  extra: { destinatario?: string; giorno?: string; altraScelta?: boolean; stima?: boolean } = {},
 ) {
   const giorno = formatData(record.turno_data);
   if (type === 'PROMEMORIA') {
@@ -175,7 +198,8 @@ function messaggio(
     return {
       a: record.da_user_id,
       title: 'Proposta accettata',
-      body: `${nomi[record.a_user_id]} ha accettato lo scambio del ${giorno}. Ricordati di inserirlo in UKG.`,
+      body: `${nomi[record.a_user_id]} ha accettato lo scambio del ${giorno}. Ricordati di inserirlo in UKG.`
+        + (extra.stima ? ' L\'orario adattato è una stima: quello definitivo lo decide UKG.' : ''),
     };
   }
   if (record.stato === 'RIFIUTATA') {
@@ -369,7 +393,15 @@ Deno.serve(async (req) => {
     ? (await leggi(`proposte?richiesta_id=eq.${record.richiesta_id}&stato=eq.ACCORDO&select=id`)).length > 0
     : false;
 
-  const m = messaggio(type, record, old_record, autore || null, nomi, { destinatario, giorno, altraScelta });
+  // Turni di durata diversa (un Full Time e un Part Time, o due Part Time con
+  // ore diverse) si adattano: l'orario che l'app ha mostrato è una stima, e
+  // chi riceve "accettata" deve saperlo prima di inserirlo in UKG. È la
+  // stessa condizione di `trasformaTurno` in core/model.js.
+  const stima = type === 'UPDATE' && record.stato === 'ACCORDO' && record.richiesta_id
+    ? durataDiversa(record, (await leggi(`richieste?id=eq.${record.richiesta_id}&select=cedo_start,cedo_end`))[0])
+    : false;
+
+  const m = messaggio(type, record, old_record, autore || null, nomi, { destinatario, giorno, altraScelta, stima });
   if (!m) return json({ inviate: 0, motivo: 'niente da notificare' });
   // Un profilo disattivato non è più nel negozio: niente notifiche.
   if (profili.find((p: { id: string; attivo: boolean }) => p.id === m.a)?.attivo === false) {

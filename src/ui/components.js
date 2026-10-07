@@ -1,7 +1,7 @@
 import { html, raw, esc } from './dom.js';
 import { store } from '../core/store.js';
 import {
-  shiftLabel, wantLabel, hasPriority, trasformaTurno, ruoloNelGiorno as ruoloCore,
+  shiftLabel, wantLabel, hasPriority, trasformaTurno, pausaBreve, ruoloNelGiorno as ruoloCore,
 } from '../core/model.js';
 import { STATUS_META, TIPO_META, TIPO_CAMBIO, RULES } from '../core/rules.js';
 import { formatDay } from '../core/time.js';
@@ -297,6 +297,14 @@ export const TESTO_STIMA = 'Orario stimato: quello definitivo lo decide UKG.';
 export const notaStima = () => `<p class="nota-stima">${TESTO_STIMA}</p>`;
 const adattamento = (match) => Boolean(match?.adattato?.trasformato || match?.adattatoControparte?.trasformato);
 
+/**
+ * La pausa di mezz'ora resta al turno: chi lo riceve se la ritrova, a meno
+ * che PPO o un lead non la cambino. Va detto quando uno dei due turni ce l'ha,
+ * perché in calendario sembra mezz'ora di lavoro in più.
+ */
+export const TESTO_PAUSA = 'La pausa di mezz\'ora resta al turno e passa a chi lo riceve, salvo modifiche di PPO o dei lead.';
+export const notaPausa = (turni) => (turni.some((s) => pausaBreve(s)) ? `<p class="nota-stima">${TESTO_PAUSA}</p>` : '');
+
 export function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);
   const turno = store.shift(match.shiftOffertoId);
@@ -317,6 +325,7 @@ export function cardMatch(match, opzioni = {}) {
       </div>
       ${raw(riassuntoMatch(match, u, turno, opzioni))}
       ${raw(adattamento(match) ? notaStima() : '')}
+      ${raw(notaPausa([turno, opzioni.mioCedo || store.shift(store.request(opzioni.miaRichiestaId)?.cedo.shiftId)]))}
       ${raw(opzioni.compatta ? html`
         <details class="perche-aperto">
           <summary>Perché${match.avvisi.length ? ' · un avviso' : ''}</summary>
@@ -475,6 +484,7 @@ export function cardOpportunita({ richiesta, match }) {
         <div><span>${u?.nome} farebbe</span><strong>${formatDay(mioTurno?.data)} · ${perLei}</strong></div>
       </div>
       ${raw(adattamento(match) ? notaStima() : '')}
+      ${raw(notaPausa([mioTurno, store.shift(richiesta.cedo.shiftId)]))}
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
       ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"

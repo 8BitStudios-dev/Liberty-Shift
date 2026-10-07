@@ -16,7 +16,7 @@ import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/stat
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
-  notaStima,
+  notaStima, notaPausa,
 } from './components.js';
 import { icona } from './icone.js';
 import { primaLePrioritarie, richiestaValida, richiestaGestita } from './views.js';
@@ -809,6 +809,7 @@ export function formProposta(request, shiftSuggerito) {
     ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo).trasformato)
     ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe.</p>${notaStima()}`
     : '')}
+    ${raw(notaPausa([suoCedo, ...opzioni]))}
     <label class="campo">
       <span>Messaggio (facoltativo)</span>
       <textarea data-campo="messaggio" rows="2" placeholder="Es. per me va bene anche 12–20"></textarea>
