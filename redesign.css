@@ -507,7 +507,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 }
 
 /* Il titolo della pagina del Profilo: un gradino sopra le altre testate. */
-.titolo-mese { font-size: 28px; font-weight: 700; letter-spacing: -.025em; margin: 0 0 16px; color: var(--testo); }
+.titolo-mese { font-size: 28px; font-weight: 700; letter-spacing: -.025em; margin: 0 0 12px; color: var(--testo); }
 
 /* --- le legende: mostrano le celle come sono, in piccolo */
 .legenda-mese {
@@ -655,12 +655,14 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 
 /* La testata del Profilo è una riga sola: il bollino a sinistra, le azioni a
    destra. Nome e ruolo stanno nel pannello che apre il bollino. Il bollino è
-   la firma della pagina: grande e con aria sopra. */
+   la firma della pagina: grande e con aria sopra. Sotto, invece, poca: il
+   calendario è il motivo per aprire il Profilo, e con 40px di vuoto fra il
+   bollino e il titolo il mese finiva a metà schermo. */
 .testata-profilo {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 44px 0 18px; position: relative;
+  padding: 44px 0 8px; position: relative;
 }
-.testata-profilo + .sezione { margin-top: 22px; }
+.testata-profilo + .sezione { margin-top: 8px; }
 .azioni-profilo { position: absolute; top: 12px; right: 0; display: flex; align-items: center; gap: 8px; }
 .testata-profilo .azioni-profilo { position: static; }
 .io { position: relative; }
