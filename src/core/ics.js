@@ -111,7 +111,7 @@ export function parseICS(testo) {
     if (c.nome === 'END' && c.valore.toUpperCase() === 'VEVENT') {
       const t = eventoInTurno(corrente);
       if (t.turni?.length) turni.push(...t.turni);
-      else ignorati.push({ titolo: corrente.titolo || '(senza titolo)', motivo: t.motivo });
+      else ignorati.push({ titolo: corrente.titolo || '(senza titolo)', motivo: t.motivo, data: corrente.inizio?.data || null });
       corrente = null;
       continue;
     }

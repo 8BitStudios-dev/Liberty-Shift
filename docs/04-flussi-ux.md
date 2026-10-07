@@ -472,7 +472,12 @@ già presenti restano dove sono.
 
 Nel Profilo c'è comunque **Aggiorna turni dal calendario**, con l'ora
 dell'ultimo giro, per il giorno in cui il turno cambia in mattinata. L'app
-sostituisce solo i giorni che il file nomina.
+sostituisce i giorni che il file nomina, e dentro il periodo che il file copre
+(dal primo all'ultimo evento) un turno che il file non nomina più diventa un
+giorno a casa: UKG un giorno libero non lo scrive, lo toglie. Prima restava il
+turno vecchio, e chi aveva scambiato un giorno risultava ancora al lavoro. Un
+giorno con un evento che l'app non sa leggere non si tocca. Fuori dal periodo
+coperto non cambia niente.
 
 **Fra il calendario del link e quello dell'app vince sempre il link**, senza
 eccezioni: è quello che dice UKG. Fino a ottobre 2026 un turno già offerto in

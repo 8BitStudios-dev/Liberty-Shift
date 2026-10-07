@@ -510,3 +510,77 @@ test('uno scambio non concordato non si annulla: si ritira o si rifiuta', () => 
   store.state.proposals.find((x) => x.id === 'pr-ukg').status = 'IN_ATTESA';
   assert.match(store.annullaScambio('pr-ukg'), /non è concordato/);
 });
+
+// --- il giorno che sparisce dal calendario -----------------------------
+
+test('un turno che sparisce dal calendario diventa un giorno a casa', () => {
+  // UKG un giorno libero non lo scrive: lo toglie. Martina aveva scambiato il
+  // 22 e in UKG era a casa, ma l'app teneva ancora il suo 08:00–13:00.
+  store.reset();
+  const me = store.state.currentUserId;
+  store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-22', tipo: 'WORK', start: '08:00', end: '13:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ]);
+  const esito = store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ]);
+  const il22 = store.state.shifts.find((s) => s.userId === me && s.data === '2030-10-22');
+  assert.equal(il22.tipo, 'OFF');
+  assert.deepEqual(esito.cambiati, ['2030-10-22']);
+});
+
+test('fuori dal periodo che il calendario copre non si tocca niente', () => {
+  store.reset();
+  const me = store.state.currentUserId;
+  store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-11-30', tipo: 'WORK', start: '08:00', end: '13:00' },
+  ]);
+  store.importaTurni([{ data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' }]);
+  assert.equal(store.state.shifts.find((s) => s.userId === me && s.data === '2030-11-30').tipo, 'WORK');
+});
+
+test('un giorno con un evento illeggibile non si cancella per un dubbio', () => {
+  store.reset();
+  const me = store.state.currentUserId;
+  store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-22', tipo: 'WORK', start: '08:00', end: '13:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ]);
+  store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ], { ignorati: [{ titolo: 'Formazione', data: '2030-10-22' }] });
+  assert.equal(store.state.shifts.find((s) => s.userId === me && s.data === '2030-10-22').tipo, 'WORK');
+});
+
+test('lo scambio concordato si chiude quando il giorno ceduto sparisce dal calendario', () => {
+  store.reset();
+  const me = store.state.currentUserId;
+  store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-22', tipo: 'WORK', start: '08:00', end: '13:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ]);
+  const mio22 = store.state.shifts.find((s) => s.userId === me && s.data === '2030-10-22');
+  store.state.users.push({ id: 'marco', nome: 'Marco', cognomeIniziale: 'C', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} });
+  store.state.shifts.push({ id: 'sh-marco', userId: 'marco', data: '2030-10-19', tipo: 'WORK', start: '11:00', end: '20:00' });
+  store.state.requests.push({
+    id: 'rq-marco', userId: 'marco', createdAt: new Date().toISOString(), status: STATUS.ACCORDO, tipo: 'OFF',
+    cedo: { shiftId: 'sh-marco', flessibile: false }, cerco: { giorni: ['2030-10-22'] },
+  });
+  store.state.proposals.push({
+    id: 'pr-martina', requestId: 'rq-marco', daUserId: me, aUserId: 'marco', shiftOffertoId: mio22.id,
+    accettataDa: [me, 'marco'], status: 'ACCORDO', cambioInserito: false, createdAt: new Date().toISOString(),
+  });
+  const esito = store.importaTurni([
+    { data: '2030-10-20', tipo: 'WORK', start: '15:00', end: '20:00' },
+    { data: '2030-10-24', tipo: 'WORK', start: '15:15', end: '20:15' },
+  ]);
+  assert.ok(store.state.scambiConfermati.includes('pr-martina'), 'UKG l\'ha approvato');
+  assert.equal(esito.scambiChiusi.length, 1);
+});

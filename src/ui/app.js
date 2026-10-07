@@ -1101,6 +1101,7 @@ const AZIONI = {
     const aggiorna = () => {
       const { turni, ignorati, errore, indirizzo } = parseICS(area.value);
       w.el._turni = turni;
+      w.el._ignorati = ignorati;
       w.el._indirizzo = indirizzo || '';
       bottone.disabled = turni.length === 0;
       // Il pulsante Scarica ha senso solo davanti a un indirizzo, e solo se
@@ -1319,7 +1320,7 @@ const AZIONI = {
     const wrap = el.closest('.sheet-backdrop');
     const turni = wrap._turni || [];
     if (!turni.length) return toast('Niente da importare');
-    const esito = store.importaTurni(turni);
+    const esito = store.importaTurni(turni, { ignorati: wrap._ignorati || [] });
     wrap.querySelector('[data-chiudi]').click();
     render();
     if (!annunciaScambiChiusi(esito)) toast(riassuntoImport(esito));

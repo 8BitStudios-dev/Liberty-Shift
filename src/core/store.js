@@ -342,8 +342,9 @@ export const store = {
 
   /**
    * Importa i turni letti da un calendario. Sostituisce quelli già presenti
-   * nelle stesse date e lascia stare tutto il resto: un import non deve mai
-   * cancellare giorni che il calendario non nomina.
+   * nelle stesse date; dentro il periodo che il calendario copre, un turno
+   * che il file non nomina più diventa un giorno a casa. Fuori da quel
+   * periodo non tocca niente.
    *
    * Fra il calendario del link e quello dell'app vince sempre il link: è
    * quello che dice UKG. Prima un giorno dentro una richiesta aperta restava
@@ -354,7 +355,7 @@ export const store = {
    * rifà) e la proposta ancora in attesa che offriva quel giorno. Uno scambio
    * già concordato no: lì il cambiamento è proprio la conferma di UKG.
    */
-  importaTurni(turni, { userId = this.state.currentUserId } = {}) {
+  importaTurni(turni, { userId = this.state.currentUserId, ignorati = [] } = {}) {
     let aggiunti = 0;
     // I miei giorni che il calendario ha davvero cambiato: servono a capire se
     // UKG ha approvato uno scambio (vedi chiudiScambiApprovati) e cosa non sta
@@ -372,6 +373,28 @@ export const store = {
           id: newId('sh'), userId, data: t.data, tipo: t.tipo, start: t.start, end: t.end,
         });
         aggiunti += 1;
+      }
+    }
+    // Un giorno che il calendario non nomina più, dentro il periodo che il
+    // calendario copre, è un giorno a casa: UKG un giorno libero non lo scrive,
+    // lo toglie. Lasciare il turno di prima voleva dire tenere al lavoro chi
+    // aveva appena scambiato quel giorno (Martina, il 22: in UKG a casa, qui
+    // ancora 08:00–13:00). Fuori dal periodo coperto non si tocca niente: lì
+    // il calendario semplicemente non arriva.
+    if (turni.length) {
+      const date = turni.map((t) => t.data).sort();
+      // Anche un evento che non si è saputo leggere nomina il suo giorno: lì
+      // il calendario dice qualcosa, solo non sappiamo cosa, e un turno vero
+      // non si cancella per un dubbio.
+      const nominati = new Set([...date, ...ignorati.map((e) => e.data).filter(Boolean)]);
+      const [primo, ultimo] = [date[0], date[date.length - 1]];
+      for (const s of this.state.shifts) {
+        if (s.userId !== userId || s.tipo !== 'WORK') continue;
+        if (s.data < primo || s.data > ultimo || nominati.has(s.data)) continue;
+        // Diventa riposo e non sparisce: richieste e proposte che lo nominano
+        // devono poterlo ritrovare per chiudersi.
+        Object.assign(s, { tipo: 'OFF', start: null, end: null });
+        cambiati.add(s.data);
       }
     }
     const scambiChiusi = userId === this.state.currentUserId ? this.chiudiScambiApprovati(cambiati) : [];
@@ -1389,10 +1412,10 @@ export const store = {
     }
     if (errore) return { errore };
 
-    const { turni, errore: erroreLettura } = parseICS(dati);
+    const { turni, ignorati, errore: erroreLettura } = parseICS(dati);
     if (erroreLettura || !turni.length) return { errore: erroreLettura || 'Nessun turno nel calendario.' };
 
-    const esito = this.importaTurni(turni);
+    const esito = this.importaTurni(turni, { ignorati });
     this.state.profilo.calendarioScaduto = false;
     this.state.profilo.calendarioAggiornatoIl = new Date().toISOString();
     this.commit();
