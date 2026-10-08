@@ -338,9 +338,37 @@ richiesta di mercoledì.
 ## Aiuta un collega
 In Home, sotto il Cambio rapido. È il matching al contrario raccolto in una
 schermata: non "chi può prendere il mio turno" ma "di chi posso risolvere il
-problema io", ordinato per quanto sei una buona risposta. Compaiono solo le
-richieste che i tuoi turni risolvono davvero: in una schermata che esiste per
-aiutare, le altre sarebbero rumore.
+problema io". Compaiono solo le richieste che i tuoi turni risolvono davvero:
+in una schermata che esiste per aiutare, le altre sarebbero rumore.
+
+Mostrare quanto eri adatto non bastava a far dire di sì: il conto di quanto ti
+pesava lo dovevi fare da solo, e nessuno ti diceva cosa ci guadagnavi. Oggi la
+schermata risponde a tutte e due le domande.
+
+- **Quanto ti costa** (`costoDelCambio` in `compatibili.js`, dalle tue
+  preferenze), scritto sopra ogni card: *Ti conviene*, *Per te non cambia
+  niente* (stessa fascia, o una che ti è indifferente), *Ti costa poco* (lasci
+  una fascia che preferisci per una che non eviti). Un cambio che pesa
+  (prendi una fascia che eviti, un giorno che vorresti OFF, un turno oltre il
+  tuo limite) non ha etichetta e va in fondo. Senza preferenze l'app dice
+  solo "non cambia niente" a parità di fascia, e invita a impostarle.
+- **Cosa ci guadagni**: ogni cambio sulla richiesta di un collega, una volta
+  approvato su UKG, vale una priorità in più in quel mese, fino al tetto
+  (R14). Il riquadro in cima dice a che punto sei e quanti cambi aspettano
+  ancora UKG; "Cambio fatto" lo ricorda.
+- **Chi ricambiare**: se un collega ti ha aiutato negli ultimi 90 giorni, la
+  sua richiesta porta "Giulia ti ha aiutato a settembre: puoi ricambiare" e
+  sale in cima. Dall'altro lato, fra i colleghi che possono prendere il tuo
+  turno, chi hai aiutato tu sta per primo, con "Hai aiutato Giulia a
+  settembre". Chi riceve gli avvisi dei cambi che convengono riceve anche
+  "Puoi ricambiare un favore", e lo può spegnere da solo con un interruttore
+  nel pannello Notifiche. Il favore lo vedono solo le due persone che l'hanno fatto:
+  niente classifiche, che in un negozio mettono in imbarazzo chi ha vincoli
+  veri.
+
+L'ordine (`occasioniDiAiuto` in `karma.js`): le prioritarie, poi i favori da
+ricambiare (salvo che ricambiare ti pesi), poi dal costo più basso, a parità
+la percentuale.
 
 ## Da dove arrivano i turni
 La voce "Inserisci i tuoi turni" non sta più in fondo al calendario, dove era un

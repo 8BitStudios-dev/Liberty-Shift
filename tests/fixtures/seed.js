@@ -238,9 +238,6 @@ export function seed() {
     },
   ];
 
-  const marco = users.find((u) => u.id === 'u_marco');
-  marco.prioritaUsata[todayISO().slice(0, 7)] = 1;
-
   return {
     versione: 2,
     currentUserId: 'u_lorenzo',

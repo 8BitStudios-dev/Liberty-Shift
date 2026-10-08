@@ -7,7 +7,7 @@ import {
 import {
   STATUS_META, TIPO_META, TIPO_CAMBIO, RULES, FASCE_PREFERENZE,
 } from '../core/rules.js';
-import { formatDay, GIORNI_LUNGHI } from '../core/time.js';
+import { formatDay, GIORNI_LUNGHI, MESI, todayISO } from '../core/time.js';
 import { icona } from './icone.js';
 
 /**
@@ -325,6 +325,9 @@ export function cardMatch(match, opzioni = {}) {
         </div>
         <span class="score">${match.score}%</span>
       </header>
+      ${raw(store.chiHaiAiutato().has(match.userId)
+    ? `<p class="etichette-aiuto"><span class="tag favore">Hai aiutato ${esc(u?.nome)} ${meseDelFavore(store.chiHaiAiutato().get(match.userId))}</span></p>`
+    : '')}
       <div class="match-tipo">
         ${raw(segnoMatch(verde))}${verde ? 'Match' : 'Potenziale'}
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
@@ -461,11 +464,38 @@ export function vuoto(titolo, sottotitolo, azione = '') {
     </div>`;
 }
 
+/** "questo mese" o "a settembre": un favore si ricorda per mese, non per giorno. */
+export function meseDelFavore(quando) {
+  if (!quando) return '';
+  if (quando.slice(0, 7) === todayISO().slice(0, 7)) return 'questo mese';
+  return `a ${MESI[Number(quando.slice(5, 7)) - 1].toLowerCase()}`;
+}
+
+const TESTO_COSTO = {
+  conviene: ['ok', 'Ti conviene'],
+  nulla: ['ok', 'Per te non cambia niente'],
+  poco: ['', 'Ti costa poco'],
+};
+
+/**
+ * Quello che una card di "Aiuta un collega" dice prima di tutto: quanto ti
+ * pesa, e se è il tuo turno di ricambiare. Il costo "pesa" non si scrive:
+ * la card resta in fondo e il motivo si legge già nei perché.
+ */
+function etichetteAiuto({ richiesta, costo, favore }) {
+  const u = store.user(richiesta.userId);
+  const etichette = [];
+  if (favore && costo !== 'costa') etichette.push(['favore', `${u?.nome} ti ha aiutato ${meseDelFavore(favore)}: puoi ricambiare`]);
+  if (TESTO_COSTO[costo]) etichette.push(TESTO_COSTO[costo]);
+  if (!etichette.length) return '';
+  return `<p class="etichette-aiuto">${etichette.map(([classe, testo]) => `<span class="tag ${classe}">${esc(testo)}</span>`).join('')}</p>`;
+}
+
 /**
  * Una richiesta altrui vista dal lato di chi può risolverla: la percentuale
  * è quanto tu sei una buona risposta per lei, non il contrario.
  */
-export function cardOpportunita({ richiesta, match }) {
+export function cardOpportunita({ richiesta, match, costo, favore }) {
   const u = store.user(richiesta.userId);
   const verde = match.tipo === 'MATCH';
   const mioTurno = store.shift(match.shiftOffertoId);
@@ -484,6 +514,7 @@ export function cardOpportunita({ richiesta, match }) {
         </div>
         <span class="score">${match.score}%</span>
       </header>
+      ${raw(etichetteAiuto({ richiesta, costo, favore }))}
       ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
       <div class="scambio-secco">

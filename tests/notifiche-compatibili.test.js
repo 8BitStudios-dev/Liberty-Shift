@@ -205,3 +205,43 @@ test('chi non ha ancora un profilo lo crea, e non vede "le note sono cambiate"',
   assert.equal(store.profiloDaCompletare(), true);
   assert.equal(store.noteDaRiaccettare(VERSIONE_NOTE), false);
 });
+
+test('gli avvisi per i favori sono accesi di base, si spengono e la scelta riparte', () => {
+  iscritto();
+  store.impostaModoNotifiche('compatibili');
+  assert.equal(store.avvisiFavori(), true);
+  assert.equal(operazioni().at(-1).dati.favori, true);
+
+  store.state.coda = [];
+  assert.equal(store.impostaAvvisiFavori(false).ok, true);
+  assert.equal(store.avvisiFavori(), false);
+  assert.equal(operazioni().length, 1, 'cambiare la scelta rimanda la riga');
+  assert.equal(operazioni()[0].dati.favori, false);
+
+  // Rientrando in "compatibili" la scelta resta quella di prima.
+  store.impostaModoNotifiche('dirette');
+  store.impostaModoNotifiche('compatibili');
+  assert.equal(store.avvisiFavori(), false);
+});
+
+test('senza i cambi che convengono gli avvisi per i favori non si accendono', () => {
+  iscritto();
+  assert.ok(store.impostaAvvisiFavori(true).errori);
+});
+
+test('le priorità usate si contano dalle richieste, e quelle guadagnate solo dopo UKG', () => {
+  const io = iscritto();
+  const mese = oggi.slice(0, 7);
+  assert.equal(store.creditoPriorita(), 1);
+  store.state.users.push({ id: 'giulia', nome: 'Giulia', cognomeIniziale: 'R', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} });
+  store.state.requests.push({ id: 'rq-g', userId: 'giulia', status: 'CHIUSA', chiusaIl: `${mese}-01T10:00:00Z`, createdAt: `${mese}-01T09:00:00Z`, cedo: { shiftId: null }, cerco: {} });
+  const proposta = { id: 'pp-g', requestId: 'rq-g', daUserId: io, aUserId: 'giulia', status: 'ACCORDO', accettataDa: [], createdAt: `${mese}-01T09:30:00Z` };
+  store.state.proposals.push(proposta);
+  assert.equal(store.creditoPriorita(), 1, 'un accordo da solo non basta');
+  assert.equal(store.aiutiInAttesa(), 1);
+  proposta.confermataIl = new Date().toISOString();
+  assert.equal(store.creditoPriorita(), 2, 'approvato su UKG: una priorità in più');
+  // Usarne una la toglie, anche senza nessun contatore sul telefono.
+  store.state.requests.push({ id: 'rq-io', userId: io, status: 'APERTA', createdAt: new Date().toISOString(), prioritaFinoA: '2099-01-01T00:00:00Z', cedo: { shiftId: null }, cerco: {} });
+  assert.equal(store.creditoPriorita(), 1);
+});

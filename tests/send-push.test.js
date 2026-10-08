@@ -12,7 +12,7 @@ import { stripTypeScriptTypes } from 'node:module';
 
 const sorgente = await readFile(new URL('../supabase/functions/send-push/index.ts', import.meta.url), 'utf8');
 const pezzo = sorgente.slice(sorgente.indexOf('const formatData'), sorgente.indexOf('const json ='));
-const codice = `${stripTypeScriptTypes(pezzo)}\nreturn { messaggio, quando, messaggioPassword, durataDiversa };`;
+const codice = `${stripTypeScriptTypes(pezzo)}\nreturn { messaggio, quando, messaggioPassword, durataDiversa, meseDelFavore };`;
 
 /** Una `Date` che alla chiamata senza argomenti risponde sempre `adesso`. */
 function dateFinta(adesso) {
@@ -21,7 +21,7 @@ function dateFinta(adesso) {
   };
 }
 const { oreRetribuite } = await import('../src/core/model.js');
-const { messaggio, quando, messaggioPassword, durataDiversa } = new Function('Date', 'oreRetribuite', codice)(dateFinta('2026-10-04T10:00:00Z'), oreRetribuite);
+const { messaggio, quando, messaggioPassword, durataDiversa, meseDelFavore } = new Function('Date', 'oreRetribuite', codice)(dateFinta('2026-10-04T10:00:00Z'), oreRetribuite);
 
 const MARTINA = 'id-martina';
 const OMAR = 'id-omar';
@@ -204,4 +204,9 @@ test('chi arriva secondo su un cambio già preso legge che l\'ha preso un altro'
   assert.match(m.body, /l'ha già preso un altro collega/);
   // Scelta da chi aveva chiesto: si dice com'era.
   assert.match(messaggio('UPDATE', dopo, prima, OMAR, nomi, { altraScelta: true }).body, /ha scelto un'altra proposta/);
+});
+
+test('il favore da ricambiare si dice per mese, come nell\'app', () => {
+  assert.equal(meseDelFavore('2026-10-02T09:00:00Z', '2026-10-04'), 'questo mese');
+  assert.equal(meseDelFavore('2026-09-20T18:00:00Z', '2026-10-04'), 'a settembre');
 });

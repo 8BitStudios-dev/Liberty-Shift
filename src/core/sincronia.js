@@ -233,13 +233,13 @@ const OPERAZIONI = {
  * il resto.
  */
 async function rigaCifrata(d) {
-  const { turni = [], preferenze = {}, ...resto } = d;
+  const { turni = [], preferenze = {}, favori = true, ...resto } = d;
   if (d.modo !== 'compatibili') return { ...resto, turni: [], preferenze: {}, dati_cifrati: null };
   return {
     ...resto,
     turni: [],
     preferenze: {},
-    dati_cifrati: await cifra({ turni, preferenze }, SERVER.chiaveTurniPubblica),
+    dati_cifrati: await cifra({ turni, preferenze, favori }, SERVER.chiaveTurniPubblica),
   };
 }
 
@@ -284,6 +284,9 @@ export function rigaNotifiche(state, oggi = todayISO()) {
     modo: compatibili ? 'compatibili' : 'dirette',
     turni: compatibili ? turniDaCondividere(state.shifts, state.currentUserId, oggi) : [],
     preferenze: compatibili ? preferenzeDaCondividere(io) : {},
+    // Gli avvisi "Puoi ricambiare un favore" si possono spegnere: la scelta
+    // viaggia cifrata con i turni, perché sul server serve solo lì.
+    favori: compatibili ? scelta.favori !== false : false,
     consenso_il: compatibili ? scelta.consensoIl : null,
     aggiornato_il: new Date().toISOString(),
   };
@@ -305,7 +308,7 @@ export function condividiNotifiche(state, { forzato = false, oggi = todayISO() }
   // La versione dentro la firma: quando cambia il modo in cui i dati escono
   // (dalla 2 sono cifrati) ogni telefono rimanda la sua riga una volta, e sul
   // server non resta niente in chiaro.
-  const firma = JSON.stringify([2, riga.modo, riga.turni, riga.preferenze]);
+  const firma = JSON.stringify([2, riga.modo, riga.turni, riga.preferenze, riga.favori]);
   if (!forzato && scelta.firma === firma) return false;
   // Un dispositivo che non ha mai mandato niente e non ha ancora i turni (un
   // telefono nuovo dopo il rientro) non sa com'è il calendario: mandare una

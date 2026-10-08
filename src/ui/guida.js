@@ -8,6 +8,7 @@
 
 import { html, raw } from './dom.js';
 import { iconaTipo } from './components.js';
+import { RULES } from '../core/rules.js';
 
 /** Versione della guida: alzarla ripropone le schede a chi le ha già viste. */
 export const VERSIONE_GUIDA = '7';
@@ -31,8 +32,9 @@ export const GUIDE = {
       <p>In cima. Il pallino rosso vuol dire che aspettano una tua risposta.</p>
 
       <p class="testo-tenue">
-        La stella in alto è la priorità: una al mese, mette la tua richiesta in cima
-        alla bacheca per 48 ore. Quando l'hai usata diventa grigia fino al mese dopo.
+        La stella in alto è la priorità: una al mese, più una per ogni collega che
+        aiuti, appena UKG approva il cambio. Mette la tua richiesta in cima alla bacheca per 48 ore. Quando le
+        hai usate tutte diventa grigia fino al mese dopo.
       </p>`,
   },
 
@@ -82,6 +84,19 @@ export const GUIDE = {
       <p class="esempio">
         Luca vuole OFF venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
         lavori: siete la risposta l'uno dell'altro.
+      </p>
+
+      <p>
+        Sopra ogni richiesta l'app ti dice <strong>quanto ti costa</strong>,
+        dalle tue preferenze: <em>Ti conviene</em>, <em>Per te non cambia
+        niente</em> o <em>Ti costa poco</em>. Le prime sono in cima.
+      </p>
+
+      <p>
+        Ogni collega che aiuti ti dà <strong>una priorità in più</strong> quando
+        UKG approva il cambio, fino a ${RULES.priority.tetto} al mese. E se qualcuno ti
+        ha aiutato, la sua richiesta te la mostriamo per prima: è il momento di
+        ricambiare.
       </p>
 
       <p class="testo-tenue">

@@ -16,7 +16,7 @@ import { RULES, STATUS } from './rules.js';
 import { addDays } from './time.js';
 import { findMatches } from './engine.js';
 import {
-  normalizzaPreferenze, haPreferenze, votoTurno, vuoleOff, superaLimite, liberaGiornoVoluto,
+  normalizzaPreferenze, haPreferenze, votoTurno, vuoleOff, superaLimite, liberaGiornoVoluto, fasceDi,
 } from './model.js';
 
 const ora = (t) => (t ? String(t).slice(0, 5) : null);
@@ -68,9 +68,39 @@ export function cambioFavorevole(preferenze, lascia, prende) {
   const io = { preferenze };
   if (!haPreferenze(preferenze) || !prende) return false;
   if (votoTurno(io, prende).voto === 'evita' || vuoleOff(io, prende.data) || superaLimite(io, prende)) return false;
+  // Una fascia preferita conviene solo se è nuova: lasciare una mattina per
+  // un'altra mattina non è un guadagno, ed era un avviso in più per niente.
+  const [prima] = fasceDi(lascia);
   return votoTurno(io, lascia).voto === 'evita'
-    || votoTurno(io, prende).voto === 'preferisce'
+    || (votoTurno(io, prende).voto === 'preferisce' && fasceDi(prende)[0] !== prima)
     || liberaGiornoVoluto(io, lascia, prende).bonus > 0;
+}
+
+/**
+ * Quanto costa un cambio a chi aiuta: lascia `lascia` e prende `prende`.
+ *
+ * "Aiuta un collega" mostrava solo quanto eri adatto, e il conto di quanto
+ * ti pesava lo dovevi fare da solo. Un turno che non ami del tutto ma che
+ * non ti cambia la giornata è un sì facile, se qualcuno te lo dice.
+ *
+ *   'conviene'  ci guadagni (vedi `cambioFavorevole`)
+ *   'nulla'     stessa fascia, o una che ti è indifferente
+ *   'poco'      lasci una fascia che preferisci per una che non eviti
+ *   'costa'     prendi una fascia che eviti, un giorno che vorresti OFF,
+ *               o un turno oltre il tuo limite
+ *   null        senza preferenze, e fasce diverse: l'app non lo sa
+ */
+export function costoDelCambio(preferenze, lascia, prende) {
+  const io = { preferenze };
+  if (!prende) return null;
+  if (superaLimite(io, prende)) return 'costa';
+  if (cambioFavorevole(preferenze, lascia, prende)) return 'conviene';
+  const [prima] = fasceDi(lascia);
+  const [dopo] = fasceDi(prende);
+  const stessaFascia = Boolean(prima) && prima === dopo;
+  if (!haPreferenze(preferenze)) return stessaFascia ? 'nulla' : null;
+  if (votoTurno(io, prende).voto === 'evita' || vuoleOff(io, prende.data)) return 'costa';
+  return votoTurno(io, lascia).voto === 'preferisce' && !stessaFascia ? 'poco' : 'nulla';
 }
 
 /**
@@ -158,23 +188,24 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
   const preferenzeDi = Object.fromEntries(candidati.map((c) => [c.profilo.id, c.preferenze || {}]));
   // Il collega lascia il turno che ha (`shiftOffertoId`) e prende quello
   // dell'autore, adattato al suo contratto.
-  const conviene = (m) => {
+  const costo = (m) => {
     const lascia = byId[m.shiftOffertoId];
     const prende = m.adattatoControparte?.trasformato
       ? { ...cedo, start: m.adattatoControparte.start, end: m.adattatoControparte.end }
       : cedo;
-    return cambioFavorevole(preferenzeDi[m.userId], lascia, prende);
+    return costoDelCambio(preferenzeDi[m.userId], lascia, prende);
   };
 
   const perPersona = new Map();
   for (const m of findMatches(richiesta, ctx)) {
     // I match arrivano dal migliore: di ogni persona si tiene il primo che le
     // conviene, e se nessuno le conviene il primo e basta.
-    const favorevole = conviene(m);
+    const c = costo(m);
+    const favorevole = c === 'conviene';
     const prima = perPersona.get(m.userId);
-    if (!prima || (favorevole && !prima.favorevole)) perPersona.set(m.userId, { m, favorevole });
+    if (!prima || (favorevole && !prima.favorevole)) perPersona.set(m.userId, { m, favorevole, costo: c });
   }
-  return [...perPersona.values()].map(({ m, favorevole }) => ({
+  return [...perPersona.values()].map(({ m, favorevole, costo: c }) => ({
     userId: m.userId,
     score: m.score,
     tipo: m.cambio,
@@ -182,6 +213,7 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
     giorno: m.data,
     turno: byId[m.shiftOffertoId] || null,
     favorevole,
+    costo: c,
   }));
 }
 
