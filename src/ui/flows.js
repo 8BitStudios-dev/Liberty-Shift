@@ -1113,18 +1113,21 @@ function riquadroRicompensa() {
   const ancora = tetto - creditsPerMonth - guadagnate;
   const inAttesa = store.aiutiInAttesa();
   const volte = aiuti === 1 ? 'un tuo aiuto' : `${aiuti} tuoi aiuti`;
-  const stato = aiuti === 0
-    ? `La priorità arriva quando UKG approva il cambio, fino a ${tetto} al mese.`
-    : ancora > 0
-      ? `Questo mese UKG ha approvato ${volte}: ${guadagnate === 1 ? 'una priorità in più' : `${guadagnate} priorità in più`}. Ne puoi guadagnare ancora ${ancora}.`
-      : `Questo mese UKG ha approvato ${volte}: hai già tutte le priorità che si possono avere (${tetto}).`;
+  const stato = ancora > 0
+    ? `Questo mese UKG ha approvato ${volte}: ${guadagnate === 1 ? 'una priorità in più' : `${guadagnate} priorità in più`}. Ne puoi guadagnare ancora ${ancora}.`
+    : `Questo mese UKG ha approvato ${volte}: hai già tutte le priorità che si possono avere (${tetto}).`;
   const attesa = inAttesa && ancora > 0
     ? ` ${inAttesa === 1 ? 'Un altro cambio aspetta' : `Altri ${inAttesa} cambi aspettano`} l'approvazione di UKG.`
     : '';
+  // Finché UKG non ha approvato niente basta l'invito: i conti li fa chi ha
+  // già cominciato ad aiutare.
+  const testo = aiuti === 0
+    ? `Sii gentile e puoi guadagnare priorità.${inAttesa ? ` ${inAttesa === 1 ? 'Un tuo cambio aspetta' : `${inAttesa} tuoi cambi aspettano`} l'approvazione di UKG.` : ''}`
+    : html`${stato}${attesa} Ora ne hai <strong>${store.creditoPriorita()}</strong> da usare.`;
   return html`
     <div class="ricompensa-aiuto">
       <span class="icona-in-riga stella">${raw(icona('priorita', { px: 16 }))}</span>
-      <p>${stato}${attesa} Ora ne hai <strong>${store.creditoPriorita()}</strong> da usare.</p>
+      <p>${raw(testo)}</p>
     </div>`;
 }
 
