@@ -616,9 +616,24 @@ preferenze (`cambioFavorevole` in `compatibili.js`): lascerebbe un turno che
 evita, oppure prenderebbe uno che preferisce, e mai uno che evita. Avvisare
 per ogni richiesta compatibile era un bombardamento. Per attivarlo serve
 almeno una preferenza accesa: l'app lo chiede prima del consenso. Il titolo è "Un cambio che ti conviene".
+Una fascia preferita conta solo se è nuova: lasciare una mattina per un'altra
+mattina non avvisa.
+
+L'eccezione è il **favore da ricambiare**: se l'autore ti ha aiutato negli
+ultimi 90 giorni (un accordo sulla tua richiesta, letto da `proposte` e
+`richieste` con `chiHaiAiutato` in `karma.js`), l'avviso arriva anche quando
+il cambio non ti conviene, purché non ti pesi (`costoDelCambio`). Il titolo è
+"Puoi ricambiare un favore". Il favore si legge solo dal server, che vede
+già le proposte. Questi avvisi si spengono dal pannello Notifiche: la scelta
+(`favori`) viaggia **dentro la parte cifrata**, accanto a turni e
+preferenze, e non in una colonna; una riga cifrata prima che la scelta
+esistesse vale come accesa.
 Limiti noti: il server non conosce le preferenze dell'autore, i suoi altri turni
 e le richieste altrui, quindi in casi al limite il telefono può rispondere
-diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi.
+diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi. Conta anche il
+weekend OFF (o un giorno scelto come OFF): un cambio che te lo libera ti
+avvisa, uno che te lo occupa no. Un turno oltre il tuo limite d'orario non
+avvisa mai.
 
 
 ## Sincronizzazione a pezzi e traffico

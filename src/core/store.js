@@ -2,8 +2,11 @@
 // Nell'MVP i dati stanno nel browser: sostituire salva()/carica() con
 // chiamate a un backend non tocca né il motore né la UI.
 
-import { RULES, PREFERENZE, STATUS } from './rules.js';
-import { newId, isExpired, hasPriority, isOpen, usaRotazione, disponibileDallePreferenze } from './model.js';
+import { RULES, STATUS } from './rules.js';
+import {
+  newId, isExpired, hasPriority, isOpen, usaRotazione, disponibileDallePreferenze,
+  normalizzaPreferenze, aggiornaPreferenze, haPreferenze,
+} from './model.js';
 import {
   validateRequest, nextStatus, turnoOfferibile, combaciaEsatto, slotSettimana, disponibilitaRicalcolata,
 } from './engine.js';
@@ -20,6 +23,9 @@ import {
   sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche, salvaTraguardi,
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
 } from './sincronia.js';
+import {
+  aiutiConclusi, aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
+} from './karma.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
@@ -316,10 +322,49 @@ export const store = {
     }
     return giorni;
   },
+  /**
+   * Le priorità ancora da usare questo mese: una di base, più una per ogni
+   * collega aiutato, fino al tetto (vedi `prioritaDelMese`).
+   *
+   * Tutto si conta da quello che sta sul server: le usate dalle proprie
+   * richieste (che l'app non cancella mai, al massimo chiude), le guadagnate
+   * dalle proposte approvate su UKG. Un contatore sul telefono si perdeva
+   * reinstallando l'app, e su due telefoni dava due risposte diverse.
+   */
   creditoPriorita(userId = this.state.currentUserId) {
-    const u = this.user(userId);
-    const usati = u.prioritaUsata?.[monthKey(todayISO())] || 0;
-    return Math.max(0, RULES.priority.creditsPerMonth - usati);
+    const mese = monthKey(todayISO());
+    const usate = this.state.requests
+      .filter((r) => r.userId === userId && r.prioritaFinoA && r.createdAt?.slice(0, 7) === mese).length;
+    return prioritaDelMese(this.aiutiDelMese(userId), usate);
+  },
+  aiutiDelMese(userId = this.state.currentUserId) {
+    return aiutiNelMese(userId, this.state, monthKey(todayISO()));
+  },
+  /** Gli aiuti già concordati che UKG non ha ancora approvato. */
+  aiutiInAttesa(userId = this.state.currentUserId) {
+    return aiutiConclusi(this.state).filter((a) => a.aiutante === userId && !a.approvatoIl).length;
+  },
+  /** I colleghi che hai aiutato, con l'ultima volta: chi ti deve una mano. */
+  chiHaiAiutato() {
+    return chiHaiAiutato(this.state.currentUserId, this.state);
+  },
+  /**
+   * I colleghi che possono prendere il tuo turno, con chi hai aiutato in
+   * cima: è da loro che un sì arriva più volentieri. Per il resto l'ordine
+   * del motore non cambia.
+   */
+  primaChiHaiAiutato(risultati) {
+    const aiutati = this.chiHaiAiutato();
+    return [...risultati].sort((a, b) => aiutati.has(b.userId) - aiutati.has(a.userId));
+  },
+  /** Le occasioni di aiutare, con costo e favore, nell'ordine in cui mostrarle. */
+  occasioni(opportunita) {
+    const me = this.me;
+    return occasioniDiAiuto(opportunita, {
+      io: me,
+      turno: (id) => this.shift(id),
+      favori: chiTiHaAiutato(me.id, this.state),
+    });
   },
 
   // --- scrittura -----------------------------------------------------
@@ -550,7 +595,7 @@ export const store = {
       && r.tipo === tipo && r.cedo.shiftId === cedo.shiftId);
     if (doppia) return { errori: ['Hai già una richiesta aperta di questo tipo su questo turno: la trovi nel giorno del calendario.'] };
     if (usaPriorita && this.creditoPriorita() < 1) {
-      return { errori: ['Hai già usato la priorità di questo mese.'] };
+      return { errori: ['Hai già usato tutte le priorità di questo mese.'] };
     }
 
     const me = this.me;
@@ -568,9 +613,6 @@ export const store = {
     if (usaPriorita) {
       const scadenza = new Date(Date.now() + RULES.priority.durationHours * 3600 * 1000);
       richiesta.prioritaFinoA = scadenza.toISOString();
-      const mk = monthKey(todayISO());
-      me.prioritaUsata = me.prioritaUsata || {};
-      me.prioritaUsata[mk] = (me.prioritaUsata[mk] || 0) + 1;
     }
 
     if (sulServer(this.state)) {
@@ -1355,13 +1397,13 @@ export const store = {
     if (modo !== 'dirette' && modo !== 'compatibili') return { errori: ['Scelta non valida.'] };
     // L'avviso arriva solo per i cambi che convengono secondo le preferenze
     // (`cambioFavorevole`): senza nessuna, non arriverebbe mai niente.
-    if (modo === 'compatibili' && !PREFERENZE.some((p) => this.me.preferenze?.[p.key])) {
+    if (modo === 'compatibili' && !haPreferenze(this.me.preferenze)) {
       return { errori: ['Prima scegli almeno una preferenza: è da lì che l\'app capisce quale cambio ti conviene.'] };
     }
     const prima = this.state.profilo.notifiche;
     this.state.profilo.notifiche = modo === 'compatibili'
-      ? { modo, consensoIl: new Date().toISOString(), firma: null }
-      : { modo, consensoIl: null, firma: null };
+      ? { modo, consensoIl: new Date().toISOString(), firma: null, favori: prima?.favori !== false }
+      : { modo, consensoIl: null, firma: null, favori: prima?.favori !== false };
     // Forzato: anche tornando a "dirette" la riga va riscritta, vuota.
     condividiNotifiche(this.state, { forzato: true });
     this.commit();
@@ -1370,6 +1412,19 @@ export const store = {
   },
   modoNotifiche() {
     return this.state.profilo?.notifiche?.modo || 'dirette';
+  },
+  /** Gli avvisi "Puoi ricambiare un favore": accesi finché non si spengono. */
+  avvisiFavori() {
+    return this.state.profilo?.notifiche?.favori !== false;
+  },
+  impostaAvvisiFavori(valore) {
+    const scelta = this.state.profilo?.notifiche;
+    if (scelta?.modo !== 'compatibili') return { errori: ['Questi avvisi vanno con i cambi che ti convengono: accendi prima quelli.'] };
+    this.state.profilo.notifiche = { ...scelta, favori: Boolean(valore) };
+    condividiNotifiche(this.state);
+    this.commit();
+    this.spingi();
+    return { ok: true };
   },
 
   /**
@@ -1506,18 +1561,16 @@ export const store = {
   },
 
   /**
-   * Attivare una preferenza spegne la sua opposta: "evito le mattine" e
-   * "preferisco le mattine" insieme non vogliono dire niente, e lasciarle
-   * entrambe accese scaricherebbe sul motore una contraddizione che si può
-   * togliere qui, dove nasce.
+   * Le preferenze, intere o con una modifica sola (vedi `aggiornaPreferenze`
+   * in model.js). Si salvano sempre nella forma di adesso: chi le tocca una
+   * volta lascia indietro gli interruttori di prima.
    */
-  impostaPreferenze(patch) {
-    for (const [key, valore] of Object.entries(patch)) {
-      this.me.preferenze[key] = valore;
-      const opposta = PREFERENZE.find((p) => p.key === key)?.opposta;
-      if (valore && opposta) this.me.preferenze[opposta] = false;
-    }
+  impostaPreferenze(preferenze) {
+    this.me.preferenze = normalizzaPreferenze(preferenze);
     this.commit();
+  },
+  modificaPreferenze(modifica) {
+    this.impostaPreferenze(aggiornaPreferenze(this.me.preferenze, modifica));
   },
 
   /**

@@ -7,9 +7,10 @@ import {
   minutes, sameAppleWeek, formatDay, weekday, appleWeekKey, addDays, todayISO,
 } from './time.js';
 import {
-  isClosing, isMorning, isOpen, hasPriority, shiftLabel, wantLabel,
+  isClosing, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, oreRetribuite,
   applicaPreferenze, concorda, contractOf, disponibileDallePreferenze,
+  liberaGiornoVoluto, superaLimite, evitaChiusureIl,
 } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -187,6 +188,16 @@ function haGiaChiesto(ctx, idx, userId, giorno) {
   return ctx.requests.some((r) => r.userId === userId && isOpen(r) && idx.byId[r.cedo.shiftId]?.data === giorno);
 }
 
+/**
+ * Uno dei due riceverebbe un turno che finisce oltre l'ora che ha detto di
+ * non poter superare. Le preferenze abbassano, il limite esclude: è un
+ * vincolo (un figlio da prendere, l'ultimo treno), non un gusto.
+ */
+function oltreIlLimite(autore, mioCedo, u, suo, trova) {
+  return superaLimite(autore, turnoAdattato(suo, mioCedo, trova))
+    || superaLimite(u, turnoAdattato(mioCedo, suo, trova));
+}
+
 function personeDi(ctx) {
   const per = new Map(ctx.users.map((u) => [u.id, u]));
   return (id) => per.get(id);
@@ -204,6 +215,11 @@ function verificheIncrociate(coppie, shifts, chiGuarda, trova) {
     const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede, trova), { io });
     bonus += pref.bonus;
     if (pref.bonus) reasons.push(io ? maiuscola(pref.reasons[0]) : `${chi.nome} ${pref.reasons[0]}`);
+    // Il rovescio: quello che si lascia. Liberare un sabato che si vuole OFF
+    // vale quanto ricevere una fascia che si preferisce.
+    const libera = liberaGiornoVoluto(chi, cede, riceve, { io });
+    bonus += libera.bonus;
+    if (libera.bonus) reasons.push(io ? maiuscola(libera.reasons[0]) : `${chi.nome} ${libera.reasons[0]}`);
     const t = trasformaTurno(riceve, cede, trova);
     if (t.trasformato) {
       penalita += RULES.adattamentoPenalty;
@@ -265,6 +281,7 @@ function matchOrario(request, ctx) {
     const stesso = (a, b) => a.start === b.start && a.end === b.end;
     if (stesso(turnoAdattato(suo, mioCedo, trova), mioCedo) || stesso(turnoAdattato(mioCedo, suo, trova), suo)) continue;
     if (perMe.score === 0) continue;
+    if (oltreIlLimite(autore, mioCedo, u, suo, trova)) continue;
 
     // Ha chiesto lui stesso un cambio orario quel giorno?
     const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
@@ -371,6 +388,7 @@ function matchOff(request, ctx) {
 
       const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo, trova));
       if (perMe.score === 0) continue;
+      if (oltreIlLimite(autore, mioCedo, u, suo, trova)) continue;
 
       const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
         && r.tipo === TIPO_CAMBIO.OFF
@@ -606,7 +624,7 @@ export function cambioRapido(shiftId, ctx) {
     prioritaFinoA: null,
     cedo: { shiftId, flessibile: false },
   };
-  const evitaChiusura = Boolean(autore.preferenze?.evitaChiusure);
+  const evitaChiusura = evitaChiusureIl(autore, mioCedo.data);
 
   const orario = findMatches({
     ...base,

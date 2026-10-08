@@ -24,7 +24,7 @@ User ──< Shift
 | `admin` | bool | può chiudere/rimuovere la richiesta di chiunque e vedere le statistiche |
 | `superAdmin` | bool | una sola persona per store; promuove/retrocede gli admin e disattiva un profilo |
 | `attivo` | bool | disattivato = fuori dal negozio, reversibile; non è una cancellazione |
-| `preferenze` | `{ preferisceMattina, evitaChiusure, disponibileWeekend }` | pesano sul punteggio |
+| `preferenze` | `{ versione: 2, modo: 'generali'\|'giorni', fasce: { APERTURA: 'evita'\|'preferisce', … }, giorni: { 0..6: { fasce, off } }, weekendOff, fineMax }` | pesano sul punteggio; il limite `fineMax` esclude. Il formato di prima (`evitaChiusure: true`…) si legge ancora, vedi `normalizzaPreferenze` |
 | `disponibilita` | `{ [weekKey]: bool[7] }` | slot 0 = sabato; calcolata da turni e preferenze, è quella che va sul server |
 | `disponibilitaManuale` | `{ [weekKey]: (bool\|null)[7] }` | solo sul telefono: le eccezioni scelte a mano, `null` = segue il calcolo |
 | `prioritaUsata` | `{ 'YYYY-MM': n }` | credito consumato per mese |

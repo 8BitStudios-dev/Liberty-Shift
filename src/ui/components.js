@@ -1,10 +1,13 @@
-import { html, raw, esc } from './dom.js';
+import { html, raw, esc, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   shiftLabel, wantLabel, hasPriority, trasformaTurno, pausaBreve, ruoloNelGiorno as ruoloCore,
+  normalizzaPreferenze,
 } from '../core/model.js';
-import { STATUS_META, TIPO_META, TIPO_CAMBIO, RULES } from '../core/rules.js';
-import { formatDay } from '../core/time.js';
+import {
+  STATUS_META, TIPO_META, TIPO_CAMBIO, RULES, FASCE_PREFERENZE,
+} from '../core/rules.js';
+import { formatDay, GIORNI_LUNGHI, MESI, todayISO } from '../core/time.js';
 import { icona } from './icone.js';
 
 /**
@@ -322,6 +325,9 @@ export function cardMatch(match, opzioni = {}) {
         </div>
         <span class="score">${match.score}%</span>
       </header>
+      ${raw(store.chiHaiAiutato().has(match.userId)
+    ? `<p class="etichette-aiuto"><span class="tag favore">Hai aiutato ${esc(u?.nome)} ${meseDelFavore(store.chiHaiAiutato().get(match.userId))}</span></p>`
+    : '')}
       <div class="match-tipo">
         ${raw(segnoMatch(verde))}${verde ? 'Match' : 'Potenziale'}
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
@@ -458,11 +464,38 @@ export function vuoto(titolo, sottotitolo, azione = '') {
     </div>`;
 }
 
+/** "questo mese" o "a settembre": un favore si ricorda per mese, non per giorno. */
+export function meseDelFavore(quando) {
+  if (!quando) return '';
+  if (quando.slice(0, 7) === todayISO().slice(0, 7)) return 'questo mese';
+  return `a ${MESI[Number(quando.slice(5, 7)) - 1].toLowerCase()}`;
+}
+
+const TESTO_COSTO = {
+  conviene: ['ok', 'Ti conviene'],
+  nulla: ['ok', 'Per te non cambia niente'],
+  poco: ['', 'Ti costa poco'],
+};
+
+/**
+ * Quello che una card di "Aiuta un collega" dice prima di tutto: quanto ti
+ * pesa, e se è il tuo turno di ricambiare. Il costo "pesa" non si scrive:
+ * la card resta in fondo e il motivo si legge già nei perché.
+ */
+function etichetteAiuto({ richiesta, costo, favore }) {
+  const u = store.user(richiesta.userId);
+  const etichette = [];
+  if (favore && costo !== 'costa') etichette.push(['favore', `${u?.nome} ti ha aiutato ${meseDelFavore(favore)}: puoi ricambiare`]);
+  if (TESTO_COSTO[costo]) etichette.push(TESTO_COSTO[costo]);
+  if (!etichette.length) return '';
+  return `<p class="etichette-aiuto">${etichette.map(([classe, testo]) => `<span class="tag ${classe}">${esc(testo)}</span>`).join('')}</p>`;
+}
+
 /**
  * Una richiesta altrui vista dal lato di chi può risolverla: la percentuale
  * è quanto tu sei una buona risposta per lei, non il contrario.
  */
-export function cardOpportunita({ richiesta, match }) {
+export function cardOpportunita({ richiesta, match, costo, favore }) {
   const u = store.user(richiesta.userId);
   const verde = match.tipo === 'MATCH';
   const mioTurno = store.shift(match.shiftOffertoId);
@@ -481,6 +514,7 @@ export function cardOpportunita({ richiesta, match }) {
         </div>
         <span class="score">${match.score}%</span>
       </header>
+      ${raw(etichetteAiuto({ richiesta, costo, favore }))}
       ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
       <div class="scambio-secco">
@@ -510,4 +544,91 @@ export function testoPromemoria(promemoria) {
       <span class="icona-in-riga">${raw(icona('orario', { px: 16 }))}</span>
       ${promemoria.quando.charAt(0).toUpperCase() + promemoria.quando.slice(1)}: l'hai già inserito in UKG?
     </p>`;
+}
+
+// ------------------------------------------------------------ preferenze
+
+/** Quante scelte dicono qualcosa: è il numero sul pulsante del Profilo. */
+export function contaPreferenze(p) {
+  const n = normalizzaPreferenze(p);
+  const fasce = n.modo === 'giorni'
+    ? Object.values(n.giorni).reduce((t, g) => t + Object.keys(g?.fasce || {}).length + (g?.off ? 1 : 0), 0)
+    : Object.keys(n.fasce).length;
+  return fasce + (n.weekendOff ? 1 : 0) + (n.fineMax ? 1 : 0);
+}
+
+const LIMITI = ['17:00', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30'];
+// Lunedì per primo: è come si legge una settimana, anche se quella di Apple parte dal sabato.
+const ORDINE_GIORNI = [1, 2, 3, 4, 5, 6, 0];
+
+/**
+ * Le preferenze, uguali per Profilo e registrazione.
+ *
+ * Una riga per fascia con tre scelte, Evito · Indifferente · Preferisco: una
+ * sola per riga, quindi niente contraddizioni da spegnere a mano. Sopra si
+ * sceglie se valgono tutti i giorni o giorno per giorno; sotto, il weekend
+ * OFF e il limite d'orario, che valgono sempre.
+ *
+ * `ambito` dice di chi sono: 'profilo' (le tue, salvate subito) o 'bozza'
+ * (la registrazione, salvate alla fine). I tasti lo portano con sé.
+ */
+export function formPreferenze(preferenze, ambito) {
+  const n = normalizzaPreferenze(preferenze);
+  const tasto = (attrs, etichetta, attivo) => `<button type="button" class="pill ${attivo ? 'attivo' : ''}" data-ambito="${ambito}" ${attrs}>${etichetta}</button>`;
+
+  const righe = (fasce, giorno) => FASCE_PREFERENZE.map((f) => {
+    const info = RULES.fasce[f.fascia] || {};
+    const nome = f.nome || info.nome;
+    const aiuto = f.aiuto || info.aiuto;
+    const voto = fasce[f.fascia] || null;
+    const g = giorno == null ? '' : ` data-giorno="${giorno}"`;
+    const scelte = [['evita', 'Evito'], [null, 'Indifferente'], ...(f.soloEvita ? [] : [['preferisce', 'Preferisco']])];
+    return `
+      <div class="pref-riga">
+        <span class="pref-nome"><strong>${nome}</strong>${aiuto ? `<em>${aiuto}</em>` : ''}</span>
+        <div class="pillole pref-voti">${scelte.map(([v, etichetta]) => tasto(
+    `data-act="pref-voto" data-fascia="${f.fascia}" data-voto="${v || ''}"${g}`, etichetta, voto === v,
+  )).join('')}</div>
+      </div>`;
+  }).join('');
+
+  const perGiorno = ORDINE_GIORNI.map((g) => {
+    const giorno = n.giorni[g] || { fasce: {}, off: false };
+    const chiave = `pref-giorno-${ambito}-${g}`;
+    const quante = Object.keys(giorno.fasce || {}).length;
+    const stato = giorno.off ? 'vorrei OFF' : quante ? `${quante} ${quante === 1 ? 'scelta' : 'scelte'}` : 'indifferente';
+    return `
+      <details class="pref-giorno" data-riquadro="${chiave}" ${riquadriAperti.has(chiave) ? 'open' : ''}>
+        <summary><span>${GIORNI_LUNGHI[g]}</span><span class="conteggio">${stato}</span></summary>
+        <label class="switch">
+          <input type="checkbox" data-act="pref-off" data-ambito="${ambito}" data-giorno="${g}" ${giorno.off ? 'checked' : ''}>
+          <span>Questo giorno preferisco essere OFF</span>
+        </label>
+        ${giorno.off ? '' : righe(giorno.fasce || {}, g)}
+      </details>`;
+  }).join('');
+
+  return html`
+    <div class="pillole pref-modo">
+      ${raw(tasto('data-act="pref-modo" data-modo="generali"', 'Uguali tutti i giorni', n.modo !== 'giorni'))}
+      ${raw(tasto('data-act="pref-modo" data-modo="giorni"', 'Giorno per giorno', n.modo === 'giorni'))}
+    </div>
+    ${raw(n.modo === 'giorni' ? perGiorno : righe(n.fasce))}
+
+    <h3 class="pref-titolo">Sempre</h3>
+    <label class="switch">
+      <input type="checkbox" data-act="pref-weekend" data-ambito="${ambito}" ${raw(n.weekendOff ? 'checked' : '')}>
+      <span>
+        Vorrei il weekend OFF
+        <em class="aiuto">Un cambio che ti libera un sabato o una domenica sale nel match, e con gli avvisi dei cambi che ti convengono ti arriva una notifica.</em>
+      </span>
+    </label>
+    <label class="campo">
+      <span>Non posso finire dopo le</span>
+      <select class="select" data-act="pref-limite" data-ambito="${ambito}">
+        <option value="" ${raw(n.fineMax ? '' : 'selected')}>Nessun limite</option>
+        ${raw(LIMITI.map((o) => `<option value="${o}" ${n.fineMax === o ? 'selected' : ''}>${o}</option>`).join(''))}
+      </select>
+    </label>
+    <p class="testo-tenue pref-nota-limite">È l'unica scelta che esclude: un turno che finisce dopo non ti viene proposto. Usala solo per un vincolo vero, come un figlio da prendere o l'ultimo treno.</p>`;
 }

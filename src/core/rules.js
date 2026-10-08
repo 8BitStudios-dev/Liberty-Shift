@@ -18,19 +18,60 @@ export const RULES = {
   /**
    * Le fasce con cui in store si chiamano i turni.
    *
-   * Non si ricavano dagli orari del negozio: sono i confini veri, quelli che
-   * la gente usa parlando. Un turno può in teoria stare in due fasce insieme,
-   * perché due guardano l'inizio e due la fine — ma con i turni che si fanno
-   * davvero, fino a 9 ore, non succede: toccare sia la finestra di inizio di
-   * MATTINA (09:30–10:00) sia quella di fine di POMERIGGIO (19:30–20:00)
-   * richiede almeno 9h30. `fasceDi()` gestisce comunque il caso, per
-   * sicurezza, ma nella pratica un turno resta sempre in una fascia sola.
+   * Ricavate dall'elenco dei turni che si fanno davvero (vedi `catalogo`), e
+   * non dagli orari del negozio: sono i nomi che la gente usa parlando. Ogni
+   * turno ne ha **una sola**: si prova nell'ordine scritto qui e vince la
+   * prima che combacia. Prima la fine (chi esce tardi chiude, anche se è
+   * entrato presto), poi l'inizio, e quello che resta è un centrale.
+   *
+   * Ogni vincolo è facoltativo: `inizioDa`/`inizioA` sull'ora d'inizio,
+   * `fineDa`/`fineA` su quella di fine, estremi compresi. Il 20:15 è già una
+   * chiusura: in store 15:15–20:15 si chiama così, anche se è raro.
    */
   fasce: {
-    APERTURA: { label: 'apertura', inizioDa: '07:30', inizioA: '09:00' },
-    MATTINA: { label: 'mattina', inizioDa: '09:30', inizioA: '10:00' },
-    POMERIGGIO: { label: 'pomeriggio', fineDa: '19:30', fineA: '20:00' },
-    CHIUSURA: { label: 'chiusura', fineDopo: '20:15' },
+    CHIUSURA: { label: 'chiusura', nome: 'Chiusura', fineDa: '20:15', aiuto: 'finisce alle 20:15 o dopo' },
+    SERA: { label: 'sera', nome: 'Sera', fineDa: '19:30', fineA: '20:00', aiuto: 'finisce fra le 19:30 e le 20' },
+    APERTURA: { label: 'apertura', nome: 'Apertura', inizioA: '09:00', aiuto: 'inizia alle 9 o prima' },
+    MATTINA: { label: 'mattina', nome: 'Mattina', inizioDa: '09:30', inizioA: '10:30', aiuto: 'inizia fra le 9:30 e le 10' },
+    CENTRALE: { label: 'centrale', nome: 'Centrale', inizioDa: '10:45', fineA: '19:00', aiuto: 'inizia dalle 11 e finisce entro le 19' },
+  },
+
+  /**
+   * I turni che esistono davvero, per contratto e ore lavorate.
+   *
+   * Servono a "Cambia orario": invece di spostare il turno su partenze
+   * generiche (che inventavano un 9–14 o un 14–19 mai visti), si propongono
+   * solo questi. I `raro` vanno in fondo: esistono, ma capitano poco.
+   * Per una durata che qui non c'è (la pausa di mezz'ora, un turno fuori
+   * schema) l'app torna al vecchio metodo delle partenze. Il Part Time da 20
+   * ore non serve a parte: fa turni da 5 ore, solo su quattro giorni.
+   *
+   * La chiave è `contratto:ore lavorate`: un Part Time fa giorni da 5 o da 6
+   * ore a seconda della settimana, e quello che conta è il turno che lascia.
+   */
+  catalogo: {
+    'PT:5': [
+      { start: '08:00', end: '13:00' },
+      { start: '09:30', end: '14:30' }, { start: '10:00', end: '15:00' },
+      { start: '11:00', end: '16:00' }, { start: '12:00', end: '17:00' }, { start: '13:00', end: '18:00' },
+      { start: '15:00', end: '20:00' },
+      { start: '16:00', end: '21:00' },
+      { start: '15:30', end: '20:30', raro: true }, { start: '15:15', end: '20:15', raro: true },
+    ],
+    'PT:6': [
+      { start: '08:00', end: '14:00' },
+      { start: '09:30', end: '15:30' }, { start: '10:00', end: '16:00' },
+      { start: '11:00', end: '17:00' }, { start: '12:00', end: '18:00' }, { start: '13:00', end: '19:00' },
+      { start: '14:00', end: '20:00' },
+      { start: '15:00', end: '21:00' },
+      { start: '14:30', end: '20:30', raro: true }, { start: '14:15', end: '20:15', raro: true },
+    ],
+    'FT:8': [
+      { start: '08:00', end: '17:00' },
+      { start: '09:30', end: '18:30' }, { start: '10:00', end: '19:00' },
+      { start: '11:00', end: '20:00' },
+      { start: '12:00', end: '21:00' },
+    ],
   },
 
   /**
@@ -109,8 +150,13 @@ export const RULES = {
   },
 
   // Priorità
+  // Chi aiuta guadagna priorità: ogni cambio concluso sulla richiesta di un
+  // collega ne vale una in più, nello stesso mese. Il tetto c'è perché la
+  // priorità serve a farsi vedere: se ce l'hanno tutti, non la vede nessuno.
   priority: {
     creditsPerMonth: 1,
+    perAiuto: 1,
+    tetto: 3,
     durationHours: 48,
     refundOnCancel: false,
     canBeAddedLater: false,
@@ -238,34 +284,44 @@ export const RULES = {
 };
 
 /**
- * Le preferenze del profilo.
+ * Le preferenze del profilo, una riga per fascia.
  *
- * Due gruppi che si comportano in modo diverso, ed è la differenza che conta:
- * quello che **eviti** abbassa molto il punteggio (`RULES.evitaPenalty`),
- * mentre quello che **preferisci** lo sposta di pochi punti
- * (`RULES.preferenzaBonus`). Nessuno dei due esclude più il turno: un
- * "evito le chiusure" pesa, ma non decide al posto di chi guarda i match —
- * un turno altrimenti ottimo resta visibile, solo più in basso.
+ * Per ognuna si sceglie **Evito**, **Indifferente** o **Preferisco**: una
+ * scelta sola per riga, così "evito e preferisco le chiusure" non si può
+ * nemmeno dire. Quello che si evita abbassa molto il punteggio
+ * (`RULES.evitaPenalty`), quello che si preferisce lo alza di poco
+ * (`RULES.preferenzaBonus`); nessuno dei due esclude il turno. L'unica cosa
+ * che esclude è il limite «non posso finire dopo le…», che è un vincolo e non
+ * un gusto.
  *
- * `fascia` collega la preferenza a una fascia oraria (R6), così il motore non ha
- * una catena di `if` da tenere allineata a mano, e `opposta` impedisce di
- * dichiarare insieme due cose incompatibili. L'aiuto sotto l'etichetta si
- * scrive solo dove serve: le fasce si spiegano da sole nella legenda.
+ * Le notti visual si possono solo evitare: sono rare, e preferirle non
+ * aiuterebbe a trovarne.
+ *
+ * Il resto della forma (generali o giorno per giorno, giorni OFF, weekend)
+ * sta in `normalizzaPreferenze` in model.js, che sa leggere anche il formato
+ * di prima.
  */
-export const PREFERENZE = [
-  { key: 'evitaAperture', label: 'Evito le aperture', gruppo: 'evita', fascia: 'APERTURA', opposta: 'preferisceAperture' },
-  { key: 'evitaMattine', label: 'Evito le mattine', gruppo: 'evita', fascia: 'MATTINA', opposta: 'preferisceMattine' },
-  { key: 'evitaPomeriggi', label: 'Evito i pomeriggi', gruppo: 'evita', fascia: 'POMERIGGIO', opposta: 'preferiscePomeriggi' },
-  { key: 'evitaChiusure', label: 'Evito le chiusure', gruppo: 'evita', fascia: 'CHIUSURA', opposta: 'preferisceChiusure' },
-  {
-    key: 'evitaNotti', label: 'Evito le notti visual', gruppo: 'evita', fascia: 'NOTTE', opposta: null,
-    aiuto: 'Sono rare, e la durata va comunque concordata a parte.',
-  },
-  { key: 'preferisceAperture', label: 'Preferisco le aperture', gruppo: 'preferisce', fascia: 'APERTURA', opposta: 'evitaAperture' },
-  { key: 'preferisceMattine', label: 'Preferisco le mattine', gruppo: 'preferisce', fascia: 'MATTINA', opposta: 'evitaMattine' },
-  { key: 'preferiscePomeriggi', label: 'Preferisco i pomeriggi', gruppo: 'preferisce', fascia: 'POMERIGGIO', opposta: 'evitaPomeriggi' },
-  { key: 'preferisceChiusure', label: 'Preferisco le chiusure', gruppo: 'preferisce', fascia: 'CHIUSURA', opposta: 'evitaChiusure' },
+export const FASCE_PREFERENZE = [
+  { fascia: 'APERTURA' },
+  { fascia: 'MATTINA' },
+  { fascia: 'CENTRALE' },
+  { fascia: 'SERA' },
+  { fascia: 'CHIUSURA' },
+  { fascia: 'NOTTE', nome: 'Notti visual', soloEvita: true, aiuto: 'sono rare, e la durata va concordata a parte' },
 ];
+
+/** Le vecchie preferenze a interruttori, e cosa diventano. */
+export const PREFERENZE_VECCHIE = {
+  evitaAperture: ['APERTURA', 'evita'],
+  evitaMattine: ['MATTINA', 'evita'],
+  evitaPomeriggi: ['SERA', 'evita'],
+  evitaChiusure: ['CHIUSURA', 'evita'],
+  evitaNotti: ['NOTTE', 'evita'],
+  preferisceAperture: ['APERTURA', 'preferisce'],
+  preferisceMattine: ['MATTINA', 'preferisce'],
+  preferiscePomeriggi: ['SERA', 'preferisce'],
+  preferisceChiusure: ['CHIUSURA', 'preferisce'],
+};
 
 export const STATUS = {
   APERTA: 'APERTA',
