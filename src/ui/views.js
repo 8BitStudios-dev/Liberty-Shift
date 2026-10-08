@@ -656,6 +656,9 @@ export function corpoNotifiche(stato = statoNoto()) {
     <h3 class="pref-titolo">Cosa ricevere</h3>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
       ${raw(opzione('compatibili', 'Anche i cambi che ti convengono', 'Ricevi una notifica quando un collega pubblica una richiesta che puoi coprire e che ti conviene secondo le tue preferenze: lasceresti un turno che eviti, oppure prenderesti uno che preferisci. Mai per un turno che eviti. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati: è l\'unica eccezione, perché di base al server arrivano solo i turni che vuoi cambiare.'))}
+      ${raw(modo === 'compatibili' && !PREFERENZE.some((p) => store.me.preferenze?.[p.key])
+    ? '<p class="avviso-box">Non hai nessuna preferenza accesa: senza, l\'app non sa quale cambio ti conviene e non ti avvisa. Sceglile da Preferenze.</p>'
+    : '')}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Su questo telefono non ci sono turni nei prossimi giorni: importali da Sincronizza turni, altrimenti non riceverai avvisi.</p>'
     : '')}`;

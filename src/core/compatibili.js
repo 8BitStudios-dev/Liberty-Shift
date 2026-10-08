@@ -177,3 +177,73 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
     favorevole,
   }));
 }
+
+/** Una riga di `richieste` com'è nel database, nella forma del motore. */
+function daRiga(riga) {
+  const cedo = {
+    id: `srv:${riga.id}`,
+    userId: riga.autore_id,
+    data: riga.cedo_data,
+    tipo: 'WORK',
+    start: ora(riga.cedo_start),
+    end: ora(riga.cedo_end),
+  };
+  const richiesta = {
+    id: riga.id,
+    userId: riga.autore_id,
+    status: riga.stato,
+    tipo: riga.tipo,
+    createdAt: riga.creata_il || new Date().toISOString(),
+    prioritaFinoA: riga.priorita_fino_a || null,
+    cedo: { shiftId: cedo.id, flessibile: Boolean(riga.cedo_flessibile) },
+    cerco: { ...(riga.cerco || {}), giorni: riga.cerco_giorni || [] },
+  };
+  return { cedo, richiesta };
+}
+
+/**
+ * Chi aveva già chiesto proprio il cambio che è appena stato pubblicato.
+ *
+ * Marco lascia sabato 10–19 e cerca 11–20; Lorenzo, da giorni, lascia 11–20
+ * e cerca 10–19. Sono due richieste a specchio, e Lorenzo deve saperlo
+ * subito. Non serve nessun calendario: le due richieste stanno già sul
+ * server, in bacheca. Per questo l'avviso arriva a chiunque abbia le
+ * notifiche accese, senza bisogno di condividere i turni.
+ *
+ * `altre`: le righe aperte degli altri, con `profilo` accanto.
+ * Torna `[{ userId, requestId }]`, una volta per persona.
+ */
+export function richiesteSpeculari({ riga, autore, altre, oggi }) {
+  if (!riga || !autore || riga.stato !== STATUS.APERTA || riga.cedo_data < oggi) return [];
+  const nuova = daRiga(riga);
+  const loro = altre
+    .filter((a) => a.profilo && a.riga.autore_id !== riga.autore_id && a.riga.cedo_data >= oggi)
+    .map((a) => ({ ...daRiga(a.riga), profilo: a.profilo }));
+  const utente = (p) => ({
+    id: p.id,
+    nome: p.nome,
+    cognomeIniziale: p.cognome_iniziale,
+    contratto: p.contratto,
+    genere: p.genere || 'X',
+    oreSettimanali: p.ore_settimanali,
+    pausaMezzora: Boolean(p.pausa_mezzora),
+    preferenze: {},
+    disponibilita: {},
+    prioritaUsata: {},
+  });
+  const ctx = {
+    users: [utente(autore), ...loro.map((l) => utente(l.profilo))],
+    shifts: [nuova.cedo, ...loro.map((l) => l.cedo)],
+    requests: loro.map((l) => l.richiesta),
+    proposals: [],
+    currentUserId: null,
+  };
+  const visti = new Set();
+  const speculari = [];
+  for (const m of findMatches(nuova.richiesta, ctx)) {
+    if (m.origine !== 'RICHIESTA' || visti.has(m.userId)) continue;
+    visti.add(m.userId);
+    speculari.push({ userId: m.userId, requestId: m.requestId });
+  }
+  return speculari;
+}

@@ -1353,6 +1353,11 @@ export const store = {
   impostaModoNotifiche(modo) {
     if (!sulServer(this.state)) return { errori: ['Per le notifiche serve essere iscritti allo store.'] };
     if (modo !== 'dirette' && modo !== 'compatibili') return { errori: ['Scelta non valida.'] };
+    // L'avviso arriva solo per i cambi che convengono secondo le preferenze
+    // (`cambioFavorevole`): senza nessuna, non arriverebbe mai niente.
+    if (modo === 'compatibili' && !PREFERENZE.some((p) => this.me.preferenze?.[p.key])) {
+      return { errori: ['Prima scegli almeno una preferenza: è da lì che l\'app capisce quale cambio ti conviene.'] };
+    }
     const prima = this.state.profilo.notifiche;
     this.state.profilo.notifiche = modo === 'compatibili'
       ? { modo, consensoIl: new Date().toISOString(), firma: null }

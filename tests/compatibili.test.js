@@ -196,3 +196,38 @@ test('fra i compatibili, il server segna chi ci guadagna', () => {
   const per = Object.fromEntries(r.map((x) => [x.userId, x.favorevole]));
   assert.deepEqual(per, { anna: false, bruno: true, ciro: true });
 });
+
+test('chi aveva già chiesto proprio quel cambio viene avvisato, senza bisogno di calendari', async () => {
+  const { richiesteSpeculari } = await import('../src/core/compatibili.js');
+  // Lorenzo da giorni lascia 11–20 e cerca di finire entro le 19. Marco ora
+  // lascia 10–19 e cerca di finire dopo le 20: l'esatto contrario.
+  const lorenzo = profilo('lorenzo', 'Lorenzo');
+  const marco = profilo('marco', 'Marco');
+  const sua = {
+    id: 'rq-lorenzo', autore_id: 'lorenzo', tipo: 'ORARIO', stato: 'APERTA',
+    cedo_data: D, cedo_start: '11:00:00', cedo_end: '20:00:00',
+    cerco_giorni: [D], cerco: { mode: 'SPECIFIC', start: '10:00', end: '19:00' },
+  };
+  const nuova = riga({
+    id: 'rq-marco', autore_id: 'marco', cedo_start: '10:00:00', cedo_end: '19:00:00',
+    cerco: { mode: 'SPECIFIC', start: '11:00', end: '20:00' },
+  });
+  const altre = [{ riga: sua, profilo: lorenzo }];
+  assert.deepEqual(richiesteSpeculari({ riga: nuova, autore: marco, altre, oggi: OGGI }), [{ userId: 'lorenzo', requestId: 'rq-lorenzo' }]);
+  // Una richiesta che non cerca quello che Marco lascia non è a specchio.
+  const diversa = { ...sua, cerco: { mode: 'SPECIFIC', start: '08:00', end: '17:00' } };
+  assert.deepEqual(richiesteSpeculari({ riga: nuova, autore: marco, altre: [{ riga: diversa, profilo: lorenzo }], oggi: OGGI }), []);
+});
+
+test('nei cambi OFF a specchio basta la richiesta, anche senza il resto del calendario', async () => {
+  const { richiesteSpeculari } = await import('../src/core/compatibili.js');
+  const altro = '2026-10-16';
+  // Lorenzo vuole libero il 16 e lavorerebbe il 14; Marco ora vuole libero il 14 e lavorerebbe il 16.
+  const sua = {
+    id: 'rq-lorenzo', autore_id: 'lorenzo', tipo: 'OFF', stato: 'APERTA',
+    cedo_data: altro, cedo_start: '10:00:00', cedo_end: '19:00:00', cerco_giorni: [D], cerco: { mode: 'ANY' },
+  };
+  const nuova = riga({ id: 'rq-marco', autore_id: 'marco', tipo: 'OFF', cedo_start: '10:00:00', cedo_end: '19:00:00', cerco_giorni: [altro], cerco: { mode: 'ANY' } });
+  const r = richiesteSpeculari({ riga: nuova, autore: profilo('marco', 'Marco'), altre: [{ riga: sua, profilo: profilo('lorenzo', 'Lorenzo') }], oggi: OGGI });
+  assert.deepEqual(r.map((x) => x.userId), ['lorenzo']);
+});

@@ -605,11 +605,17 @@ con `type: RICHIESTA`; la funzione usa il motore vero (`core/`, copia generata
 da `npm run funzioni`) per decidere chi avvisare. Dopo ogni modifica a
 `src/core/` va rilanciato `npm run funzioni` e **ripubblicata la funzione**: i
 test verificano che le copie siano identiche, non che siano online.
+Prima ancora, `send-push` avvisa **chi aveva già chiesto proprio quel
+cambio** (`richiesteSpeculari`): una richiesta aperta a specchio di quella
+nuova ("C'è il cambio che cerchi"). Non serve nessun calendario, le due
+richieste sono già in bacheca: vale per chiunque abbia le notifiche accese.
+Chi riceve questo avviso non riceve anche l'altro.
+
 Fra i compatibili si avvisa **solo chi ci guadagna** secondo le sue
 preferenze (`cambioFavorevole` in `compatibili.js`): lascerebbe un turno che
 evita, oppure prenderebbe uno che preferisce, e mai uno che evita. Avvisare
-per ogni richiesta compatibile era un bombardamento. Chi non ha preferenze
-accese non riceve questi avvisi. Il titolo è "Un cambio che ti conviene".
+per ogni richiesta compatibile era un bombardamento. Per attivarlo serve
+almeno una preferenza accesa: l'app lo chiede prima del consenso. Il titolo è "Un cambio che ti conviene".
 Limiti noti: il server non conosce le preferenze dell'autore, i suoi altri turni
 e le richieste altrui, quindi in casi al limite il telefono può rispondere
 diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi.

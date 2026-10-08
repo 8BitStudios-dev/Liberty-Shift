@@ -19,7 +19,7 @@
 // variabili d'ambiente da ricordare in dashboard, niente segreti nel codice.
 
 import webpush from 'npm:web-push@3.6.7';
-import { candidatiCompatibili } from './core/compatibili.js';
+import { candidatiCompatibili, richiesteSpeculari } from './core/compatibili.js';
 import { RULES } from './core/rules.js';
 import { decifra } from './core/cifratura.js';
 import { oreRetribuite } from './core/model.js';
@@ -296,6 +296,37 @@ async function invia(utente: string, notifica: { title: string; body: string; ur
   return { inviate, rimosse, errori };
 }
 
+/**
+ * Una richiesta appena pubblicata che è proprio il cambio che qualcun altro
+ * aveva già chiesto: lo si dice a lui. Vale per chiunque abbia le notifiche
+ * accese, perché le due richieste sono già in bacheca e non serve nessun
+ * calendario (vedi `richiesteSpeculari`).
+ */
+async function avvisaSpeculari(riga: RigaRichiesta) {
+  const oggi = oggiARoma();
+  const righe = await leggi(
+    `richieste?autore_id=neq.${riga.autore_id}&stato=in.(APERTA,PROPOSTA,IN_ATTESA)&cedo_data=gte.${oggi}`
+    + '&select=id,autore_id,tipo,stato,priorita_fino_a,cedo_data,cedo_start,cedo_end,cedo_flessibile,cerco,cerco_giorni,creata_il',
+  );
+  if (!righe.length) return { notificati: [] as string[] };
+  const ids = [...new Set([riga.autore_id, ...righe.map((r: { autore_id: string }) => r.autore_id)])].join(',');
+  const profili = await leggi(
+    `profili?id=in.(${ids})&attivo=eq.true&select=id,nome,cognome_iniziale,contratto,ore_settimanali,genere,pausa_mezzora`,
+  );
+  const autore = profili.find((p: { id: string }) => p.id === riga.autore_id);
+  if (!autore) return { notificati: [] as string[] };
+  const altre = righe.map((r: { autore_id: string }) => ({ riga: r, profilo: profili.find((p: { id: string }) => p.id === r.autore_id) }));
+  const trovati = richiesteSpeculari({ riga, autore, altre, oggi });
+  const notificati: string[] = [];
+  for (const t of trovati) {
+    const sua = righe.find((r: { id: string }) => r.id === t.requestId);
+    const body = `${nomeBreve(autore)} ha pubblicato proprio il cambio che cerchi per ${formatData(sua?.cedo_data || riga.cedo_data)}. Apri la sua richiesta per concluderlo.`;
+    const esito = await invia(t.userId, { title: 'C\'è il cambio che cerchi', body, url: `#/richiesta?id=${riga.id}` });
+    if (esito.inviate || esito.rimosse) notificati.push(t.userId);
+  }
+  return { notificati };
+}
+
 type RigaRichiesta = {
   id: string; autore_id: string; tipo: string; stato: string;
   cedo_data: string; cedo_start: string | null; cedo_end: string | null;
@@ -311,7 +342,7 @@ type RigaRichiesta = {
  * settimane non gli si crede più: un avviso su un turno che forse non c'è più
  * è peggio di nessun avviso.
  */
-async function avvisaCompatibili(riga: RigaRichiesta) {
+async function avvisaCompatibili(riga: RigaRichiesta, esclusi: Set<string> = new Set()) {
   const oggi = oggiARoma();
   const limite = new Date(Date.now() - RULES.notifiche.giorniFreschezza * 86400000).toISOString();
 
@@ -364,7 +395,7 @@ async function avvisaCompatibili(riga: RigaRichiesta) {
 
   // Solo i cambi che convengono secondo le preferenze: avvisare per ogni
   // richiesta compatibile era un bombardamento (vedi `cambioFavorevole`).
-  for (const t of trovati.filter((x: { favorevole: boolean }) => x.favorevole)) {
+  for (const t of trovati.filter((x: { favorevole: boolean; userId: string }) => x.favorevole && !esclusi.has(x.userId))) {
     // Cambio orario: il tuo turno quel giorno. Cambio OFF: il giorno che
     // l'autore vuole libero lo lavoreresti tu, e lui lavorerebbe il tuo.
     const body = riga.tipo === 'OFF'
@@ -402,7 +433,11 @@ Deno.serve(async (req) => {
   }
   if (type === 'RICHIESTA') {
     if (!record?.autore_id || !record?.cedo_data) return json({ notificati: [], motivo: 'riga incompleta' });
-    return json(await avvisaCompatibili(record));
+    // Prima chi aveva chiesto proprio questo cambio, poi chi ci guadagna:
+    // una persona sola riceve un avviso solo.
+    const speculari = await avvisaSpeculari(record);
+    const compatibili = await avvisaCompatibili(record, new Set(speculari.notificati));
+    return json({ speculari, compatibili });
   }
   if (!record?.da_user_id || !record?.a_user_id) return json({ inviate: 0, motivo: 'riga incompleta' });
 

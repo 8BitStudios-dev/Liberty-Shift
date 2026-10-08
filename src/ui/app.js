@@ -686,6 +686,13 @@ const AZIONI = {
       toast(errori ? errori[0] : 'Ricevi solo le proposte fatte a te. I tuoi turni sono stati tolti dal server.');
       return render();
     }
+    // Senza preferenze l'avviso non saprebbe cosa ti conviene: si apre il
+    // pannello dove sceglierle, invece del consenso.
+    if (!PREFERENZE.some((p) => store.me.preferenze?.[p.key])) {
+      toast('Prima scegli almeno una preferenza: è da lì che l\'app capisce quale cambio ti conviene');
+      V.pannelloProfilo.aperto = 'preferenze';
+      return render();
+    }
     render();
     sheet('Notifiche per i cambi che ti convengono', V.consensoCompatibili(), {
       azioni: '<button class="btn primario largo" data-act="consenso-compatibili">Acconsento e attiva</button>'
