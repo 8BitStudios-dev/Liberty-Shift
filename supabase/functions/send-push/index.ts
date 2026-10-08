@@ -386,8 +386,9 @@ async function avvisaCompatibili(riga: RigaRichiesta, esclusi: Set<string> = new
   const scelte = (await Promise.all(righe.map(async (r: { user_id: string; dati_cifrati: string | null }) => {
     if (!r.dati_cifrati) return null;
     try {
-      const { turni, preferenze } = await decifra(r.dati_cifrati, chiave);
-      return { user_id: r.user_id, turni, preferenze };
+      const { turni, preferenze, favori } = await decifra(r.dati_cifrati, chiave);
+      // Chi ha mandato i turni prima che esistesse la scelta non l'ha spenta.
+      return { user_id: r.user_id, turni, preferenze, favori: favori !== false };
     } catch (err) {
       console.error('send-push: riga non decifrabile', r.user_id, (err as Error).message);
       return null;
@@ -429,10 +430,13 @@ async function avvisaCompatibili(riga: RigaRichiesta, esclusi: Set<string> = new
   const aiutati = trovati.some((x: { costo: string | null }) => x.costo && x.costo !== 'costa')
     ? await aiutatiDa(riga.autore_id)
     : new Map<string, string>();
+  // Il favore conta solo per chi non ha spento questi avvisi.
+  const vuoleFavori = new Set(scelte.filter((s: { favori: boolean }) => s.favori).map((s: { user_id: string }) => s.user_id));
+  const favoreDi = (id: string) => (vuoleFavori.has(id) ? aiutati.get(id) : undefined);
   const daAvvisare = trovati.filter((x: { favorevole: boolean; costo: string | null; userId: string }) => !esclusi.has(x.userId)
-    && (x.favorevole || (aiutati.has(x.userId) && x.costo !== null && x.costo !== 'costa')));
+    && (x.favorevole || (favoreDi(x.userId) !== undefined && x.costo !== null && x.costo !== 'costa')));
   for (const t of daAvvisare) {
-    const favore = aiutati.get(t.userId);
+    const favore = favoreDi(t.userId);
     const apertura = favore ? `${nomeAutore} ti ha aiutato ${meseDelFavore(favore, oggi)} e ora` : nomeAutore;
     // Cambio orario: il tuo turno quel giorno. Cambio OFF: il giorno che
     // l'autore vuole libero lo lavoreresti tu, e lui lavorerebbe il tuo.

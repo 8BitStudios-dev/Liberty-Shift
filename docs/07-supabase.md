@@ -624,7 +624,10 @@ ultimi 90 giorni (un accordo sulla tua richiesta, letto da `proposte` e
 `richieste` con `chiHaiAiutato` in `karma.js`), l'avviso arriva anche quando
 il cambio non ti conviene, purché non ti pesi (`costoDelCambio`). Il titolo è
 "Puoi ricambiare un favore". Il favore si legge solo dal server, che vede
-già le proposte: non esce niente di nuovo dal telefono.
+già le proposte. Questi avvisi si spengono dal pannello Notifiche: la scelta
+(`favori`) viaggia **dentro la parte cifrata**, accanto a turni e
+preferenze, e non in una colonna; una riga cifrata prima che la scelta
+esistesse vale come accesa.
 Limiti noti: il server non conosce le preferenze dell'autore, i suoi altri turni
 e le richieste altrui, quindi in casi al limite il telefono può rispondere
 diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi. Conta anche il

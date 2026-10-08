@@ -650,6 +650,14 @@ export function corpoNotifiche(stato = statoNoto()) {
     <h3 class="pref-titolo">Cosa ricevere</h3>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
       ${raw(opzione('compatibili', 'Anche i cambi che ti convengono', 'Ricevi una notifica quando un collega pubblica una richiesta che puoi coprire e che ti conviene secondo le tue preferenze: lasceresti un turno che eviti, oppure prenderesti uno che preferisci. Mai per un turno che eviti. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati: è l\'unica eccezione, perché di base al server arrivano solo i turni che vuoi cambiare.'))}
+      ${raw(modo === 'compatibili' ? html`
+        <label class="switch sotto-opzione">
+          <input type="checkbox" data-act="avvisi-favori" ${raw(store.avvisiFavori() ? 'checked' : '')}>
+          <span>
+            Anche quando puoi ricambiare un favore
+            <em class="aiuto">Se un collega ti ha aiutato negli ultimi 90 giorni e ora cerca un cambio che puoi coprire, ti avviso anche se non ti conviene, purché non ti pesi.</em>
+          </span>
+        </label>` : '')}
       ${raw(modo === 'compatibili' && !haPreferenze(store.me.preferenze)
     ? '<p class="avviso-box">Non hai nessuna preferenza accesa: senza, l\'app non sa quale cambio ti conviene e non ti avvisa. Sceglile da Preferenze.</p>'
     : '')}
@@ -669,8 +677,10 @@ export function consensoCompatibili() {
       Ti avviso quando un collega pubblica una richiesta che puoi coprire con
       i tuoi turni e che ti conviene secondo le tue preferenze: lasceresti un
       turno che eviti, oppure prenderesti uno che preferisci. Per le altre
-      richieste niente notifica, così non ne arrivano troppe. Se non lo
-      attivi, ricevi solo le proposte fatte a te.
+      richieste niente notifica, così non ne arrivano troppe. L'eccezione è
+      un collega che ti ha aiutato: se cerca un cambio che puoi coprire senza
+      fatica, te lo dico (si spegne da qui). Se non lo attivi, ricevi solo le
+      proposte fatte a te.
     </p>
     <p>
       Quando l'app è chiusa il telefono non può fare il confronto, quindi lo

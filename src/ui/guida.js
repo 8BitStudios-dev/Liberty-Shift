@@ -33,7 +33,7 @@ export const GUIDE = {
 
       <p class="testo-tenue">
         La stella in alto è la priorità: una al mese, più una per ogni collega che
-        aiuti. Mette la tua richiesta in cima alla bacheca per 48 ore. Quando le
+        aiuti, appena UKG approva il cambio. Mette la tua richiesta in cima alla bacheca per 48 ore. Quando le
         hai usate tutte diventa grigia fino al mese dopo.
       </p>`,
   },
@@ -93,8 +93,8 @@ export const GUIDE = {
       </p>
 
       <p>
-        Ogni collega che aiuti ti dà <strong>una priorità in più</strong> da
-        usare nello stesso mese, fino a ${RULES.priority.tetto}. E se qualcuno ti
+        Ogni collega che aiuti ti dà <strong>una priorità in più</strong> quando
+        UKG approva il cambio, fino a ${RULES.priority.tetto} al mese. E se qualcuno ti
         ha aiutato, la sua richiesta te la mostriamo per prima: è il momento di
         ricambiare.
       </p>

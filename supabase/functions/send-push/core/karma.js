@@ -49,7 +49,8 @@ export function traguardiNuovi(stato, sogliaVista) {
  * nessuno. Le proposte spariscono con la pulizia dei 90 giorni, e con loro
  * il ricordo del favore: è voluto, un favore di sei mesi fa non si rinfaccia.
  *
- * `quando` è la chiusura della richiesta, cioè il giorno dell'accordo.
+ * `quando` è la chiusura della richiesta, cioè il giorno dell'accordo;
+ * `approvatoIl` il giorno in cui UKG l'ha confermato, se l'ha fatto.
  */
 export function aiutiConclusi({ proposals = [], requests = [] }) {
   const richieste = new Map(requests.map((r) => [r.id, r]));
@@ -60,14 +61,25 @@ export function aiutiConclusi({ proposals = [], requests = [] }) {
     if (!r) continue;
     const aiutante = p.daUserId === r.userId ? p.aUserId : p.daUserId;
     if (!aiutante || aiutante === r.userId) continue;
-    aiuti.push({ aiutante, aiutato: r.userId, quando: r.chiusaIl || p.confermataIl || p.createdAt, propostaId: p.id });
+    aiuti.push({
+      aiutante,
+      aiutato: r.userId,
+      quando: r.chiusaIl || p.confermataIl || p.createdAt,
+      approvatoIl: p.confermataIl || null,
+      propostaId: p.id,
+    });
   }
   return aiuti;
 }
 
-/** Quante volte una persona ha aiutato in un mese ('AAAA-MM'). */
+/**
+ * Quante volte una persona ha aiutato in un mese ('AAAA-MM'), contando solo
+ * i cambi approvati su UKG, nel mese dell'approvazione: un accordo che poi
+ * non si fa non deve valere una priorità, e due amici non possono
+ * guadagnarne con scambi finti.
+ */
 export function aiutiNelMese(userId, stato, mese) {
-  return aiutiConclusi(stato).filter((a) => a.aiutante === userId && a.quando?.slice(0, 7) === mese).length;
+  return aiutiConclusi(stato).filter((a) => a.aiutante === userId && a.approvatoIl?.slice(0, 7) === mese).length;
 }
 
 /**

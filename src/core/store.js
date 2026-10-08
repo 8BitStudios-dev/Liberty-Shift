@@ -24,7 +24,7 @@ import {
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
 } from './sincronia.js';
 import {
-  aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
+  aiutiConclusi, aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
 } from './karma.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
@@ -326,19 +326,23 @@ export const store = {
    * Le priorità ancora da usare questo mese: una di base, più una per ogni
    * collega aiutato, fino al tetto (vedi `prioritaDelMese`).
    *
-   * Quelle usate si contano anche dalle richieste: `prioritaUsata` vive solo
-   * su questo telefono, e un'app reinstallata la ridarebbe da capo.
+   * Tutto si conta da quello che sta sul server: le usate dalle proprie
+   * richieste (che l'app non cancella mai, al massimo chiude), le guadagnate
+   * dalle proposte approvate su UKG. Un contatore sul telefono si perdeva
+   * reinstallando l'app, e su due telefoni dava due risposte diverse.
    */
   creditoPriorita(userId = this.state.currentUserId) {
     const mese = monthKey(todayISO());
-    const u = this.user(userId);
-    const dalleRichieste = this.state.requests
+    const usate = this.state.requests
       .filter((r) => r.userId === userId && r.prioritaFinoA && r.createdAt?.slice(0, 7) === mese).length;
-    const usate = Math.max(u?.prioritaUsata?.[mese] || 0, dalleRichieste);
     return prioritaDelMese(this.aiutiDelMese(userId), usate);
   },
   aiutiDelMese(userId = this.state.currentUserId) {
     return aiutiNelMese(userId, this.state, monthKey(todayISO()));
+  },
+  /** Gli aiuti già concordati che UKG non ha ancora approvato. */
+  aiutiInAttesa(userId = this.state.currentUserId) {
+    return aiutiConclusi(this.state).filter((a) => a.aiutante === userId && !a.approvatoIl).length;
   },
   /** I colleghi che hai aiutato, con l'ultima volta: chi ti deve una mano. */
   chiHaiAiutato() {
@@ -591,7 +595,7 @@ export const store = {
       && r.tipo === tipo && r.cedo.shiftId === cedo.shiftId);
     if (doppia) return { errori: ['Hai già una richiesta aperta di questo tipo su questo turno: la trovi nel giorno del calendario.'] };
     if (usaPriorita && this.creditoPriorita() < 1) {
-      return { errori: ['Hai già usato la priorità di questo mese.'] };
+      return { errori: ['Hai già usato tutte le priorità di questo mese.'] };
     }
 
     const me = this.me;
@@ -609,9 +613,6 @@ export const store = {
     if (usaPriorita) {
       const scadenza = new Date(Date.now() + RULES.priority.durationHours * 3600 * 1000);
       richiesta.prioritaFinoA = scadenza.toISOString();
-      const mk = monthKey(todayISO());
-      me.prioritaUsata = me.prioritaUsata || {};
-      me.prioritaUsata[mk] = (me.prioritaUsata[mk] || 0) + 1;
     }
 
     if (sulServer(this.state)) {
@@ -1401,8 +1402,8 @@ export const store = {
     }
     const prima = this.state.profilo.notifiche;
     this.state.profilo.notifiche = modo === 'compatibili'
-      ? { modo, consensoIl: new Date().toISOString(), firma: null }
-      : { modo, consensoIl: null, firma: null };
+      ? { modo, consensoIl: new Date().toISOString(), firma: null, favori: prima?.favori !== false }
+      : { modo, consensoIl: null, firma: null, favori: prima?.favori !== false };
     // Forzato: anche tornando a "dirette" la riga va riscritta, vuota.
     condividiNotifiche(this.state, { forzato: true });
     this.commit();
@@ -1411,6 +1412,19 @@ export const store = {
   },
   modoNotifiche() {
     return this.state.profilo?.notifiche?.modo || 'dirette';
+  },
+  /** Gli avvisi "Puoi ricambiare un favore": accesi finché non si spengono. */
+  avvisiFavori() {
+    return this.state.profilo?.notifiche?.favori !== false;
+  },
+  impostaAvvisiFavori(valore) {
+    const scelta = this.state.profilo?.notifiche;
+    if (scelta?.modo !== 'compatibili') return { errori: ['Questi avvisi vanno con i cambi che ti convengono: accendi prima quelli.'] };
+    this.state.profilo.notifiche = { ...scelta, favori: Boolean(valore) };
+    condividiNotifiche(this.state);
+    this.commit();
+    this.spingi();
+    return { ok: true };
   },
 
   /**

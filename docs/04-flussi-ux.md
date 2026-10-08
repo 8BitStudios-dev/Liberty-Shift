@@ -352,14 +352,17 @@ schermata risponde a tutte e due le domande.
   (prendi una fascia che eviti, un giorno che vorresti OFF, un turno oltre il
   tuo limite) non ha etichetta e va in fondo. Senza preferenze l'app dice
   solo "non cambia niente" a parità di fascia, e invita a impostarle.
-- **Cosa ci guadagni**: ogni cambio concluso sulla richiesta di un collega
-  vale una priorità in più nello stesso mese, fino al tetto (R14). Il
-  riquadro in cima dice a che punto sei; "Cambio fatto" lo ricorda.
+- **Cosa ci guadagni**: ogni cambio sulla richiesta di un collega, una volta
+  approvato su UKG, vale una priorità in più in quel mese, fino al tetto
+  (R14). Il riquadro in cima dice a che punto sei e quanti cambi aspettano
+  ancora UKG; "Cambio fatto" lo ricorda.
 - **Chi ricambiare**: se un collega ti ha aiutato negli ultimi 90 giorni, la
   sua richiesta porta "Giulia ti ha aiutato a settembre: puoi ricambiare" e
   sale in cima. Dall'altro lato, fra i colleghi che possono prendere il tuo
   turno, chi hai aiutato tu sta per primo, con "Hai aiutato Giulia a
-  settembre". Il favore lo vedono solo le due persone che l'hanno fatto:
+  settembre". Chi riceve gli avvisi dei cambi che convengono riceve anche
+  "Puoi ricambiare un favore", e lo può spegnere da solo con un interruttore
+  nel pannello Notifiche. Il favore lo vedono solo le due persone che l'hanno fatto:
   niente classifiche, che in un negozio mettono in imbarazzo chi ha vincoli
   veri.
 

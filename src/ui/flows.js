@@ -1102,22 +1102,29 @@ export function formGrazie(proposalId) {
 
 /**
  * Cosa ci guadagni ad aiutare, detto dove si decide se farlo: ogni cambio
- * concluso per un collega vale una priorità in più nel mese, fino al tetto.
+ * per un collega approvato su UKG vale una priorità in più nel mese, fino al
+ * tetto. Gli accordi che UKG non ha ancora approvato si dicono a parte:
+ * altrimenti chi ha appena aiutato non vedrebbe cambiare niente.
  */
 function riquadroRicompensa() {
   const { creditsPerMonth, perAiuto, tetto } = RULES.priority;
   const aiuti = store.aiutiDelMese();
   const guadagnate = Math.min(tetto - creditsPerMonth, aiuti * perAiuto);
   const ancora = tetto - creditsPerMonth - guadagnate;
+  const inAttesa = store.aiutiInAttesa();
+  const volte = aiuti === 1 ? 'un tuo aiuto' : `${aiuti} tuoi aiuti`;
   const stato = aiuti === 0
-    ? `Ogni collega che aiuti ti dà una priorità in più da usare questo mese, fino a ${tetto} in tutto.`
+    ? `Ogni collega che aiuti ti dà una priorità in più quando UKG approva il cambio, fino a ${tetto} al mese.`
     : ancora > 0
-      ? `Questo mese hai aiutato ${aiuti === 1 ? 'una volta' : `${aiuti} volte`}: ${guadagnate === 1 ? 'una priorità in più' : `${guadagnate} priorità in più`}. Ne puoi guadagnare ancora ${ancora}.`
-      : `Questo mese hai aiutato ${aiuti === 1 ? 'una volta' : `${aiuti} volte`}: hai già tutte le priorità che si possono avere (${tetto}).`;
+      ? `Questo mese UKG ha approvato ${volte}: ${guadagnate === 1 ? 'una priorità in più' : `${guadagnate} priorità in più`}. Ne puoi guadagnare ancora ${ancora}.`
+      : `Questo mese UKG ha approvato ${volte}: hai già tutte le priorità che si possono avere (${tetto}).`;
+  const attesa = inAttesa && ancora > 0
+    ? ` ${inAttesa === 1 ? 'Un altro cambio aspetta' : `Altri ${inAttesa} cambi aspettano`} l'approvazione di UKG.`
+    : '';
   return html`
     <div class="ricompensa-aiuto">
       <span class="icona-in-riga stella">${raw(icona('priorita', { px: 16 }))}</span>
-      <p>${stato} Ora ne hai <strong>${store.creditoPriorita()}</strong> da usare.</p>
+      <p>${stato}${attesa} Ora ne hai <strong>${store.creditoPriorita()}</strong> da usare.</p>
     </div>`;
 }
 

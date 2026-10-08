@@ -819,6 +819,14 @@ const AZIONI = {
   },
   'priorita-giorno': (e) => { F.dalGiorno.usaPriorita = e.target.checked; },
 
+  'avvisi-favori': (e) => {
+    const { errori } = store.impostaAvvisiFavori(e.target.checked);
+    toast(errori ? errori[0] : e.target.checked
+      ? 'Ti avviso quando puoi ricambiare un favore'
+      : 'Niente avvisi per i favori: restano solo i cambi che ti convengono');
+    render();
+  },
+
   'pubblica-giorno': () => {
     const bozza = F.bozzaDalGiorno();
     const { errori, richiesta } = store.creaRichiesta({
@@ -923,9 +931,9 @@ const AZIONI = {
       sheet('Cambio fatto', html`
         <p><strong>${chi}</strong> ha ricevuto una notifica.</p>
         <p>Inserite il cambio su UKG: basta che lo faccia uno dei due.</p>
-        <p class="testo-tenue">${raw(icona('priorita', { px: 14 }))} Hai aiutato un collega: ${store.aiutiDelMese() * RULES.priority.perAiuto + RULES.priority.creditsPerMonth <= RULES.priority.tetto
-    ? 'questo mese hai una priorità in più.'
-    : 'questo mese hai già tutte le priorità che si possono avere.'}</p>`, {
+        <p class="testo-tenue">${raw(icona('priorita', { px: 14 }))} Hai aiutato un collega. ${store.aiutiDelMese() * RULES.priority.perAiuto + RULES.priority.creditsPerMonth < RULES.priority.tetto
+    ? 'Quando UKG approva il cambio, ricevi una priorità in più.'
+    : 'Questo mese hai già tutte le priorità che si possono avere.'}</p>`, {
         azioni: '<button class="btn primario largo" data-chiudi>Ho capito</button>',
       });
     } else {
@@ -1375,7 +1383,7 @@ const AZIONI = {
     sheet('Come funziona la priorità', html`
       <ul class="elenco">
         <li>Hai <strong>1 priorità al mese</strong>, dura <strong>48 ore</strong>.</li>
-        <li>Ogni collega che aiuti te ne dà <strong>una in più</strong> nello stesso mese, fino a ${RULES.priority.tetto} in tutto.</li>
+        <li>Ogni collega che aiuti te ne dà <strong>una in più</strong>, quando UKG approva il cambio, fino a ${RULES.priority.tetto} al mese.</li>
         <li>La richiesta va in cima alla bacheca ed è evidenziata nel calendario.</li>
         <li>Ti dà visibilità, non precedenza: nessuno è obbligato ad accettare.</li>
         <li>Si sceglie al momento della pubblicazione: non si può aggiungere dopo.</li>

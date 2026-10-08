@@ -57,9 +57,10 @@ const stato = {
   ],
   proposals: [
     // Lorenzo ha risposto alla richiesta di Giulia.
-    { id: 'p1', requestId: 'r1', daUserId: 'lorenzo', aUserId: 'giulia', status: 'ACCORDO' },
+    { id: 'p1', requestId: 'r1', daUserId: 'lorenzo', aUserId: 'giulia', status: 'ACCORDO', confermataIl: '2026-09-25T08:00:00Z' },
     // Marco ha scritto lui a Lorenzo dalla sua richiesta: aiuta lo stesso Lorenzo.
-    { id: 'p2', requestId: 'r2', daUserId: 'marco', aUserId: 'lorenzo', status: 'ACCORDO' },
+    // Approvato su UKG il mese dopo l'accordo: la priorità vale a novembre.
+    { id: 'p2', requestId: 'r2', daUserId: 'marco', aUserId: 'lorenzo', status: 'ACCORDO', confermataIl: '2026-11-02T08:00:00Z' },
     { id: 'p3', requestId: 'r3', daUserId: 'giulia', aUserId: 'lorenzo', status: 'ACCORDO' },
     { id: 'p4', requestId: 'r4', daUserId: 'lorenzo', aUserId: 'anna', status: 'ACCORDO', annullataIl: '2026-10-04T08:00:00Z' },
     { id: 'p5', requestId: 'r2', daUserId: 'anna', aUserId: 'marco', status: 'RIFIUTATA' },
@@ -71,10 +72,13 @@ test('aiuta chi risponde, chiunque abbia scritto la proposta', () => {
   assert.deepEqual(aiuti, ['lorenzo>giulia', 'lorenzo>marco', 'giulia>lorenzo']);
 });
 
-test('gli aiuti si contano per mese', () => {
-  assert.equal(aiutiNelMese('lorenzo', stato, '2026-10'), 1);
+test('per la priorità conta solo l\'aiuto approvato su UKG, nel mese dell\'approvazione', () => {
   assert.equal(aiutiNelMese('lorenzo', stato, '2026-09'), 1);
-  assert.equal(aiutiNelMese('giulia', stato, '2026-10'), 1);
+  assert.equal(aiutiNelMese('lorenzo', stato, '2026-10'), 0);
+  assert.equal(aiutiNelMese('lorenzo', stato, '2026-11'), 1);
+  // L'aiuto di Giulia è un accordo non ancora approvato: per il favore conta,
+  // per la priorità no.
+  assert.equal(aiutiNelMese('giulia', stato, '2026-10'), 0);
 });
 
 test('priorità: una di base, una per aiuto, mai oltre il tetto', () => {

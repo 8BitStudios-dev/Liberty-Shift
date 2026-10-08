@@ -989,3 +989,4 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .tag.favore { background: color-mix(in srgb, var(--accento) 16%, transparent); color: var(--accento); font-weight: 600; }
 .ricompensa-aiuto { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; margin: 0 0 14px; border-radius: 12px; background: var(--superficie-2); }
 .ricompensa-aiuto p { margin: 0; }
+.switch.sotto-opzione { margin-left: 28px; }
