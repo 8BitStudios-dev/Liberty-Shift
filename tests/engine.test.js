@@ -663,6 +663,10 @@ test('"Cambia orario" propone i turni veri del contratto, i rari in fondo', () =
   assert.ok(testo.includes('15:00-20:00'));
   assert.deepEqual(orari.filter((o) => o.raro).map((o) => o.start), ['15:30', '15:15']);
   assert.equal(orari.find((o) => o.start === '11:00').fascia, 'CENTRALE');
+  // Un Part Time da 20 ore fa gli stessi turni da 5 ore, solo per quattro
+  // giorni: conta il turno che lascia, non il monte ore.
+  const venti = orariStandard({ tipo: 'WORK', start: '10:00', end: '15:00', data: '2026-10-14' }, { ...pt, oreSettimanali: 20 });
+  assert.deepEqual(venti, orari);
   // Full Time: 9 ore di presenza, 8 lavorate.
   const ft = orariStandard({ tipo: 'WORK', start: '10:00', end: '19:00', data: '2026-10-14' }, { contratto: 'FT' });
   assert.deepEqual(ft.map((o) => o.start), ['08:00', '09:30', '11:00', '12:00']);
