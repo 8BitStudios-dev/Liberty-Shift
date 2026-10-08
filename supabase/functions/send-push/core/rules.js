@@ -304,7 +304,9 @@ export const RULES = {
 export const FASCE_PREFERENZE = [
   { fascia: 'APERTURA' },
   { fascia: 'MATTINA' },
-  { fascia: 'CENTRALE' },
+  // Un Full Time non ha turni centrali: con nove ore di presenza chi entra
+  // alle 11 esce alle 20, ed è già sera. Chiederglielo sarebbe una riga vuota.
+  { fascia: 'CENTRALE', soloContratti: ['PT'] },
   { fascia: 'SERA' },
   { fascia: 'CHIUSURA' },
   { fascia: 'NOTTE', nome: 'Notti visual', soloEvita: true, aiuto: 'sono rare, e la durata va concordata a parte' },

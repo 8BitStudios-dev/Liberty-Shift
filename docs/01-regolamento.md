@@ -292,7 +292,9 @@ richiesta di nuovo.
 ## R19 — Preferenze
 Per ogni fascia di R6 (più le notti visual) si sceglie **Evito**,
 **Indifferente** o **Preferisco**. Una scelta sola per riga, quindi due
-preferenze opposte non possono stare insieme per costruzione.
+preferenze opposte non possono stare insieme per costruzione. Il **Centrale**
+lo vede solo chi è Part Time: un Full Time, con nove ore di presenza, non ha
+turni centrali (`soloContratti` in `FASCE_PREFERENZE`).
 
 | Scelta | Effetto |
 |---|---|

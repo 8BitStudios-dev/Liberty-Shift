@@ -245,3 +245,12 @@ test('le priorità usate si contano dalle richieste, e quelle guadagnate solo do
   store.state.requests.push({ id: 'rq-io', userId: io, status: 'APERTA', createdAt: new Date().toISOString(), prioritaFinoA: '2099-01-01T00:00:00Z', cedo: { shiftId: null }, cerco: {} });
   assert.equal(store.creditoPriorita(), 1);
 });
+
+test('le preferenze mostrano il centrale solo ai Part Time', async () => {
+  const { formPreferenze } = await import('../src/ui/components.js');
+  const centrale = (contratto) => formPreferenze({}, 'profilo', contratto).includes('data-fascia="CENTRALE"');
+  assert.equal(centrale('PT'), true);
+  assert.equal(centrale('FT'), false, 'un Full Time non ha turni centrali');
+  assert.equal(centrale(''), true, 'senza contratto scelto si mostra tutto');
+  assert.equal(formPreferenze({}, 'profilo', 'FT').includes('data-fascia="SERA"'), true);
+});

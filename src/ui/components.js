@@ -572,15 +572,17 @@ const ORDINE_GIORNI = [1, 2, 3, 4, 5, 6, 0];
  * `ambito` dice di chi sono: 'profilo' (le tue, salvate subito) o 'bozza'
  * (la registrazione, salvate alla fine). I tasti lo portano con sé.
  */
-export function formPreferenze(preferenze, ambito) {
+export function formPreferenze(preferenze, ambito, contratto = '') {
   const n = normalizzaPreferenze(preferenze);
+  // Senza contratto (non ancora scelto) si mostra tutto.
+  const fasce = FASCE_PREFERENZE.filter((f) => !f.soloContratti || !contratto || f.soloContratti.includes(contratto));
   const tasto = (attrs, etichetta, attivo) => `<button type="button" class="pill ${attivo ? 'attivo' : ''}" data-ambito="${ambito}" ${attrs}>${etichetta}</button>`;
 
-  const righe = (fasce, giorno) => FASCE_PREFERENZE.map((f) => {
+  const righe = (voti, giorno) => fasce.map((f) => {
     const info = RULES.fasce[f.fascia] || {};
     const nome = f.nome || info.nome;
     const aiuto = f.aiuto || info.aiuto;
-    const voto = fasce[f.fascia] || null;
+    const voto = voti[f.fascia] || null;
     const g = giorno == null ? '' : ` data-giorno="${giorno}"`;
     const scelte = [['evita', 'Evito'], [null, 'Indifferente'], ...(f.soloEvita ? [] : [['preferisce', 'Preferisco']])];
     return `

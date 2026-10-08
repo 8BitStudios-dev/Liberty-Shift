@@ -355,7 +355,7 @@ function passoPreferenze() {
       disponibile a cambiarlo senza doverlo segnare. Puoi saltare questo passo
       e cambiarle dal Profilo.
     </p>
-    ${raw(formPreferenze(b.preferenze, 'bozza'))}
+    ${raw(formPreferenze(b.preferenze, 'bozza', b.contratto))}
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
 

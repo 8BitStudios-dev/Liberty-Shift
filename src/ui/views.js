@@ -775,7 +775,7 @@ function corpoPreferenze(me) {
           collega le vede. Nei giorni in cui hai un turno che eviti risulti già
           disponibile a cambiarlo.
         </p>
-        ${raw(formPreferenze(me.preferenze, 'profilo'))}
+        ${raw(formPreferenze(me.preferenze, 'profilo', me.contratto))}
       </div>`;
 }
 
