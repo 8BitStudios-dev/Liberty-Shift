@@ -209,9 +209,16 @@ Una richiesta scade quando è passata la data del turno ceduto o di quello
 cercato. Sparisce da bacheca, calendario e match; resta nei dati.
 
 ## R14 — Priorità
-1 al mese, 48 ore, si sceglie alla pubblicazione.
+1 al mese, più 1 per ogni collega aiutato nello stesso mese, fino a 3. Dura 48
+ore e si sceglie alla pubblicazione.
 
 **Assunzioni** (tutte in `RULES.priority`):
+- aiuta chi conclude un accordo sulla richiesta di un altro, chiunque dei due
+  abbia scritto la proposta; un accordo annullato non conta;
+- il tetto c'è perché la priorità serve a farsi vedere: se ce l'hanno tutti,
+  non la vede nessuno;
+- le priorità usate si contano anche dalle proprie richieste, non solo sul
+  telefono: un'app reinstallata non le ridà da capo;
 - il credito si consuma all'uso e non torna se cancelli;
 - non è trasferibile e non si aggiunge dopo;
 - il conteggio è per mese di calendario, quindi si rinnova il primo del mese.

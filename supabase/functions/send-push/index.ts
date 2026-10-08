@@ -21,6 +21,7 @@
 import webpush from 'npm:web-push@3.6.7';
 import { candidatiCompatibili, richiesteSpeculari } from './core/compatibili.js';
 import { RULES } from './core/rules.js';
+import { chiHaiAiutato } from './core/karma.js';
 import { decifra } from './core/cifratura.js';
 import { oreRetribuite } from './core/model.js';
 
@@ -327,6 +328,34 @@ async function avvisaSpeculari(riga: RigaRichiesta) {
   return { notificati };
 }
 
+/**
+ * I colleghi che l'autore ha aiutato, con l'ultima volta (vedi
+ * `chiHaiAiutato`): a loro una richiesta sua arriva come un favore da
+ * ricambiare, anche quando il cambio non è di quelli che convengono.
+ */
+async function aiutatiDa(autore: string): Promise<Map<string, string>> {
+  const proposte = await leggi(
+    `proposte?stato=eq.ACCORDO&annullata_il=is.null&or=(da_user_id.eq.${autore},a_user_id.eq.${autore})`
+    + '&select=id,richiesta_id,da_user_id,a_user_id,stato,annullata_il,confermata_il,creata_il',
+  );
+  if (!proposte.length) return new Map();
+  const ids = [...new Set(proposte.map((p: { richiesta_id: string }) => p.richiesta_id))].join(',');
+  const richieste = await leggi(`richieste?id=in.(${ids})&select=id,autore_id,chiusa_il`);
+  return chiHaiAiutato(autore, {
+    proposals: proposte.map((p: Record<string, string>) => ({
+      id: p.id, requestId: p.richiesta_id, daUserId: p.da_user_id, aUserId: p.a_user_id,
+      status: p.stato, annullataIl: p.annullata_il, confermataIl: p.confermata_il, createdAt: p.creata_il,
+    })),
+    requests: richieste.map((r: Record<string, string>) => ({ id: r.id, userId: r.autore_id, chiusaIl: r.chiusa_il })),
+  });
+}
+
+/** "questo mese" o "a settembre", come nell'app. */
+function meseDelFavore(quando: string, oggi: string) {
+  if (quando.slice(0, 7) === oggi.slice(0, 7)) return 'questo mese';
+  return `a ${new Date(`${quando.slice(0, 7)}-15T12:00:00Z`).toLocaleDateString('it-IT', { month: 'long', timeZone: 'Europe/Rome' })}`;
+}
+
 type RigaRichiesta = {
   id: string; autore_id: string; tipo: string; stato: string;
   cedo_data: string; cedo_start: string | null; cedo_end: string | null;
@@ -395,13 +424,23 @@ async function avvisaCompatibili(riga: RigaRichiesta, esclusi: Set<string> = new
 
   // Solo i cambi che convengono secondo le preferenze: avvisare per ogni
   // richiesta compatibile era un bombardamento (vedi `cambioFavorevole`).
-  for (const t of trovati.filter((x: { favorevole: boolean; userId: string }) => x.favorevole && !esclusi.has(x.userId))) {
+  // L'eccezione è chi l'autore ha aiutato: a lui basta che il cambio non gli
+  // pesi, perché è il momento di ricambiare.
+  const aiutati = trovati.some((x: { costo: string | null }) => x.costo && x.costo !== 'costa')
+    ? await aiutatiDa(riga.autore_id)
+    : new Map<string, string>();
+  const daAvvisare = trovati.filter((x: { favorevole: boolean; costo: string | null; userId: string }) => !esclusi.has(x.userId)
+    && (x.favorevole || (aiutati.has(x.userId) && x.costo !== null && x.costo !== 'costa')));
+  for (const t of daAvvisare) {
+    const favore = aiutati.get(t.userId);
+    const apertura = favore ? `${nomeAutore} ti ha aiutato ${meseDelFavore(favore, oggi)} e ora` : nomeAutore;
     // Cambio orario: il tuo turno quel giorno. Cambio OFF: il giorno che
     // l'autore vuole libero lo lavoreresti tu, e lui lavorerebbe il tuo.
     const body = riga.tipo === 'OFF'
-      ? `${nomeAutore} vuole libero ${formatData(riga.cedo_data)} e in cambio lavorerebbe ${formatData(t.giorno)}. Quel giorno tu non lavori: potete scambiarvi le due giornate.`
-      : `${nomeAutore} cerca un cambio orario per ${formatData(riga.cedo_data)}: il tuo turno dalle ${t.turno?.start} alle ${t.turno?.end} potrebbe andare bene.`;
-    const esito = await invia(t.userId, { title: 'Un cambio che ti conviene', body, url: '#/aiuta' });
+      ? `${apertura} vuole libero ${formatData(riga.cedo_data)} e in cambio lavorerebbe ${formatData(t.giorno)}. Quel giorno tu non lavori: potete scambiarvi le due giornate.`
+      : `${apertura} cerca un cambio orario per ${formatData(riga.cedo_data)}: il tuo turno dalle ${t.turno?.start} alle ${t.turno?.end} potrebbe andare bene.`;
+    const title = favore ? 'Puoi ricambiare un favore' : 'Un cambio che ti conviene';
+    const esito = await invia(t.userId, { title, body, url: '#/aiuta' });
     if (esito.inviate || esito.rimosse) notificati.push(t.userId);
     inviate += esito.inviate;
   }

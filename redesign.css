@@ -983,3 +983,9 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .orari-fascia { display: block; font-size: 13px; font-weight: 600; color: var(--testo-tenue); margin: 10px 0 0; }
 .orari-gruppo .chips { margin: 6px 0 4px; }
 .pref-nota-limite { margin: -6px 0 4px; font-size: 13px; }
+
+/* Aiuta un collega: quanto costa un cambio, e chi puoi ricambiare. */
+.etichette-aiuto { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.tag.favore { background: color-mix(in srgb, var(--accento) 16%, transparent); color: var(--accento); font-weight: 600; }
+.ricompensa-aiuto { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; margin: 0 0 14px; border-radius: 12px; background: var(--superficie-2); }
+.ricompensa-aiuto p { margin: 0; }

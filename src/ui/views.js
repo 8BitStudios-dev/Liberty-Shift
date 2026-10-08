@@ -23,12 +23,6 @@ import {
 
 // ---------------------------------------------------------------- HOME
 
-/** Le occasioni di aiutare, prioritarie prima; a pari priorità resta l'ordine per percentuale. */
-export const primaLePrioritarie = (opportunita) => [
-  ...opportunita.filter((o) => hasPriority(o.richiesta)),
-  ...opportunita.filter((o) => !hasPriority(o.richiesta)),
-];
-
 /**
  * L'ordine della Bacheca: le prioritarie sopra, poi tutte le altre dalla più
  * recente. Dalla prima pubblicata, la richiesta appena arrivata finiva in
@@ -1133,7 +1127,7 @@ export function dettaglioGiornoPubblico(data) {
     <div class="giorno-dettaglio">
       ${raw(mie.length ? html`
         <h3>Puoi aiutare ${mie.length === 1 ? 'una persona' : `${mie.length} persone`}</h3>
-        ${raw(primaLePrioritarie(mie).map((o) => cardOpportunita(o)).join(''))}` : '')}
+        ${raw(store.occasioni(mie).map((o) => cardOpportunita(o)).join(''))}` : '')}
       ${raw(gruppi)}
     </div>`;
 }

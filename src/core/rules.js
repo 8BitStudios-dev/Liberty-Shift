@@ -150,8 +150,13 @@ export const RULES = {
   },
 
   // Priorità
+  // Chi aiuta guadagna priorità: ogni cambio concluso sulla richiesta di un
+  // collega ne vale una in più, nello stesso mese. Il tetto c'è perché la
+  // priorità serve a farsi vedere: se ce l'hanno tutti, non la vede nessuno.
   priority: {
     creditsPerMonth: 1,
+    perAiuto: 1,
+    tetto: 3,
     durationHours: 48,
     refundOnCancel: false,
     canBeAddedLater: false,

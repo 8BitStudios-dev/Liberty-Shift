@@ -10,7 +10,7 @@ import {
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import {
   shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno, orariStandard,
-  evitaChiusureIl,
+  evitaChiusureIl, haPreferenze,
 } from '../core/model.js';
 import {
   appleWeekKey, addDays, formatDay, todayISO, MESI, minutes as minuti,
@@ -22,7 +22,7 @@ import {
   notaStima, notaPausa, personaDi,
 } from './components.js';
 import { icona } from './icone.js';
-import { primaLePrioritarie, richiestaValida, richiestaGestita } from './views.js';
+import { richiestaValida, richiestaGestita } from './views.js';
 
 export const draft = {
   tipo: null,
@@ -98,7 +98,7 @@ export function vistaRapida() {
       ${raw(sceltaTurno)}
       <h2 class="titolo-gruppo">${raw(iconaTipo(TIPO_CAMBIO.OFF, 17))} Puoi prendere un turno (${lista.length})</h2>
       <p class="testo-tenue">${formatDay(rapido.giorno)} non lavori: prendi il turno di un collega e in cambio gli lasci uno dei tuoi.</p>
-      ${raw(primaLePrioritarie(lista).map((o) => cardOpportunita(o)).join(''))}`;
+      ${raw(store.occasioni(lista).map((o) => cardOpportunita(o)).join(''))}`;
   }
 
   const cedo = store.shift(rapido.shiftId);
@@ -109,7 +109,7 @@ export function vistaRapida() {
   const gruppo = (titolo, sottotitolo, lista) => (lista.length ? html`
     <h2 class="titolo-gruppo">${raw(titolo)}</h2>
     <p class="testo-tenue">${sottotitolo}</p>
-    ${raw(lista.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true })).join(''))}` : '');
+    ${raw(store.primaChiHaiAiutato(lista).map((m) => cardMatch(m, { mioCedo: cedo, compatta: true })).join(''))}` : '');
 
   return html`
     ${raw(testataRapido())}
@@ -385,7 +385,7 @@ export function cambioDalGiorno() {
     ${raw(errori.length ? '' : risultati.length ? html`
       <h2 class="titolo-gruppo">Colleghi disponibili (${risultati.length})</h2>
       <p class="testo-tenue">Proponi lo scambio a uno di loro, oppure pubblica la richiesta e aspetta chi risponde.</p>
-      ${raw(risultati.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true, dalGiorno: true })).join(''))}`
+      ${raw(store.primaChiHaiAiutato(risultati).map((m) => cardMatch(m, { mioCedo: cedo, compatta: true, dalGiorno: true })).join(''))}`
     : vuoto('Nessun collega disponibile per ora', 'Pubblica la richiesta: resta in bacheca, e chi può aiutarti la trova lì.'))}
     ${raw(errori.length ? '' : html`
       <button class="btn ${risultati.length ? 'secondario' : 'primario'} largo" data-act="pubblica-giorno">Pubblica in bacheca</button>`)}`;
@@ -660,8 +660,8 @@ export function match(params) {
     </header>
     <div class="card riepilogo">${raw(coppiaCedoCerco(r, { compatto: true }))}</div>
 
-    ${raw(pieni.length ? `<h2 class="titolo-gruppo">${segnoMatch(true)}Match (${pieni.length})</h2>${pieni.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
-    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">${segnoMatch(false)}Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
+    ${raw(pieni.length ? `<h2 class="titolo-gruppo">${segnoMatch(true)}Match (${pieni.length})</h2>${store.primaChiHaiAiutato(pieni).map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
+    ${raw(potenziali.length ? `<h2 class="titolo-gruppo">${segnoMatch(false)}Potenziali (${potenziali.length})</h2>${store.primaChiHaiAiutato(potenziali).map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
     ${raw(risultati.length ? '' : vuoto(
     'Ancora nessuno',
     'Nessun collega ha un turno compatibile su quel giorno. La richiesta resta in bacheca.',
@@ -1101,6 +1101,27 @@ export function formGrazie(proposalId) {
 // ------------------------------------------------------- AIUTA UN COLLEGA
 
 /**
+ * Cosa ci guadagni ad aiutare, detto dove si decide se farlo: ogni cambio
+ * concluso per un collega vale una priorità in più nel mese, fino al tetto.
+ */
+function riquadroRicompensa() {
+  const { creditsPerMonth, perAiuto, tetto } = RULES.priority;
+  const aiuti = store.aiutiDelMese();
+  const guadagnate = Math.min(tetto - creditsPerMonth, aiuti * perAiuto);
+  const ancora = tetto - creditsPerMonth - guadagnate;
+  const stato = aiuti === 0
+    ? `Ogni collega che aiuti ti dà una priorità in più da usare questo mese, fino a ${tetto} in tutto.`
+    : ancora > 0
+      ? `Questo mese hai aiutato ${aiuti === 1 ? 'una volta' : `${aiuti} volte`}: ${guadagnate === 1 ? 'una priorità in più' : `${guadagnate} priorità in più`}. Ne puoi guadagnare ancora ${ancora}.`
+      : `Questo mese hai aiutato ${aiuti === 1 ? 'una volta' : `${aiuti} volte`}: hai già tutte le priorità che si possono avere (${tetto}).`;
+  return html`
+    <div class="ricompensa-aiuto">
+      <span class="icona-in-riga stella">${raw(icona('priorita', { px: 16 }))}</span>
+      <p>${stato} Ora ne hai <strong>${store.creditoPriorita()}</strong> da usare.</p>
+    </div>`;
+}
+
+/**
  * Il matching al contrario, tutto in una schermata: non "chi può prendere il
  * mio turno" ma "di chi posso risolvere il problema io". Sono le stesse
  * opportunità che compaiono giorno per giorno nel Profilo, qui raccolte e
@@ -1116,11 +1137,15 @@ export function aiuta() {
       <button class="icon-btn" data-act="guida" data-sezione="aiuta" title="Come funziona">?</button>
     </header>
     <p class="occhiello">
-      Le richieste che puoi coprire con i tuoi turni. Le altre non compaiono:
-      non servirebbe a nessuno.
+      Le richieste che puoi coprire con i tuoi turni, da quella che ti pesa
+      meno. Le altre non compaiono: non servirebbe a nessuno.
     </p>
+    ${raw(riquadroRicompensa())}
+    ${raw(mie.length && !haPreferenze(store.me.preferenze)
+    ? '<p class="testo-tenue">Imposta le tue preferenze nel Profilo e qui vedrai anche quanto ti costa ogni cambio.</p>'
+    : '')}
     ${raw(mie.length
-    ? primaLePrioritarie(mie).map((o) => cardOpportunita(o)).join('')
+    ? store.occasioni(mie).map((o) => cardOpportunita(o)).join('')
     : vuoto(
       'Niente da fare, per ora',
       'Per ora nessuna richiesta è compatibile con i tuoi turni. Se il calendario non è aggiornato, aggiornalo dal Profilo.',

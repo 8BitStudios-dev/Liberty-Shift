@@ -23,6 +23,9 @@ import {
   sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche, salvaTraguardi,
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
 } from './sincronia.js';
+import {
+  aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
+} from './karma.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
 // Shift: rinominarla sarebbe come cambiare serratura e buttare la chiave, i
@@ -319,10 +322,45 @@ export const store = {
     }
     return giorni;
   },
+  /**
+   * Le priorità ancora da usare questo mese: una di base, più una per ogni
+   * collega aiutato, fino al tetto (vedi `prioritaDelMese`).
+   *
+   * Quelle usate si contano anche dalle richieste: `prioritaUsata` vive solo
+   * su questo telefono, e un'app reinstallata la ridarebbe da capo.
+   */
   creditoPriorita(userId = this.state.currentUserId) {
+    const mese = monthKey(todayISO());
     const u = this.user(userId);
-    const usati = u.prioritaUsata?.[monthKey(todayISO())] || 0;
-    return Math.max(0, RULES.priority.creditsPerMonth - usati);
+    const dalleRichieste = this.state.requests
+      .filter((r) => r.userId === userId && r.prioritaFinoA && r.createdAt?.slice(0, 7) === mese).length;
+    const usate = Math.max(u?.prioritaUsata?.[mese] || 0, dalleRichieste);
+    return prioritaDelMese(this.aiutiDelMese(userId), usate);
+  },
+  aiutiDelMese(userId = this.state.currentUserId) {
+    return aiutiNelMese(userId, this.state, monthKey(todayISO()));
+  },
+  /** I colleghi che hai aiutato, con l'ultima volta: chi ti deve una mano. */
+  chiHaiAiutato() {
+    return chiHaiAiutato(this.state.currentUserId, this.state);
+  },
+  /**
+   * I colleghi che possono prendere il tuo turno, con chi hai aiutato in
+   * cima: è da loro che un sì arriva più volentieri. Per il resto l'ordine
+   * del motore non cambia.
+   */
+  primaChiHaiAiutato(risultati) {
+    const aiutati = this.chiHaiAiutato();
+    return [...risultati].sort((a, b) => aiutati.has(b.userId) - aiutati.has(a.userId));
+  },
+  /** Le occasioni di aiutare, con costo e favore, nell'ordine in cui mostrarle. */
+  occasioni(opportunita) {
+    const me = this.me;
+    return occasioniDiAiuto(opportunita, {
+      io: me,
+      turno: (id) => this.shift(id),
+      favori: chiTiHaAiutato(me.id, this.state),
+    });
   },
 
   // --- scrittura -----------------------------------------------------
