@@ -1114,7 +1114,7 @@ function riquadroRicompensa() {
   const inAttesa = store.aiutiInAttesa();
   const volte = aiuti === 1 ? 'un tuo aiuto' : `${aiuti} tuoi aiuti`;
   const stato = aiuti === 0
-    ? `Ogni collega che aiuti ti dà una priorità in più quando UKG approva il cambio, fino a ${tetto} al mese.`
+    ? `La priorità arriva quando UKG approva il cambio, fino a ${tetto} al mese.`
     : ancora > 0
       ? `Questo mese UKG ha approvato ${volte}: ${guadagnate === 1 ? 'una priorità in più' : `${guadagnate} priorità in più`}. Ne puoi guadagnare ancora ${ancora}.`
       : `Questo mese UKG ha approvato ${volte}: hai già tutte le priorità che si possono avere (${tetto}).`;
@@ -1144,8 +1144,8 @@ export function aiuta() {
       <button class="icon-btn" data-act="guida" data-sezione="aiuta" title="Come funziona">?</button>
     </header>
     <p class="occhiello">
-      Le richieste che puoi coprire con i tuoi turni, da quella che ti pesa
-      meno. Le altre non compaiono: non servirebbe a nessuno.
+      Dai una mano a un collega e guadagni una priorità in più per il mese.
+      Vedi solo i cambi che puoi fare davvero, prima quelli che non ti costano niente.
     </p>
     ${raw(riquadroRicompensa())}
     ${raw(mie.length && !haPreferenze(store.me.preferenze)
