@@ -290,9 +290,7 @@ export const RULES = {
  * scelta sola per riga, così "evito e preferisco le chiusure" non si può
  * nemmeno dire. Quello che si evita abbassa molto il punteggio
  * (`RULES.evitaPenalty`), quello che si preferisce lo alza di poco
- * (`RULES.preferenzaBonus`); nessuno dei due esclude il turno. L'unica cosa
- * che esclude è il limite «non posso finire dopo le…», che è un vincolo e non
- * un gusto.
+ * (`RULES.preferenzaBonus`); nessuno dei due esclude il turno.
  *
  * Le notti visual si possono solo evitare: sono rare, e preferirle non
  * aiuterebbe a trovarne.

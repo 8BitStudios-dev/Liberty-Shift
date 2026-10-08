@@ -10,7 +10,7 @@ import {
   isClosing, isOpen, hasPriority, shiftLabel, wantLabel,
   fineMinuti, trasformaTurno, turnoAdattato, impattoMonteOre, oreRetribuite,
   applicaPreferenze, concorda, contractOf, disponibileDallePreferenze,
-  liberaGiornoVoluto, superaLimite, evitaChiusureIl,
+  liberaGiornoVoluto, evitaChiusureIl,
 } from './model.js';
 
 const clamp = (n, min = 0, max = 100) => Math.max(min, Math.min(max, n));
@@ -188,16 +188,6 @@ function haGiaChiesto(ctx, idx, userId, giorno) {
   return ctx.requests.some((r) => r.userId === userId && isOpen(r) && idx.byId[r.cedo.shiftId]?.data === giorno);
 }
 
-/**
- * Uno dei due riceverebbe un turno che finisce oltre l'ora che ha detto di
- * non poter superare. Le preferenze abbassano, il limite esclude: è un
- * vincolo (un figlio da prendere, l'ultimo treno), non un gusto.
- */
-function oltreIlLimite(autore, mioCedo, u, suo, trova) {
-  return superaLimite(autore, turnoAdattato(suo, mioCedo, trova))
-    || superaLimite(u, turnoAdattato(mioCedo, suo, trova));
-}
-
 function personeDi(ctx) {
   const per = new Map(ctx.users.map((u) => [u.id, u]));
   return (id) => per.get(id);
@@ -281,7 +271,6 @@ function matchOrario(request, ctx) {
     const stesso = (a, b) => a.start === b.start && a.end === b.end;
     if (stesso(turnoAdattato(suo, mioCedo, trova), mioCedo) || stesso(turnoAdattato(mioCedo, suo, trova), suo)) continue;
     if (perMe.score === 0) continue;
-    if (oltreIlLimite(autore, mioCedo, u, suo, trova)) continue;
 
     // Ha chiesto lui stesso un cambio orario quel giorno?
     const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
@@ -388,8 +377,7 @@ function matchOff(request, ctx) {
 
       const perMe = satisfies(request.cerco, turnoAdattato(suo, mioCedo, trova));
       if (perMe.score === 0) continue;
-      if (oltreIlLimite(autore, mioCedo, u, suo, trova)) continue;
-
+  
       const suaRichiesta = ctx.requests.find((r) => r.userId === u.id && isOpen(r)
         && r.tipo === TIPO_CAMBIO.OFF
         && idx.byId[r.cedo.shiftId]?.data === giorno

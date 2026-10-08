@@ -183,7 +183,6 @@ export function disponibileDallePreferenze(user, shift) {
  *     fasce: { APERTURA: 'evita' | 'preferisce', ... },   // generali
  *     giorni: { 0..6: { fasce: {...}, off: bool } },     // 0 = domenica
  *     weekendOff: bool,     // vorrei il sabato e la domenica liberi
- *     fineMax: 'HH:MM' | null,  // non posso finire dopo: l'unico vincolo vero
  *   }
  *
  * Prima erano interruttori (`evitaChiusure: true`). Sono ancora così sui
@@ -192,8 +191,14 @@ export function disponibileDallePreferenze(user, shift) {
  * "Pomeriggio" è diventato "Sera", che è come lo chiamano in store.
  */
 export function normalizzaPreferenze(p) {
-  if (p?.versione === 2) return p;
-  const n = { versione: 2, modo: 'generali', fasce: {}, giorni: {}, weekendOff: false, fineMax: null };
+  // Il limite «non posso finire dopo le…» non esiste più: chi l'aveva scelto
+  // se lo ritrova tolto, invece di un vincolo che nessuna schermata mostra.
+  if (p?.versione === 2) {
+    if (!('fineMax' in p)) return p;
+    const { fineMax, ...resto } = p;
+    return resto;
+  }
+  const n = { versione: 2, modo: 'generali', fasce: {}, giorni: {}, weekendOff: false };
   for (const [chiave, [fascia, voto]] of Object.entries(PREFERENZE_VECCHIE)) {
     if (p?.[chiave]) n.fasce[fascia] = voto;
   }
@@ -203,7 +208,7 @@ export function normalizzaPreferenze(p) {
 /** C'è almeno una preferenza che dica qualcosa? */
 export function haPreferenze(p) {
   const n = normalizzaPreferenze(p);
-  return Object.keys(n.fasce).length > 0 || n.weekendOff || Boolean(n.fineMax)
+  return Object.keys(n.fasce).length > 0 || n.weekendOff
     || (n.modo === 'giorni' && Object.values(n.giorni).some((g) => g?.off || Object.keys(g?.fasce || {}).length));
 }
 
@@ -232,17 +237,6 @@ export function vuoleOff(user, data) {
   return (n.weekendOff && (g === 0 || g === 6)) || (n.modo === 'giorni' && Boolean(n.giorni[g]?.off));
 }
 
-/**
- * Il turno finisce dopo l'ora oltre cui la persona non può restare.
- * È l'unica preferenza che esclude: chi deve prendere un figlio alle 19 non
- * può fare una chiusura, e mostrargliela in basso non serve a nessuno.
- */
-export function superaLimite(user, shift) {
-  if (shift?.tipo !== 'WORK' || !user?.preferenze) return false;
-  const { fineMax } = normalizzaPreferenze(user.preferenze);
-  return Boolean(fineMax) && fineMinuti(shift) > minutes(fineMax);
-}
-
 /** La persona evita le chiusure quel giorno: serve al "qualsiasi turno non di chiusura". */
 export function evitaChiusureIl(user, data) {
   if (!user?.preferenze) return false;
@@ -258,7 +252,6 @@ export const nomeGiorno = (data) => GIORNI_LUNGHI[weekday(data)].toLowerCase();
  *   { tipo: 'modo', modo: 'generali'|'giorni' }
  *   { tipo: 'off', giorno, off }       // giorno 0..6, 0 = domenica
  *   { tipo: 'weekend', valore }
- *   { tipo: 'limite', fineMax }        // 'HH:MM' o null
  *
  * Passando a "giorno per giorno" ogni giorno ancora vuoto parte dalle scelte
  * generali: chi ha detto "evito le chiusure" non deve ripeterlo sette volte,
@@ -288,9 +281,6 @@ export function aggiornaPreferenze(p, modifica) {
       break;
     case 'weekend':
       n.weekendOff = Boolean(modifica.valore);
-      break;
-    case 'limite':
-      n.fineMax = modifica.fineMax || null;
       break;
     default:
       break;
@@ -574,8 +564,7 @@ export function ruoloNelGiorno(request, giorno, cedo) {
  * Restituisce { bonus, reasons }. Niente esclude il turno: quello che si
  * evita abbassa molto il punteggio (`RULES.evitaPenalty`), quello che si
  * preferisce lo alza di poco (`RULES.preferenzaBonus`). Lavorare in un giorno
- * che si vorrebbe OFF pesa come una fascia evitata. Il limite d'orario invece
- * esclude, ma lo guarda il motore prima (`superaLimite`).
+ * che si vorrebbe OFF pesa come una fascia evitata.
  *
  * `io` sceglie la persona grammaticale: seconda quando la frase la legge solo
  * la persona a cui si riferisce (è chi chiama la funzione a saperlo — vedi

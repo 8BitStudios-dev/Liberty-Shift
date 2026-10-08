@@ -14,7 +14,7 @@ import {
 import {
   isClosing, isNotturno, durataOre, etichettaFascia, trasformaTurno,
   impattoMonteOre, shiftLabel, isExpired, ruoloNelGiorno, applicaPreferenze, fasceDi,
-  normalizzaPreferenze, aggiornaPreferenze, vuoleOff, liberaGiornoVoluto, superaLimite, orariStandard,
+  normalizzaPreferenze, aggiornaPreferenze, vuoleOff, liberaGiornoVoluto, orariStandard,
   oreRetribuite, concorda,
 } from '../src/core/model.js';
 
@@ -642,16 +642,13 @@ test('il weekend OFF: lavorarci pesa, liberarlo conviene', () => {
   assert.equal(vuoleOff(lun, '2026-10-12'), true);
 });
 
-test('il limite d\'orario esclude, invece di abbassare', () => {
+test('il vecchio limite «non posso finire dopo le…» non esiste più: si toglie', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
-  const prima = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
-  assert.ok(prima);
   const martina = s.users.find((u) => u.id === 'u_martina');
-  martina.preferenze = aggiornaPreferenze(martina.preferenze, { tipo: 'limite', fineMax: '19:00' });
-  assert.equal(findMatches(richiesta, s).some((m) => m.userId === 'u_martina'), false);
-  assert.equal(superaLimite(martina, { tipo: 'WORK', start: '10:00', end: '19:00' }), false);
-  assert.equal(superaLimite(martina, { tipo: 'WORK', start: '11:00', end: '20:00' }), true);
+  martina.preferenze = { versione: 2, modo: 'generali', fasce: {}, giorni: {}, weekendOff: false, fineMax: '19:00' };
+  assert.ok(findMatches(richiesta, s).some((m) => m.userId === 'u_martina'), 'non esclude più nessuno');
+  assert.equal('fineMax' in normalizzaPreferenze(martina.preferenze), false);
 });
 
 test('"Cambia orario" propone i turni veri del contratto, i rari in fondo', () => {

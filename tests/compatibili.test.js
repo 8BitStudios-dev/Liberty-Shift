@@ -244,7 +244,4 @@ test('weekend OFF: arriva l\'avviso quando qualcuno può liberarti un sabato', a
   assert.equal(cambioFavorevole(p, sabato, mercoledi), true);
   // Il contrario no: prenderesti un sabato.
   assert.equal(cambioFavorevole(p, mercoledi, sabato), false);
-  // Il limite d'orario vale anche qui: niente avviso per un turno che finisce troppo tardi.
-  const conLimite = aggiornaPreferenze(p, { tipo: 'limite', fineMax: '19:00' });
-  assert.equal(cambioFavorevole(conLimite, sabato, lavora('2026-10-14', '12:00', '21:00')), false);
 });

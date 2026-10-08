@@ -301,15 +301,14 @@ turni centrali (`soloContratti` in `FASCE_PREFERENZE`).
 | **Evito** | abbassa molto il punteggio, `RULES.evitaPenalty` punti |
 | **Preferisco** | lo alza di `RULES.preferenzaBonus` punti |
 | **Vorrei OFF** (un giorno, o il weekend) | lavorarci pesa come una fascia evitata; liberarlo vale come una preferita |
-| **Non posso finire dopo le…** | **esclude**: un turno che finisce dopo non viene proposto |
 
 Le scelte valgono **tutti i giorni uguali** oppure **giorno per giorno**: il
 sabato può essere diverso dal mercoledì. Passando a giorno per giorno, ogni
 giorno parte dalle scelte generali. Il **weekend OFF** vale in entrambi i modi.
 
-Il limite d'orario è l'unica preferenza che esclude, perché è un vincolo (un
-figlio da prendere, l'ultimo treno) e non un gusto: mostrarlo in fondo alla
-lista non servirebbe a nessuno.
+Nessuna preferenza esclude un turno: abbassano o alzano il punteggio e basta.
+C'era un limite «non posso finire dopo le…» che escludeva; è stato tolto, e
+chi l'aveva scelto lo perde alla prima lettura (`normalizzaPreferenze`).
 
 Tutto passa da `normalizzaPreferenze` in model.js, che legge anche il formato
 di prima (gli interruttori `evitaChiusure`, `preferiscePomeriggi`…): chi non

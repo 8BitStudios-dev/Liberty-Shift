@@ -32,11 +32,9 @@ test('costo: una fascia indifferente non costa, una preferita lasciata costa poc
   assert.equal(costoDelCambio(amaMattine, mattina, mattina2), 'nulla');
 });
 
-test('costo: prendere una fascia evitata, un giorno voluto OFF o oltre il limite pesa', () => {
+test('costo: prendere una fascia evitata o un giorno voluto OFF pesa', () => {
   const evitaChiusure = { versione: 2, modo: 'generali', fasce: { CHIUSURA: 'evita' }, giorni: {} };
   assert.equal(costoDelCambio(evitaChiusure, mattina, chiusura), 'costa');
-  const limite = { versione: 2, modo: 'generali', fasce: {}, giorni: {}, fineMax: '19:00' };
-  assert.equal(costoDelCambio(limite, mattina, chiusura), 'costa');
   const mercoledi = { versione: 2, modo: 'giorni', fasce: {}, giorni: { 3: { fasce: {}, off: true } } };
   assert.equal(costoDelCambio(mercoledi, turno('10:00', '19:00', '2026-10-15'), mattina), 'costa');
 });

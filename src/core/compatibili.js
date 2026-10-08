@@ -16,7 +16,7 @@ import { RULES, STATUS } from './rules.js';
 import { addDays } from './time.js';
 import { findMatches } from './engine.js';
 import {
-  normalizzaPreferenze, haPreferenze, votoTurno, vuoleOff, superaLimite, liberaGiornoVoluto, fasceDi,
+  normalizzaPreferenze, haPreferenze, votoTurno, vuoleOff, liberaGiornoVoluto, fasceDi,
 } from './model.js';
 
 const ora = (t) => (t ? String(t).slice(0, 5) : null);
@@ -60,14 +60,13 @@ export function preferenzeDaCondividere(user) {
  * richiesta compatibile si ritrovava bombardato. Conviene quando lasci un
  * turno che eviti, ne prendi uno che preferisci, o ti liberi un giorno che
  * vorresti OFF (il weekend, per chi l'ha chiesto). Mai se quello che prendi
- * è tra quelli che eviti, cade in un giorno che vorresti OFF o finisce oltre
- * il tuo limite. Senza preferenze non conviene niente in particolare, e non
+ * è tra quelli che eviti o cade in un giorno che vorresti OFF. Senza preferenze non conviene niente in particolare, e non
  * arriva niente.
  */
 export function cambioFavorevole(preferenze, lascia, prende) {
   const io = { preferenze };
   if (!haPreferenze(preferenze) || !prende) return false;
-  if (votoTurno(io, prende).voto === 'evita' || vuoleOff(io, prende.data) || superaLimite(io, prende)) return false;
+  if (votoTurno(io, prende).voto === 'evita' || vuoleOff(io, prende.data)) return false;
   // Una fascia preferita conviene solo se è nuova: lasciare una mattina per
   // un'altra mattina non è un guadagno, ed era un avviso in più per niente.
   const [prima] = fasceDi(lascia);
@@ -86,14 +85,12 @@ export function cambioFavorevole(preferenze, lascia, prende) {
  *   'conviene'  ci guadagni (vedi `cambioFavorevole`)
  *   'nulla'     stessa fascia, o una che ti è indifferente
  *   'poco'      lasci una fascia che preferisci per una che non eviti
- *   'costa'     prendi una fascia che eviti, un giorno che vorresti OFF,
- *               o un turno oltre il tuo limite
+ *   'costa'     prendi una fascia che eviti, o un giorno che vorresti OFF
  *   null        senza preferenze, e fasce diverse: l'app non lo sa
  */
 export function costoDelCambio(preferenze, lascia, prende) {
   const io = { preferenze };
   if (!prende) return null;
-  if (superaLimite(io, prende)) return 'costa';
   if (cambioFavorevole(preferenze, lascia, prende)) return 'conviene';
   const [prima] = fasceDi(lascia);
   const [dopo] = fasceDi(prende);

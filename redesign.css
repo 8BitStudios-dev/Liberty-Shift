@@ -994,7 +994,6 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .orari-gruppo { margin: 6px 0 0; }
 .orari-fascia { display: block; font-size: 13px; font-weight: 600; color: var(--testo-tenue); margin: 10px 0 0; }
 .orari-gruppo .chips { margin: 6px 0 4px; }
-.pref-nota-limite { margin: -6px 0 4px; font-size: 13px; }
 
 /* Aiuta un collega: quanto costa un cambio, e chi puoi ricambiare. */
 .etichette-aiuto { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }

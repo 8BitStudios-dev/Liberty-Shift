@@ -554,10 +554,9 @@ export function contaPreferenze(p) {
   const fasce = n.modo === 'giorni'
     ? Object.values(n.giorni).reduce((t, g) => t + Object.keys(g?.fasce || {}).length + (g?.off ? 1 : 0), 0)
     : Object.keys(n.fasce).length;
-  return fasce + (n.weekendOff ? 1 : 0) + (n.fineMax ? 1 : 0);
+  return fasce + (n.weekendOff ? 1 : 0);
 }
 
-const LIMITI = ['17:00', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30'];
 // Lunedì per primo: è come si legge una settimana, anche se quella di Apple parte dal sabato.
 const ORDINE_GIORNI = [1, 2, 3, 4, 5, 6, 0];
 
@@ -567,7 +566,7 @@ const ORDINE_GIORNI = [1, 2, 3, 4, 5, 6, 0];
  * Una riga per fascia con tre scelte, Evito · Indifferente · Preferisco: una
  * sola per riga, quindi niente contraddizioni da spegnere a mano. Sopra si
  * sceglie se valgono tutti i giorni o giorno per giorno; sotto, il weekend
- * OFF e il limite d'orario, che valgono sempre.
+ * OFF, che vale sempre.
  *
  * `ambito` dice di chi sono: 'profilo' (le tue, salvate subito) o 'bozza'
  * (la registrazione, salvate alla fine). I tasti lo portano con sé.
@@ -624,13 +623,5 @@ export function formPreferenze(preferenze, ambito, contratto = '') {
         Vorrei il weekend OFF
         <em class="aiuto">Un cambio che ti libera un sabato o una domenica sale nel match, e con gli avvisi dei cambi che ti convengono ti arriva una notifica.</em>
       </span>
-    </label>
-    <label class="campo">
-      <span>Non posso finire dopo le</span>
-      <select class="select" data-act="pref-limite" data-ambito="${ambito}">
-        <option value="" ${raw(n.fineMax ? '' : 'selected')}>Nessun limite</option>
-        ${raw(LIMITI.map((o) => `<option value="${o}" ${n.fineMax === o ? 'selected' : ''}>${o}</option>`).join(''))}
-      </select>
-    </label>
-    <p class="testo-tenue pref-nota-limite">È l'unica scelta che esclude: un turno che finisce dopo non ti viene proposto. Usala solo per un vincolo vero, come un figlio da prendere o l'ultimo treno.</p>`;
+    </label>`;
 }

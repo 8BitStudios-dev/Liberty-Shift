@@ -516,7 +516,6 @@ const AZIONI = {
   'pref-modo': (_, el) => cambiaPreferenze(el, { tipo: 'modo', modo: el.dataset.modo }),
   'pref-off': (e, el) => cambiaPreferenze(el, { tipo: 'off', giorno: Number(el.dataset.giorno), off: e.target.checked }),
   'pref-weekend': (e, el) => cambiaPreferenze(el, { tipo: 'weekend', valore: e.target.checked }),
-  'pref-limite': (_, el) => cambiaPreferenze(el, { tipo: 'limite', fineMax: el.value || null }),
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
   'profilo-pausa': (e) => { P.bozzaProfilo.pausaMezzora = e.target.checked; },
   'profilo-accetta-voce': (e, el) => {

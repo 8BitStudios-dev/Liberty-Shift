@@ -632,8 +632,7 @@ Limiti noti: il server non conosce le preferenze dell'autore, i suoi altri turni
 e le richieste altrui, quindi in casi al limite il telefono può rispondere
 diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi. Conta anche il
 weekend OFF (o un giorno scelto come OFF): un cambio che te lo libera ti
-avvisa, uno che te lo occupa no. Un turno oltre il tuo limite d'orario non
-avvisa mai.
+avvisa, uno che te lo occupa no.
 
 
 ## Sincronizzazione a pezzi e traffico
