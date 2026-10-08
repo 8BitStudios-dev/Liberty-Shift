@@ -217,13 +217,16 @@ export function schermataNuoveNote() {
     ${raw(insegna(1))}
     <header class="testata"><h1>Le note sono cambiate</h1></header>
     <p>
-      Da questa versione chi lo sceglie può ricevere un avviso anche per le
-      richieste compatibili con i propri turni. Per farlo, <strong>solo in quel
-      caso</strong>, i turni dei prossimi ${RULES.notifiche.giorniCondivisi} giorni vanno al server.
+      Da questa versione ognuno sceglie dove tenere i propri turni: tutti sul
+      server, cifrati, per avere suggerimenti completi, oppure solo quelli da
+      cambiare, come finora. Con la prima scelta i turni dei prossimi
+      ${RULES.notifiche.giorniCondivisi} giorni vanno al server, e li apre solo il confronto con
+      quelli dei colleghi.
     </p>
     <p class="testo-tenue">
-      Non cambia niente finché non lo scegli tu, in Impostazioni. Ma le note lo
-      dicono, e per questo vanno rilette.
+      Non cambia niente finché non lo scegli tu: te lo chiediamo in Home, e lo
+      cambi quando vuoi dalle Impostazioni. Ma le note lo dicono, e per questo
+      vanno rilette.
     </p>
     ${raw(accettazioneNote(b.accettazioni))}
     <details class="riquadro">

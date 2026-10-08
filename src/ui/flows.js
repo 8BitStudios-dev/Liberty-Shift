@@ -4,7 +4,7 @@
 import { html, raw, toast, esc } from './dom.js';
 import { store } from '../core/store.js';
 import {
-  findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
+  findMatches, validateRequest, cambioRapido, richiesteRapide, giorniLiberi, turnoOfferibile,
   opportunitaPerMe,
 } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
@@ -100,7 +100,15 @@ export function vistaRapida() {
   }
 
   const cedo = store.shift(rapido.shiftId);
-  const risultati = cambioRapido(rapido.shiftId, store.state);
+  // Le stesse due richieste, chieste anche al server: chi condivide i turni
+  // trova i colleghi liberi che il telefono non conosce. I numeri sotto i
+  // turni restano quelli del telefono, per non fare una domanda per turno.
+  const richieste = richiesteRapide(rapido.shiftId, store.state)
+    .map((r) => ({ r, perServer: bozzaPerServer(r, cedo) }));
+  const risultati = richieste
+    .flatMap(({ r, perServer }) => unisci(findMatches(r, store.state), risultatiServer(store.state, perServer)))
+    .sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+  const attesa = richieste.map(({ perServer }) => attesaServer(perServer)).find(Boolean) || '';
   const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
   const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
 
@@ -125,7 +133,8 @@ export function vistaRapida() {
     off,
   ))}
 
-    ${raw(risultati.length ? '' : vuoto(
+    ${raw(attesa)}
+    ${raw(risultati.length || attesa ? '' : vuoto(
     'Nessuno per ora',
     `Per ${formatDay(cedo.data)} al momento nessun collega ha un turno adatto. Pubblica la richiesta: resta in bacheca e qualcuno può risponderti.`,
     html`<button class="btn primario" data-act="cambio-giorno" data-azione="orario" data-data="${cedo.data}">Crea la richiesta</button>`,

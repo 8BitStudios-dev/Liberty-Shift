@@ -563,6 +563,16 @@ export function giorniLiberi(userId, dataRiferimento, shifts) {
  * libero — e mette insieme i risultati.
  */
 export function cambioRapido(shiftId, ctx) {
+  return richiesteRapide(shiftId, ctx)
+    .flatMap((r) => findMatches(r, ctx))
+    .sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+}
+
+/**
+ * Le due richieste che il Cambio Rapido prova, senza farle girare: servono
+ * anche a chiedere al server, che cerca fra i calendari condivisi.
+ */
+export function richiesteRapide(shiftId, ctx) {
   const idx = indexShifts(ctx.shifts);
   const mioCedo = idx.byId[shiftId];
   if (!mioCedo || mioCedo.tipo !== 'WORK') return [];
@@ -578,22 +588,20 @@ export function cambioRapido(shiftId, ctx) {
   };
   const evitaChiusura = Boolean(autore.preferenze?.evitaChiusure);
 
-  const orario = findMatches({
+  const orario = {
     ...base,
     id: 'rapido_orario',
     tipo: TIPO_CAMBIO.ORARIO,
     cerco: { giorni: [mioCedo.data], mode: WANT_MODE.RANGE, entroLe: '', dalleOre: '', evitaChiusura },
-  }, ctx);
-
+  };
   const liberi = giorniLiberi(autore.id, mioCedo.data, ctx.shifts);
-  const off = liberi.length ? findMatches({
+  if (!liberi.length) return [orario];
+  return [orario, {
     ...base,
     id: 'rapido_off',
     tipo: TIPO_CAMBIO.OFF,
     cerco: { giorni: liberi, mode: WANT_MODE.ANY, evitaChiusura },
-  }, ctx) : [];
-
-  return [...orario, ...off].sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+  }];
 }
 
 /**
