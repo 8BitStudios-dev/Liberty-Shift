@@ -10,8 +10,11 @@ import {
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import {
   shiftLabel, wantLabel, hasPriority, etichettaFascia, turnoAdattato, trasformaTurno, orariStandard,
+  evitaChiusureIl,
 } from '../core/model.js';
-import { appleWeekKey, addDays, formatDay, todayISO, MESI } from '../core/time.js';
+import {
+  appleWeekKey, addDays, formatDay, todayISO, MESI, minutes as minuti,
+} from '../core/time.js';
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
@@ -253,7 +256,7 @@ export function giorniDaLiberare(data) {
 /** La richiesta che si pubblicherebbe con le scelte fatte finora. */
 export function bozzaDalGiorno() {
   const me = store.me;
-  const evitaChiusura = Boolean(me?.preferenze?.evitaChiusure);
+  const evitaChiusura = evitaChiusureIl(me, dalGiorno.data);
   const base = {
     id: 'bozza-giorno',
     userId: me?.id,
@@ -309,14 +312,28 @@ export function cambioDalGiorno() {
   let domanda;
   let scelto;
   if (azione === 'orario') {
-    const orari = orariStandard(turno);
-    const attivo = (o) => dalGiorno.orari.some((x) => x.start === o.start);
+    const orari = orariStandard(turno, store.user(turno?.userId));
+    const attivo = (o) => dalGiorno.orari.some((x) => x.start === o.start && x.end === o.end);
+    const chip = (o) => html`
+      <button class="chip ${attivo(o) ? 'attivo' : ''}" data-act="giorno-orario" data-start="${o.start}" data-end="${o.end}">${o.start}–${o.end}</button>`;
+    // Divisi per fascia, con gli stessi nomi delle preferenze: si vede subito
+    // che si sta cercando una "sera". I turni rari stanno in fondo.
+    const gruppi = Object.keys(RULES.fasce)
+      .map((f) => ({ nome: RULES.fasce[f].nome, lista: orari.filter((o) => !o.raro && o.fascia === f) }))
+      .filter((g) => g.lista.length)
+      .sort((a, b) => minuti(a.lista[0].start) - minuti(b.lista[0].start));
+    const senzaFascia = orari.filter((o) => !o.raro && !o.fascia);
+    const rari = orari.filter((o) => o.raro);
+    const blocco = (titolo, lista) => (lista.length
+      ? `<div class="orari-gruppo"><span class="orari-fascia">${titolo}</span><div class="chips">${lista.map(chip).join('')}</div></div>`
+      : '');
     domanda = html`
       <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
       <h2 class="titolo-gruppo">In quale orario vorresti lavorare?</h2>
       <p class="testo-tenue">Puoi sceglierne più di uno: vedrai i colleghi che hanno almeno uno di questi orari.</p>
-      <div class="chips">${raw(orari.map((o) => html`
-        <button class="chip ${attivo(o) ? 'attivo' : ''}" data-act="giorno-orario" data-start="${o.start}" data-end="${o.end}">${o.start}–${o.end}</button>`).join(''))}</div>`;
+      ${raw(gruppi.map((g) => blocco(g.nome, g.lista)).join(''))}
+      ${raw(blocco('Altri', senzaFascia))}
+      ${raw(blocco('Rari', rari))}`;
     scelto = dalGiorno.orari.length > 0;
   } else if (azione === 'richiedi-off') {
     const liberi = giorniLiberi(store.state.currentUserId, data, store.state.shifts);

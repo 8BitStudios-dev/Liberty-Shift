@@ -2,18 +2,18 @@ import { html, raw, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno, testoPromemoria, iconaTipo,
+  ruoloNelGiorno, testoPromemoria, iconaTipo, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
 import {
   hasPriority, shiftLabel, wantLabel, isOpen, etichettaFascia, usaRotazione,
-  disponibileDallePreferenze,
+  disponibileDallePreferenze, haPreferenze,
 } from '../core/model.js';
 import {
   slotSettimana, opportunitaPerMe, disponibileIl,
 } from '../core/engine.js';
-import { RULES, PREFERENZE, TIPO_CAMBIO } from '../core/rules.js';
+import { RULES, TIPO_CAMBIO } from '../core/rules.js';
 import { karma } from '../core/karma.js';
 import { VERSIONE_APP } from '../core/config.js';
 import { letteraDi, rotazioneVuota } from '../core/rotazione.js';
@@ -601,7 +601,7 @@ function scorciatoieProfilo(me) {
       <strong>${titolo}</strong>
       <em>${stato}</em>
     </button>`;
-  const attive = PREFERENZE.filter((p) => me.preferenze[p.key]).length;
+  const attive = contaPreferenze(me.preferenze);
   const corpo = {
     turni: () => `<div class="turni-corpo">${sezioneTurni()}</div>`,
     preferenze: () => corpoPreferenze(me),
@@ -656,7 +656,7 @@ export function corpoNotifiche(stato = statoNoto()) {
     <h3 class="pref-titolo">Cosa ricevere</h3>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
       ${raw(opzione('compatibili', 'Anche i cambi che ti convengono', 'Ricevi una notifica quando un collega pubblica una richiesta che puoi coprire e che ti conviene secondo le tue preferenze: lasceresti un turno che eviti, oppure prenderesti uno che preferisci. Mai per un turno che eviti. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati: è l\'unica eccezione, perché di base al server arrivano solo i turni che vuoi cambiare.'))}
-      ${raw(modo === 'compatibili' && !PREFERENZE.some((p) => store.me.preferenze?.[p.key])
+      ${raw(modo === 'compatibili' && !haPreferenze(store.me.preferenze)
     ? '<p class="avviso-box">Non hai nessuna preferenza accesa: senza, l\'app non sa quale cambio ti conviene e non ti avvisa. Sceglile da Preferenze.</p>'
     : '')}
       ${raw(modo === 'compatibili' && !turniQui
@@ -762,60 +762,17 @@ function bottoneSync() {
  * solo dopo le scelte. Quante ne hai attive lo dice il pulsante.
  */
 function corpoPreferenze(me) {
-  const gruppi = [
-    {
-      key: 'evita',
-      titolo: 'Turni da evitare',
-      nota: 'Quel turno scende molto nel match e di solito sparisce. Non è un divieto: se per il resto lo scambio è ottimo, lo vedi lo stesso.',
-    },
-    {
-      key: 'preferisce',
-      titolo: 'Turni preferiti',
-      nota: 'Quel turno sale un po\' nel match. Non esclude niente.',
-    },
-  ];
-
-  const scelte = gruppi.map((g) => html`
-    <h3 class="pref-titolo">${g.titolo}</h3>
-    <p class="testo-tenue pref-nota">${g.nota}</p>
-    ${raw(PREFERENZE.filter((p) => p.gruppo === g.key).map((p) => html`
-      <label class="switch">
-        <input type="checkbox" data-act="pref" data-key="${p.key}" ${raw(me.preferenze[p.key] ? 'checked' : '')}>
-        <span>
-          ${p.label}
-          ${raw(p.aiuto ? `<em class="aiuto">${p.aiuto}</em>` : '')}
-        </span>
-      </label>`).join(''))}`).join('');
-
   return html`
       <div class="pref-corpo">
         <p class="pref-intro">
-          Indica i turni che preferisci e quelli che vuoi evitare. Servono solo
-          a mettere in cima gli scambi che preferisci e agiscono sulle
-          percentuali di match, nessun collega le vede. Nei giorni in cui hai
-          un turno che eviti risulti già disponibile a cambiarlo.
+          Per ogni fascia scegli se la eviti, se ti è indifferente o se la
+          preferisci. Quello che eviti scende molto nel match, quello che
+          preferisci sale un po': nessuno dei due esclude niente, e nessun
+          collega le vede. Nei giorni in cui hai un turno che eviti risulti già
+          disponibile a cambiarlo.
         </p>
-        ${raw(legendaFasce())}
-        <p class="testo-tenue">
-          Due preferenze opposte non stanno insieme: se ne attivi una, l'altra
-          si disattiva.
-        </p>
-        ${raw(scelte)}
+        ${raw(formPreferenze(me.preferenze, 'profilo'))}
       </div>`;
-}
-
-/** Cosa vuol dire ciascuna fascia, con gli orari veri. */
-function legendaFasce() {
-  const righe = Object.values(RULES.fasce).map((f) => {
-    const quando = f.inizioDa ? `inizia fra le ${f.inizioDa} e le ${f.inizioA}`
-      : f.fineDa ? `finisce fra le ${f.fineDa} e le ${f.fineA}`
-        : `finisce dopo le ${f.fineDopo}`;
-    const nome = f.label.charAt(0).toUpperCase() + f.label.slice(1);
-    return `<li><strong>${nome}</strong><span>${quando}</span></li>`;
-  }).join('');
-  return html`
-    <h3 class="pref-titolo">Cosa vuol dire ogni fascia</h3>
-    <ul class="pref-fasce">${raw(righe)}</ul>`;
 }
 
 /** Quanti turni hai nelle prossime 4 settimane: sul pulsante, in due parole, dice se sei a posto. */
@@ -1288,8 +1245,8 @@ export function dettaglioGiornoProfilo(data) {
       </label>
       <p class="testo-tenue">
         ${disponibile && disponibileDallePreferenze(me, turno)
-    ? 'Acceso da solo: è un turno che eviti. Se quel giorno non vuoi cambiare, spegnilo.'
-    : 'Chi cerca un cambio ti trova più in alto nei match. Nei turni che eviti è già acceso.'}
+    ? 'Acceso da solo: è un turno che eviti, o un giorno che vorresti OFF. Se quel giorno non vuoi cambiare, spegnilo.'
+    : 'Chi cerca un cambio ti trova più in alto nei match. Nei turni che eviti, e nei giorni che vorresti OFF, è già acceso.'}
       </p>
     </div>`;
 }

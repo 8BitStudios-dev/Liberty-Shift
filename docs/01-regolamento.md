@@ -74,22 +74,19 @@ Le **fasce** sono un'altra cosa, e non si ricavano dagli orari del negozio: sono
 i confini con cui in store si chiamano i turni parlando fra colleghi. Stanno in
 `RULES.fasce`.
 
-| Fascia | Quando |
-|---|---|
-| apertura | inizia fra le 07:30 e le 09:00 |
-| mattina | inizia fra le 09:30 e le 10:00 |
-| pomeriggio | finisce fra le 19:30 e le 20:00 |
-| chiusura | finisce dopo le 20:15 |
+| Fascia | Quando (si prova in quest'ordine, vince la prima) | Turni veri |
+|---|---|---|
+| chiusura | finisce alle 20:15 o dopo | 16–21, 15–21, 12–21, 15:30–20:30, 15:15–20:15 |
+| sera | finisce fra le 19:30 e le 20:00 | 15–20, 14–20, 11–20, 14:30–20:00 |
+| apertura | inizia alle 09:00 o prima | 8–13, 8–14, 8–17 |
+| mattina | inizia fra le 09:30 e le 10:30 | 9:30–14:30, 10–15, 10–16, 9:30–18:30, 10–19 |
+| centrale | inizia dalle 10:45 e finisce entro le 19:00 | 11–16, 12–17, 13–18, 11–17, 12–18, 13–19 |
 
-Due guardano l'inizio e due la fine, quindi **in teoria un turno potrebbe stare
-in due fasce insieme** — ma con turni fino a 9 ore, come sono davvero in
-negozio, non capita: per toccare sia l'inizio di mattina (09:30–10:00) sia la
-fine di pomeriggio (19:30–20:00) servirebbero almeno 9h30. `fasceDi()`
-restituisce comunque una lista, non un valore, perché il caso resta possibile
-sulla carta e chi la usa deve saperlo gestire.
-
-Ci sono anche turni che non stanno in nessuna fascia — un 11:00–18:00 non è
-niente di particolare — ed è corretto: nessuna preferenza li tocca.
+Ogni turno ha **una fascia sola**: prima si guarda la fine (chi esce tardi
+chiude, anche se è entrato presto), poi l'inizio, e quello che resta è un
+centrale. Le regole vengono dall'elenco dei turni che si fanno davvero
+(`RULES.catalogo`), e un test controlla che ognuno cada dove deve. Un turno
+fuori da ogni schema resta senza fascia, e nessuna preferenza lo tocca.
 
 Il flag "non voglio la chiusura" su una richiesta è un filtro netto: un turno di
 chiusura non compare fra i match, non compare con punteggio basso.
@@ -281,26 +278,28 @@ La presa visione è legata alla versione del testo: se le note cambiano, viene
 richiesta di nuovo.
 
 ## R19 — Preferenze
-Le preferenze del profilo sono due cose diverse, e l'app le tiene separate
-perché pesano in modo diverso — ma nessuna delle due esclude più un turno.
+Per ogni fascia di R6 (più le notti visual) si sceglie **Evito**,
+**Indifferente** o **Preferisco**. Una scelta sola per riga, quindi due
+preferenze opposte non possono stare insieme per costruzione.
 
-| Gruppo | Effetto | Voci |
-|---|---|---|
-| **Turni da evitare** | abbassa molto il punteggio, `RULES.evitaPenalty` punti | aperture, mattine, pomeriggi, chiusure, notti visual |
-| **Turni preferiti** | sposta il punteggio di `RULES.preferenzaBonus` punti | aperture, mattine, pomeriggi, chiusure |
+| Scelta | Effetto |
+|---|---|
+| **Evito** | abbassa molto il punteggio, `RULES.evitaPenalty` punti |
+| **Preferisco** | lo alza di `RULES.preferenzaBonus` punti |
+| **Vorrei OFF** (un giorno, o il weekend) | lavorarci pesa come una fascia evitata; liberarlo vale come una preferita |
+| **Non posso finire dopo le…** | **esclude**: un turno che finisce dopo non viene proposto |
 
-Le voci stanno in `PREFERENZE`, ciascuna collegata a una fascia di R6 invece che
-a una catena di `if`: aggiungerne una è una riga di tabella.
+Le scelte valgono **tutti i giorni uguali** oppure **giorno per giorno**: il
+sabato può essere diverso dal mercoledì. Passando a giorno per giorno, ogni
+giorno parte dalle scelte generali. Il **weekend OFF** vale in entrambi i modi.
 
-Un turno in due fasce può incrociare due preferenze. Se anche una sola dice
-"evito", conta solo quella: chi non vuole le chiusure non cambia idea perché
-quel turno è anche una mattina. Il bonus invece si prende **una volta sola**,
-altrimenti bastava un turno lungo per scalare la classifica.
+Il limite d'orario è l'unica preferenza che esclude, perché è un vincolo (un
+figlio da prendere, l'ultimo treno) e non un gusto: mostrarlo in fondo alla
+lista non servirebbe a nessuno.
 
-**Due preferenze opposte non possono stare accese insieme.** "Evito le mattine"
-e "preferisco le mattine" insieme non vogliono dire niente, quindi attivarne una
-spegne l'altra, nello store, dove nasce la contraddizione. Il motore non deve
-sapere che esiste.
+Tutto passa da `normalizzaPreferenze` in model.js, che legge anche il formato
+di prima (gli interruttori `evitaChiusure`, `preferiscePomeriggi`…): chi non
+tocca niente si ritrova le stesse scelte, e "pomeriggio" è diventato "sera".
 
 Un turno da evitare pesa abbastanza da sparire nella maggior parte dei casi
 (la penalità basta di solito a portarlo sotto `potentialThreshold`), ma non è

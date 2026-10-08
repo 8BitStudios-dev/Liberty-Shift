@@ -64,7 +64,7 @@ test('scegliere "compatibili" manda i turni dei prossimi giorni, con il consenso
   assert.deepEqual(op.dati.turni.map((t) => t.data), [addDays(oggi, 1), addDays(oggi, 2), addDays(oggi, 5)],
     'solo i prossimi 28 giorni: il turno fra quaranta giorni non esce');
   assert.deepEqual(op.dati.turni[1], { data: addDays(oggi, 2), tipo: 'OFF', start: null, end: null });
-  assert.deepEqual(op.dati.preferenze, { evitaChiusure: true });
+  assert.deepEqual(op.dati.preferenze.fasce, { CHIUSURA: 'evita' });
   assert.doesNotMatch(JSON.stringify(op.dati), /riservato/, 'le note di un turno non escono');
 });
 

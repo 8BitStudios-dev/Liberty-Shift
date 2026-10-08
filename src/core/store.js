@@ -2,8 +2,11 @@
 // Nell'MVP i dati stanno nel browser: sostituire salva()/carica() con
 // chiamate a un backend non tocca né il motore né la UI.
 
-import { RULES, PREFERENZE, STATUS } from './rules.js';
-import { newId, isExpired, hasPriority, isOpen, usaRotazione, disponibileDallePreferenze } from './model.js';
+import { RULES, STATUS } from './rules.js';
+import {
+  newId, isExpired, hasPriority, isOpen, usaRotazione, disponibileDallePreferenze,
+  normalizzaPreferenze, aggiornaPreferenze, haPreferenze,
+} from './model.js';
 import {
   validateRequest, nextStatus, turnoOfferibile, combaciaEsatto, slotSettimana, disponibilitaRicalcolata,
 } from './engine.js';
@@ -1355,7 +1358,7 @@ export const store = {
     if (modo !== 'dirette' && modo !== 'compatibili') return { errori: ['Scelta non valida.'] };
     // L'avviso arriva solo per i cambi che convengono secondo le preferenze
     // (`cambioFavorevole`): senza nessuna, non arriverebbe mai niente.
-    if (modo === 'compatibili' && !PREFERENZE.some((p) => this.me.preferenze?.[p.key])) {
+    if (modo === 'compatibili' && !haPreferenze(this.me.preferenze)) {
       return { errori: ['Prima scegli almeno una preferenza: è da lì che l\'app capisce quale cambio ti conviene.'] };
     }
     const prima = this.state.profilo.notifiche;
@@ -1506,18 +1509,16 @@ export const store = {
   },
 
   /**
-   * Attivare una preferenza spegne la sua opposta: "evito le mattine" e
-   * "preferisco le mattine" insieme non vogliono dire niente, e lasciarle
-   * entrambe accese scaricherebbe sul motore una contraddizione che si può
-   * togliere qui, dove nasce.
+   * Le preferenze, intere o con una modifica sola (vedi `aggiornaPreferenze`
+   * in model.js). Si salvano sempre nella forma di adesso: chi le tocca una
+   * volta lascia indietro gli interruttori di prima.
    */
-  impostaPreferenze(patch) {
-    for (const [key, valore] of Object.entries(patch)) {
-      this.me.preferenze[key] = valore;
-      const opposta = PREFERENZE.find((p) => p.key === key)?.opposta;
-      if (valore && opposta) this.me.preferenze[opposta] = false;
-    }
+  impostaPreferenze(preferenze) {
+    this.me.preferenze = normalizzaPreferenze(preferenze);
     this.commit();
+  },
+  modificaPreferenze(modifica) {
+    this.impostaPreferenze(aggiornaPreferenze(this.me.preferenze, modifica));
   },
 
   /**

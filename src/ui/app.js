@@ -6,9 +6,9 @@ import { formatDay, appleWeekKey, todayISO } from '../core/time.js';
 import { slotSettimana } from '../core/engine.js';
 import {
   durataOre, isNotturno, fuoriFascia, etichettaFascia, oreDelContratto, oreAutomatiche,
-  spostaTurno,
+  spostaTurno, aggiornaPreferenze, haPreferenze, evitaChiusureIl,
 } from '../core/model.js';
-import { RULES, PREFERENZE } from '../core/rules.js';
+import { RULES } from '../core/rules.js';
 import { rotazioneDaCalendario, rotazioneVuota } from '../core/rotazione.js';
 import { parseICS } from '../core/ics.js';
 import * as P from './profilo-setup.js';
@@ -336,6 +336,16 @@ function vai(to) {
   else location.hash = to;
 }
 
+/** Una modifica alle preferenze, sulle tue o su quelle della registrazione. */
+function cambiaPreferenze(el, modifica) {
+  if (el.dataset.ambito === 'bozza') {
+    P.bozzaProfilo.preferenze = aggiornaPreferenze(P.bozzaProfilo.preferenze, modifica);
+  } else {
+    store.modificaPreferenze(modifica);
+  }
+  render({ fermo: true });
+}
+
 // ------------------------------------------------------------ azioni
 
 const AZIONI = {
@@ -496,13 +506,17 @@ const AZIONI = {
     render();
   },
   // Come nel Profilo: accenderne una spegne la sua opposta.
-  'profilo-pref': (e, el) => {
-    const { preferenze } = P.bozzaProfilo;
-    preferenze[el.dataset.key] = e.target.checked;
-    const opposta = PREFERENZE.find((p) => p.key === el.dataset.key)?.opposta;
-    if (e.target.checked && opposta) preferenze[opposta] = false;
-    render({ fermo: true });
-  },
+  // Le preferenze, dal Profilo (salvate subito) o dalla registrazione (nella
+  // bozza, salvate alla fine): stesso modulo, stesse azioni, e `data-ambito`
+  // dice di chi sono.
+  'pref-voto': (_, el) => cambiaPreferenze(el, {
+    tipo: 'voto', fascia: el.dataset.fascia, voto: el.dataset.voto || null,
+    giorno: el.dataset.giorno === undefined ? null : Number(el.dataset.giorno),
+  }),
+  'pref-modo': (_, el) => cambiaPreferenze(el, { tipo: 'modo', modo: el.dataset.modo }),
+  'pref-off': (e, el) => cambiaPreferenze(el, { tipo: 'off', giorno: Number(el.dataset.giorno), off: e.target.checked }),
+  'pref-weekend': (e, el) => cambiaPreferenze(el, { tipo: 'weekend', valore: e.target.checked }),
+  'pref-limite': (_, el) => cambiaPreferenze(el, { tipo: 'limite', fineMax: el.value || null }),
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
   'profilo-pausa': (e) => { P.bozzaProfilo.pausaMezzora = e.target.checked; },
   'profilo-accetta-voce': (e, el) => {
@@ -688,7 +702,7 @@ const AZIONI = {
     }
     // Senza preferenze l'avviso non saprebbe cosa ti conviene: si apre il
     // pannello dove sceglierle, invece del consenso.
-    if (!PREFERENZE.some((p) => store.me.preferenze?.[p.key])) {
+    if (!haPreferenze(store.me.preferenze)) {
       toast('Prima scegli almeno una preferenza: è da lì che l\'app capisce quale cambio ti conviene');
       V.pannelloProfilo.aperto = 'preferenze';
       return render();
@@ -764,7 +778,7 @@ const AZIONI = {
         start: orario ? el.dataset.start : '',
         end: orario ? el.dataset.end : '',
         entroLe: '', dalleOre: '',
-        evitaChiusura: Boolean(me.preferenze?.evitaChiusure),
+        evitaChiusura: evitaChiusureIl(me, el.dataset.data),
         note: '',
       },
       usaPriorita: false,
@@ -1075,7 +1089,6 @@ const AZIONI = {
 
   // Serve il render: attivare una preferenza ne spegne un'altra, e senza
   // ridisegnare la casella dell'opposta resterebbe accesa a mentire.
-  pref: (e, el) => { store.impostaPreferenze({ [el.dataset.key]: e.target.checked }); render(); },
   'monte-ore': (e) => { store.impostaContratto({ oreSettimanali: Number(e.target.value) }); render(); },
 
   /**
@@ -1453,6 +1466,9 @@ on(document.body, 'click', '[data-act]', (e, el) => {
   // Caselle e radio li gestisce 'change': su un click emettono entrambi gli
   // eventi, e farli passare due volte significa eseguire l'azione due volte.
   if (el.tagName === 'INPUT' && (el.type === 'checkbox' || el.type === 'radio')) return;
+  // Un menu si apre al tocco e cambia con 'change': fermarne il click lo
+  // terrebbe chiuso.
+  if (el.tagName === 'SELECT') return;
   if (el.tagName !== 'INPUT') e.preventDefault();
   fn(e, el);
 });

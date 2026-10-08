@@ -12,10 +12,12 @@
 // nella funzione `send-push` (cosa farne). Per questo non conosce il DOM né
 // il database: riceve dati e restituisce dati.
 
-import { RULES, PREFERENZE, STATUS } from './rules.js';
+import { RULES, STATUS } from './rules.js';
 import { addDays } from './time.js';
 import { findMatches } from './engine.js';
-import { fasceDi } from './model.js';
+import {
+  normalizzaPreferenze, haPreferenze, votoTurno, vuoleOff, superaLimite, liberaGiornoVoluto,
+} from './model.js';
 
 const ora = (t) => (t ? String(t).slice(0, 5) : null);
 
@@ -39,13 +41,16 @@ export function turniDaCondividere(shifts, userId, oggi, giorni = RULES.notifich
     .sort((a, b) => a.data.localeCompare(b.data));
 }
 
-/** Le preferenze attive, come elenco di chiavi: quelle spente non dicono niente. */
+/**
+ * Le preferenze da mandare al server, nella forma di adesso e solo quello
+ * che dice qualcosa: le righe "indifferente" non escono.
+ */
 export function preferenzeDaCondividere(user) {
-  const attive = {};
-  for (const p of PREFERENZE) {
-    if (user?.preferenze?.[p.key]) attive[p.key] = true;
-  }
-  return attive;
+  if (!haPreferenze(user?.preferenze)) return {};
+  const n = normalizzaPreferenze(user.preferenze);
+  const pieni = Object.fromEntries(Object.entries(n.giorni)
+    .filter(([, g]) => g?.off || Object.keys(g?.fasce || {}).length));
+  return { ...n, giorni: n.modo === 'giorni' ? pieni : {} };
 }
 
 /**
@@ -53,17 +58,19 @@ export function preferenzeDaCondividere(user) {
  *
  * La notifica deve valere la pena di essere aperta: chi le riceveva per ogni
  * richiesta compatibile si ritrovava bombardato. Conviene quando lasci un
- * turno che eviti, oppure ne prendi uno che preferisci; mai se quello che
- * prendi è tra quelli che eviti. Senza preferenze accese non conviene niente
- * in particolare, e non arriva niente.
+ * turno che eviti, ne prendi uno che preferisci, o ti liberi un giorno che
+ * vorresti OFF (il weekend, per chi l'ha chiesto). Mai se quello che prendi
+ * è tra quelli che eviti, cade in un giorno che vorresti OFF o finisce oltre
+ * il tuo limite. Senza preferenze non conviene niente in particolare, e non
+ * arriva niente.
  */
 export function cambioFavorevole(preferenze, lascia, prende) {
-  const attive = PREFERENZE.filter((p) => preferenze?.[p.key]);
-  const fl = fasceDi(lascia);
-  const fp = fasceDi(prende);
-  if (attive.some((p) => p.gruppo === 'evita' && fp.includes(p.fascia))) return false;
-  return attive.some((p) => p.gruppo === 'evita' && fl.includes(p.fascia))
-    || attive.some((p) => p.gruppo === 'preferisce' && fp.includes(p.fascia));
+  const io = { preferenze };
+  if (!haPreferenze(preferenze) || !prende) return false;
+  if (votoTurno(io, prende).voto === 'evita' || vuoleOff(io, prende.data) || superaLimite(io, prende)) return false;
+  return votoTurno(io, lascia).voto === 'evita'
+    || votoTurno(io, prende).voto === 'preferisce'
+    || liberaGiornoVoluto(io, lascia, prende).bonus > 0;
 }
 
 /**

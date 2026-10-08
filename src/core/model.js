@@ -1,8 +1,8 @@
 // Data model (Fase 3 della specifica).
 // Nessuna classe: oggetti semplici, serializzabili, pronti per qualsiasi backend.
 
-import { RULES, PREFERENZE, STATUS, WANT_MODE, TIPO_CAMBIO } from './rules.js';
-import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
+import { RULES, PREFERENZE_VECCHIE, STATUS, WANT_MODE, TIPO_CAMBIO } from './rules.js';
+import { minutes, todayISO, appleWeekKey, formatDay, weekday, GIORNI_LUNGHI } from './time.js';
 
 /**
  * User
@@ -13,7 +13,7 @@ import { minutes, todayISO, appleWeekKey, formatDay } from './time.js';
  *   superAdmin: bool,      // una sola persona per store, impostata da SQL
  *   attivo: bool,          // disattivato = fuori dal negozio, reversibile
  *   genere: 'F'|'M'|'X',   // X = non specificato: si usano forme neutre
- *   preferenze: { evita*, preferisce* },
+ *   preferenze: vedi normalizzaPreferenze (accetta anche il vecchio { evita*, preferisce* }),
  *   disponibilita: { '<weekKey>': [bool x7 partendo da sabato] },
  *   prioritaUsata: { '<YYYY-MM>': true }
  * }
@@ -68,27 +68,22 @@ export function durataOre(shift) {
 }
 
 /**
- * Le fasce a cui appartiene un turno, secondo i confini di `RULES.fasce`.
+ * La fascia di un turno, secondo `RULES.fasce`: la prima che combacia.
  *
- * Restituisce un array perché due fasce guardano l'inizio (apertura, mattina)
- * e due la fine (pomeriggio, chiusura), e in teoria potrebbero valere
- * entrambe. Con i turni reali, fino a 9 ore, è un caso limite che di fatto
- * non capita — servirebbero almeno 9h30 per toccare sia mattina che
- * pomeriggio — ma chi legge il risultato deve comunque saperlo gestire,
- * invece di dare per scontato che ce ne sia sempre una sola.
+ * Restituisce un array, con una fascia o nessuna, perché chi lo legge (le
+ * preferenze, le etichette) lo tratta da sempre come un elenco. Un turno
+ * fuori da tutti gli schemi resta senza fascia: nessuna preferenza lo
+ * riguarda, e non gli si inventa un nome.
  */
 export function fasceDi(shift) {
   if (shift?.tipo !== 'WORK') return [];
   if (isNotturno(shift)) return ['NOTTE'];
   const inizio = minutes(shift.start);
   const fine = minutes(shift.end);
-  const dentro = (v, da, a) => v >= minutes(da) && v <= minutes(a);
-
-  return Object.entries(RULES.fasce)
-    .filter(([, f]) => (f.inizioDa ? dentro(inizio, f.inizioDa, f.inizioA) : false)
-      || (f.fineDa ? dentro(fine, f.fineDa, f.fineA) : false)
-      || (f.fineDopo ? fine > minutes(f.fineDopo) : false))
-    .map(([key]) => key);
+  const ok = (v, da, a) => (!da || v >= minutes(da)) && (!a || v <= minutes(a));
+  const trovata = Object.entries(RULES.fasce)
+    .find(([, f]) => ok(inizio, f.inizioDa, f.inizioA) && ok(fine, f.fineDa, f.fineA));
+  return trovata ? [trovata[0]] : [];
 }
 
 export const inFascia = (shift, fascia) => fasceDi(shift).includes(fascia);
@@ -102,14 +97,10 @@ export const isPreApertura = (shift) => inFascia(shift, 'APERTURA');
 
 /** Etichetta breve per il tipo di turno, quando c'è qualcosa da dire. */
 export function etichettaFascia(shift) {
-  const fasce = fasceDi(shift);
-  if (!fasce.length) return null;
-  if (fasce.includes('NOTTE')) return 'notte';
-  // Con due fasce si nomina quella che condiziona di più la giornata: uscire
-  // tardi pesa più che entrare presto.
-  const ordine = ['CHIUSURA', 'APERTURA', 'POMERIGGIO', 'MATTINA'];
-  const scelta = ordine.find((f) => fasce.includes(f));
-  return scelta ? RULES.fasce[scelta].label : null;
+  const [fascia] = fasceDi(shift);
+  if (!fascia) return null;
+  if (fascia === 'NOTTE') return 'notte';
+  return RULES.fasce[fascia]?.label ?? null;
 }
 
 /** Il turno esce dalla fascia normale dello store senza essere una notte. */
@@ -141,12 +132,26 @@ export function spostaTurno(nuovoInizio, start, end) {
 }
 
 /**
- * Gli orari standard in cui si può chiedere di spostare un turno: le
- * partenze di `RULES.cambioOrario`, con la durata del turno stesso, tranne
- * quello che si ha già e quelli che finirebbero dopo l'ultima uscita.
+ * Gli orari in cui si può chiedere di spostare un turno.
+ *
+ * Prima di tutto i turni che esistono davvero per quel contratto e quelle
+ * ore (`RULES.catalogo`), dal mattino alla sera e i rari in fondo, tranne
+ * quello che si ha già. Le partenze generiche inventavano turni mai visti
+ * (un 9–14, un 14–19): sceglierne uno voleva dire cercare un collega che non
+ * c'è. Senza catalogo per quella durata, o per chi ha la pausa di mezz'ora
+ * (i suoi turni durano mezz'ora in più, e la lista non li conosce), si torna
+ * alle partenze di `RULES.cambioOrario` con la durata del turno stesso.
  */
-export function orariStandard(turno) {
+export function orariStandard(turno, persona = null) {
   if (!turno || turno.tipo !== 'WORK' || isNotturno(turno)) return [];
+  const catalogo = persona && !persona.pausaMezzora
+    ? RULES.catalogo[`${persona.contratto}:${oreRetribuite(turno, persona)}`]
+    : null;
+  if (catalogo) {
+    return catalogo
+      .filter((t) => !(t.start === turno.start && t.end === turno.end))
+      .map((t) => ({ start: t.start, end: t.end, raro: Boolean(t.raro), fascia: fasceDi({ ...t, tipo: 'WORK' })[0] || null }));
+  }
   const durata = minutes(turno.end) - minutes(turno.start);
   const hh = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
   return RULES.cambioOrario.inizi
@@ -156,15 +161,141 @@ export function orariStandard(turno) {
 }
 
 /**
- * Un turno che cade in una fascia che eviti ti rende disponibile a cambiarlo
- * senza doverlo dire ogni volta: è la stessa cosa che hai già detto una volta
- * nelle preferenze. Solo i giorni di lavoro: lavorare in un giorno OFF è un
- * sacrificio che l'app non dà mai per scontato.
+ * Un turno che cade in una fascia che eviti, o in un giorno che vorresti
+ * OFF, ti rende disponibile a cambiarlo senza doverlo dire ogni volta: è la
+ * stessa cosa che hai già detto una volta nelle preferenze. Solo i giorni di
+ * lavoro: lavorare in un giorno OFF è un sacrificio che l'app non dà mai per
+ * scontato.
  */
 export function disponibileDallePreferenze(user, shift) {
   if (shift?.tipo !== 'WORK' || !user?.preferenze) return false;
-  const fasce = fasceDi(shift);
-  return PREFERENZE.some((p) => p.gruppo === 'evita' && user.preferenze[p.key] && fasce.includes(p.fascia));
+  return votoTurno(user, shift).voto === 'evita' || vuoleOff(user, shift.data);
+}
+
+// ------------------------------------------------------------ preferenze
+
+/**
+ * Le preferenze nella forma di adesso, qualunque sia quella salvata.
+ *
+ *   {
+ *     versione: 2,
+ *     modo: 'generali' | 'giorni',
+ *     fasce: { APERTURA: 'evita' | 'preferisce', ... },   // generali
+ *     giorni: { 0..6: { fasce: {...}, off: bool } },     // 0 = domenica
+ *     weekendOff: bool,     // vorrei il sabato e la domenica liberi
+ *     fineMax: 'HH:MM' | null,  // non posso finire dopo: l'unico vincolo vero
+ *   }
+ *
+ * Prima erano interruttori (`evitaChiusure: true`). Sono ancora così sui
+ * telefoni che non hanno aggiornato e nelle righe cifrate già sul server: li
+ * si legge qui, in un posto solo, invece di chiedere a tutti di rifarle.
+ * "Pomeriggio" è diventato "Sera", che è come lo chiamano in store.
+ */
+export function normalizzaPreferenze(p) {
+  if (p?.versione === 2) return p;
+  const n = { versione: 2, modo: 'generali', fasce: {}, giorni: {}, weekendOff: false, fineMax: null };
+  for (const [chiave, [fascia, voto]] of Object.entries(PREFERENZE_VECCHIE)) {
+    if (p?.[chiave]) n.fasce[fascia] = voto;
+  }
+  return n;
+}
+
+/** C'è almeno una preferenza che dica qualcosa? */
+export function haPreferenze(p) {
+  const n = normalizzaPreferenze(p);
+  return Object.keys(n.fasce).length > 0 || n.weekendOff || Boolean(n.fineMax)
+    || (n.modo === 'giorni' && Object.values(n.giorni).some((g) => g?.off || Object.keys(g?.fasce || {}).length));
+}
+
+/** Le scelte sulle fasce che valgono per quel giorno della settimana. */
+function fascePer(n, data) {
+  return n.modo === 'giorni' ? (n.giorni[weekday(data)]?.fasce || {}) : n.fasce;
+}
+
+/**
+ * Cosa pensa una persona di un turno: `voto` è 'evita', 'preferisce' o null.
+ * `delGiorno` dice se la scelta viene dalle preferenze giorno per giorno,
+ * per dirlo nella spiegazione ("il sabato eviti le chiusure").
+ */
+export function votoTurno(user, shift) {
+  const [fascia] = fasceDi(shift);
+  if (!fascia || !user?.preferenze) return { voto: null, fascia: fascia || null, delGiorno: false };
+  const n = normalizzaPreferenze(user.preferenze);
+  return { voto: fascePer(n, shift.data)[fascia] || null, fascia, delGiorno: n.modo === 'giorni' };
+}
+
+/** Quel giorno la persona vorrebbe essere OFF (weekend, o un giorno scelto). */
+export function vuoleOff(user, data) {
+  if (!user?.preferenze || !data) return false;
+  const n = normalizzaPreferenze(user.preferenze);
+  const g = weekday(data);
+  return (n.weekendOff && (g === 0 || g === 6)) || (n.modo === 'giorni' && Boolean(n.giorni[g]?.off));
+}
+
+/**
+ * Il turno finisce dopo l'ora oltre cui la persona non può restare.
+ * È l'unica preferenza che esclude: chi deve prendere un figlio alle 19 non
+ * può fare una chiusura, e mostrargliela in basso non serve a nessuno.
+ */
+export function superaLimite(user, shift) {
+  if (shift?.tipo !== 'WORK' || !user?.preferenze) return false;
+  const { fineMax } = normalizzaPreferenze(user.preferenze);
+  return Boolean(fineMax) && fineMinuti(shift) > minutes(fineMax);
+}
+
+/** La persona evita le chiusure quel giorno: serve al "qualsiasi turno non di chiusura". */
+export function evitaChiusureIl(user, data) {
+  if (!user?.preferenze) return false;
+  return fascePer(normalizzaPreferenze(user.preferenze), data).CHIUSURA === 'evita';
+}
+
+export const nomeGiorno = (data) => GIORNI_LUNGHI[weekday(data)].toLowerCase();
+
+/**
+ * Le preferenze dopo una modifica, senza toccare quelle di partenza.
+ *
+ *   { tipo: 'voto', fascia, voto: 'evita'|'preferisce'|null, giorno? }
+ *   { tipo: 'modo', modo: 'generali'|'giorni' }
+ *   { tipo: 'off', giorno, off }       // giorno 0..6, 0 = domenica
+ *   { tipo: 'weekend', valore }
+ *   { tipo: 'limite', fineMax }        // 'HH:MM' o null
+ *
+ * Passando a "giorno per giorno" ogni giorno ancora vuoto parte dalle scelte
+ * generali: chi ha detto "evito le chiusure" non deve ripeterlo sette volte,
+ * cambia solo i giorni diversi.
+ */
+export function aggiornaPreferenze(p, modifica) {
+  const n = structuredClone(normalizzaPreferenze(p));
+  const giorno = (g) => { n.giorni[g] ||= { fasce: {}, off: false }; n.giorni[g].fasce ||= {}; return n.giorni[g]; };
+  switch (modifica.tipo) {
+    case 'voto': {
+      const fasce = modifica.giorno == null ? n.fasce : giorno(modifica.giorno).fasce;
+      if (modifica.voto) fasce[modifica.fascia] = modifica.voto;
+      else delete fasce[modifica.fascia];
+      break;
+    }
+    case 'modo':
+      n.modo = modifica.modo === 'giorni' ? 'giorni' : 'generali';
+      if (n.modo === 'giorni') {
+        for (let g = 0; g < 7; g += 1) {
+          const gg = giorno(g);
+          if (!Object.keys(gg.fasce).length) gg.fasce = { ...n.fasce };
+        }
+      }
+      break;
+    case 'off':
+      giorno(modifica.giorno).off = Boolean(modifica.off);
+      break;
+    case 'weekend':
+      n.weekendOff = Boolean(modifica.valore);
+      break;
+    case 'limite':
+      n.fineMax = modifica.fineMax || null;
+      break;
+    default:
+      break;
+  }
+  return n;
 }
 
 /** Questo contratto lavora a settimane che girano? */
@@ -440,44 +571,59 @@ export function ruoloNelGiorno(request, giorno, cedo) {
 /**
  * Le preferenze applicate a un turno che una persona riceverebbe.
  *
- * Restituisce { bonus, reasons }. Né l'uno né l'altro gruppo escludono più il
- * turno: quello che si evita abbassa molto il punteggio (`RULES.evitaPenalty`),
- * quello che si preferisce lo alza di poco (`RULES.preferenzaBonus`).
- *
- * Un turno può stare in due fasce, quindi può incrociare due preferenze. Se
- * anche una sola dice "evito" conta solo quella, perché chi non vuole le
- * chiusure non cambia idea perché quel turno è anche una mattina. Il bonus
- * invece si prende una volta sola, altrimenti bastava un turno lungo per
- * scalare la classifica.
+ * Restituisce { bonus, reasons }. Niente esclude il turno: quello che si
+ * evita abbassa molto il punteggio (`RULES.evitaPenalty`), quello che si
+ * preferisce lo alza di poco (`RULES.preferenzaBonus`). Lavorare in un giorno
+ * che si vorrebbe OFF pesa come una fascia evitata. Il limite d'orario invece
+ * esclude, ma lo guarda il motore prima (`superaLimite`).
  *
  * `io` sceglie la persona grammaticale: seconda quando la frase la legge solo
  * la persona a cui si riferisce (è chi chiama la funzione a saperlo — vedi
- * `verificheIncrociate`), terza altrimenti. Mai l'etichetta del profilo presa
- * di peso (quella è scritta in prima persona, "Preferisco le mattine").
+ * `verificheIncrociate`), terza altrimenti.
  */
 // La notte non sta in RULES.fasce (è un caso a parte, vedi fasceDi/isNotturno):
 // serve un'etichetta di riserva per quando una preferenza la riguarda.
+const PLURALI = {
+  APERTURA: 'le aperture', MATTINA: 'le mattine', CENTRALE: 'i centrali', SERA: 'le sere', CHIUSURA: 'le chiusure',
+};
 function fasciaLabel(key) {
-  return RULES.fasce[key]?.label ?? 'le notti visual';
+  return PLURALI[key] ?? 'le notti visual';
 }
 
 export function applicaPreferenze(user, shift, { io = false } = {}) {
-  const fasce = fasceDi(shift);
-  if (!fasce.length || !user?.preferenze) return { bonus: 0, reasons: [] };
-
-  const attive = PREFERENZE.filter((p) => user.preferenze[p.key] && fasce.includes(p.fascia));
-  const evitata = attive.find((p) => p.gruppo === 'evita');
-  if (evitata) {
+  if (shift?.tipo !== 'WORK' || !user?.preferenze) return { bonus: 0, reasons: [] };
+  if (vuoleOff(user, shift.data)) {
     return {
       bonus: -RULES.evitaPenalty,
-      reasons: [`${io ? 'eviti' : 'evita'} ${fasciaLabel(evitata.fascia)}, e ${shiftLabel(shift)} lo è`],
+      reasons: [`${io ? 'vorresti' : 'vorrebbe'} essere OFF ${nomeGiorno(shift.data)}`],
     };
   }
-
-  const preferite = attive.filter((p) => p.gruppo === 'preferisce');
-  if (!preferite.length) return { bonus: 0, reasons: [] };
+  const { voto, fascia, delGiorno } = votoTurno(user, shift);
+  if (!voto) return { bonus: 0, reasons: [] };
+  const quando = delGiorno ? ` il ${nomeGiorno(shift.data)}` : '';
+  if (voto === 'evita') {
+    return {
+      bonus: -RULES.evitaPenalty,
+      reasons: [`${io ? 'eviti' : 'evita'} ${fasciaLabel(fascia)}${quando}, e ${shiftLabel(shift)} lo è`],
+    };
+  }
   return {
     bonus: RULES.preferenzaBonus,
-    reasons: [`${io ? 'preferisci' : 'preferisce'} ${preferite.map((p) => fasciaLabel(p.fascia)).join(' e ')}, e ${shiftLabel(shift)} lo è`],
+    reasons: [`${io ? 'preferisci' : 'preferisce'} ${fasciaLabel(fascia)}${quando}, e ${shiftLabel(shift)} lo è`],
+  };
+}
+
+/**
+ * Lo scambio libera un giorno che la persona vorrebbe OFF: lascia il turno di
+ * quel giorno e lavora in un altro. È il caso del weekend: chi vuole i sabati
+ * liberi guadagna da ogni cambio OFF che glielo toglie.
+ */
+export function liberaGiornoVoluto(user, cede, riceve, { io = false } = {}) {
+  if (cede?.tipo !== 'WORK' || !riceve || riceve.data === cede.data || !vuoleOff(user, cede.data)) {
+    return { bonus: 0, reasons: [] };
+  }
+  return {
+    bonus: RULES.preferenzaBonus,
+    reasons: [`${io ? 'liberi' : 'libera'} ${nomeGiorno(cede.data)}, che ${io ? 'vuoi' : 'vuole'} OFF`],
   };
 }

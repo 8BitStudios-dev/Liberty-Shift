@@ -142,8 +142,10 @@ test('dal telefono escono solo i prossimi giorni, e solo data, tipo e orari', ()
 });
 
 test('delle preferenze escono solo quelle accese', () => {
-  assert.deepEqual(preferenzeDaCondividere({ preferenze: { evitaChiusure: true, evitaAperture: false, preferisceMattine: true } }),
-    { evitaChiusure: true, preferisceMattine: true });
+  const p = preferenzeDaCondividere({ preferenze: { evitaChiusure: true, evitaAperture: false, preferisceMattine: true } });
+  assert.deepEqual(p.fasce, { CHIUSURA: 'evita', MATTINA: 'preferisce' });
+  // Senza preferenze non esce niente.
+  assert.deepEqual(preferenzeDaCondividere({ preferenze: {} }), {});
   assert.deepEqual(preferenzeDaCondividere({ preferenze: {} }), {});
   assert.deepEqual(preferenzeDaCondividere(null), {});
 });
@@ -230,4 +232,19 @@ test('nei cambi OFF a specchio basta la richiesta, anche senza il resto del cale
   const nuova = riga({ id: 'rq-marco', autore_id: 'marco', tipo: 'OFF', cedo_start: '10:00:00', cedo_end: '19:00:00', cerco_giorni: [altro], cerco: { mode: 'ANY' } });
   const r = richiesteSpeculari({ riga: nuova, autore: profilo('marco', 'Marco'), altre: [{ riga: sua, profilo: profilo('lorenzo', 'Lorenzo') }], oggi: OGGI });
   assert.deepEqual(r.map((x) => x.userId), ['lorenzo']);
+});
+
+test('weekend OFF: arriva l\'avviso quando qualcuno può liberarti un sabato', async () => {
+  const { cambioFavorevole } = await import('../src/core/compatibili.js');
+  const { aggiornaPreferenze } = await import('../src/core/model.js');
+  const p = aggiornaPreferenze({}, { tipo: 'weekend', valore: true });
+  const sabato = lavora('2026-10-17', '10:00', '19:00');
+  const mercoledi = lavora('2026-10-14', '10:00', '19:00');
+  // Lasci il sabato e lavori il mercoledì: conviene.
+  assert.equal(cambioFavorevole(p, sabato, mercoledi), true);
+  // Il contrario no: prenderesti un sabato.
+  assert.equal(cambioFavorevole(p, mercoledi, sabato), false);
+  // Il limite d'orario vale anche qui: niente avviso per un turno che finisce troppo tardi.
+  const conLimite = aggiornaPreferenze(p, { tipo: 'limite', fineMax: '19:00' });
+  assert.equal(cambioFavorevole(conLimite, sabato, lavora('2026-10-14', '12:00', '21:00')), false);
 });

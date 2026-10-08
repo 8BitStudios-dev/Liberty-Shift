@@ -960,3 +960,26 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   font-size: 12.5px;
   color: var(--testo-tenue);
 }
+
+/* Le preferenze nuove: una riga per fascia, il nome a sinistra e le tre
+   scelte sotto, perché a 340px tre pillole accanto al nome non ci stanno. */
+.pref-modo { margin: 14px 0 6px; }
+.pref-riga { padding: 10px 0; border-bottom: 1px solid var(--filetto); }
+.pref-riga:last-child { border-bottom: 0; }
+.pref-nome { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.pref-nome em { font-style: normal; font-size: 13px; color: var(--testo-tenue); }
+.pref-voti { margin: 8px 0 0; }
+.pref-voti .pill { flex: 1 1 0; padding: 8px 6px; font-size: 14px; }
+.pref-giorno { border-bottom: 1px solid var(--filetto); }
+.pref-giorno > summary {
+  list-style: none; cursor: pointer; display: flex; justify-content: space-between;
+  align-items: baseline; padding: 12px 0; font-weight: 600;
+}
+.pref-giorno > summary::-webkit-details-marker { display: none; }
+.pref-giorno .conteggio { font-weight: 400; font-size: 14px; color: var(--testo-tenue); }
+
+/* "Cambia orario": i turni veri divisi per fascia, ciascuno col suo nome. */
+.orari-gruppo { margin: 6px 0 0; }
+.orari-fascia { display: block; font-size: 13px; font-weight: 600; color: var(--testo-tenue); margin: 10px 0 0; }
+.orari-gruppo .chips { margin: 6px 0 4px; }
+.pref-nota-limite { margin: -6px 0 4px; font-size: 13px; }

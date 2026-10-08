@@ -7,14 +7,14 @@
 
 import { html, raw } from './dom.js';
 import { store } from '../core/store.js';
-import { RULES, PREFERENZE } from '../core/rules.js';
+import { RULES } from '../core/rules.js';
 import { noteLegali, accettazioneNote, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword, REGOLE_PASSWORD } from '../core/accesso.js';
 import { oreDelContratto, oreAutomatiche } from '../core/model.js';
 import { todayISO } from '../core/time.js';
 import { scannerDisponibile } from './scanner.js';
 import { serverConfigurato } from '../core/config.js';
-import { campoPortachiavi, elencoErrori } from './components.js';
+import { campoPortachiavi, elencoErrori, formPreferenze } from './components.js';
 
 /** La bozza in corso di compilazione. */
 export const bozzaProfilo = {
@@ -345,30 +345,17 @@ function passoContratto() {
  */
 function passoPreferenze() {
   const b = bozzaProfilo;
-  const quando = (fascia) => {
-    const f = RULES.fasce[fascia];
-    if (!f) return '';
-    return f.inizioDa ? `inizia fra le ${f.inizioDa} e le ${f.inizioA}`
-      : f.fineDa ? `finisce fra le ${f.fineDa} e le ${f.fineA}`
-        : `finisce dopo le ${f.fineDopo}`;
-  };
-  const gruppo = (chiave, titolo) => html`
-    <h3 class="pref-titolo">${titolo}</h3>
-    ${raw(PREFERENZE.filter((p) => p.gruppo === chiave).map((p) => html`
-      <label class="switch">
-        <input type="checkbox" data-act="profilo-pref" data-key="${p.key}" ${raw(b.preferenze[p.key] ? 'checked' : '')}>
-        <span>${p.label}${raw(quando(p.fascia) ? `<em class="aiuto">${quando(p.fascia)}</em>` : '')}</span>
-      </label>`).join(''))}`;
   return html`
     <h2 class="titolo-gruppo">I turni che preferisci</h2>
     <p class="testo-tenue">
-      Servono solo a mettere in cima gli scambi che ti vanno bene e agiscono
-      sulle percentuali di match. Non escludono niente e nessun collega le vede. In più, nei giorni in cui
-      hai un turno che eviti risulti disponibile a cambiarlo senza doverlo
-      segnare. Puoi saltare questo passo e cambiarle dal Profilo.
+      Per ogni fascia scegli se la eviti, se ti è indifferente o se la
+      preferisci. Servono a mettere in cima gli scambi che ti vanno bene e
+      agiscono sulle percentuali di match: non escludono niente e nessun
+      collega le vede. In più, nei giorni in cui hai un turno che eviti risulti
+      disponibile a cambiarlo senza doverlo segnare. Puoi saltare questo passo
+      e cambiarle dal Profilo.
     </p>
-    ${raw(gruppo('evita', 'Turni da evitare'))}
-    ${raw(gruppo('preferisce', 'Turni preferiti'))}
+    ${raw(formPreferenze(b.preferenze, 'bozza'))}
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
 
