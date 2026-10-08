@@ -42,8 +42,9 @@ export const RULES = {
    * Servono a "Cambia orario": invece di spostare il turno su partenze
    * generiche (che inventavano un 9–14 o un 14–19 mai visti), si propongono
    * solo questi. I `raro` vanno in fondo: esistono, ma capitano poco.
-   * Per una durata che qui non c'è (un Part Time da 20 ore, un turno fuori
-   * schema) l'app torna al vecchio metodo delle partenze.
+   * Per una durata che qui non c'è (la pausa di mezz'ora, un turno fuori
+   * schema) l'app torna al vecchio metodo delle partenze. Il Part Time da 20
+   * ore non serve a parte: fa turni da 5 ore, solo su quattro giorni.
    *
    * La chiave è `contratto:ore lavorate`: un Part Time fa giorni da 5 o da 6
    * ore a seconda della settimana, e quello che conta è il turno che lascia.
