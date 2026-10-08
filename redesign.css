@@ -66,6 +66,12 @@
   /* Il cuore dei ringraziamenti: rosa, perché il rosso vuol dire errore o
      "ti aspetta una risposta", e un grazie non è né l'uno né l'altro. */
   --grazie: #b4366e;
+  /* "Aiuta un collega" in Home: un rosa Barbie. Pieno solo per i cuori e il
+     bordo, che sono decorazione; il titolo prende un tono più scuro, perché
+     #e0218a sul fondo rosa stava a 3,9:1. */
+  --aiuta-fondo: #fdebf4;
+  --aiuta-segno: #e0218a;
+  --aiuta-testo: #c71a7a;
   /* Le tue richieste hanno un colore loro, il viola, che il Calendario non
      usa: un colpo d'occhio basta a capire su quale dei due mesi si è. */
   --mio: #6b46c8;
@@ -114,6 +120,9 @@
     --ambra: #ffb066;
     --oro: #e8c04c;
     --grazie: #ff8fb8;
+    --aiuta-fondo: #2e1625;
+    --aiuta-segno: #ff7ec0;
+    --aiuta-testo: #ff93cc;
     /* styles.css ridichiara questi due nel suo blocco scuro, che pesa più del
        :root chiaro: gli alias vanno ripetuti qui. */
     --verde: var(--prendo);
@@ -147,6 +156,9 @@
   --ambra: #ffb066;
   --oro: #e8c04c;
   --grazie: #ff8fb8;
+  --aiuta-fondo: #2e1625;
+  --aiuta-segno: #ff7ec0;
+  --aiuta-testo: #ff93cc;
   --verde: var(--prendo);
   --giallo: var(--ambra);
   --mio: #b39bff;
@@ -990,3 +1002,37 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .ricompensa-aiuto { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; margin: 0 0 14px; border-radius: 12px; background: var(--superficie-2); }
 .ricompensa-aiuto p { margin: 0; }
 .switch.sotto-opzione { margin-left: 28px; }
+
+/* "Aiuta un collega" in Home: rosa Barbie, con due cuori disegnati nel
+   tratto delle icone, uno pieno e uno solo contornato. Dare una mano è il
+   gesto che l'app vuole far venire voglia di fare, e il cuore è già il suo
+   segno: è quello dei ringraziamenti. I cuori sono maschere colorate dal
+   token, così in scuro cambiano tinta da soli. */
+.tile.aiuta {
+  position: relative; overflow: hidden;
+  background: var(--aiuta-fondo);
+  border: 1px solid color-mix(in srgb, var(--aiuta-segno) 30%, transparent);
+}
+.tile.aiuta strong, .tile.aiuta .tile-icona { color: var(--aiuta-testo); }
+/* Il testo non deve passare sotto i cuori. */
+.tile.aiuta > span:nth-child(2) { padding-right: 36px; }
+.tile.aiuta::before, .tile.aiuta::after {
+  content: ''; position: absolute; pointer-events: none;
+  background: var(--aiuta-segno);
+  -webkit-mask: var(--cuore) no-repeat center / contain; mask: var(--cuore) no-repeat center / contain;
+}
+.tile.aiuta::before {
+  --cuore: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.4c-.4 0-7.6-4.6-7.6-9.6a4.1 4.1 0 0 1 7.6-2.2 4.1 4.1 0 0 1 7.6 2.2c0 5-7.2 9.6-7.6 9.6z'/%3E%3C/svg%3E");
+  width: 24px; height: 24px; right: 40px; top: 10px; transform: rotate(-14deg); opacity: .4;
+}
+.tile.aiuta::after {
+  --cuore: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 20.4c-.4 0-7.6-4.6-7.6-9.6a4.1 4.1 0 0 1 7.6-2.2 4.1 4.1 0 0 1 7.6 2.2c0 5-7.2 9.6-7.6 9.6z' fill='none' stroke='black' stroke-width='1.9' stroke-linejoin='round'/%3E%3C/svg%3E");
+  width: 16px; height: 16px; right: 30px; bottom: 10px; transform: rotate(12deg); opacity: .65;
+}
+/* In scuro il cuore pieno a .4 si perdeva sul fondo prugna. */
+:root[data-theme="dark"] .tile.aiuta { border-color: color-mix(in srgb, var(--aiuta-segno) 35%, transparent); }
+:root[data-theme="dark"] .tile.aiuta::before { opacity: .6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tile.aiuta { border-color: color-mix(in srgb, var(--aiuta-segno) 35%, transparent); }
+  :root:not([data-theme="light"]) .tile.aiuta::before { opacity: .6; }
+}

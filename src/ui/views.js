@@ -124,7 +124,7 @@ export function home() {
         </span>
         <span class="chevron">›</span>
       </button>
-      <button class="tile" data-act="vai" data-to="#/aiuta">
+      <button class="tile aiuta" data-act="vai" data-to="#/aiuta">
         <span class="tile-icona">${raw(icona('aiuta'))}</span>
         <span>
           <strong>Aiuta un collega</strong>
