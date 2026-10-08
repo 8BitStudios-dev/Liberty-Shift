@@ -384,6 +384,22 @@ export async function scaricaCalendario(url) {
 }
 
 /**
+ * I colleghi liberi per uno scambio, cercati sul server fra i turni condivisi.
+ *
+ * Passa da `send-push`, l'unica funzione che può aprire i turni cifrati: la
+ * chiave privata sta lì, e lì restano i calendari. Torna solo l'elenco dei
+ * colleghi e il turno che ciascuno farebbe.
+ */
+export async function cercaSulServer(bozza) {
+  const r = await chiama('/functions/v1/send-push', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'CERCA', bozza }),
+  });
+  if (r.errore) return { dati: null, errore: r.errore };
+  return { dati: r.dati, errore: r.dati?.errore || null };
+}
+
+/**
  * Le azioni riservate al SuperAdmin: promuovere/retrocedere un admin,
  * disattivare/riattivare un profilo. Passano dalla funzione `Amministrazione`
  * perché sono le uniche scritture che il trigger `blocca_scritture_privilegiate`

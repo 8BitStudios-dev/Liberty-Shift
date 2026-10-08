@@ -365,6 +365,14 @@ function matchOff(request, ctx) {
       // Deve essere libero il giorno che voglio lasciare...
       const suoNelMioGiorno = idx.get(u.id, mioCedo.data);
       if (suoNelMioGiorno && suoNelMioGiorno.tipo !== 'OFF') continue;
+      // Un giorno di cui non si sa niente non è per forza libero: dei colleghi
+      // che non condividono i turni l'app conosce solo quelli nelle richieste.
+      // Dove i calendari sono interi (il confronto sul server) un giorno senza
+      // turno è davvero libero.
+      // Chi ha segnato la disponibilità per quel giorno ha già risposto.
+      // Il proprio calendario chi guarda lo conosce: l'incertezza è sugli altri.
+      const incerto = !suoNelMioGiorno && !ctx.calendariCompleti && u.id !== ctx.currentUserId
+        && !disponibileIl(u, mioCedo.data);
       // ...e lavorare nel giorno che gli offro.
       const suo = idx.get(u.id, giorno);
       if (!suo || suo.tipo !== 'WORK') continue;
@@ -415,6 +423,8 @@ function matchOff(request, ctx) {
               f: `è OFF ${formatDay(mioCedo.data)} e si è dichiarata disponibile a lavorarci`,
               n: `non lavora ${formatDay(mioCedo.data)} e ha dato la disponibilità a lavorarci`,
             }));
+        } else if (incerto) {
+          reasons.push(`Non so se ${nome(u)} lavora ${formatDay(mioCedo.data)}: il suo calendario non è sul server`);
         } else {
           reasons.push(ioSonoU
             ? concorda(u, { m: `Sei OFF ${formatDay(mioCedo.data)}`, f: `Sei OFF ${formatDay(mioCedo.data)}`, n: `Non lavori ${formatDay(mioCedo.data)}` })
@@ -425,8 +435,11 @@ function matchOff(request, ctx) {
         ? `Lavoreresti ${formatDay(giorno)} al posto di ${nome(u)}: ${perMe.reasons[0]}`
         : `${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto ${ioSonoU ? 'tuo' : 'suo'}: ${perMe.reasons[0]}`);
 
+      // Con una sua richiesta che offre proprio quel giorno, è lui a dire che
+      // è libero: l'incertezza resta solo per i suggerimenti dal calendario.
+      const dubbio = incerto && origine === 'CALENDARIO';
       const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
-      score = clamp(Math.round(score - v.penalita + v.bonus), 0,
+      score = clamp(Math.round(score - v.penalita + v.bonus - (dubbio ? RULES.incertoPenalty : 0)), 0,
         origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
       if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
 
@@ -446,6 +459,7 @@ function matchOff(request, ctx) {
         adattato: trasformaTurno(suo, mioCedo, trova),
         adattatoControparte: trasformaTurno(mioCedo, suo, trova),
         prioritaria: suaRichiesta ? hasPriority(suaRichiesta) : false,
+        incerto: dubbio,
         reasons: [...reasons, ...v.reasons],
         avvisi: v.avvisi,
       });

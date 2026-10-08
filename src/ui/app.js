@@ -19,8 +19,10 @@ import { controllaPassword } from '../core/accesso.js';
 import { karma, traguardiNuovi } from '../core/karma.js';
 import { scaricaCalendario, candidatiAccesso } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
+import { quandoArriva } from '../core/ricerca.js';
 import {
   campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito, coppiaCedoCerco,
+  CONDIVISIONE, spiegazioneCondivisione,
 } from './components.js';
 import { icona, VOCI_TABBAR } from './icone.js';
 import {
@@ -505,6 +507,37 @@ const AZIONI = {
   },
   'profilo-ore': (_, el) => { P.bozzaProfilo.oreSettimanali = Number(el.dataset.valore); render(); },
   'profilo-pausa': (e) => { P.bozzaProfilo.pausaMezzora = e.target.checked; },
+  'profilo-condivisione': (_, el) => { P.bozzaProfilo.condivisione = el.value; P.bozzaProfilo.errori = []; render({ fermo: true }); },
+
+  // La (i) accanto alle due scelte: solo la spiegazione, nessuna azione dentro.
+  'info-condivisione': (_, el) => {
+    const voce = el.dataset.voce;
+    sheet(CONDIVISIONE[voce].titolo, spiegazioneCondivisione(voce));
+  },
+
+  // Dalle Impostazioni o dalla Home. Tenere i turni sul telefono è immediato,
+  // e cancella quelli sul server. Mandarli no: prima si dice cosa esce e chi
+  // lo legge, e finché non si acconsente resta tutto com'era.
+  condivisione: (_, el) => {
+    if (el.value === 'locale') {
+      const prima = store.condivisione();
+      store.impostaCondivisione('locale');
+      toast(prima === 'cifrati' ? 'Fatto: i tuoi turni sono stati tolti dal server' : 'Fatto: i tuoi turni restano sul telefono');
+      return render({ fermo: true });
+    }
+    render({ fermo: true });
+    sheet(CONDIVISIONE.cifrati.titolo, spiegazioneCondivisione('cifrati'), {
+      azioni: '<button class="btn primario largo" data-act="consenso-condivisione">Acconsento</button>'
+        + '<button class="btn secondario largo" data-chiudi>Resta com\'è</button>',
+    });
+  },
+
+  'consenso-condivisione': (_, el) => {
+    el.closest('.sheet-backdrop').querySelector('[data-chiudi]').click();
+    store.impostaCondivisione('cifrati');
+    toast('Fatto: i tuoi turni vanno al server cifrati');
+    render({ fermo: true });
+  },
   'profilo-accetta-voce': (e, el) => {
     const b = P.bozzaProfilo;
     b.accettazioni[Number(el.dataset.indice)] = e.target.checked;
@@ -572,7 +605,10 @@ const AZIONI = {
       return render();
     }
 
-    if (!b.modifica) store.impostaPreferenze(b.preferenze);
+    if (!b.modifica) {
+      store.impostaPreferenze(b.preferenze);
+      if (b.condivisione) store.impostaCondivisione(b.condivisione);
+    }
     toast(b.modifica ? 'Profilo aggiornato' : `Ciao ${store.me.nome}`);
     vai(b.modifica ? '#/home' : '#/primi-turni');
   },
@@ -1498,6 +1534,13 @@ window.addEventListener('hashchange', render);
 
 store.init();
 store.subscribe(() => {});
+// La risposta della ricerca sul server arriva dopo il primo disegno. Se stai
+// scrivendo o hai un foglio aperto si aspetta: la si vede al disegno dopo.
+quandoArriva(() => {
+  if (document.querySelector('.sheet-backdrop')) return;
+  if (document.activeElement?.matches?.('input, textarea, select')) return;
+  render({ fermo: true });
+});
 if (!location.hash) location.hash = '#/home';
 render();
 aggiornamentoSilenzioso();

@@ -233,8 +233,11 @@ const OPERAZIONI = {
  * il resto.
  */
 async function rigaCifrata(d) {
-  const { turni = [], preferenze = {}, ...resto } = d;
-  if (d.modo !== 'compatibili') return { ...resto, turni: [], preferenze: {}, dati_cifrati: null };
+  const { turni = [], preferenze = {}, condivide: scelta, ...resto } = d;
+  // Una riga rimasta in coda da una versione di prima non ha `condivide`:
+  // allora i turni partivano solo con le notifiche compatibili.
+  const condivide = scelta ?? d.modo === 'compatibili';
+  if (!condivide) return { ...resto, turni: [], preferenze: {}, dati_cifrati: null };
   return {
     ...resto,
     turni: [],
@@ -275,16 +278,27 @@ export function accoda(state, tipo, dati, gruppo = null) {
  * non ferma la condivisione, la cancella. `aggiornato_il` dice al server
  * quanto è fresco il calendario, ed è l'unico campo che cambia a ogni invio.
  */
+/**
+ * I turni vanno sul server (cifrati)? Sì se l'ha scelto nel profilo, o se ha
+ * acceso le notifiche per le richieste compatibili, che senza non possono
+ * funzionare (vedi `impostaCondivisione` e `impostaModoNotifiche`).
+ */
+export function condivideTurni(state) {
+  return state.profilo?.condivisione === 'cifrati' || state.profilo?.notifiche?.modo === 'compatibili';
+}
+
 export function rigaNotifiche(state, oggi = todayISO()) {
   const scelta = state.profilo?.notifiche;
-  const compatibili = scelta?.modo === 'compatibili';
+  const condivide = condivideTurni(state);
   const io = state.users.find((u) => u.id === state.currentUserId);
   return {
     user_id: state.profilo.idServer,
-    modo: compatibili ? 'compatibili' : 'dirette',
-    turni: compatibili ? turniDaCondividere(state.shifts, state.currentUserId, oggi) : [],
-    preferenze: compatibili ? preferenzeDaCondividere(io) : {},
-    consenso_il: compatibili ? scelta.consensoIl : null,
+    modo: scelta?.modo === 'compatibili' ? 'compatibili' : 'dirette',
+    // Solo per `rigaCifrata`: decide se i turni partono, e non va al server.
+    condivide,
+    turni: condivide ? turniDaCondividere(state.shifts, state.currentUserId, oggi) : [],
+    preferenze: condivide ? preferenzeDaCondividere(io) : {},
+    consenso_il: condivide ? (scelta?.consensoIl || null) : null,
     aggiornato_il: new Date().toISOString(),
   };
 }
@@ -299,13 +313,13 @@ export function rigaNotifiche(state, oggi = todayISO()) {
 export function condividiNotifiche(state, { forzato = false, oggi = todayISO() } = {}) {
   if (!sulServer(state)) return false;
   const scelta = state.profilo.notifiche;
-  if (!forzato && scelta?.modo !== 'compatibili') return false;
+  if (!forzato && !condivideTurni(state)) return false;
 
   const riga = rigaNotifiche(state, oggi);
   // La versione dentro la firma: quando cambia il modo in cui i dati escono
   // (dalla 2 sono cifrati) ogni telefono rimanda la sua riga una volta, e sul
   // server non resta niente in chiaro.
-  const firma = JSON.stringify([2, riga.modo, riga.turni, riga.preferenze]);
+  const firma = JSON.stringify([2, riga.modo, riga.condivide, riga.turni, riga.preferenze]);
   if (!forzato && scelta.firma === firma) return false;
   // Un dispositivo che non ha mai mandato niente e non ha ancora i turni (un
   // telefono nuovo dopo il rientro) non sa com'è il calendario: mandare una
@@ -570,6 +584,9 @@ export async function scarica(state, { completo = false } = {}) {
       modo: mia.modo,
       consensoIl: mia.consenso_il || null,
     };
+    // Anche la scelta sui turni si ritrova su un telefono nuovo: un consenso
+    // registrato senza le notifiche compatibili vuol dire che l'ha scelta.
+    if (mia.consenso_il && mia.modo === 'dirette' && !state.profilo.condivisione) state.profilo.condivisione = 'cifrati';
   }
 
   if (!password.errore) {

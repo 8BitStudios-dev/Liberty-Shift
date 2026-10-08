@@ -82,6 +82,24 @@ per ogni giorno che offro:
 La richiesta speculare è il caso pulito: «vuole liberare lunedì e lavorare
 venerdì, l'esatto contrario del tuo».
 
+**Libero, o solo sconosciuto?** Sul telefono un giorno senza turno di un
+collega non vuol dire che sia libero: dei colleghi l'app conosce solo i turni
+che stanno in bacheca. In quel caso il match `CALENDARIO` esce con
+`incerto: true`, perde `RULES.incertoPenalty` punti e la scheda dice "Non so se
+X lavora quel giorno: chiediglielo prima". Non è incerto se il collega ha
+segnato la disponibilità per quel giorno, né quando il confronto gira sul
+server con i calendari interi (`ctx.calendariCompleti`, vedi sotto).
+
+**La ricerca sul server.** Chi sceglie «Tutti i turni sul server, cifrati»
+manda il calendario dei prossimi 28 giorni, cifrato. Quando cerca, il telefono
+chiede anche a `send-push` (`type: CERCA`, `src/core/ricerca.js`): la funzione
+apre i calendari di chi condivide, fa girare `colleghiPerBozza` (stesso
+motore, `calendariCompleti: true`) e restituisce solo nome, giorno, turno e
+spiegazioni. Il telefono unisce le due risposte (`unisci`): di chi condivide i
+suggerimenti dal calendario sono quelli del server, gli altri restano i suoi.
+Può chiedere solo chi condivide a sua volta, e il turno da lasciare deve
+coincidere con quello condiviso.
+
 ## Le due sorgenti di match
 In entrambi gli algoritmi un match può nascere da due cose diverse:
 

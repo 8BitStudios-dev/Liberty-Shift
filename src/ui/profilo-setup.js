@@ -14,7 +14,7 @@ import { oreDelContratto, oreAutomatiche } from '../core/model.js';
 import { todayISO } from '../core/time.js';
 import { scannerDisponibile } from './scanner.js';
 import { serverConfigurato } from '../core/config.js';
-import { campoPortachiavi, elencoErrori } from './components.js';
+import { campoPortachiavi, elencoErrori, sceltaCondivisione } from './components.js';
 
 /** La bozza in corso di compilazione. */
 export const bozzaProfilo = {
@@ -25,6 +25,7 @@ export const bozzaProfilo = {
   contratto: '',
   oreSettimanali: null,
   preferenze: {},
+  condivisione: null,
   password: '',
   conferma: '',
   codice: '',
@@ -51,7 +52,7 @@ export function passi() {
   const b = bozzaProfilo;
   if (b.modifica) return [passoChiSei, passoContratto];
   return serverConfigurato()
-    ? [passoCodice, passoChiSei, passoContratto, passoPreferenze, passoPassword, passoNote]
+    ? [passoCodice, passoChiSei, passoContratto, passoPreferenze, passoCondivisione, passoPassword, passoNote]
     : [passoChiSei, passoContratto, passoPreferenze, passoPassword, passoNote];
 }
 
@@ -62,6 +63,7 @@ export function erroriDelPasso(numero) {
     passoCodice: /codice/i,
     passoChiSei: /nome|cognome|opzioni/i,
     passoContratto: /contratto|monte ore/i,
+    passoCondivisione: /tuoi turni/i,
     passoPassword: /password/i,
   }[nome] || null;
 }
@@ -80,6 +82,7 @@ export function apriProfilo({ modifica = false } = {}) {
     oreSettimanali: modifica ? me.oreSettimanali : null,
     pausaMezzora: modifica ? Boolean(me.pausaMezzora) : false,
     preferenze: {},
+    condivisione: null,
     password: '',
     conferma: '',
     codice: '',
@@ -121,6 +124,9 @@ export function validaProfilo() {
   }
   if (!b.modifica && serverConfigurato() && !b.codice.trim()) {
     errori.push('Serve il codice dello store.');
+  }
+  if (!b.modifica && serverConfigurato() && !b.condivisione) {
+    errori.push('Scegli dove tenere i tuoi turni.');
   }
   if (!b.accettate) errori.push('Serve la presa visione delle note.');
   return errori;
@@ -369,6 +375,25 @@ function passoPreferenze() {
     </p>
     ${raw(gruppo('evita', 'Turni da evitare'))}
     ${raw(gruppo('preferisce', 'Turni preferiti'))}
+    <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
+}
+
+/**
+ * Dove stanno i turni. Si chiede alla registrazione, senza una risposta già
+ * segnata: è la scelta che decide cosa esce dal telefono, e una casella
+ * spuntata in partenza la farebbe al posto di chi si iscrive.
+ */
+function passoCondivisione() {
+  const b = bozzaProfilo;
+  return html`
+    <h2 class="titolo-gruppo">Dove tenere i tuoi turni</h2>
+    <p class="testo-tenue">
+      L'app cerca per te i colleghi che possono prendere un tuo turno. Quanto
+      ci riesce bene dipende da cosa sa dei loro calendari, e loro del tuo.
+      Tocca la (i) per leggere cosa cambia. Puoi cambiare idea quando vuoi
+      dalle Impostazioni.
+    </p>
+    ${raw(sceltaCondivisione(b.condivisione, 'profilo-condivisione'))}
     <button class="btn primario largo" data-act="profilo-avanti">Continua</button>`;
 }
 

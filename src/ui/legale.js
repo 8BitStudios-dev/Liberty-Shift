@@ -8,7 +8,7 @@
 import { html, raw } from './dom.js';
 
 /** La versione del testo: cambiarla ripropone l'accettazione a tutti. */
-export const VERSIONE_NOTE = '2026-10-1';
+export const VERSIONE_NOTE = '2026-10-2';
 
 export function noteLegali({ compatte = false } = {}) {
   const esteso = (contenuto) => (compatte ? '' : contenuto);
@@ -67,16 +67,19 @@ export function noteLegali({ compatte = false } = {}) {
       </table>
 
       <p>
-        <strong>Un'eccezione, solo se la scegli.</strong> Puoi ricevere una
-        notifica anche per le richieste che il tuo calendario può risolvere,
-        non solo per le proposte che ti arrivano. Ad app chiusa il telefono non
-        può fare quel confronto, quindi in quel caso, e solo in quel caso,
-        l'app manda al server i tuoi turni dei prossimi 28 giorni (data, tipo e
-        orari) e le tue preferenze di turno, cifrati dal telefono prima di
-        partire. Sul server restano cifrati: li decifra solo la funzione che fa
-        il confronto, e solo in quel momento. Non li vedono i colleghi né gli
-        admin, e chi apre il database legge un testo illeggibile. Tornando a
-        «solo le proposte dirette» vengono cancellati.
+        <strong>Un'eccezione, solo se la scegli.</strong> Alla registrazione, e
+        poi dalle Impostazioni, scegli dove tenere i tuoi turni. Con «Solo i
+        turni che vuoi cambiare» vale la tabella qui sopra. Con «Tutti i turni
+        sul server, cifrati», e anche se attivi le notifiche per le richieste
+        che puoi coprire, l'app manda al server i tuoi turni dei prossimi 28
+        giorni (data, tipo e orari) e le tue preferenze di turno, cifrati dal
+        telefono prima di partire. Servono a trovare i colleghi davvero liberi
+        quando qualcuno cerca un cambio, e a mandarti quelle notifiche ad app
+        chiusa. Sul server restano cifrati: li decifra solo la funzione che fa
+        il confronto, e solo in quel momento; a chi cerca torna il nome del
+        collega e il turno che farebbe, non il resto del calendario. Non li
+        vedono i colleghi né gli admin, e chi apre il database legge un testo
+        illeggibile. Tornando all'altra scelta vengono cancellati.
       </p>
 
       <ul class="elenco piccolo">
@@ -141,8 +144,8 @@ const VOCI_ACCETTAZIONE = [
   { titolo: 'Non è un\'app aziendale', testo: 'e non è approvata da nessuno. L\'abbiamo fatta fra colleghi.' },
   { titolo: 'Non fa nessun cambio turno.', testo: 'Serve a mettersi d\'accordo; il cambio va poi inserito nel sistema ufficiale.' },
   {
-    titolo: 'I tuoi turni restano su questo dispositivo.',
-    testo: 'Solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente. Fa eccezione, solo se lo scegli tu, l\'avviso sulle richieste compatibili: in quel caso i turni dei prossimi 28 giorni vanno al server cifrati, e li decifra solo il confronto.',
+    titolo: 'I tuoi turni stanno dove scegli tu.',
+    testo: 'Di base restano su questo dispositivo, e solo i cambi che pubblichi sono conservati in un database protetto, criptato e cancellati periodicamente. Se scegli «Tutti i turni sul server, cifrati», i turni dei prossimi 28 giorni vanno al server cifrati, e li decifra solo il confronto con quelli dei colleghi.',
   },
 ];
 

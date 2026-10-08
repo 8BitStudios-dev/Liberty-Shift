@@ -19,7 +19,7 @@
 // variabili d'ambiente da ricordare in dashboard, niente segreti nel codice.
 
 import webpush from 'npm:web-push@3.6.7';
-import { candidatiCompatibili } from './core/compatibili.js';
+import { candidatiCompatibili, colleghiPerBozza } from './core/compatibili.js';
 import { RULES } from './core/rules.js';
 import { decifra } from './core/cifratura.js';
 import { oreRetribuite } from './core/model.js';
@@ -361,12 +361,106 @@ const json = (corpo: unknown, stato = 200) => new Response(JSON.stringify(corpo)
   status: stato, headers: { 'Content-Type': 'application/json' },
 });
 
+// ------------------------------------------------- ricerca dei colleghi
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+const jsonCors = (corpo: unknown, stato = 200) => new Response(JSON.stringify(corpo), {
+  status: stato, headers: { ...CORS, 'Content-Type': 'application/json' },
+});
+
+/**
+ * Chi sta chiamando, dalla sua sessione. Questa funzione non chiede il JWT
+ * alla piattaforma (la usano anche i trigger, con il segreto), quindi la
+ * sessione si verifica qui, chiedendola al servizio di accesso.
+ */
+async function utenteDaSessione(req: Request): Promise<string | null> {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: SERVICE_ROLE!, Authorization: `Bearer ${token}` },
+  });
+  if (!r.ok) return null;
+  return (await r.json())?.id || null;
+}
+
+/**
+ * I colleghi per uno scambio, fra i turni condivisi (vedi `colleghiPerBozza`).
+ *
+ * Solo per chi condivide a sua volta, con una riga fresca: chi tiene i turni
+ * sul telefono non vede quelli degli altri. I turni si aprono qui, in
+ * memoria, e al telefono torna solo il risultato.
+ */
+async function cercaColleghi(io: string, bozza: unknown) {
+  const chiave = segreti?.turni_chiave_privata;
+  if (!chiave) return { errore: 'La ricerca sul server non è configurata.' };
+  const limite = new Date(Date.now() - RULES.notifiche.giorniFreschezza * 86400000).toISOString();
+  const righe = await leggi(`notifiche_preferenze?dati_cifrati=not.is.null&aggiornato_il=gte.${limite}&select=user_id,dati_cifrati`);
+  if (!righe.some((r: { user_id: string }) => r.user_id === io)) {
+    return { errore: 'Per cercare fra i turni condivisi devi condividere anche i tuoi.' };
+  }
+  const aperte = (await Promise.all(righe.map(async (r: { user_id: string; dati_cifrati: string }) => {
+    try {
+      const { turni, preferenze } = await decifra(r.dati_cifrati, chiave);
+      return { user_id: r.user_id, turni, preferenze };
+    } catch {
+      return null;
+    }
+  }))).filter(Boolean) as { user_id: string; turni: unknown[]; preferenze: Record<string, boolean> }[];
+
+  const elenco = aperte.map((a) => a.user_id).join(',');
+  const profili = await leggi(`profili?id=in.(${elenco})&attivo=eq.true&select=id,nome,cognome_iniziale,contratto,ore_settimanali,genere,pausa_mezzora`);
+  const disp = await leggi(`disponibilita?user_id=in.(${elenco})&select=user_id,settimana,giorni`);
+  const disponibilita: Record<string, Record<string, boolean[]>> = {};
+  for (const d of disp) (disponibilita[d.user_id] ||= {})[d.settimana] = d.giorni;
+  const richieste = await leggi(`richieste?autore_id=in.(${elenco})&stato=in.(APERTA,PROPOSTA,IN_ATTESA)&select=id,autore_id,tipo,stato,priorita_fino_a,cedo_data,cedo_flessibile,cerco,cerco_giorni,creata_il`);
+
+  const persona = (a: { user_id: string; turni: unknown[]; preferenze: Record<string, boolean> }) => ({
+    profilo: profili.find((p: { id: string }) => p.id === a.user_id),
+    turni: a.turni,
+    preferenze: a.preferenze,
+    disponibilita: disponibilita[a.user_id] || {},
+  });
+  // La propria riga c'è ma non si apre (cifrata con una chiave vecchia): il
+  // telefono la riscrive alla prossima apertura, intanto si cerca da lì.
+  const mia = aperte.find((a) => a.user_id === io);
+  if (!mia) return { errore: 'I tuoi turni sul server non sono leggibili: riapri l\'app e riprova.' };
+  return colleghiPerBozza({
+    io: persona(mia),
+    bozza,
+    candidati: aperte.filter((a) => a.user_id !== io).map(persona).filter((c) => c.profilo),
+    richieste,
+    oggi: oggiARoma(),
+  });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   const s = await caricaSegreti();
   if (!s) return json({ errore: 'Segreti delle notifiche non configurati.' }, 500);
+
+  let corpo: Record<string, unknown>;
+  try {
+    corpo = await req.json();
+  } catch {
+    return jsonCors({ errore: 'Richiesta illeggibile.' }, 400);
+  }
+
+  // La ricerca la chiede un telefono, con la sua sessione; tutto il resto
+  // arriva dai trigger del database, con il segreto.
+  if (corpo.type === 'CERCA') {
+    const io = await utenteDaSessione(req);
+    if (!io) return jsonCors({ errore: 'Sessione non valida.' }, 401);
+    return jsonCors(await cercaColleghi(io, corpo.bozza));
+  }
   if (req.headers.get('x-webhook-secret') !== s.push_webhook) return json({ errore: 'non autorizzato' }, 401);
 
-  const { type, record, old_record, autore, destinatario, giorno, utenti } = await req.json();
+  const { type, record, old_record, autore, destinatario, giorno, utenti } = corpo as {
+    type: string; record: any; old_record: any; autore?: string; destinatario?: string; giorno?: string; utenti?: string[];
+  };
   if (type === 'PASSWORD') {
     if (!Array.isArray(utenti) || !utenti.length) return json({ inviate: 0, motivo: 'nessuno da nominare' });
     const richiedenti = await leggi(`profili?id=in.(${utenti.join(',')})&select=id,nome,cognome_iniziale`);

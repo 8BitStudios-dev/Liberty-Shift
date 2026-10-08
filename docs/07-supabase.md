@@ -569,10 +569,19 @@ condiviso diventa più netta, non meno: vedi
 
 ## Notifiche sulle richieste compatibili
 
-Chi sceglie "richieste compatibili" (Profilo, notifiche) acconsente a mandare al
-server i turni dei prossimi 28 giorni (solo data, tipo e orari) e le preferenze.
-Stanno in `notifiche_preferenze`: la legge solo il proprietario e `service_role`,
-**mai admin né colleghi**. Tornando a "solo proposte dirette" la riga si svuota.
+Chi sceglie «Tutti i turni sul server, cifrati» (registrazione o Impostazioni,
+`profilo.condivisione = 'cifrati'`), o le notifiche per le richieste
+compatibili, acconsente a mandare al server i turni dei prossimi 28 giorni
+(solo data, tipo e orari) e le preferenze. Stanno in `notifiche_preferenze`: la
+legge solo il proprietario e `service_role`, **mai admin né colleghi**. La
+colonna `modo` decide solo le notifiche; se i turni ci sono lo decide
+`condivideTurni()` in `sincronia.js`. Tornando a «Solo i turni che vuoi
+cambiare» la riga si svuota.
+
+Gli stessi turni servono alla ricerca dei colleghi: `send-push` con
+`type: CERCA` non usa il segreto del webhook ma la sessione di chi chiama
+(verificata con `/auth/v1/user`), e risponde solo a chi ha a sua volta una
+riga cifrata e recente. Torna l'elenco dei colleghi possibili, mai i calendari.
 
 **Sono cifrati.** Il telefono cifra turni e preferenze prima di mandarli
 (`src/core/cifratura.js`: AES-GCM per i dati, RSA-OAEP per la chiave AES) e li

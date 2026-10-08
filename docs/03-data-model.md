@@ -29,6 +29,11 @@ User ──< Shift
 | `disponibilitaManuale` | `{ [weekKey]: (bool\|null)[7] }` | solo sul telefono: le eccezioni scelte a mano, `null` = segue il calcolo |
 | `prioritaUsata` | `{ 'YYYY-MM': n }` | credito consumato per mese |
 
+Nel profilo del dispositivo (`state.profilo`), accanto alle notifiche:
+`condivisione` è `'cifrati'` (tutti i turni dei prossimi 28 giorni sul server,
+cifrati) o `'locale'` (solo quelli da cambiare). Assente vuol dire che la
+persona non ha ancora scelto, e vale `'locale'`: la Home glielo chiede.
+
 `weekKey` è la data ISO del sabato: la disponibilità è per settimana. Le
 preferenze restano sul telefono: sul server arriva solo la disponibilità che
 ne risulta, mai il motivo.

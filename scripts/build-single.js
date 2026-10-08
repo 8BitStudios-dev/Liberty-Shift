@@ -23,6 +23,7 @@ const MODULI = [
   'src/core/supabase.js',
   'src/core/cifratura.js',
   'src/core/sincronia.js',
+  'src/core/ricerca.js',
   'src/core/rotazione.js',
   'src/core/statistiche.js',
   'src/core/karma.js',

@@ -432,6 +432,11 @@ input[type="time"], input.testo, input[type="password"], textarea, .select {
 .switch-tile { cursor: pointer; }
 .switch-tile input { width: 20px; height: 20px; accent-color: var(--accento); flex: none; }
 .switch.disabilitato { opacity: .5; }
+/* La (i) sta fuori dall'etichetta: dentro, un tocco per leggere sceglierebbe anche l'opzione. */
+.scelta-condivisione { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--bordo); }
+.scelta-condivisione .switch { flex: 1; border-bottom: 0; }
+.riquadro .scelta-condivisione:last-of-type, .invito-notifiche .scelta-condivisione:last-of-type { border-bottom: 0; }
+.scelta-condivisione .info-condivisione { flex: none; color: var(--accento); }
 
 .progresso { height: 3px; background: var(--superficie-2); border-radius: 2px; overflow: hidden; margin-bottom: 18px; }
 .progresso i { display: block; height: 100%; background: var(--accento); transition: width .2s ease; }

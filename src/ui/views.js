@@ -3,6 +3,7 @@ import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
   ruoloNelGiorno, testoPromemoria, iconaTipo,
+  sceltaCondivisione, CONDIVISIONE,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
@@ -115,6 +116,7 @@ export function home() {
     ${raw(avvisoCalendarioScaduto())}
     ${raw(avvisoSincronia())}
     ${raw(avvisoCodaFerma())}
+    ${raw(invitoCondivisione())}
     ${raw(invitoNotifiche())}
 
     <section class="sezione">
@@ -457,6 +459,25 @@ function avvisoCodaFerma() {
     </section>`;
 }
 
+/**
+ * Chi si è iscritto prima che esistesse la scelta non l'ha mai fatta: per
+ * lui vale ancora la promessa di allora, i turni sul telefono. Glielo si
+ * chiede in Home una volta, senza decidere al suo posto; la risposta chiude
+ * il riquadro, e la si cambia dalle Impostazioni.
+ */
+function invitoCondivisione() {
+  if (!store.state.profilo?.idServer || store.condivisione()) return '';
+  return html`
+    <section class="invito-notifiche">
+      <span class="invito-icona">${raw(icona('calendario', { px: 24 }))}</span>
+      <div>
+        <strong>Dove tenere i tuoi turni</strong>
+        <p>Da qui dipende quanto sono precisi i colleghi che l'app ti suggerisce. Scegli tu, e tocca la (i) per capire cosa cambia.</p>
+        ${raw(sceltaCondivisione(null, 'condivisione'))}
+      </div>
+    </section>`;
+}
+
 function invitoNotifiche() {
   const stato = statoNoto();
   if (invitoRimandato()) return '';
@@ -578,7 +599,28 @@ export function impostazioni() {
           <span class="chevron">›</span>
         </button>` : '')}
     </section>
+    ${raw(store.state.profilo?.idServer ? riquadroCondivisione() : '')}
     <p class="versione-app">Ver: ${VERSIONE_APP}</p>`;
+}
+
+/**
+ * La scelta su dove stanno i turni, nelle Impostazioni. Con le notifiche per
+ * le richieste compatibili accese i turni sono già sul server: la scelta lo
+ * mostra, e passare all'altra spegne anche quelle, cosa che si dice.
+ */
+function riquadroCondivisione() {
+  const valore = store.condivisione();
+  const perNotifiche = store.modoNotifiche() === 'compatibili' && store.state.profilo?.condivisione !== 'cifrati';
+  return html`
+    <section class="sezione">
+      <h2>I tuoi turni</h2>
+      <div class="riquadro riquadro-condivisione">
+        ${raw(sceltaCondivisione(valore, 'condivisione'))}
+        ${raw(perNotifiche
+    ? '<p class="testo-tenue">Sono sul server per le notifiche delle richieste che puoi coprire: scegliendo l\'altra opzione si spengono anche quelle.</p>'
+    : '')}
+      </div>
+    </section>`;
 }
 
 /**
@@ -655,7 +697,7 @@ export function corpoNotifiche(stato = statoNoto()) {
     ${raw(accensione)}
     <h3 class="pref-titolo">Cosa ricevere</h3>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Anche le richieste che puoi coprire', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che potresti coprire con i tuoi turni, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati.'))}
+      ${raw(opzione('compatibili', 'Anche le richieste che puoi coprire', `Ricevi una notifica ogni volta che un collega pubblica una richiesta che potresti coprire con i tuoi turni, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati${store.state.profilo?.condivisione === 'cifrati' ? ', come hai già scelto' : ''}.`))}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Su questo telefono non ci sono turni nei prossimi giorni: importali da Sincronizza turni, altrimenti non riceverai avvisi.</p>'
     : '')}`;

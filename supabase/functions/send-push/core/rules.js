@@ -198,6 +198,19 @@ export const RULES = {
 
   adattamentoPenalty: 5,
 
+  /**
+   * Quanto scende un suggerimento costruito su un giorno che l'app non conosce.
+   *
+   * I turni dei colleghi che non li condividono arrivano a pezzi (quelli
+   * dentro le loro richieste): un loro giorno sconosciuto potrebbe essere
+   * lavorato. Il suggerimento resta, perché spesso è giusto, ma va in fondo e
+   * la scheda dice di chiedere (`incerto` nei match).
+   *
+   * **Assunzione**: 15 punti, abbastanza da farlo passare sotto i suggerimenti
+   * certi senza farlo sparire.
+   */
+  incertoPenalty: 15,
+
   // Quanto pesa una preferenza soddisfatta. Poco per costruzione: è un
   // "mi farebbe piacere", non una condizione.
   preferenzaBonus: 4,

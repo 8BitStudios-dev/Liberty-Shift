@@ -19,6 +19,7 @@ import {
   notaStima, notaPausa, personaDi,
 } from './components.js';
 import { icona } from './icone.js';
+import { bozzaPerServer, risultatiServer, inAttesa, unisci } from '../core/ricerca.js';
 import { primaLePrioritarie, richiestaValida, richiestaGestita } from './views.js';
 
 export const draft = {
@@ -345,8 +346,9 @@ export function cambioDalGiorno() {
   const bozza = bozzaDalGiorno();
   const errori = validateRequest(bozza, store.shiftsById(), store.state.shifts);
   const ctx = { ...store.state, requests: store.state.requests.filter((r) => r.id !== bozza.id) };
-  const risultati = errori.length ? [] : findMatches(bozza, ctx);
   const cedo = store.shift(bozza.cedo.shiftId);
+  const perServer = errori.length ? null : bozzaPerServer(bozza, cedo);
+  const risultati = errori.length ? [] : unisci(findMatches(bozza, ctx), risultatiServer(store.state, perServer));
   const credito = store.creditoPriorita();
 
   // La nota e la priorità valgono per tutti e due i tasti (pubblicare da
@@ -368,10 +370,18 @@ export function cambioDalGiorno() {
     ${raw(errori.length ? '' : risultati.length ? html`
       <h2 class="titolo-gruppo">Colleghi disponibili (${risultati.length})</h2>
       <p class="testo-tenue">Proponi lo scambio a uno di loro, oppure pubblica la richiesta e aspetta chi risponde.</p>
-      ${raw(risultati.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true, dalGiorno: true })).join(''))}`
-    : vuoto('Nessun collega disponibile per ora', 'Pubblica la richiesta: resta in bacheca, e chi può aiutarti la trova lì.'))}
+      ${raw(risultati.map((m) => cardMatch(m, { mioCedo: cedo, compatta: true, dalGiorno: true })).join(''))}
+      ${raw(attesaServer(perServer))}`
+    : inAttesa(store.state, perServer) ? attesaServer(perServer) : vuoto('Nessun collega disponibile per ora', 'Pubblica la richiesta: resta in bacheca, e chi può aiutarti la trova lì.'))}
     ${raw(errori.length ? '' : html`
       <button class="btn ${risultati.length ? 'secondario' : 'primario'} largo" data-act="pubblica-giorno">Pubblica in bacheca</button>`)}`;
+}
+
+/** Mentre il server cerca fra i turni condivisi: una riga, non una rotella. */
+function attesaServer(perServer) {
+  return inAttesa(store.state, perServer)
+    ? '<p class="testo-tenue">Cerco anche fra i turni condivisi dai colleghi…</p>'
+    : '';
 }
 
 export function scelta() {
@@ -632,7 +642,8 @@ function barra(titolo, passo) {
 export function match(params) {
   const r = store.request(params.id);
   if (!r) return vuoto('Richiesta non trovata', 'Forse è stata chiusa.');
-  const risultati = findMatches(r, store.state);
+  const perServer = bozzaPerServer(r, store.shift(r.cedo.shiftId));
+  const risultati = unisci(findMatches(r, store.state), risultatiServer(store.state, perServer));
   const pieni = risultati.filter((m) => m.tipo === 'MATCH');
   const potenziali = risultati.filter((m) => m.tipo === 'POTENZIALE');
 
@@ -645,7 +656,8 @@ export function match(params) {
 
     ${raw(pieni.length ? `<h2 class="titolo-gruppo">${segnoMatch(true)}Match (${pieni.length})</h2>${pieni.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
     ${raw(potenziali.length ? `<h2 class="titolo-gruppo">${segnoMatch(false)}Potenziali (${potenziali.length})</h2>${potenziali.map((m) => cardMatch(m, { miaRichiestaId: r.id })).join('')}` : '')}
-    ${raw(risultati.length ? '' : vuoto(
+    ${raw(attesaServer(perServer))}
+    ${raw(risultati.length || inAttesa(store.state, perServer) ? '' : vuoto(
     'Ancora nessuno',
     'Nessun collega ha un turno compatibile su quel giorno. La richiesta resta in bacheca.',
     '<button class="btn secondario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',

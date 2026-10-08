@@ -16,8 +16,9 @@ import {
 } from './supabase.js';
 import { parseICS } from './ics.js';
 import { daRiempire, rotazioneVuota } from './rotazione.js';
+import { turnoDalServer } from './ricerca.js';
 import {
-  sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche, salvaTraguardi,
+  sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche, salvaTraguardi, condivideTurni,
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
 } from './sincronia.js';
 
@@ -208,7 +209,9 @@ export const store = {
     return this.state.users.find((u) => u.id === id);
   },
   shift(id) {
-    return this.state.shifts.find((s) => s.id === id);
+    // Un turno di un collega arrivato con la ricerca sul server: non si salva
+    // fra i turni, ma una scheda deve poterlo mostrare.
+    return this.state.shifts.find((s) => s.id === id) || turnoDalServer(id) || undefined;
   },
   shiftsById() {
     return Object.fromEntries(this.state.shifts.map((s) => [s.id, s]));
@@ -1323,9 +1326,15 @@ export const store = {
     if (!sulServer(this.state)) return { errori: ['Per le notifiche serve essere iscritti allo store.'] };
     if (modo !== 'dirette' && modo !== 'compatibili') return { errori: ['Scelta non valida.'] };
     const prima = this.state.profilo.notifiche;
-    this.state.profilo.notifiche = modo === 'compatibili'
-      ? { modo, consensoIl: new Date().toISOString(), firma: null }
-      : { modo, consensoIl: null, firma: null };
+    // Le notifiche compatibili lavorano sui turni condivisi: accenderle li
+    // condivide. Spegnerle li toglie, a meno che la persona non abbia scelto
+    // di condividerli comunque nel profilo (`condivisione`).
+    const condivide = modo === 'compatibili' || this.state.profilo.condivisione === 'cifrati';
+    this.state.profilo.notifiche = {
+      modo,
+      consensoIl: condivide ? (prima?.consensoIl || new Date().toISOString()) : null,
+      firma: null,
+    };
     // Forzato: anche tornando a "dirette" la riga va riscritta, vuota.
     condividiNotifiche(this.state, { forzato: true });
     this.commit();
@@ -1334,6 +1343,30 @@ export const store = {
   },
   modoNotifiche() {
     return this.state.profilo?.notifiche?.modo || 'dirette';
+  },
+
+  /**
+   * Dove stanno i tuoi turni: tutti sul server, cifrati (`cifrati`), oppure
+   * solo quelli che metti in una richiesta (`locale`, ed è com'era prima).
+   *
+   * Scegliere `cifrati` è il consenso: si registra l'ora, e i turni dei
+   * prossimi giorni partono già cifrati. Tornare a `locale` li cancella dal
+   * server e spegne le notifiche compatibili, che senza non funzionano.
+   */
+  impostaCondivisione(valore) {
+    if (valore !== 'cifrati' && valore !== 'locale') return { errori: ['Scelta non valida.'] };
+    this.state.profilo.condivisione = valore;
+    const prima = this.state.profilo.notifiche || { modo: 'dirette', consensoIl: null };
+    this.state.profilo.notifiche = valore === 'cifrati'
+      ? { ...prima, consensoIl: prima.consensoIl || new Date().toISOString(), firma: null }
+      : { ...prima, modo: 'dirette', consensoIl: null, firma: null };
+    if (sulServer(this.state)) condividiNotifiche(this.state, { forzato: true });
+    this.commit();
+    this.spingi();
+    return { ok: true };
+  },
+  condivisione() {
+    return condivideTurni(this.state) ? 'cifrati' : (this.state.profilo?.condivisione || null);
   },
 
   /**

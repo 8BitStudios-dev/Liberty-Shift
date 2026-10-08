@@ -134,6 +134,7 @@ la documentazione che mente è peggio di quella che manca.
   server ragiona con regole vecchie. Con tutti i commenti i file superano gli 80 KB e il
   caricamento dal connettore si pianta: si pubblica una copia passata da
   `typescript.transpileModule` con `removeComments` (stesso codice, circa
-  55 KB), poi si controlla che la funzione risponda 401 senza segreto. `notifiche_preferenze` non va mai aperta
+  55 KB), poi si controlla che la funzione risponda 401 senza segreto (e
+  `{"errore":"Sessione non valida."}` a un `type: CERCA` senza sessione). `notifiche_preferenze` non va mai aperta
   in lettura ad admin o colleghi: contiene turni di persone che hanno
   acconsentito solo a questo uso.

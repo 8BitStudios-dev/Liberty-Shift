@@ -308,6 +308,17 @@ const adattamento = (match) => Boolean(match?.adattato?.trasformato || match?.ad
 export const TESTO_PAUSA = 'La pausa di mezz\'ora resta al turno e passa a chi lo riceve, salvo modifiche di PPO o dei lead.';
 export const notaPausa = (turni) => (turni.some((s) => pausaBreve(s, personaDi(s?.userId))) ? `<p class="nota-stima">${TESTO_PAUSA}</p>` : '');
 
+/**
+ * Un collega suggerito senza sapere se quel giorno è libero: il suo
+ * calendario non è sul server, e sul telefono c'è solo un pezzo. Il
+ * suggerimento resta, perché spesso è giusto, ma si dice di chiedere prima:
+ * proporre uno scambio a chi quel giorno lavora fa perdere tempo a tutti e due.
+ */
+function notaIncerto(u, { mioCedo, miaRichiestaId } = {}) {
+  const giorno = (mioCedo || store.shift(store.request(miaRichiestaId)?.cedo.shiftId))?.data;
+  return `<p class="nota-stima">Non so se ${esc(u?.nome || 'questo collega')} lavora ${giorno ? formatDay(giorno) : 'quel giorno'}: chiediglielo prima.</p>`;
+}
+
 export function cardMatch(match, opzioni = {}) {
   const u = store.user(match.userId);
   const turno = store.shift(match.shiftOffertoId);
@@ -327,6 +338,7 @@ export function cardMatch(match, opzioni = {}) {
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
       </div>
       ${raw(riassuntoMatch(match, u, turno, opzioni))}
+      ${raw(match.incerto ? notaIncerto(u, opzioni) : '')}
       ${raw(adattamento(match) ? notaStima() : '')}
       ${raw(notaPausa([turno, opzioni.mioCedo || store.shift(store.request(opzioni.miaRichiestaId)?.cedo.shiftId)]))}
       ${raw(opzioni.compatta ? html`
@@ -510,4 +522,75 @@ export function testoPromemoria(promemoria) {
       <span class="icona-in-riga">${raw(icona('orario', { px: 16 }))}</span>
       ${promemoria.quando.charAt(0).toUpperCase() + promemoria.quando.slice(1)}: l'hai già inserito in UKG?
     </p>`;
+}
+
+/**
+ * Dove stanno i turni: tutti sul server cifrati, o solo quelli da cambiare.
+ *
+ * La stessa domanda compare alla registrazione e nelle Impostazioni, con le
+ * stesse parole: chi la ritrova deve riconoscere quello che ha scelto. Il
+ * titolo dice cosa succede, la riga sotto cosa si guadagna e cosa si perde;
+ * il perché sta dietro la (i), per chi lo vuole leggere.
+ */
+export const CONDIVISIONE = {
+  cifrati: {
+    titolo: 'Tutti i turni sul server, cifrati',
+    sintesi: 'Privacy alta · suggerimenti completi',
+  },
+  locale: {
+    titolo: 'Solo i turni che vuoi cambiare',
+    sintesi: 'Privacy massima · suggerimenti parziali',
+  },
+};
+
+export function sceltaCondivisione(valore, act) {
+  return Object.entries(CONDIVISIONE).map(([chiave, o]) => html`
+    <div class="scelta-condivisione">
+      <label class="switch">
+        <input type="radio" name="condivisione" data-act="${act}" value="${chiave}"
+               ${raw(valore === chiave ? 'checked' : '')}>
+        <span>
+          ${o.titolo}
+          <em class="aiuto">${o.sintesi}</em>
+        </span>
+      </label>
+      <button class="icon-btn info-condivisione" data-act="info-condivisione" data-voce="${chiave}"
+              aria-label="Cosa vuol dire «${o.titolo}»">${raw(icona('info', { px: 20 }))}</button>
+    </div>`).join('');
+}
+
+/**
+ * La spiegazione dietro la (i). Dice cosa esce, chi lo legge e cosa cambia
+ * nei suggerimenti, senza promettere più di quello che è vero: il server, per
+ * confrontare, i turni li apre in memoria, ed è per questo che la prima
+ * scelta è "alta" e non "massima".
+ */
+export function spiegazioneCondivisione(voce) {
+  const giorni = RULES.notifiche.giorniCondivisi;
+  if (voce === 'cifrati') {
+    return html`
+      <p>
+        L'app manda al server <strong>i tuoi turni dei prossimi ${giorni} giorni</strong>
+        (data, tipo e orari) e le tue preferenze di turno. Partono già cifrati
+        dal telefono e nel database restano illeggibili.
+      </p>
+      <ul class="elenco">
+        <li>Li apre solo il server, per il tempo di un confronto: quando cerchi chi può prendere un tuo turno, o quando un collega cerca qualcuno come te.</li>
+        <li><strong>Non li vedono i colleghi, e nemmeno gli admin.</strong> Dei tuoi turni un collega vede solo quello che metti in bacheca.</li>
+        <li>I suggerimenti sono completi: l'app sa chi è libero davvero, anche fra chi non ha segnato le disponibilità. E chi cerca un cambio può trovare te.</li>
+        <li>Puoi passare all'altra scelta quando vuoi: i turni sul server vengono cancellati subito.</li>
+      </ul>`;
+  }
+  return html`
+    <p>
+      Il calendario resta su questo telefono. Al server arrivano solo i turni
+      che metti in bacheca o che proponi a un collega, perché gli altri
+      li devono vedere.
+    </p>
+    <ul class="elenco">
+      <li>Nessuno, nemmeno il server, conosce il resto dei tuoi turni.</li>
+      <li>I suggerimenti sono parziali: dei colleghi l'app sa solo cosa hanno messo in bacheca e i giorni che hanno segnato come disponibili. Quando non sa se qualcuno è libero te lo dice, e conviene chiederglielo prima.</li>
+      <li>Allo stesso modo, chi cerca un cambio ti trova solo nei giorni che hai segnato come disponibili.</li>
+      <li>Le notifiche per le richieste che puoi coprire non ci sono: per funzionare ad app chiusa hanno bisogno dei turni sul server.</li>
+    </ul>`;
 }

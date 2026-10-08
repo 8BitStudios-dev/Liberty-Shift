@@ -58,7 +58,10 @@ del giorno offre la domanda giusta per quel giorno:
   accordi insieme farebbero lavorare due volte.
 
 Appena c'è una scelta compaiono i colleghi compatibili, come nel Cambio
-rapido (si propone o si pubblica e si avvisa). Se non c'è nessuno, il tasto
+rapido (si propone o si pubblica e si avvisa). Chi condivide i turni sul
+server vede comparire, dopo un attimo, anche i colleghi liberi che il telefono
+non poteva conoscere ("Cerco anche fra i turni condivisi…"); un suggerimento
+su un giorno di cui l'app non sa niente dice di chiedere prima. Se non c'è nessuno, il tasto
 principale diventa **Pubblica in bacheca**; nota e priorità stanno lì.
 
 Il wizard di prima resta raggiungibile da `#/nuovo` per chi ha un
