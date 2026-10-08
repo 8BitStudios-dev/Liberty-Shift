@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
 import {
   satisfies, validateRequest, findMatches, disponibileIl, cambioRapido, turnoOfferibile,
-  opportunitaPerMe, richiesteSulGiorno,
+  opportunitaPerMe, richiesteSulGiorno, slotSettimana,
 } from '../src/core/engine.js';
 import { WANT_MODE, RULES, PREFERENZE, TIPO_CAMBIO } from '../src/core/rules.js';
 import { seed } from './fixtures/seed.js';
@@ -799,6 +799,29 @@ test('a chi ha già chiesto qualcosa su quel giorno non si propone altro dal cal
   };
   const ctx = { users: [martina, marco], shifts: [suo18, marco22], requests: [richiestaMarco], proposals: [], currentUserId: 'martina' };
   assert.equal(findMatches(bozza, ctx).some((m) => m.userId === 'marco'), false);
-  // Senza la sua richiesta, il calendario lo propone come prima.
-  assert.equal(findMatches(bozza, { ...ctx, requests: [] }).some((m) => m.userId === 'marco'), true);
+  // Senza la sua richiesta, e sapendo che il 18 è OFF, il calendario lo propone.
+  const marco18 = { id: 'c18', userId: 'marco', data: '2026-10-18', tipo: 'OFF', start: null, end: null };
+  assert.equal(findMatches(bozza, { ...ctx, requests: [], shifts: [suo18, marco22, marco18] }).some((m) => m.userId === 'marco'), true);
+});
+
+test('chi non si sa se sia libero non viene proposto', () => {
+  // Del 18 di Marco il telefono non sa niente: non è "OFF", è sconosciuto.
+  const martina = { id: 'martina', nome: 'Martina', cognomeIniziale: 'L', contratto: 'PT', oreSettimanali: 25, preferenze: {}, disponibilita: {}, prioritaUsata: {} };
+  const marco = { id: 'marco', nome: 'Marco', cognomeIniziale: 'C', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} };
+  const suo18 = { id: 'm18', userId: 'martina', data: '2026-10-18', tipo: 'WORK', start: '09:30', end: '14:30' };
+  const marco22 = { id: 'c22', userId: 'marco', data: '2026-10-22', tipo: 'WORK', start: '08:00', end: '17:00' };
+  const bozza = {
+    id: 'bozza', userId: 'martina', status: 'APERTA', tipo: TIPO_CAMBIO.OFF, createdAt: '2026-10-07T22:00:00Z',
+    cedo: { shiftId: 'm18', flessibile: false }, cerco: { giorni: ['2026-10-22'], mode: WANT_MODE.ANY },
+  };
+  const ctx = { users: [martina, marco], shifts: [suo18, marco22], requests: [], proposals: [], currentUserId: 'martina' };
+  assert.equal(findMatches(bozza, ctx).some((m) => m.userId === 'marco'), false);
+  // Se ha segnato la disponibilità per il 18, lo sa lui: si propone.
+  const settimana = appleWeekKey('2026-10-18');
+  const slot = slotSettimana('2026-10-18');
+  const giorni = Array(7).fill(false); giorni[slot] = true;
+  const disponibile = { ...marco, disponibilita: { [settimana]: giorni } };
+  assert.equal(findMatches(bozza, { ...ctx, users: [martina, disponibile] }).some((m) => m.userId === 'marco'), true);
+  // Dove i calendari sono interi (le notifiche) un giorno senza turno è libero.
+  assert.equal(findMatches(bozza, { ...ctx, calendariCompleti: true }).some((m) => m.userId === 'marco'), true);
 });

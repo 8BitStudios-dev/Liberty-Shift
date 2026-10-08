@@ -380,6 +380,15 @@ function matchOff(request, ctx) {
       // che gli si chiede (Marco lascia il suo 22 cercando un orario più
       // tardi), non gli si propone di cederlo per intero.
       if (!suaRichiesta && haGiaChiesto(ctx, idx, u.id, giorno)) continue;
+      // Un giorno di cui non si sa niente non è un giorno libero. Dei colleghi
+      // il telefono conosce solo i turni in bacheca: proporre Marco come "OFF
+      // il 22" senza saperlo mandava a scrivere a chi quel giorno lavorava
+      // (il caso di Martina). Si propone solo chi è libero di sicuro: ha il
+      // giorno OFF in calendario, ha segnato la disponibilità, o lo dice la
+      // sua richiesta speculare. Dove i calendari sono interi (il confronto
+      // per le notifiche) un giorno senza turno è davvero libero.
+      if (!suoNelMioGiorno && !suaRichiesta && !ctx.calendariCompleti
+        && u.id !== ctx.currentUserId && !disponibileIl(u, mioCedo.data)) continue;
 
       const ioSonoU = u.id === ctx.currentUserId;
       const ioSonoAutore = autore.id === ctx.currentUserId;

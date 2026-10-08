@@ -82,6 +82,14 @@ per ogni giorno che offro:
 La richiesta speculare è il caso pulito: «vuole liberare lunedì e lavorare
 venerdì, l'esatto contrario del tuo».
 
+**Libero di sicuro, o niente.** Dei colleghi il telefono conosce solo i turni
+in bacheca. Un collega si propone solo se è libero di sicuro nel giorno da
+liberare: quel giorno è OFF nel suo calendario, ha segnato la disponibilità,
+o lo dice la sua richiesta speculare. Un giorno di cui non si sa niente non è
+un giorno libero (il caso di Martina, a cui l'app aveva proposto Marco «OFF
+il 22» mentre lui lavorava). Fa eccezione il confronto delle notifiche sul
+server, dove i calendari sono interi (`ctx.calendariCompleti`).
+
 ## Le due sorgenti di match
 In entrambi gli algoritmi un match può nascere da due cose diverse:
 

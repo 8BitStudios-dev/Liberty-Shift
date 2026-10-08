@@ -123,6 +123,9 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
     // Chi sceglie questo avviso vuole sapere di ogni richiesta che può soddisfare,
     // non solo di quelle con un punteggio alto: la percentuale resta nell'app.
     sogliaPotenziale: RULES.notifiche.sogliaMinima,
+    // Chi sceglie questo avviso manda tutti i suoi turni della finestra: un
+    // giorno senza turno è un giorno libero, non uno sconosciuto.
+    calendariCompleti: true,
   };
 
   const perPersona = new Map();
