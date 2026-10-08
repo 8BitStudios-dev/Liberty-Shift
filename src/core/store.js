@@ -5,7 +5,7 @@
 import { RULES, PREFERENZE, STATUS } from './rules.js';
 import { newId, isExpired, hasPriority, isOpen, usaRotazione, disponibileDallePreferenze } from './model.js';
 import {
-  validateRequest, nextStatus, turnoOfferibile, slotSettimana, disponibilitaRicalcolata,
+  validateRequest, nextStatus, turnoOfferibile, combaciaEsatto, slotSettimana, disponibilitaRicalcolata,
 } from './engine.js';
 import { creaCredenziali, verificaPassword, apriSessione, chiudiSessione, sessioneAperta } from './accesso.js';
 import { monthKey, todayISO, addDays, formatDay, appleWeekKey } from './time.js';
@@ -683,8 +683,12 @@ export const store = {
     // modulo, così nessuna scorciatoia della UI la aggira.
     const offerto = this.shift(shiftOffertoId);
     if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido.'] };
-    const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById(), (id) => this.user(id));
+    const trova = (id) => this.user(id);
+    const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById(), trova);
     if (!verifica.ok) return { errori: [verifica.motivo] };
+    // Il turno è esattamente quello chiesto: il sì di chi ha pubblicato c'è
+    // già, nella richiesta stessa (vedi `combaciaEsatto`).
+    const diretto = combaciaEsatto(r, offerto, this.shiftsById(), trova);
 
     const proposta = {
       id: this.nuovoId('pr'),
@@ -693,7 +697,9 @@ export const store = {
       aUserId: r.userId,
       shiftOffertoId,
       messaggio: messaggio || '',
-      accettataDa: [me], // proporre vale già come prima accettazione
+      // Proporre vale già come prima accettazione; su un cambio che combacia
+      // vale anche quella di chi ha chiesto.
+      accettataDa: diretto ? [me, r.userId] : [me],
       status: 'IN_ATTESA',
       createdAt: new Date().toISOString(),
       cambioInserito: false,
@@ -704,12 +710,30 @@ export const store = {
     }
 
     this.state.proposals.push(proposta);
+    // L'accordo sale come un aggiornamento separato, nel suo gruppo: se sul
+    // server la richiesta ha già un accordo (un sì arrivato un attimo prima),
+    // l'aggiornamento rimbalza e il gruppo si scarta, come per `accetta`.
+    // Creata così, la proposta non manda la notifica "nuova proposta": quella
+    // giusta parte col passaggio ad accordo (vedi send-push).
+    let gruppo = null;
+    if (diretto) {
+      gruppo = `accordo:${proposta.id}`;
+      proposta.status = 'ACCORDO';
+      this.rispecchiaProposta(proposta, {
+        stato: 'ACCORDO',
+        accettata_da: proposta.accettataDa.map((u) => serverDi(this.state, u)),
+      }, gruppo);
+      // Le altre proposte sulla stessa richiesta non sono di chi accetta: sul
+      // server le chiude il trigger `turno_impegnato`, qui solo quelle a vista.
+      this.effettiAccordo(proposta, r, gruppo, { altreSulServer: false });
+    } else {
+      this.notifica(r.userId, `${this.user(me).nome} ti ha proposto uno scambio.`);
+    }
     this.aggiornaStato(r);
-    this.rispecchiaRichiesta(r);
-    this.notifica(r.userId, `${this.user(me).nome} ti ha proposto uno scambio.`);
+    this.rispecchiaRichiesta(r, gruppo);
     this.commit();
     this.spingi();
-    return { proposta };
+    return { proposta, diretto };
   },
 
   accetta(proposalId) {
@@ -728,29 +752,7 @@ export const store = {
       accettata_da: p.accettataDa.map((u) => serverDi(this.state, u)),
     }, gruppo);
     if (p.accettataDa.length >= 2) {
-      // Le altre proposte sulla stessa richiesta decadono.
-      this.state.proposals
-        .filter((x) => x.requestId === p.requestId && x.id !== p.id)
-        .forEach((x) => { x.status = 'RIFIUTATA'; });
-      this.state.proposals
-        .filter((x) => x.requestId === p.requestId && x.id !== p.id)
-        .forEach((x) => this.rispecchiaProposta(x, { stato: 'RIFIUTATA' }, gruppo));
-      // Un turno si scambia una volta sola. Le altre proposte in attesa che
-      // usano lo stesso turno (quello offerto da chi ha proposto, o quello che
-      // l'autore lascia) decadono: è il primo sì a vincere. Sul server lo fa
-      // il trigger `turno_impegnato`, che può toccare anche le proposte di
-      // altre persone; qui si allinea solo quello che il telefono già mostra.
-      const cedoRichiesta = r?.cedo.shiftId;
-      this.state.proposals
-        .filter((x) => x.status === 'IN_ATTESA' && x.requestId !== p.requestId
-          && ((x.daUserId === p.daUserId && x.shiftOffertoId === p.shiftOffertoId)
-            || (x.daUserId === p.aUserId && x.shiftOffertoId === cedoRichiesta)))
-        .forEach((x) => {
-          x.status = 'RIFIUTATA';
-          x.motivoDecadenza = 'TURNO_IMPEGNATO';
-          this.aggiornaStato(this.request(x.requestId));
-        });
-      [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo in UKG.'));
+      this.effettiAccordo(p, r, gruppo);
     } else {
       this.notifica(p.daUserId === me ? p.aUserId : p.daUserId, `${this.user(me).nome} ha accettato il cambio.`);
     }
@@ -758,6 +760,35 @@ export const store = {
     this.rispecchiaRichiesta(r, gruppo);
     this.commit();
     this.spingi();
+  },
+
+  /**
+   * Quello che segue un accordo, da qualunque parte arrivi: le altre proposte
+   * sulla stessa richiesta decadono, e così quelle che usano gli stessi turni.
+   * `altreSulServer` dice se chi accetta può chiuderle anche sul server: chi
+   * ha pubblicato sì, perché le ha ricevute; chi conclude un cambio diretto
+   * no, e lì le chiude il database.
+   */
+  effettiAccordo(p, r, gruppo, { altreSulServer = true } = {}) {
+    const altre = this.state.proposals.filter((x) => x.requestId === p.requestId && x.id !== p.id);
+    altre.forEach((x) => { x.status = 'RIFIUTATA'; });
+    if (altreSulServer) altre.forEach((x) => this.rispecchiaProposta(x, { stato: 'RIFIUTATA' }, gruppo));
+    // Un turno si scambia una volta sola. Le altre proposte in attesa che
+    // usano lo stesso turno (quello offerto da chi ha proposto, o quello che
+    // l'autore lascia) decadono: è il primo sì a vincere. Sul server lo fa
+    // il trigger `turno_impegnato`, che può toccare anche le proposte di
+    // altre persone; qui si allinea solo quello che il telefono già mostra.
+    const cedoRichiesta = r?.cedo.shiftId;
+    this.state.proposals
+      .filter((x) => x.status === 'IN_ATTESA' && x.requestId !== p.requestId
+        && ((x.daUserId === p.daUserId && x.shiftOffertoId === p.shiftOffertoId)
+          || (x.daUserId === p.aUserId && x.shiftOffertoId === cedoRichiesta)))
+      .forEach((x) => {
+        x.status = 'RIFIUTATA';
+        x.motivoDecadenza = 'TURNO_IMPEGNATO';
+        this.aggiornaStato(this.request(x.requestId));
+      });
+    [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo in UKG.'));
   },
 
   /**

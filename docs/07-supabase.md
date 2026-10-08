@@ -460,6 +460,14 @@ server il turno è la coppia (persona, giorno). Le proposte chiuse così hanno
 ricevute "Proposta non scelta". La funzione è `security definer` perché tocca
 proposte di altre persone, che chi accetta non potrebbe modificare.
 
+Chiude anche le altre proposte in attesa **sulla stessa richiesta**, senza
+`motivo_decadenza`. Serve al cambio diretto (il turno combacia con quello
+chiesto): lì l'accordo lo scrive chi risponde, che quelle proposte non può
+toccare. Il cambio diretto sale come proposta creata già con il sì di tutti e
+due in `accettata_da` e subito portata ad `ACCORDO`: `send-push` non manda
+"Nuova proposta" per l'inserimento e, sul passaggio ad accordo fatto da chi ha
+proposto, scrive "Cambio accettato" a chi aveva pubblicato.
+
 ## Una proposta ritirata
 Chi ha fatto una proposta la può ritirare finché l'altra persona non l'ha
 accettata: l'app la cancella (policy "si ritira solo la propria proposta").

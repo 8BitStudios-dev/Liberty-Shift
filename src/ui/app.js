@@ -875,10 +875,12 @@ const AZIONI = {
   proponi: (_, el) => {
     const richiesta = store.request(el.dataset.richiesta);
     if (!richiesta) return;
-    const possibile = F.turniOfferibili(richiesta).length > 0;
+    const opzioni = F.turniOfferibili(richiesta);
+    const possibile = opzioni.length > 0;
+    const primo = opzioni.find((x) => x.id === el.dataset.shift) || opzioni[0];
     const s = sheet('Proponi lo scambio', F.formProposta(richiesta, el.dataset.shift), {
       azioni: possibile
-        ? '<button class="btn primario largo" data-act="conferma-proposta">Invia proposta</button>'
+        ? `<button class="btn primario largo" data-act="conferma-proposta">${F.esitoProposta(richiesta, primo).tasto}</button>`
         : '<button class="btn secondario largo" data-chiudi>Chiudi</button>',
     });
     s.el.dataset.richiesta = richiesta.id;
@@ -890,10 +892,21 @@ const AZIONI = {
     if (!scelta) return toast('Non hai un turno da offrire su quel giorno');
     const shiftId = scelta.value;
     const messaggio = wrap.querySelector('[data-campo="messaggio"]').value;
-    const { errori } = store.proponiScambio({ requestId: wrap.dataset.richiesta, shiftOffertoId: shiftId, messaggio });
+    const { errori, diretto } = store.proponiScambio({ requestId: wrap.dataset.richiesta, shiftOffertoId: shiftId, messaggio });
     if (errori) return toast(errori[0]);
     wrap.querySelector('[data-chiudi]').click();
-    toast('Proposta inviata');
+    if (diretto) {
+      // Chi ha pubblicato riceve la notifica; a chi ha accettato si dice cosa
+      // resta da fare, che è l'unica cosa che l'app non può fare al posto loro.
+      const chi = store.user(store.request(wrap.dataset.richiesta)?.userId)?.nome || 'L\'altra persona';
+      sheet('Cambio fatto', html`
+        <p><strong>${chi}</strong> ha ricevuto una notifica.</p>
+        <p>Inserite il cambio su UKG: basta che lo faccia uno dei due.</p>`, {
+        azioni: '<button class="btn primario largo" data-chiudi>Ho capito</button>',
+      });
+    } else {
+      toast('Proposta inviata');
+    }
     vai(`#/richiesta?id=${wrap.dataset.richiesta}`);
     render();
   },
@@ -1468,6 +1481,13 @@ on(document.body, 'input', '[data-campo]', (e, el) => {
     const blocco = wrap?.querySelector('[data-coppia-proposta]');
     const richiesta = store.request(wrap?.dataset.richiesta);
     if (blocco && richiesta) blocco.innerHTML = coppiaCedoCerco(richiesta, { compatto: true, mioTurno: store.shift(el.value) });
+    if (richiesta) {
+      const esito = F.esitoProposta(richiesta, store.shift(el.value));
+      const testo = wrap.querySelector('[data-esito-proposta]');
+      const tasto = wrap.querySelector('[data-act="conferma-proposta"]');
+      if (testo) testo.innerHTML = esito.testo;
+      if (tasto) tasto.textContent = esito.tasto;
+    }
     return;
   }
   if (chiave in F.draft.cerco) F.draft.cerco[chiave] = el.value;

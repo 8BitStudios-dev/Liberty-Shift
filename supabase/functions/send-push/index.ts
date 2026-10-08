@@ -165,6 +165,10 @@ function messaggio(
   }
   if (type === 'INSERT') {
     if (autore === record.a_user_id) return null;
+    // Un cambio che combacia con la richiesta nasce già accettato da tutti e
+    // due (vedi `combaciaEsatto`): la notifica giusta è quella dell'accordo,
+    // che arriva subito dopo. "Nuova proposta" sarebbe una domanda già risolta.
+    if ((record.accettata_da || []).includes(record.a_user_id)) return null;
     return {
       a: record.a_user_id,
       title: 'Nuova proposta di cambio turno',
@@ -197,6 +201,17 @@ function messaggio(
       body: `${nomi[chi]} ha annullato lo scambio del ${giorno}: la richiesta torna aperta.${motivo}`,
     };
   }
+  // Il cambio l'ha chiuso chi ha risposto, perché era proprio quello chiesto:
+  // lo si dice a chi aveva pubblicato, che non ha dovuto fare niente.
+  // Si riconosce perché il sì di chi ha chiesto c'era già quando è nata.
+  if (type === 'UPDATE' && record.stato === 'ACCORDO' && old?.stato !== 'ACCORDO'
+    && autore === record.da_user_id && (old?.accettata_da || []).includes(record.a_user_id)) {
+    return {
+      a: record.a_user_id,
+      title: 'Cambio accettato',
+      body: `${nomi[record.da_user_id]} ha accettato il tuo cambio del ${giorno}. Inseritelo su UKG: basta che lo faccia uno dei due.`,
+    };
+  }
   if (type !== 'UPDATE' || record.stato === old?.stato || autore === record.da_user_id) return null;
   if (record.stato === 'ACCORDO') {
     return {
@@ -220,7 +235,10 @@ function messaggio(
       a: record.da_user_id,
       title: extra.altraScelta ? 'Proposta non scelta' : 'Proposta rifiutata',
       body: extra.altraScelta
-        ? `${nomi[record.a_user_id]} ha scelto un'altra proposta per il turno di ${giorno}.`
+        ? dallaPersona
+          ? `${nomi[record.a_user_id]} ha scelto un'altra proposta per il turno di ${giorno}.`
+          // Chiusa dal database perché un altro collega ha accettato per primo.
+          : `Il cambio di ${nomi[record.a_user_id]} per il turno di ${giorno} l'ha già preso un altro collega.`
         : dallaPersona
           ? `${nomi[record.a_user_id]} ha rifiutato lo scambio del ${giorno}.${motivo}`
           : `La tua proposta per il turno di ${giorno} non è più valida.`,

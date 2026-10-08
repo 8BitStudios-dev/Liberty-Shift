@@ -493,6 +493,22 @@ export function turnoOfferibile(request, shift, shifts, shiftsById, trova = null
 }
 
 /**
+ * Il turno offerto è proprio quello che la richiesta chiede?
+ *
+ * Allora chi risponde non propone: accetta, e il cambio è fatto. Chi ha
+ * pubblicato ha già detto cosa voleva, e chiedergli un secondo sì per la
+ * stessa cosa era solo un passaggio in più. Vale solo per la corrispondenza
+ * piena: un orario adattato al contratto o qualche minuto di scarto restano
+ * una proposta, perché lì il sì di chi ha chiesto non è scontato.
+ */
+export function combaciaEsatto(request, shift, shiftsById, trova = null) {
+  const mioCedo = shiftsById[request.cedo.shiftId];
+  if (!shift || !mioCedo || shift.tipo !== 'WORK') return false;
+  if (trasformaTurno(shift, mioCedo, trova).trasformato) return false;
+  return satisfies(request.cerco, shift).score === 100;
+}
+
+/**
  * Il matching al contrario: non "chi può aiutare la mia richiesta", ma
  * "quali richieste degli altri posso risolvere io".
  *

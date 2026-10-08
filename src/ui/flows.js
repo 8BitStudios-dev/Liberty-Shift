@@ -5,7 +5,7 @@ import { html, raw, toast, esc } from './dom.js';
 import { store } from '../core/store.js';
 import {
   findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
-  opportunitaPerMe,
+  opportunitaPerMe, combaciaEsatto,
 } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import {
@@ -816,7 +816,28 @@ export function formProposta(request, shiftSuggerito) {
       <span>Messaggio (facoltativo)</span>
       <textarea data-campo="messaggio" rows="2" placeholder="Es. per me va bene anche 12–20"></textarea>
     </label>
-    <p class="testo-tenue">Proponendo hai già detto sì: lo scambio è fatto quando accetta anche l'altra persona.</p>`;
+    <p class="testo-tenue" data-esito-proposta>${raw(esitoProposta(request, opzioni.find((s) => s.id === shiftSuggerito) || opzioni[0]).testo)}</p>`;
+}
+
+/**
+ * Cosa succede toccando il tasto, detto prima: se il turno è proprio quello
+ * chiesto il cambio si chiude subito, altrimenti parte una proposta. Lo usano
+ * il foglio e il menu dei turni, che lo ricalcola a ogni scelta.
+ */
+export function esitoProposta(request, turno) {
+  const chi = store.user(request.userId)?.nome || 'il collega';
+  if (combaciaEsatto(request, turno, store.shiftsById(), personaDi)) {
+    return {
+      diretto: true,
+      tasto: 'Accetta il cambio',
+      testo: `È proprio il cambio che ${esc(chi)} ha chiesto: accettando è fatto, senza aspettare la sua risposta. Poi uno dei due lo inserisce su UKG.`,
+    };
+  }
+  return {
+    diretto: false,
+    tasto: 'Invia proposta',
+    testo: 'Proponendo hai già detto sì: lo scambio è fatto quando accetta anche l\'altra persona.',
+  };
 }
 
 export function pubblica() {

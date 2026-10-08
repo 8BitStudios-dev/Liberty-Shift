@@ -181,3 +181,27 @@ test('la stima scatta solo se le due durate sono diverse', () => {
   assert.equal(durataDiversa({ turno_start: '14:30:00', turno_end: '20:00:00' }, { cedo_start: '15:00:00', cedo_end: '20:00:00' }, conPausa, undefined), false);
   assert.equal(durataDiversa({ turno_start: '14:30:00', turno_end: '20:00:00' }, { cedo_start: '15:00:00', cedo_end: '20:00:00' }), true);
 });
+
+test('un cambio accettato da chi risponde avvisa chi aveva chiesto, e solo una volta', () => {
+  // Martina risponde alla richiesta di Omar con proprio il turno che cercava.
+  const nuova = proposta({ accettata_da: [MARTINA, OMAR] });
+  assert.equal(messaggio('INSERT', nuova, null, MARTINA, nomi), null);
+  const dopo = proposta({ stato: 'ACCORDO', accettata_da: [MARTINA, OMAR] });
+  const m = messaggio('UPDATE', dopo, nuova, MARTINA, nomi);
+  assert.equal(m.a, OMAR);
+  assert.equal(m.title, 'Cambio accettato');
+  assert.match(m.body, /^Martina L\. ha accettato il tuo cambio .*Inseritelo su UKG: basta che lo faccia uno dei due\.$/);
+  // Una proposta normale resta una proposta.
+  assert.equal(messaggio('INSERT', proposta({ accettata_da: [MARTINA] }), null, MARTINA, nomi).title, 'Nuova proposta di cambio turno');
+});
+
+test('chi arriva secondo su un cambio già preso legge che l\'ha preso un altro', () => {
+  const prima = proposta();
+  const dopo = proposta({ stato: 'RIFIUTATA' });
+  // Chiusa dal database dopo il sì di un terzo collega.
+  const m = messaggio('UPDATE', dopo, prima, 'id-terzo', nomi, { altraScelta: true });
+  assert.equal(m.a, MARTINA);
+  assert.match(m.body, /l'ha già preso un altro collega/);
+  // Scelta da chi aveva chiesto: si dice com'era.
+  assert.match(messaggio('UPDATE', dopo, prima, OMAR, nomi, { altraScelta: true }).body, /ha scelto un'altra proposta/);
+});

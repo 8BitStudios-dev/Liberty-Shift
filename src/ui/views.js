@@ -655,7 +655,7 @@ export function corpoNotifiche(stato = statoNoto()) {
     ${raw(accensione)}
     <h3 class="pref-titolo">Cosa ricevere</h3>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Anche le richieste che puoi coprire', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che potresti coprire con i tuoi turni, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati.'))}
+      ${raw(opzione('compatibili', 'Anche le richieste che puoi coprire', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che potresti coprire con i tuoi turni, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati: è l\'unica eccezione, perché di base al server arrivano solo i turni che vuoi cambiare.'))}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Su questo telefono non ci sono turni nei prossimi giorni: importali da Sincronizza turni, altrimenti non riceverai avvisi.</p>'
     : '')}`;
@@ -682,6 +682,7 @@ export function consensoCompatibili() {
       <li>Li legge solo il server, per questo confronto.</li>
       <li><strong>Non li vedono i colleghi, e nemmeno gli admin.</strong></li>
       <li>Si aggiornano ogni volta che apri l'app.</li>
+      <li>È l'unica eccezione: senza questa scelta, al server arrivano solo i turni che vuoi cambiare.</li>
       <li>Puoi tornare a «solo le proposte dirette» quando vuoi: sul server vengono cancellati subito.</li>
     </ul>`;
 }

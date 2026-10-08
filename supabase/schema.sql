@@ -725,6 +725,17 @@ declare
 begin
   select r.cedo_data into cedo from public.richieste r where r.id = new.richiesta_id;
 
+  -- Le altre proposte sulla stessa richiesta. Quando accetta chi ha
+  -- pubblicato le chiude già il suo telefono; quando il cambio lo conclude
+  -- chi risponde (il turno era proprio quello chiesto) quel telefono non
+  -- può, perché non sono sue. Senza `motivo_decadenza`: per send-push è
+  -- "l'ha preso un altro collega", non un turno impegnato altrove.
+  update public.proposte q
+  set stato = 'RIFIUTATA'
+  where q.id <> new.id
+    and q.richiesta_id = new.richiesta_id
+    and q.stato = 'IN_ATTESA';
+
   update public.proposte q
   set stato = 'RIFIUTATA', motivo_decadenza = 'TURNO_IMPEGNATO'
   where q.id <> new.id

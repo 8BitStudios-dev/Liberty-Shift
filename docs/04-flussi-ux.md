@@ -139,7 +139,15 @@ si passa da dieci a cento richieste, e il motore la sa già calcolare.
 ## Proposta e accordo
 Il pulsante "Proponi uno scambio" compare **solo se hai davvero qualcosa da
 offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
-per l'accordo. Dopo l'accordo il riquadro dello scambio va per passi
+per l'accordo.
+
+**Il cambio che combacia non chiede un secondo sì.** Se il turno che offri è
+esattamente quello che la richiesta cerca (orario o fascia rispettati, nessun
+adattamento al contratto: `combaciaEsatto` in `engine.js`), il tasto diventa
+"Accetta il cambio" e lo scambio è concordato subito. Chi ha pubblicato riceve
+"Cambio accettato: inseritelo su UKG, basta che lo faccia uno dei due"; chi ha
+accettato legge un foglio "Cambio fatto" che gli dice la stessa cosa. Un
+orario adattato o qualche minuto di scarto restano una proposta normale. Dopo l'accordo il riquadro dello scambio va per passi
 (`passoAccordo` in `flows.js`):
 
 1. **Scambio concordato**: inseriscilo in UKG, poi tocca "Ho inserito il
