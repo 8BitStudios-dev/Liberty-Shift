@@ -15,6 +15,7 @@
 import { RULES, PREFERENZE, STATUS } from './rules.js';
 import { addDays } from './time.js';
 import { findMatches } from './engine.js';
+import { fasceDi } from './model.js';
 
 const ora = (t) => (t ? String(t).slice(0, 5) : null);
 
@@ -45,6 +46,24 @@ export function preferenzeDaCondividere(user) {
     if (user?.preferenze?.[p.key]) attive[p.key] = true;
   }
   return attive;
+}
+
+/**
+ * Il cambio conviene a chi lo riceve, secondo le sue preferenze?
+ *
+ * La notifica deve valere la pena di essere aperta: chi le riceveva per ogni
+ * richiesta compatibile si ritrovava bombardato. Conviene quando lasci un
+ * turno che eviti, oppure ne prendi uno che preferisci; mai se quello che
+ * prendi è tra quelli che eviti. Senza preferenze accese non conviene niente
+ * in particolare, e non arriva niente.
+ */
+export function cambioFavorevole(preferenze, lascia, prende) {
+  const attive = PREFERENZE.filter((p) => preferenze?.[p.key]);
+  const fl = fasceDi(lascia);
+  const fp = fasceDi(prende);
+  if (attive.some((p) => p.gruppo === 'evita' && fp.includes(p.fascia))) return false;
+  return attive.some((p) => p.gruppo === 'evita' && fl.includes(p.fascia))
+    || attive.some((p) => p.gruppo === 'preferisce' && fp.includes(p.fascia));
 }
 
 /**
@@ -128,18 +147,33 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
     calendariCompleti: true,
   };
 
+  const byId = Object.fromEntries(shifts.map((s) => [s.id, s]));
+  const preferenzeDi = Object.fromEntries(candidati.map((c) => [c.profilo.id, c.preferenze || {}]));
+  // Il collega lascia il turno che ha (`shiftOffertoId`) e prende quello
+  // dell'autore, adattato al suo contratto.
+  const conviene = (m) => {
+    const lascia = byId[m.shiftOffertoId];
+    const prende = m.adattatoControparte?.trasformato
+      ? { ...cedo, start: m.adattatoControparte.start, end: m.adattatoControparte.end }
+      : cedo;
+    return cambioFavorevole(preferenzeDi[m.userId], lascia, prende);
+  };
+
   const perPersona = new Map();
   for (const m of findMatches(richiesta, ctx)) {
-    // I match arrivano dal migliore: il primo di ogni persona è quello che le si mostra.
-    if (!perPersona.has(m.userId)) perPersona.set(m.userId, m);
+    // I match arrivano dal migliore: di ogni persona si tiene il primo che le
+    // conviene, e se nessuno le conviene il primo e basta.
+    const favorevole = conviene(m);
+    const prima = perPersona.get(m.userId);
+    if (!prima || (favorevole && !prima.favorevole)) perPersona.set(m.userId, { m, favorevole });
   }
-  const byId = Object.fromEntries(shifts.map((s) => [s.id, s]));
-  return [...perPersona.values()].map((m) => ({
+  return [...perPersona.values()].map(({ m, favorevole }) => ({
     userId: m.userId,
     score: m.score,
     tipo: m.cambio,
     // Il giorno in cui il collega dovrebbe lavorare, e il turno che ha già quel giorno.
     giorno: m.data,
     turno: byId[m.shiftOffertoId] || null,
+    favorevole,
   }));
 }

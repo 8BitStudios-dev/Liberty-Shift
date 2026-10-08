@@ -165,3 +165,34 @@ test('chi sceglie tutte le richieste compatibili le riceve anche con un punteggi
   const trovati = candidatiCompatibili({ riga, autore: persona('a', 'FT', 40), candidati, oggi: '2099-10-01' });
   assert.equal(trovati.length, 1);
 });
+
+test('la notifica arriva solo per un cambio che conviene secondo le preferenze', async () => {
+  const { cambioFavorevole } = await import('../src/core/compatibili.js');
+  const apertura = lavora(D, '08:00', '17:00');
+  const chiusura = lavora(D, '12:00', '21:00');
+  const centrale = lavora(D, '10:00', '19:00');
+  // Lasci una chiusura che eviti: conviene.
+  assert.equal(cambioFavorevole({ evitaChiusure: true }, chiusura, centrale), true);
+  // Prendi un'apertura che preferisci: conviene.
+  assert.equal(cambioFavorevole({ preferisceAperture: true }, centrale, apertura), true);
+  // Prendi una chiusura che eviti: mai, anche se lasci qualcosa che eviti.
+  assert.equal(cambioFavorevole({ evitaChiusure: true, evitaAperture: true }, apertura, chiusura), false);
+  // Senza preferenze accese non conviene niente in particolare.
+  assert.equal(cambioFavorevole({}, chiusura, apertura), false);
+});
+
+test('fra i compatibili, il server segna chi ci guadagna', () => {
+  // Carla lascia 12–21 e cerca di finire entro le 19. Anna ha 09:30–18:30 ed
+  // evita le aperture: prenderebbe una chiusura, che non evita, ma non
+  // lascerebbe niente che evita. Bruno evita le mattine e ha 09:30–18:30.
+  const r = candidatiCompatibili({
+    riga: riga(), autore, oggi: OGGI,
+    candidati: [
+      { profilo: profilo('anna', 'Anna'), turni: [lavora(D, '09:30:00', '18:30:00')], preferenze: { evitaAperture: true } },
+      { profilo: profilo('bruno', 'Bruno'), turni: [lavora(D, '09:30:00', '18:30:00')], preferenze: { evitaMattine: true } },
+      { profilo: profilo('ciro', 'Ciro'), turni: [lavora(D, '09:30:00', '18:30:00')], preferenze: { preferisceChiusure: true } },
+    ],
+  });
+  const per = Object.fromEntries(r.map((x) => [x.userId, x.favorevole]));
+  assert.deepEqual(per, { anna: false, bruno: true, ciro: true });
+});

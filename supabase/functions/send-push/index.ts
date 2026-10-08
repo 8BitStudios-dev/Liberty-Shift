@@ -362,13 +362,15 @@ async function avvisaCompatibili(riga: RigaRichiesta) {
   const notificati: string[] = [];
   let inviate = 0;
 
-  for (const t of trovati) {
+  // Solo i cambi che convengono secondo le preferenze: avvisare per ogni
+  // richiesta compatibile era un bombardamento (vedi `cambioFavorevole`).
+  for (const t of trovati.filter((x: { favorevole: boolean }) => x.favorevole)) {
     // Cambio orario: il tuo turno quel giorno. Cambio OFF: il giorno che
     // l'autore vuole libero lo lavoreresti tu, e lui lavorerebbe il tuo.
     const body = riga.tipo === 'OFF'
       ? `${nomeAutore} vuole libero ${formatData(riga.cedo_data)} e in cambio lavorerebbe ${formatData(t.giorno)}. Quel giorno tu non lavori: potete scambiarvi le due giornate.`
       : `${nomeAutore} cerca un cambio orario per ${formatData(riga.cedo_data)}: il tuo turno dalle ${t.turno?.start} alle ${t.turno?.end} potrebbe andare bene.`;
-    const esito = await invia(t.userId, { title: 'Richiesta compatibile con i tuoi turni', body, url: '#/aiuta' });
+    const esito = await invia(t.userId, { title: 'Un cambio che ti conviene', body, url: '#/aiuta' });
     if (esito.inviate || esito.rimosse) notificati.push(t.userId);
     inviate += esito.inviate;
   }

@@ -605,6 +605,11 @@ con `type: RICHIESTA`; la funzione usa il motore vero (`core/`, copia generata
 da `npm run funzioni`) per decidere chi avvisare. Dopo ogni modifica a
 `src/core/` va rilanciato `npm run funzioni` e **ripubblicata la funzione**: i
 test verificano che le copie siano identiche, non che siano online.
+Fra i compatibili si avvisa **solo chi ci guadagna** secondo le sue
+preferenze (`cambioFavorevole` in `compatibili.js`): lascerebbe un turno che
+evita, oppure prenderebbe uno che preferisce, e mai uno che evita. Avvisare
+per ogni richiesta compatibile era un bombardamento. Chi non ha preferenze
+accese non riceve questi avvisi. Il titolo è "Un cambio che ti conviene".
 Limiti noti: il server non conosce le preferenze dell'autore, i suoi altri turni
 e le richieste altrui, quindi in casi al limite il telefono può rispondere
 diversamente. Un calendario non aggiornato da 14 giorni non genera avvisi.

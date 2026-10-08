@@ -619,7 +619,7 @@ function scorciatoieProfilo(me) {
 /** Lo stato delle notifiche in due parole, per il pulsante. */
 export function statoNotificheBreve(stato = statoNoto()) {
   switch (stato) {
-    case STATO.ATTIVE: return store.modoNotifiche() === 'compatibili' ? 'tutte le compatibili' : 'solo personali';
+    case STATO.ATTIVE: return store.modoNotifiche() === 'compatibili' ? 'cambi che convengono' : 'solo personali';
     case STATO.DA_ATTIVARE: return 'spente';
     case STATO.BLOCCATE: return 'bloccate';
     case STATO.DA_INSTALLARE: return 'dalla Home';
@@ -655,7 +655,7 @@ export function corpoNotifiche(stato = statoNoto()) {
     ${raw(accensione)}
     <h3 class="pref-titolo">Cosa ricevere</h3>
       ${raw(opzione('dirette', 'Solo le richieste personali', 'Ricevi una notifica quando qualcuno ti propone uno scambio o risponde a una tua proposta.'))}
-      ${raw(opzione('compatibili', 'Anche le richieste che puoi coprire', 'Ricevi una notifica ogni volta che un collega pubblica una richiesta che potresti coprire con i tuoi turni, qualunque sia la percentuale. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati: è l\'unica eccezione, perché di base al server arrivano solo i turni che vuoi cambiare.'))}
+      ${raw(opzione('compatibili', 'Anche i cambi che ti convengono', 'Ricevi una notifica quando un collega pubblica una richiesta che puoi coprire e che ti conviene secondo le tue preferenze: lasceresti un turno che eviti, oppure prenderesti uno che preferisci. Mai per un turno che eviti. Per farlo i tuoi turni dei prossimi 28 giorni vanno al server cifrati: è l\'unica eccezione, perché di base al server arrivano solo i turni che vuoi cambiare.'))}
       ${raw(modo === 'compatibili' && !turniQui
     ? '<p class="avviso-box">Su questo telefono non ci sono turni nei prossimi giorni: importali da Sincronizza turni, altrimenti non riceverai avvisi.</p>'
     : '')}`;
@@ -669,8 +669,11 @@ export function corpoNotifiche(stato = statoNoto()) {
 export function consensoCompatibili() {
   return html`
     <p>
-      Ti avviso quando un collega pubblica una richiesta che potresti coprire
-      con i tuoi turni. Se non lo attivi, ricevi solo le proposte fatte a te.
+      Ti avviso quando un collega pubblica una richiesta che puoi coprire con
+      i tuoi turni e che ti conviene secondo le tue preferenze: lasceresti un
+      turno che eviti, oppure prenderesti uno che preferisci. Per le altre
+      richieste niente notifica, così non ne arrivano troppe. Se non lo
+      attivi, ricevi solo le proposte fatte a te.
     </p>
     <p>
       Quando l'app è chiusa il telefono non può fare il confronto, quindi lo

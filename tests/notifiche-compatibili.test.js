@@ -157,14 +157,14 @@ test('la scelta compare a notifiche accese, e prima invita ad accenderle', () =>
 
   const dirette = corpoNotifiche(STATO.ATTIVE);
   assert.match(dirette, /Solo le richieste personali/);
-  assert.match(dirette, /Anche le richieste che puoi coprire/);
+  assert.match(dirette, /Anche i cambi che ti convengono/);
   assert.match(dirette, /value="dirette"\s+checked/);
   assert.equal(statoNotificheBreve(STATO.ATTIVE), 'solo personali');
 
   store.impostaModoNotifiche('compatibili');
   const compatibili = corpoNotifiche(STATO.ATTIVE);
   assert.match(compatibili, /value="compatibili"\s+checked/);
-  assert.equal(statoNotificheBreve(STATO.ATTIVE), 'tutte le compatibili');
+  assert.equal(statoNotificheBreve(STATO.ATTIVE), 'cambi che convengono');
   assert.doesNotMatch(compatibili, /\[object Object\]/);
 });
 

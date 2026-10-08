@@ -687,7 +687,7 @@ const AZIONI = {
       return render();
     }
     render();
-    sheet('Notifiche per le richieste che puoi coprire', V.consensoCompatibili(), {
+    sheet('Notifiche per i cambi che ti convengono', V.consensoCompatibili(), {
       azioni: '<button class="btn primario largo" data-act="consenso-compatibili">Acconsento e attiva</button>'
         + '<button class="btn secondario largo" data-chiudi>Resta com\'è</button>',
     });
@@ -696,7 +696,7 @@ const AZIONI = {
   'consenso-compatibili': (_, el) => {
     el.closest('.sheet-backdrop').querySelector('[data-chiudi]').click();
     const { errori } = store.impostaModoNotifiche('compatibili');
-    toast(errori ? errori[0] : 'Fatto: ti avviso per ogni richiesta che puoi coprire');
+    toast(errori ? errori[0] : 'Fatto: ti avviso quando un cambio ti conviene');
     render();
   },
 
