@@ -78,3 +78,20 @@ test('al server il cambio diretto sale come proposta già accettata, poi l\'acco
   assert.deepEqual(crea.dati.accettata_da.sort(), ['srv-giulia', 'u_martina'].sort());
   assert.equal(accordo.dati.patch.stato, 'ACCORDO');
 });
+
+test('le proposte si leggono dalla più vicina a quello chiesto, a parità dalla prima arrivata', async () => {
+  const { ordinaProposte } = await import('../src/core/engine.js');
+  const turni = {
+    cedo: { id: 'cedo', userId: 'u_martina', data: '2030-10-12', tipo: 'WORK', start: '11:00', end: '20:00' },
+    esatto: { id: 'esatto', userId: 'u_a', data: '2030-10-12', tipo: 'WORK', start: '10:00', end: '19:00' },
+    vicino: { id: 'vicino', userId: 'u_b', data: '2030-10-12', tipo: 'WORK', start: '10:30', end: '19:30' },
+    esatto2: { id: 'esatto2', userId: 'u_c', data: '2030-10-12', tipo: 'WORK', start: '10:00', end: '19:00' },
+  };
+  const richiesta = { cedo: { shiftId: 'cedo' }, cerco: { giorni: ['2030-10-12'], mode: 'SPECIFIC', start: '10:00', end: '19:00' } };
+  const proposte = [
+    { id: 'p-vicino', shiftOffertoId: 'vicino', createdAt: '2030-10-01T08:00:00Z' },
+    { id: 'p-esatto-tardi', shiftOffertoId: 'esatto2', createdAt: '2030-10-01T10:00:00Z' },
+    { id: 'p-esatto', shiftOffertoId: 'esatto', createdAt: '2030-10-01T09:00:00Z' },
+  ];
+  assert.deepEqual(ordinaProposte(richiesta, proposte, turni).map((p) => p.id), ['p-esatto', 'p-esatto-tardi', 'p-vicino']);
+});

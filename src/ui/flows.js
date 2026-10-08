@@ -5,7 +5,7 @@ import { html, raw, toast, esc } from './dom.js';
 import { store } from '../core/store.js';
 import {
   findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
-  opportunitaPerMe, combaciaEsatto,
+  opportunitaPerMe, combaciaEsatto, ordinaProposte,
 } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
 import {
@@ -660,8 +660,13 @@ export function dettaglio(params) {
   if (!r) return vuoto('Richiesta non trovata', 'Forse è stata chiusa o è scaduta.');
   const autore = store.user(r.userId);
   const mio = r.userId === store.state.currentUserId;
-  const proposte = store.proposteDi(r.id).filter((p) => p.status !== 'RIFIUTATA');
+  const tutte = store.proposteDi(r.id).filter((p) => p.status !== 'RIFIUTATA');
+  const proposte = mio ? ordinaProposte(r, tutte, store.shiftsById(), personaDi) : tutte;
   const me = store.state.currentUserId;
+  // Con più proposte in attesa la prima è quella da guardare: lo si dice,
+  // perché accettarne una chiude le altre.
+  const inAttesa = proposte.filter((p) => p.status === 'IN_ATTESA');
+  const primaScelta = mio && inAttesa.length > 1 ? inAttesa[0].id : null;
 
   const blocchiProposte = proposte.map((p) => {
     const da = store.user(p.daUserId);
@@ -696,6 +701,7 @@ export function dettaglio(params) {
           <span class="avatar">${iniziali(da)}</span>
           <div><strong>${nomeUtente(da)}</strong><div class="meta">ha proposto uno scambio</div></div>
         </header>
+        ${raw(p.id === primaScelta ? '<p class="tag">La più vicina a quello che hai chiesto</p>' : '')}
         <p>${p.aUserId === me ? 'Ti darebbe' : p.daUserId === me ? 'Offri' : 'Offre'} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
         ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
         <div class="accettazioni">${raw(p.accettataDa.map((u) => `<span class="tag ok">${nomeUtente(store.user(u))} ha accettato</span>`).join(''))}</div>
@@ -750,6 +756,7 @@ export function dettaglio(params) {
     ? `<p class="avviso"><span class="icona-in-riga">${icona('admin', { px: 16 })}</span> ${r.status === STATUS.RIMOSSA ? 'Rimossa' : 'Chiusa'} da un admin: “${r.motivoAdmin}”</p>`
     : '')}
     </article>
+    ${raw(primaScelta ? `<p class="testo-tenue">Hai ${inAttesa.length} proposte, dalla più vicina a quello che hai chiesto. Quando ne accetti una, le altre si chiudono e chi le aveva fatte riceve un avviso.</p>` : '')}
     ${raw(blocchiProposte)}
     ${raw(azioneAutore)}
     ${raw(azioniAdmin)}`;

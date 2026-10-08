@@ -493,6 +493,25 @@ export function turnoOfferibile(request, shift, shifts, shiftsById, trova = null
 }
 
 /**
+ * Le proposte su una richiesta, nell'ordine in cui conviene leggerle: prima
+ * quella più vicina a quello che si è chiesto, a parità la prima arrivata.
+ * Chi ne riceve tre di solito sceglie così; l'app le metteva nell'ordine in
+ * cui scendevano dal server, che non vuol dire niente.
+ */
+export function ordinaProposte(request, proposte, shiftsById, trova = null) {
+  const mioCedo = shiftsById[request.cedo.shiftId];
+  const vicinanza = (p) => {
+    const offerto = shiftsById[p.shiftOffertoId];
+    if (!offerto || !mioCedo) return 0;
+    return satisfies(request.cerco, turnoAdattato(offerto, mioCedo, trova)).score;
+  };
+  return proposte
+    .map((p) => ({ p, v: vicinanza(p) }))
+    .sort((a, b) => b.v - a.v || String(a.p.createdAt).localeCompare(String(b.p.createdAt)))
+    .map((x) => x.p);
+}
+
+/**
  * Il turno offerto è proprio quello che la richiesta chiede?
  *
  * Allora chi risponde non propone: accetta, e il cambio è fatto. Chi ha
