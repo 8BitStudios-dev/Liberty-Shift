@@ -24,6 +24,7 @@ import { RULES } from './core/rules.js';
 import { chiHaiAiutato } from './core/karma.js';
 import { decifra } from './core/cifratura.js';
 import { oreRetribuite } from './core/model.js';
+import { addDays } from './core/time.js';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -164,7 +165,9 @@ function messaggio(
       body: `${nomi[record.da_user_id]} ha ritirato la proposta di scambio per il turno di ${giorno}.`,
     };
   }
-  if (type === 'INSERT') {
+  // Una proposta chiusa che chi l'aveva fatta riapre è nuova per chi la riceve.
+  const riaperta = type === 'UPDATE' && old?.stato === 'RIFIUTATA' && record.stato === 'IN_ATTESA';
+  if (type === 'INSERT' || riaperta) {
     if (autore === record.a_user_id) return null;
     // Un cambio che combacia con la richiesta nasce già accettato da tutti e
     // due (vedi `combaciaEsatto`): la notifica giusta è quella dell'accordo,
@@ -186,6 +189,19 @@ function messaggio(
       a: record.a_user_id,
       title: 'Proposta non scelta',
       body: `${nomi[record.da_user_id]} ha scelto un altro scambio per il turno di ${giorno}: la proposta che ti aveva fatto non è più valida.`,
+    };
+  }
+  // La richiesta su cui si era proposto è stata chiusa dal database: chi
+  // l'aveva pubblicata ha già scambiato quel turno con un'altra richiesta
+  // (trigger `turno_impegnato`). Lo si dice a chi aveva proposto, che
+  // altrimenti aspetterebbe una risposta che non arriverà.
+  if (type === 'UPDATE' && record.stato === 'RIFIUTATA' && old?.stato !== 'RIFIUTATA'
+    && record.motivo_decadenza === 'TURNO_CEDUTO') {
+    if (autore === record.da_user_id) return null;
+    return {
+      a: record.da_user_id,
+      title: 'Proposta non più valida',
+      body: `${nomi[record.a_user_id]} ha già scambiato quel turno con un altro collega: la tua proposta per il turno di ${giorno} non è più valida.`,
     };
   }
   // Uno scambio concordato annullato da una delle due parti prima che UKG lo
@@ -376,19 +392,28 @@ async function avvisaCompatibili(riga: RigaRichiesta, esclusi: Set<string> = new
   const limite = new Date(Date.now() - RULES.notifiche.giorniFreschezza * 86400000).toISOString();
 
   const righe = await leggi(
-    `notifiche_preferenze?modo=eq.compatibili&user_id=neq.${riga.autore_id}&aggiornato_il=gte.${limite}&select=user_id,dati_cifrati`,
+    `notifiche_preferenze?modo=eq.compatibili&user_id=neq.${riga.autore_id}&aggiornato_il=gte.${limite}&select=user_id,dati_cifrati,aggiornato_il`,
+  );
+  // L'ultimo giorno che il telefono ha condiviso: i turni partono dal giorno
+  // dell'invio e coprono `giorniCondivisi` giorni. Oltre, il calendario non è
+  // vuoto, è sconosciuto (vedi `candidatiCompatibili`).
+  const finoA = (inviato: string) => addDays(
+    new Date(inviato).toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' }),
+    RULES.notifiche.giorniCondivisi - 1,
   );
   // I turni arrivano cifrati: si decifrano qui, solo in memoria e solo per
   // il confronto. Una riga che non si decifra (chiave cambiata, riga
   // manomessa) si salta: un avviso perso è meglio di uno sbagliato.
   const chiave = segreti?.turni_chiave_privata;
   if (!chiave) return { notificati: [], motivo: 'manca la chiave dei turni in Vault' };
-  const scelte = (await Promise.all(righe.map(async (r: { user_id: string; dati_cifrati: string | null }) => {
+  const scelte = (await Promise.all(righe.map(async (r: { user_id: string; dati_cifrati: string | null; aggiornato_il: string }) => {
     if (!r.dati_cifrati) return null;
     try {
       const { turni, preferenze, favori } = await decifra(r.dati_cifrati, chiave);
       // Chi ha mandato i turni prima che esistesse la scelta non l'ha spenta.
-      return { user_id: r.user_id, turni, preferenze, favori: favori !== false };
+      return {
+        user_id: r.user_id, turni, preferenze, favori: favori !== false, finoA: finoA(r.aggiornato_il),
+      };
     } catch (err) {
       console.error('send-push: riga non decifrabile', r.user_id, (err as Error).message);
       return null;
@@ -409,9 +434,10 @@ async function avvisaCompatibili(riga: RigaRichiesta, esclusi: Set<string> = new
   for (const d of righeDisponibilita) (disponibilita[d.user_id] ||= {})[d.settimana] = d.giorni;
 
   const candidati = scelte
-    .map((s: { user_id: string; turni: unknown[]; preferenze: Record<string, boolean> }) => ({
+    .map((s: { user_id: string; turni: unknown[]; preferenze: Record<string, boolean>; finoA: string }) => ({
       profilo: profili.find((p: { id: string }) => p.id === s.user_id),
       turni: s.turni,
+      finoA: s.finoA,
       preferenze: s.preferenze,
       disponibilita: disponibilita[s.user_id] || {},
     }))

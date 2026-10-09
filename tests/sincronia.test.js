@@ -542,6 +542,68 @@ test('accettando, la proposta parte per prima e tutto l\'accordo è un gruppo so
   assert.ok(ops.some(([t, id]) => t === 'richiesta.aggiorna' && id === 'rq-mia'));
 });
 
+// --- riproporre e turni già scambiati ---------------------------------------
+
+test('riproporre dopo un no riapre la stessa proposta invece di crearne una che il server rifiuta', () => {
+  const state = propostaMiaAdAnna();
+  globalThis.fetch = async () => { throw new Error('senza rete'); };
+  store.request('rq-anna').cerco = { giorni: ['2026-10-20'], mode: 'SPECIFIC', start: '10:00', end: '19:00' };
+  Object.assign(state.proposals.find((p) => p.id === 'pr-mia'), {
+    status: 'RIFIUTATA', motivoRifiuto: 'Ho un impegno', annullataIl: '2026-10-03T10:00:00Z',
+  });
+  state.coda = [];
+
+  const { proposta, errori } = store.proponiScambio({ requestId: 'rq-anna', shiftOffertoId: 't-io', messaggio: 'Riprovo' });
+  assert.equal(errori, undefined, errori?.join(' '));
+  assert.equal(proposta.id, 'pr-mia', 'sul server è la stessa riga');
+  assert.equal(state.proposals.filter((p) => p.requestId === 'rq-anna').length, 1);
+  assert.equal(proposta.status, 'IN_ATTESA');
+  assert.equal(proposta.motivoRifiuto, undefined);
+
+  const op = state.coda.find((x) => x.dati.id === 'pr-mia');
+  assert.equal(op.tipo, 'proposta.aggiorna', 'una creazione tornerebbe indietro con 409, data per riuscita');
+  assert.equal(op.dati.patch.stato, 'IN_ATTESA');
+  assert.equal(op.dati.patch.messaggio, 'Riprovo');
+  for (const campo of ['motivo_rifiuto', 'motivo_decadenza', 'annullata_il', 'confermata_il', 'promemoria_il']) {
+    assert.equal(op.dati.patch[campo], null, `${campo} resta dalla volta prima`);
+  }
+  assert.equal(op.dati.patch.richiesta_id, undefined);
+  assert.ok(!state.coda.some((x) => x.tipo === 'proposta.crea'));
+});
+
+test('un accordo chiude l\'altra mia richiesta aperta sullo stesso turno', () => {
+  const state = statoIscritto();
+  const me = state.currentUserId;
+  globalThis.fetch = async () => { throw new Error('senza rete'); };
+  state.users.push({ id: 'u-anna', nome: 'Anna', cognomeIniziale: 'V', contratto: 'PT', preferenze: {}, disponibilita: {} });
+  state.shifts.push({ id: 't-mio', userId: me, data: '2026-10-20', tipo: 'WORK', start: '12:00', end: '21:00' });
+  // Lo stesso turno in due richieste: un cambio orario e un cambio OFF.
+  for (const [id, tipo] of [['rq-orario', 'ORARIO'], ['rq-off', 'OFF']]) {
+    state.requests.push({
+      id, userId: me, tipo, status: 'IN_ATTESA', createdAt: '2026-10-01T10:00:00Z', daServer: true,
+      prioritaFinoA: null, cedo: { shiftId: 't-mio', flessibile: false }, cerco: { giorni: ['2026-10-20'] },
+    });
+  }
+  // Anna offre il suo turno del 20 sul cambio orario e quello del 18 sul cambio OFF.
+  state.shifts.push(
+    { id: 't-anna-20', userId: 'u-anna', data: '2026-10-20', tipo: 'WORK', start: '09:30', end: '18:30' },
+    { id: 't-anna-18', userId: 'u-anna', data: '2026-10-18', tipo: 'WORK', start: '09:30', end: '18:30' },
+  );
+  for (const [id, requestId, shiftOffertoId] of [['pr-orario', 'rq-orario', 't-anna-20'], ['pr-off', 'rq-off', 't-anna-18']]) {
+    state.proposals.push({
+      id, requestId, daUserId: 'u-anna', aUserId: me, shiftOffertoId, messaggio: '',
+      accettataDa: ['u-anna'], status: 'IN_ATTESA', createdAt: '2026-10-02T10:00:00Z', cambioInserito: false, daServer: true,
+    });
+  }
+
+  store.accetta('pr-orario');
+  assert.equal(store.request('rq-orario').status, 'ACCORDO');
+  assert.equal(store.request('rq-off').status, 'CHIUSA', 'il turno è già scambiato: un secondo accordo non deve poter nascere');
+  const superata = state.proposals.find((p) => p.id === 'pr-off');
+  assert.equal(superata.status, 'RIFIUTATA');
+  assert.equal(superata.motivoDecadenza, 'TURNO_CEDUTO');
+});
+
 test('un turno importato dal calendario resta giusto anche dopo la discesa successiva', async () => {
   // Il giorno di una mia proposta concordata, scesa dal server su un telefono
   // che quel giorno non aveva ancora nessun turno: nasce il turno "del
