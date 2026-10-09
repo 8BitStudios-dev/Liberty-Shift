@@ -2,7 +2,7 @@ import { html, raw, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno, testoPromemoria, iconaTipo, formPreferenze, contaPreferenze,
+  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
@@ -1249,7 +1249,7 @@ function rigaMiaRichiesta(r) {
     <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
       ${raw(segnoCambio('richiesta', 15))}
       <div>
-        <strong>${raw(iconaTipo(r.tipo))} ${r.tipo === TIPO_CAMBIO.OFF ? 'Cambio OFF' : 'Cambio orario'}</strong>
+        <strong>${raw(etichettaTipo(r.tipo, r.tipo === TIPO_CAMBIO.OFF ? 'Cambio OFF' : 'Cambio orario', 15))}</strong>
         <div class="meta">${cosa}</div>
         <div class="meta">${raw(badgeStato(r.status))}</div>
       </div>

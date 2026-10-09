@@ -21,6 +21,15 @@ export function iconaTipo(tipo, px = 14) {
   return `<span class="icona-in-riga">${icona(ICONA_TIPO[tipo] || 'orario', { px })}</span>`;
 }
 
+/**
+ * Il tipo di cambio come pillola colorata: la prima cosa che si deve leggere
+ * in una scheda. Orario e OFF hanno un colore ciascuno, diverso da quelli già
+ * presi (blu e verde dei due lati, viola dei turni tuoi, rosso degli errori).
+ */
+export function etichettaTipo(tipo, testo, px = 16) {
+  return `<span class="tipo-etichetta" data-tipo="${esc(tipo)}">${iconaTipo(tipo, px)} ${esc(testo)}</span>`;
+}
+
 export function nomeUtente(u) {
   return u ? `${u.nome} ${u.cognomeIniziale}.` : '—';
 }
@@ -103,7 +112,7 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } =
 
   const lati = (sinistra, destra) => html`
     <div class="coppia ${compatto ? 'compatta' : ''}">
-      <div class="tipo-cambio">${raw(iconaTipo(request.tipo))} ${meta.label}</div>
+      <div class="tipo-cambio">${raw(etichettaTipo(request.tipo, meta.label))}</div>
       <div class="lati">
         <div class="lato cedo">${raw(sinistra)}</div>
         <div class="freccia">⇄</div>
@@ -238,7 +247,7 @@ export function cardRichiesta(request, giorno = null) {
       <span class="riga-testo">
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
-          <span class="tipo-pill">${raw(iconaTipo(request.tipo, 13))} ${ctx ? ctx.verbo : meta.breve}</span>
+          <span class="tipo-pill" data-tipo="${request.tipo}">${raw(iconaTipo(request.tipo, 13))} ${ctx ? ctx.verbo : meta.breve}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
         ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}

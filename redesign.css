@@ -56,6 +56,8 @@
   --prendo-tenue: #e4f6ee;
   /* Il cambio orario ha un colore suo: ha un giorno solo, non lascia né offre. */
   --orario: #7a45d6;
+  /* Il tipo di cambio: fucsia per OFF (l'orario usa --orario). */
+  --tipo-off: #b02a78;
   /* Nome storico di --prendo, ancora usato da styles.css. */
   --verde: var(--prendo);
   --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
@@ -125,6 +127,7 @@
     --prendo: #45d19a;
     --prendo-tenue: #12302a;
     --orario: #b496ff;
+    --tipo-off: #ff8fcf;
     --rosso: #ff7b80;
     --ambra: #ffb066;
     --oro: #e8c04c;
@@ -165,6 +168,7 @@
   --prendo: #45d19a;
   --prendo-tenue: #12302a;
   --orario: #b496ff;
+  --tipo-off: #ff8fcf;
   --rosso: #ff7b80;
   --ambra: #ffb066;
   --oro: #e8c04c;
@@ -326,6 +330,19 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   display: flex; align-items: center; gap: 6px;
 }
 .titolo-gruppo { display: flex; align-items: center; gap: 8px; }
+/* La pillola del tipo di cambio: tono su tono, come i tag. Il colore passa da
+   --tipo, così pillola piccola e grande non possono divergere. */
+.tipo-etichetta[data-tipo="ORARIO"], .tipo-pill[data-tipo="ORARIO"] { --tipo: var(--orario); }
+.tipo-etichetta[data-tipo="OFF"], .tipo-pill[data-tipo="OFF"] { --tipo: var(--tipo-off); }
+.tipo-etichetta, .tipo-pill[data-tipo] {
+  color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent);
+}
+.tipo-etichetta {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 700; letter-spacing: 0;
+  padding: 4px 11px; border-radius: var(--raggio-pill);
+}
+.tipo-pill[data-tipo] { font-weight: 600; }
 
 .scambio-secco > div { font-size: 15px; padding: 8px 0; border-bottom: 1px solid var(--filetto); }
 .scambio-secco > div:last-child { border-bottom: 0; }
