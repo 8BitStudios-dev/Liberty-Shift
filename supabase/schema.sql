@@ -639,8 +639,11 @@ declare
 begin
   -- La conferma di UKG vista da un telefono avvisa l'altra parte: passa anche
   -- se lo stato non cambia, una volta sola (da vuota a piena).
+  -- Una proposta chiusa che chi l'aveva fatta riapre (vedi `proponiScambio`)
+  -- è una proposta nuova per chi la riceve, e passa come tale.
   if tg_op = 'UPDATE'
     and not (old.confermata_il is null and new.confermata_il is not null)
+    and not (old.stato = 'RIFIUTATA' and new.stato = 'IN_ATTESA')
     and (
       new.stato is not distinct from old.stato
       or new.stato not in ('ACCORDO', 'RIFIUTATA')
@@ -722,7 +725,7 @@ create or replace trigger notifica_conferma
 alter table public.proposte add column if not exists motivo_decadenza text;
 alter table public.proposte drop constraint if exists proposte_motivo_decadenza_check;
 alter table public.proposte add constraint proposte_motivo_decadenza_check
-  check (motivo_decadenza is null or motivo_decadenza = 'TURNO_IMPEGNATO');
+  check (motivo_decadenza is null or motivo_decadenza in ('TURNO_IMPEGNATO', 'TURNO_CEDUTO'));
 
 create or replace function public.turno_impegnato() returns trigger
 language plpgsql security definer set search_path = '' as $$
@@ -751,6 +754,28 @@ begin
       (q.da_user_id = new.da_user_id and q.turno_data = new.turno_data)
       or (q.da_user_id = new.a_user_id and q.turno_data = cedo)
     );
+
+  -- Lo stesso turno in un'altra richiesta aperta: quella di chi ha pubblicato
+  -- (un cambio orario e un cambio OFF sullo stesso giorno sono due righe) o
+  -- quella con cui chi ha proposto cercava di cedere il turno che ha appena
+  -- dato. Restava in bacheca e poteva chiudere un secondo accordo sullo
+  -- stesso turno. Si chiude, e le proposte che aveva ricevuto decadono con
+  -- `TURNO_CEDUTO`: per send-push "quel turno l'ha già scambiato".
+  with superate as (
+    update public.richieste r
+    set stato = 'CHIUSA', chiusa_il = now()
+    where r.id <> new.richiesta_id
+      and r.stato in ('APERTA', 'PROPOSTA', 'IN_ATTESA')
+      and (
+        (r.autore_id = new.a_user_id and r.cedo_data = cedo)
+        or (r.autore_id = new.da_user_id and r.cedo_data = new.turno_data)
+      )
+    returning r.id
+  )
+  update public.proposte q
+  set stato = 'RIFIUTATA', motivo_decadenza = 'TURNO_CEDUTO'
+  where q.richiesta_id in (select id from superate)
+    and q.stato = 'IN_ATTESA';
   return new;
 end $$;
 
@@ -916,10 +941,13 @@ create policy "ognuno gestisce le proprie preferenze di notifica"
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
--- Quando nasce una richiesta, se qualcuno ha scelto di essere avvisato la
--- funzione `send-push` la confronta con i calendari di chi l'ha scelto. Il
--- controllo `exists` risparmia la chiamata finché nessuno l'ha acceso. Come per
--- le proposte, un guasto qui non deve impedire di pubblicare.
+-- Quando nasce una richiesta la funzione `send-push` cerca chi aveva già
+-- chiesto proprio quel cambio (le richieste speculari, per chiunque abbia le
+-- notifiche accese) e la confronta con i calendari di chi ha scelto le
+-- compatibili. Il controllo `exists` risparmia la chiamata finché nessun altro
+-- ha un dispositivo iscritto: guardare solo chi ha scelto le compatibili
+-- spegneva anche gli avvisi speculari, che non ne hanno bisogno. Come per le
+-- proposte, un guasto qui non deve impedire di pubblicare.
 create or replace function public.notifica_richiesta() returns trigger
 language plpgsql security definer set search_path = '' as $$
 declare
@@ -928,7 +956,7 @@ begin
   if new.stato <> 'APERTA' then
     return new;
   end if;
-  if not exists (select 1 from public.notifiche_preferenze where modo = 'compatibili') then
+  if not exists (select 1 from public.push_subscriptions where user_id <> new.autore_id) then
     return new;
   end if;
 
@@ -1189,9 +1217,14 @@ begin
     if autore is null or aiutante is null or aiutante = autore then
       return new;
     end if;
+    -- Una proposta annullata e poi riaperta (vedi `proponiScambio`) torna in
+    -- accordo con lo stesso id: la sua riga era segnata come annullata, e
+    -- senza rimetterla in piedi la pulizia avrebbe tolto un aiuto vero.
     insert into public.aiuti (proposta_id, aiutante_id, aiutato_id)
     values (new.id, aiutante, autore)
-    on conflict (proposta_id) do nothing;
+    on conflict (proposta_id) do update
+      set annullato_il = null, quando = now()
+      where aiuti.annullato_il is not null;
   elsif tg_op = 'UPDATE' and old.stato = 'ACCORDO' then
     update public.aiuti set annullato_il = now()
     where proposta_id = new.id and annullato_il is null;

@@ -462,6 +462,15 @@ server il turno è la coppia (persona, giorno). Le proposte chiuse così hanno
 ricevute "Proposta non scelta". La funzione è `security definer` perché tocca
 proposte di altre persone, che chi accetta non potrebbe modificare.
 
+Lo stesso turno può stare anche in un'altra richiesta aperta: un cambio
+orario e un cambio OFF sullo stesso giorno dell'autore, o una richiesta con
+cui chi ha proposto cercava di cedere il turno che ha appena dato. Il trigger
+le chiude (`CHIUSA`) e fa decadere le proposte che avevano ricevuto con
+`motivo_decadenza = 'TURNO_CEDUTO'`: `send-push` scrive a chi le aveva fatte
+"Proposta non più valida". Senza, quella richiesta poteva chiudere un secondo
+accordo sullo stesso turno. Un accordo annullato dopo non le riapre: chi le
+aveva pubblicate le ripubblica.
+
 Chiude anche le altre proposte in attesa **sulla stessa richiesta**, senza
 `motivo_decadenza`. Serve al cambio diretto (il turno combacia con quello
 chiesto): lì l'accordo lo scrive chi risponde, che quelle proposte non può
@@ -629,7 +638,16 @@ Prima ancora, `send-push` avvisa **chi aveva già chiesto proprio quel
 cambio** (`richiesteSpeculari`): una richiesta aperta a specchio di quella
 nuova ("C'è il cambio che cerchi"). Non serve nessun calendario, le due
 richieste sono già in bacheca: vale per chiunque abbia le notifiche accese.
-Chi riceve questo avviso non riceve anche l'altro.
+Chi riceve questo avviso non riceve anche l'altro. Per questo il trigger
+chiama `send-push` appena un collega ha un dispositivo iscritto, non solo
+quando qualcuno ha scelto le compatibili: con quella condizione bastava che
+l'unica persona con le compatibili le spegnesse per fermare anche gli avvisi
+speculari di tutti.
+
+Un giorno senza turno conta come libero solo **dentro la finestra condivisa**:
+i turni partono dal giorno dell'invio (`aggiornato_il`) e coprono 28 giorni.
+Un cambio OFF che vuole libero un giorno oltre quella finestra non avvisa chi
+non ha mandato fin lì: quel giorno non è vuoto, è sconosciuto.
 
 Fra i compatibili si avvisa **solo chi ci guadagna** secondo le sue
 preferenze (`cambioFavorevole` in `compatibili.js`): lascerebbe un turno che

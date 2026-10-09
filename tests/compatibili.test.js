@@ -73,6 +73,17 @@ test('un cambio OFF cerca chi è libero il giorno ceduto e lavora in uno dei gio
   assert.equal(r[0].giorno, offerto);
 });
 
+test('un giorno oltre la finestra condivisa non è un giorno libero', () => {
+  // Anna ha mandato i turni fino al 13: il 14, che l'autore vuole libero, non
+  // è vuoto, è sconosciuto. Dirle "quel giorno tu non lavori" era un'ipotesi.
+  const offerto = '2026-10-13';
+  const off = riga({ tipo: 'OFF', cerco_giorni: [offerto], cerco: { mode: 'ANY' } });
+  const anna = (finoA) => ({ profilo: profilo('anna', 'Anna'), turni: [lavora(offerto, '09:30:00', '18:30:00')], finoA });
+  assert.deepEqual(candidatiCompatibili({ riga: off, autore, oggi: OGGI, candidati: [anna(offerto)] }), []);
+  // Con la finestra che copre il 14, il giorno senza turno è davvero libero.
+  assert.deepEqual(candidatiCompatibili({ riga: off, autore, oggi: OGGI, candidati: [anna(D)] }).map((x) => x.userId), ['anna']);
+});
+
 test('le preferenze di chi riceve contano: chi evita le chiusure non è avvisato di una chiusura', () => {
   const chiusura = riga({ cedo_start: '12:00:00', cedo_end: '21:00:00', cerco: { mode: 'ANY' } });
   const senza = candidatiCompatibili({

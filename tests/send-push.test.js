@@ -85,6 +85,28 @@ test('quando il turno va a un altro scambio, chi aveva ricevuto la proposta legg
   assert.equal(messaggio('UPDATE', p, proposta(), OMAR, nomi, {}), null);
 });
 
+test('una proposta riaperta dopo un no arriva come proposta nuova', () => {
+  // Martina ripropone a Omar dopo un rifiuto: sul server è la stessa riga che
+  // torna in attesa, per chi la riceve è una proposta nuova.
+  const m = messaggio('UPDATE', proposta({ stato: 'IN_ATTESA' }), proposta({ stato: 'RIFIUTATA' }), MARTINA, nomi, {});
+  assert.equal(m.a, OMAR);
+  assert.equal(m.title, 'Nuova proposta di cambio turno');
+  // Riaperta su un cambio che combacia: la notizia giusta è l'accordo, dopo.
+  const diretta = proposta({ stato: 'IN_ATTESA', accettata_da: [MARTINA, OMAR] });
+  assert.equal(messaggio('UPDATE', diretta, proposta({ stato: 'RIFIUTATA' }), MARTINA, nomi, {}), null);
+});
+
+test('una richiesta chiusa perché il turno è già scambiato lo dice a chi aveva proposto', () => {
+  // Omar aveva due richieste sullo stesso turno; un'altra è andata in porto e
+  // il trigger `turno_impegnato` chiude questa, con la proposta di Martina.
+  const p = proposta({ stato: 'RIFIUTATA', motivo_decadenza: 'TURNO_CEDUTO' });
+  const m = messaggio('UPDATE', p, proposta(), OMAR, nomi, {});
+  assert.equal(m.a, MARTINA, 'la notizia va a chi aspettava una risposta');
+  assert.equal(m.title, 'Proposta non più valida');
+  assert.match(m.body, /Omar R\. ha già scambiato quel turno/);
+  assert.doesNotMatch(m.body, /rifiutat/);
+});
+
 test('la propria azione non suona il proprio telefono', () => {
   assert.equal(messaggio('INSERT', proposta(), null, OMAR, nomi, {}), null, 'il destinatario ha fatto la modifica');
   assert.equal(messaggio('UPDATE', proposta({ stato: 'ACCORDO' }), proposta(), MARTINA, nomi, {}), null);

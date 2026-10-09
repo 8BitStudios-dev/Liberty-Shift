@@ -747,8 +747,15 @@ export const store = {
     // già, nella richiesta stessa (vedi `combaciaEsatto`).
     const diretto = combaciaEsatto(r, offerto, this.shiftsById(), trova);
 
+    // Sul server c'è una proposta sola per persona e richiesta, e una chiusa
+    // non si cancella. Chi ripropone dopo un no, o dopo uno scambio annullato,
+    // riapre quella: una riga nuova tornava indietro come "esiste già", la
+    // coda la dava per arrivata, e la proposta spariva al giro dopo senza che
+    // nessuno l'avesse mai ricevuta.
+    const vecchia = this.state.proposals.find((p) => p.requestId === requestId && p.daUserId === me);
+
     const proposta = {
-      id: this.nuovoId('pr'),
+      id: vecchia?.id || this.nuovoId('pr'),
       requestId,
       daUserId: me,
       aUserId: r.userId,
@@ -761,20 +768,37 @@ export const store = {
       createdAt: new Date().toISOString(),
       cambioInserito: false,
     };
-    if (sulServer(this.state) && r.daServer) {
+    const gruppo = diretto ? `accordo:${proposta.id}` : null;
+    if (vecchia?.daServer && sulServer(this.state)) {
+      proposta.daServer = true;
+      // Tutto quello che la chiusura aveva lasciato sulla riga si azzera: il
+      // motivo del no, l'annullamento, il promemoria già partito.
+      const { id, richiesta_id: _r, da_user_id: _d, ...riga } = rigaDaProposta(this.state, proposta, offerto);
+      accoda(this.state, 'proposta.aggiorna', {
+        id,
+        patch: {
+          ...riga,
+          motivo_rifiuto: null,
+          motivo_decadenza: null,
+          annullata_il: null,
+          confermata_il: null,
+          promemoria_il: null,
+          cambio_inserito: false,
+        },
+      }, gruppo);
+    } else if (sulServer(this.state) && r.daServer) {
       proposta.daServer = true;
       accoda(this.state, 'proposta.crea', rigaDaProposta(this.state, proposta, offerto));
     }
 
+    this.state.proposals = this.state.proposals.filter((p) => p !== vecchia);
     this.state.proposals.push(proposta);
     // L'accordo sale come un aggiornamento separato, nel suo gruppo: se sul
     // server la richiesta ha già un accordo (un sì arrivato un attimo prima),
     // l'aggiornamento rimbalza e il gruppo si scarta, come per `accetta`.
     // Creata così, la proposta non manda la notifica "nuova proposta": quella
     // giusta parte col passaggio ad accordo (vedi send-push).
-    let gruppo = null;
     if (diretto) {
-      gruppo = `accordo:${proposta.id}`;
       proposta.status = 'ACCORDO';
       this.rispecchiaProposta(proposta, {
         stato: 'ACCORDO',
@@ -844,6 +868,25 @@ export const store = {
         x.status = 'RIFIUTATA';
         x.motivoDecadenza = 'TURNO_IMPEGNATO';
         this.aggiornaStato(this.request(x.requestId));
+      });
+    // Lo stesso turno poteva stare anche in un'altra richiesta aperta, di
+    // chi l'ha pubblicata (un cambio orario e un cambio OFF sullo stesso
+    // giorno) o di chi ha proposto: ormai è scambiato, e quella richiesta
+    // avrebbe potuto chiudere un secondo accordo. Il server la chiude nello
+    // stesso trigger; qui si allinea quello che il telefono vede.
+    const giornoDi = (shiftId) => this.shift(shiftId)?.data;
+    const ceduto = giornoDi(cedoRichiesta);
+    const offerto = giornoDi(p.shiftOffertoId);
+    this.state.requests
+      .filter((x) => isOpen(x) && x.id !== p.requestId
+        && ((x.userId === p.aUserId && ceduto && giornoDi(x.cedo.shiftId) === ceduto)
+          || (x.userId === p.daUserId && offerto && giornoDi(x.cedo.shiftId) === offerto)))
+      .forEach((x) => {
+        x.status = STATUS.CHIUSA;
+        x.chiusaIl = new Date().toISOString();
+        this.state.proposals
+          .filter((q) => q.requestId === x.id && q.status === 'IN_ATTESA')
+          .forEach((q) => { q.status = 'RIFIUTATA'; q.motivoDecadenza = 'TURNO_CEDUTO'; });
       });
     [p.daUserId, p.aUserId].forEach((u) => this.notifica(u, '🟢 Cambio concordato. Inseriscilo in UKG.'));
   },

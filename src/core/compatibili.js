@@ -12,7 +12,7 @@
 // nella funzione `send-push` (cosa farne). Per questo non conosce il DOM né
 // il database: riceve dati e restituisce dati.
 
-import { RULES, STATUS } from './rules.js';
+import { RULES, STATUS, TIPO_CAMBIO } from './rules.js';
 import { addDays } from './time.js';
 import { findMatches } from './engine.js';
 import {
@@ -148,6 +148,14 @@ export function candidatiCompatibili({ riga, autore, candidati, oggi }) {
     disponibilita,
     prioritaUsata: {},
   });
+
+  // Un giorno senza turno è libero solo dentro la finestra che il telefono ha
+  // condiviso (`finoA`, l'ultimo giorno mandato). Oltre non si sa niente: un
+  // cambio OFF che chiede di lavorare lì diceva "quel giorno tu non lavori" a
+  // chi magari lavorava. Chi non dice fin dove arriva resta com'era.
+  if (riga.tipo === TIPO_CAMBIO.OFF) {
+    candidati = candidati.filter((c) => !c.finoA || riga.cedo_data <= c.finoA);
+  }
 
   const shifts = [cedo];
   for (const c of candidati) {
