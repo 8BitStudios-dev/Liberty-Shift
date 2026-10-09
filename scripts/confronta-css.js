@@ -127,7 +127,7 @@ const VISTE = ['home', 'calendario', 'bacheca', 'bacheca?filtro=PRIORITA', 'prof
 const TENDINE = [
   ['profilo', '.mese-personale .mese-giorno.da-cambiare'], ['profilo', '.mese-personale .mese-giorno.oggi'],
   ['calendario', '.mese-pubblico .mese-giorno.prioritaria'], ['profilo', '[data-act="vedi-grazie"]'],
-  ['home', '[data-act="spiega-priorita"]'], ['rapido', '.cal-turno:not(.vuoto)'],
+  ['home', '[data-act="spiega-priorita"]'], ['rapido', '.rapida'],
 ];
 const ORA = new Date('2026-10-07T10:00:00+02:00');
 

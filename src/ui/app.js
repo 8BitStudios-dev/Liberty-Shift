@@ -747,8 +747,11 @@ const AZIONI = {
     render();
   },
 
-  'rapido-turno': (_, el) => { F.rapido.shiftId = el.dataset.id; F.rapido.giorno = null; render(); },
-  'rapido-giorno': (_, el) => { F.rapido.giorno = el.dataset.giorno; render(); },
+  // Ritoccata, la casella aperta si richiude: la scheda sotto è una sola.
+  'rapido-scegli': (_, el) => {
+    F.rapido.scelta = F.rapido.scelta === el.dataset.chiave ? null : el.dataset.chiave;
+    render();
+  },
 
   // Chi ha solo una disponibilità non ha una richiesta su cui proporre:
   // si avvisa, e sarà lui a rispondere.

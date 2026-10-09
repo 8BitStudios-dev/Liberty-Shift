@@ -26,25 +26,30 @@ cui atterrare.
 ## Cambio Rapido e cambio dal calendario
 Sono due cose diverse, e la differenza è quanto lavoro fa l'app al posto tuo.
 
-**⚡ Cambio rapido** non fa domande. Prendi un tuo turno e vedi subito chi
-potrebbe prenderlo, in due gruppi: chi può scambiare l'orario nella stessa
-giornata e chi può prendersi la giornata intera. Il motore prova entrambe le
-strade e tutti i giorni in cui sei libero. È il principio UX numero 4 preso
-alla lettera.
+**⚡ Cambio rapido** non fa domande. Il motore guarda tutti i tuoi turni
+futuri e i giorni in cui sei libero, prova per ognuno sia il cambio orario
+sia quello di giornata, e tiene le richieste più affini. È il principio UX
+numero 4 preso alla lettera.
 
-I turni stanno in un calendario di settimane Apple. Su ogni turno un bollino
-verde dice quante richieste vanno bene; un turno senza nessuno resta toccabile
-ma spento. Compaiono anche i giorni in cui non lavori ma un collega lascia un
-turno che potresti prendere tu (bordo tratteggiato, scritta OFF): toccandoli
-si vedono quelle richieste, le stesse di Aiuta un collega per quel giorno.
+Il risultato è una griglia di cinque caselle (`RULES.rapidoMassimo`), una per
+richiesta, dalla più affine: ogni casella dice solo il giorno del tuo turno, o
+del giorno libero che copriresti, e la percentuale. Toccandone una si apre
+sotto la scheda intera, con chi è, cosa lasci e cosa prendi e il tasto
+**Proponi lo scambio**; ritoccandola si richiude. Prima c'era un mini
+calendario di turni con un bollino per giorno, e per sapere dove conveniva
+cambiare bisognava aprire i giorni uno alla volta.
 
-Si vedono solo le richieste già pubblicate dai colleghi, le cinque più affini
-(`richiesteRapide`, `RULES.rapidoMassimo`), orario e OFF insieme, ciascuna poi
-nel suo gruppo; se ce ne sono di più lo si dice sotto. I Potenziali trovati
+Una richiesta che va bene su più tuoi turni conta una volta sola, con il
+punteggio migliore; a pari punteggio viene prima un collega che hai aiutato.
+Se le richieste compatibili sono più di cinque lo si dice sotto la griglia.
+
+Si vedono solo le richieste già pubblicate dai colleghi (`richiesteRapide`,
+e per i giorni liberi le stesse di Aiuta un collega). I Potenziali trovati
 dal calendario di chi non ha chiesto niente qui non compaiono: stavano nella
-stessa lista con un altro tasto, e non si capiva la differenza. Niente tasto per creare la richiesta: quando non c'è nessuno, la
-schermata rimanda al calendario del Profilo, da dove una richiesta si pubblica
-con le domande giuste.
+stessa lista con un altro tasto, e non si capiva la differenza. Niente tasto
+per creare la richiesta: quando non c'è nessuno, la schermata rimanda al
+calendario del Profilo, da dove una richiesta si pubblica con le domande
+giuste.
 
 **Il cambio dal calendario** sostituisce il vecchio Nuovo cambio, che non
 sta più in Home. Si tocca un giorno nel calendario del Profilo, e il foglio

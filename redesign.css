@@ -72,6 +72,12 @@
   --aiuta-fondo: #fdebf4;
   --aiuta-segno: #e0218a;
   --aiuta-testo: #c71a7a;
+  /* "Cambio rapido" in Home, il gemello giallo fulmine: stessa idea, il
+     giallo pieno solo per le saette e il bordo, il titolo in un ambra scuro
+     (5,4:1 sul fondo) perché il giallo sul giallo non si legge. */
+  --rapido-fondo: #fff4cc;
+  --rapido-segno: #f5b800;
+  --rapido-testo: #8a5a00;
   /* Le tue richieste hanno un colore loro, il viola, che il Calendario non
      usa: un colpo d'occhio basta a capire su quale dei due mesi si è. */
   --mio: #6b46c8;
@@ -123,6 +129,9 @@
     --aiuta-fondo: #2e1625;
     --aiuta-segno: #ff7ec0;
     --aiuta-testo: #ff93cc;
+    --rapido-fondo: #2b2410;
+    --rapido-segno: #ffcf3d;
+    --rapido-testo: #ffd34d;
     /* styles.css ridichiara questi due nel suo blocco scuro, che pesa più del
        :root chiaro: gli alias vanno ripetuti qui. */
     --verde: var(--prendo);
@@ -159,6 +168,9 @@
   --aiuta-fondo: #2e1625;
   --aiuta-segno: #ff7ec0;
   --aiuta-testo: #ff93cc;
+  --rapido-fondo: #2b2410;
+  --rapido-segno: #ffcf3d;
+  --rapido-testo: #ffd34d;
   --verde: var(--prendo);
   --giallo: var(--ambra);
   --mio: #b39bff;
@@ -821,49 +833,29 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   font-size: 14px; color: var(--rosso); text-decoration: underline; text-underline-offset: 3px;
 }
 
-/* --------------------------------------------------- Cambio rapido, i turni
-   Una griglia di settimana in settimana, sette colonne, testo piccolo: i
-   turni si scelgono come su un calendario. */
-.cal-turni { margin: 0 0 8px; }
-.cal-turni-testa, .cal-turni-griglia { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.cal-turni-testa { margin-bottom: 4px; }
-.cal-turni-testa span { font-size: 12px; text-align: center; color: var(--testo-tenue); }
-.cal-turno {
-  appearance: none; font: inherit; color: inherit; cursor: pointer; position: relative;
-  min-height: var(--bersaglio); padding: 4px 0; border-radius: var(--raggio-cella);
+/* ------------------------------------------- Cambio rapido, le più convenienti
+   Cinque caselle in fila, una per richiesta: giorno e percentuale, niente
+   altro. Chi è e cosa vi scambiate si legge nella scheda che si apre sotto,
+   così la griglia resta leggibile anche a 340px. */
+.rapide { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 4px 0 12px; }
+.rapida {
+  appearance: none; font: inherit; color: inherit; cursor: pointer;
+  min-height: 84px; padding: 8px 0; border-radius: var(--raggio-cella);
   border: 1px solid var(--bordo); background: var(--superficie);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
 }
-.cal-turno b { font-size: 14px; line-height: 1.1; }
-.cal-turno em { font-style: normal; font-size: 12px; color: var(--testo-tenue); font-variant-numeric: tabular-nums; }
-.cal-turno.vuoto { border-color: transparent; background: none; cursor: default; }
-.cal-turno.vuoto b { font-weight: 400; color: var(--testo-tenue); opacity: .55; }
-.cal-turno.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
-.cal-turno.attivo em { color: inherit; opacity: .85; }
-
-/* Quanti colleghi vanno bene, giorno per giorno. Il bollino sta nell'angolo
-   per non spostare numero e orario; i turni senza nessuno si spengono ma
-   restano toccabili (si può sempre pubblicare). I giorni liberi con un turno
-   da prendere hanno il bordo tratteggiato: si toccano, ma non sono un tuo
-   turno. */
-.cal-conta {
-  position: absolute; top: -8px; right: -7px;
-  min-width: 18px; height: 18px; padding: 0 4px; border-radius: var(--raggio-pill); box-sizing: border-box;
+.rapida-dow { font-size: 12px; color: var(--testo-tenue); text-transform: capitalize; }
+.rapida-numero { font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.rapida-quota {
+  margin-top: 2px; padding: 1px 6px; border-radius: var(--raggio-pill);
   background: var(--prendo); color: var(--su-pieno);
-  font-size: 12px; font-weight: 700; font-style: normal; line-height: 18px; text-align: center;
-  font-variant-numeric: tabular-nums;
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
-.cal-turno.nessuno { opacity: .5; }
-.cal-turno.libero { border-style: dashed; border-color: var(--prendo); background: none; }
-.cal-turno.libero em { color: var(--prendo); font-weight: 600; }
-.cal-turno.libero.attivo { border-style: solid; background: var(--prendo); border-color: var(--prendo); }
-.cal-turno.libero.attivo em { color: inherit; }
-.cal-turno.attivo .cal-conta { background: var(--su-pieno); color: var(--accento); }
-.cal-turno.libero.attivo .cal-conta { color: var(--prendo); }
-.cal-turni-legenda { margin: 12px 0 0; font-size: 12px; color: var(--testo-tenue); display: flex; gap: 6px 14px; flex-wrap: wrap; }
-.cal-turni-legenda > span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.cal-turni-legenda .cal-conta { position: static; display: inline-block; }
-.cal-turni-legenda em { font-style: normal; font-size: 12px; font-weight: 600; color: var(--prendo); border: 1px dashed var(--prendo); border-radius: 6px; padding: 0 5px; }
+.rapida.attiva { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
+.rapida.attiva .rapida-dow { color: inherit; opacity: .85; }
+.rapida.attiva .rapida-quota { background: var(--su-pieno); color: var(--accento); }
+.rapida-aiuto { text-align: center; margin: 0 0 12px; }
+.rapida-scheda { margin: 0 0 12px; }
 
 /* Le ragioni di un match dietro "Perché": in Rapido le schede erano alte
    cinque righe di spiegazione, e la decisione si perdeva sotto. */
@@ -1034,4 +1026,27 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .tile.aiuta { border-color: color-mix(in srgb, var(--aiuta-segno) 35%, transparent); }
   :root:not([data-theme="light"]) .tile.aiuta::before { opacity: .6; }
+}
+
+/* "Cambio rapido", lo stesso riquadro in giallo fulmine: due saette al posto
+   dei cuori, una piena e una solo contornata. È la saetta della sua icona. */
+.tile.cambio-rapido {
+  position: relative; overflow: hidden;
+  background: var(--rapido-fondo);
+  border: 1px solid color-mix(in srgb, var(--rapido-segno) 45%, transparent);
+}
+.tile.cambio-rapido strong, .tile.cambio-rapido .tile-icona { color: var(--rapido-testo); opacity: 1; }
+.tile.cambio-rapido > span:nth-child(2) { padding-right: 36px; }
+.tile.cambio-rapido::before, .tile.cambio-rapido::after {
+  content: ''; position: absolute; pointer-events: none;
+  background: var(--rapido-segno);
+  -webkit-mask: var(--saetta) no-repeat center / contain; mask: var(--saetta) no-repeat center / contain;
+}
+.tile.cambio-rapido::before {
+  --saetta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z'/%3E%3C/svg%3E");
+  width: 24px; height: 24px; right: 40px; top: 10px; transform: rotate(-12deg); opacity: .7;
+}
+.tile.cambio-rapido::after {
+  --saetta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z' fill='none' stroke='black' stroke-width='1.9' stroke-linejoin='round'/%3E%3C/svg%3E");
+  width: 16px; height: 16px; right: 30px; bottom: 10px; transform: rotate(14deg); opacity: .9;
 }

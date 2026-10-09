@@ -55,16 +55,18 @@ export function resetDraft(tipo = null) {
 
 // ------------------------------------------------------- CAMBIO RAPIDO
 
-export const rapido = { shiftId: null, giorno: null };
+export const rapido = { shiftId: null, scelta: null };
 
 /**
- * Un tocco e vedi chi può prenderti il turno. Nessuna domanda: il motore
- * prova sia il cambio orario nella stessa giornata sia il cambio OFF su
- * tutti i giorni in cui sei libero, e mette insieme i risultati.
+ * Le richieste più convenienti, tutte insieme: un tocco e le vedi.
  *
- * Nel calendario ci sono anche i giorni liberi in cui un collega lascia un
- * turno che potresti prendere tu: è lo stesso scambio visto dall'altra parte,
- * e nasconderlo solo perché quel giorno non lavori faceva perdere l'occasione.
+ * Prima si sceglieva un proprio turno in un mini calendario e sotto
+ * comparivano le richieste per quel turno: per sapere dove conveniva
+ * cambiare bisognava toccare i giorni uno alla volta. Ora il motore guarda
+ * tutti i tuoi turni e i giorni in cui sei libero, e restano le
+ * `RULES.rapidoMassimo` richieste più affini. Una griglia dice solo il
+ * giorno e la percentuale; toccandone una si apre sotto la scheda intera,
+ * con chi è e cosa vi scambiate.
  */
 export function vistaRapida() {
   const me = store.state.currentUserId;
@@ -79,68 +81,71 @@ export function vistaRapida() {
     '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}`;
   }
 
-  const conteggi = new Map(miei.map((s) => [s.id, richiesteRapide(s.id, store.state).tutte]));
-
-  // Un giorno libero scelto resta scelto finché ha ancora richieste; se no si
-  // parte dal primo turno che ne ha, così la schermata non si apre vuota.
-  if (rapido.giorno && !perGiorno.has(rapido.giorno)) rapido.giorno = null;
-  if (!rapido.giorno && (!rapido.shiftId || !miei.some((s) => s.id === rapido.shiftId))) {
-    if (miei.length) rapido.shiftId = (miei.find((s) => conteggi.get(s.id) > 0) || miei[0]).id;
-    else rapido.giorno = [...perGiorno.keys()].sort()[0];
-  }
-  const sceltaTurno = calendarioTurni(miei, perGiorno, conteggi);
-
-  const massimo = RULES.rapidoMassimo;
-  const notaPiu = (mostrati, tutti) => (tutti > mostrati
-    ? `<p class="testo-tenue">Le ${mostrati} richieste più affini su ${tutti}.</p>`
-    : '');
-
-  if (rapido.giorno) {
-    const tutte = perGiorno.get(rapido.giorno);
-    const lista = [...tutte].sort((a, b) => b.match.score - a.match.score).slice(0, massimo);
+  const { scelte, tutte } = richiestePiuConvenienti(miei, perGiorno);
+  if (!scelte.length) {
     return html`
       ${raw(testataRapido())}
-      <p class="occhiello">Quale turno vuoi lasciare?</p>
-      ${raw(sceltaTurno)}
-      <h2 class="titolo-gruppo">${raw(iconaTipo(TIPO_CAMBIO.OFF, 17))} Puoi prendere un turno (${lista.length})</h2>
-      <p class="testo-tenue">${formatDay(rapido.giorno)} non lavori: prendi il turno di un collega e in cambio gli lasci uno dei tuoi.</p>
-      ${raw(store.occasioni(lista).map((o) => cardOpportunita(o)).join(''))}
-      ${raw(notaPiu(lista.length, tutte.length))}`;
+      ${raw(vuoto('Nessuno per ora',
+    'Nessun collega ha pubblicato una richiesta che puoi coprire. Puoi pubblicare la tua toccando un giorno nel tuo calendario, nel Profilo.'))}`;
   }
 
-  const cedo = store.shift(rapido.shiftId);
-  // Le più affini, fra orario e OFF insieme: poi ognuna nel suo gruppo.
-  const { mostrate: risultati, tutte: tutti } = richiesteRapide(rapido.shiftId, store.state, massimo);
-  const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
-  const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
-
-  const gruppo = (titolo, sottotitolo, lista) => (lista.length ? html`
-    <h2 class="titolo-gruppo">${raw(titolo)}</h2>
-    <p class="testo-tenue">${sottotitolo}</p>
-    ${raw(store.primaChiHaiAiutato(lista).map((m) => cardMatch(m, { mioCedo: cedo, compatta: true })).join(''))}` : '');
+  if (!scelte.some((x) => x.chiave === rapido.scelta)) rapido.scelta = null;
+  const aperta = scelte.find((x) => x.chiave === rapido.scelta);
+  const caselle = scelte.map((x) => {
+    return html`
+      <button class="rapida ${x === aperta ? 'attiva' : ''}" data-act="rapido-scegli" data-chiave="${x.chiave}"
+              aria-expanded="${x === aperta ? 'true' : 'false'}" aria-label="${formatDay(x.giorno, true)}, ${x.score}%">
+        <span class="rapida-dow">${formatDay(x.giorno).split(' ')[0]}</span>
+        <strong class="rapida-numero">${Number(x.giorno.slice(8))}</strong>
+        <span class="rapida-quota">${x.score}%</span>
+      </button>`;
+  }).join('');
 
   return html`
     ${raw(testataRapido())}
-    <p class="occhiello">Quale turno vuoi lasciare?</p>
-    ${raw(sceltaTurno)}
+    <p class="occhiello">${scelte.length === 1 ? 'La richiesta più conveniente per te.' : `Le ${scelte.length} richieste più convenienti per te.`}</p>
+    <div class="rapide">${raw(caselle)}</div>
+    ${raw(aperta
+    ? `<div class="rapida-scheda">${aperta.scheda()}</div>`
+    : '<p class="testo-tenue rapida-aiuto">Tocca un giorno per vedere chi è e cosa vi scambiate.</p>')}
+    ${raw(tutte > scelte.length ? `<p class="testo-tenue">Le ${scelte.length} più affini su ${tutte}.</p>` : '')}`;
+}
 
-    ${raw(gruppo(
-    `${iconaTipo(TIPO_CAMBIO.ORARIO, 17)} Cambio orario (${orario.length})`,
-    'Lavorate tutti e due quel giorno: vi scambiate solo l\'orario.',
-    orario,
-  ))}
-    ${raw(gruppo(
-    `${iconaTipo(TIPO_CAMBIO.OFF, 17)} Cambio OFF (${off.length})`,
-    'Scambi il tuo OFF con un giorno lavorativo.',
-    off,
-  ))}
-
-    ${raw(notaPiu(risultati.length, tutti))}
-    ${raw(risultati.length ? '' : vuoto(
-    'Nessuno per ora',
-    `Per ${formatDay(cedo.data)} al momento nessun collega ha pubblicato una richiesta compatibile. Puoi pubblicare la tua toccando il giorno nel tuo calendario, nel Profilo.`,
-  ))}
-`;
+/**
+ * Le richieste dei colleghi che puoi coprire, dalla più affine, fra i turni
+ * che puoi lasciare e i giorni in cui sei libero. Una richiesta che va bene
+ * su più tuoi turni conta una volta sola, con il punteggio migliore. A pari
+ * punteggio viene prima chi hai aiutato: è da lì che un sì arriva più
+ * volentieri.
+ */
+function richiestePiuConvenienti(miei, perGiorno) {
+  const migliori = new Map();
+  const metti = (x) => {
+    const prima = migliori.get(x.richiestaId);
+    if (!prima || x.score > prima.score) migliori.set(x.richiestaId, x);
+  };
+  for (const s of miei) {
+    for (const m of richiesteRapide(s.id, store.state, Infinity).mostrate) {
+      metti({
+        chiave: `turno:${s.id}:${m.requestId}`, richiestaId: m.requestId, userId: m.userId,
+        score: m.score, giorno: s.data,
+        scheda: () => cardMatch(m, { mioCedo: s, compatta: true }),
+      });
+    }
+  }
+  for (const [giorno, lista] of perGiorno) {
+    for (const o of store.occasioni(lista)) {
+      metti({
+        chiave: `libero:${o.richiesta.id}`, richiestaId: o.richiesta.id, userId: o.richiesta.userId,
+        score: o.match.score, giorno,
+        scheda: () => cardOpportunita(o),
+      });
+    }
+  }
+  const aiutati = store.chiHaiAiutato();
+  const tutte = [...migliori.values()]
+    .sort((a, b) => b.score - a.score || aiutati.has(b.userId) - aiutati.has(a.userId) || a.giorno.localeCompare(b.giorno));
+  return { scelte: tutte.slice(0, RULES.rapidoMassimo), tutte: tutte.length };
 }
 
 /**
@@ -158,52 +163,6 @@ function occasioniNeiGiorniLiberi(me, miei) {
     perGiorno.set(giorno, [...(perGiorno.get(giorno) || []), o]);
   }
   return perGiorno;
-}
-
-/**
- * I turni che puoi lasciare, messi come in un calendario: una riga per
- * settimana Apple, sette colonne dal sabato al venerdì.
- *
- * Prima erano pillole in fila, una per turno, alte due righe: quindici
- * turni facevano mezzo schermo e non si capiva in che settimana cadessero.
- * Nella griglia i giorni senza turno restano vuoti, e la forma della
- * settimana si vede da sola.
- *
- * Il bollino dice quanti colleghi vanno bene: senza, bisognava toccare un
- * giorno alla volta per scoprire che non c'era nessuno.
- */
-function calendarioTurni(miei, perGiorno, conteggi) {
-  const date = [...miei.map((s) => s.data), ...perGiorno.keys()];
-  const settimane = [...new Set(date.map((d) => appleWeekKey(d)))].sort();
-  const perData = new Map(miei.map((s) => [s.data, s]));
-  const bollino = (n) => (n ? `<i class="cal-conta">${n}</i>` : '');
-  const intestazione = Array.from({ length: 7 }, (_, i) => `<span>${formatDay(addDays(settimane[0], i)).slice(0, 3)}</span>`).join('');
-  const righe = settimane.map((wk) => Array.from({ length: 7 }, (_, i) => {
-    const data = addDays(wk, i);
-    const s = perData.get(data);
-    const numero = Number(data.slice(8));
-    const occasioni = perGiorno.get(data);
-    if (occasioni) {
-      return html`
-        <button class="cal-turno libero ${rapido.giorno === data ? 'attivo' : ''}" data-act="rapido-giorno" data-giorno="${data}"
-                aria-label="${formatDay(data)}, non lavori: ${occasioni.length} ${occasioni.length === 1 ? 'richiesta' : 'richieste'} da prendere">
-          ${raw(bollino(occasioni.length))}<b>${numero}</b><em>OFF</em>
-        </button>`;
-    }
-    if (!s) return `<span class="cal-turno vuoto"><b>${numero}</b></span>`;
-    const n = conteggi.get(s.id);
-    return html`
-      <button class="cal-turno ${n ? '' : 'nessuno'} ${!rapido.giorno && s.id === rapido.shiftId ? 'attivo' : ''}" data-act="rapido-turno" data-id="${s.id}"
-              aria-label="${formatDay(s.data)} ${shiftLabel(s)}: ${n ? `${n} ${n === 1 ? 'collega' : 'colleghi'}` : 'nessuno per ora'}">
-        ${raw(bollino(n))}<b>${numero}</b><em>${s.start}</em>
-      </button>`;
-  }).join('')).join('');
-  return `
-    <div class="cal-turni">
-      <div class="cal-turni-testa">${intestazione}</div>
-      <div class="cal-turni-griglia">${righe}</div>
-      <p class="cal-turni-legenda"><span><i class="cal-conta">2</i> richieste compatibili</span><span><em>OFF</em> un turno da prendere</span></p>
-    </div>`;
 }
 
 function testataRapido() {

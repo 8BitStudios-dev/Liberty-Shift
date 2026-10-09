@@ -121,6 +121,7 @@ export function home() {
         <span class="tile-icona">${raw(icona('rapido'))}</span>
         <span>
           <strong>Cambio rapido</strong>
+          <em>Le ${RULES.rapidoMassimo} più convenienti per te</em>
         </span>
         <span class="chevron">›</span>
       </button>

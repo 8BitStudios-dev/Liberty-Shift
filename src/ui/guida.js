@@ -20,7 +20,7 @@ export const GUIDE = {
       <p>Da qui parti, in tre modi.</p>
 
       <h3>Cambio rapido</h3>
-      <p>Scegli un tuo turno e vedi subito chi può prenderlo.</p>
+      <p>Le richieste dei colleghi che ti convengono di più, in un colpo d'occhio.</p>
 
       <h3>Aiuta un collega</h3>
       <p>Il contrario: chi ha bisogno di un turno che tu hai.</p>
@@ -43,29 +43,23 @@ export const GUIDE = {
     corpo: () => html`
       <p>Il modo più veloce per liberarti un turno.</p>
 
-      <p>Scegli il turno in alto. Sotto compaiono le richieste già pubblicate dai colleghi che vanno bene con quel turno, in due gruppi:</p>
-      <ul class="elenco piccolo">
-        <li><strong>Cambio orario</strong> — restate nello stesso giorno e vi
-          scambiate l'orario;</li>
-        <li><strong>Cambio OFF</strong> — ti prendono la giornata, e tu lavori
-          in un giorno in cui sei a casa.</li>
-      </ul>
-
       <p>
-        Il bollino verde su un giorno dice quante richieste vanno bene: i turni
-        senza bollino, per ora, non ne hanno nessuna. I giorni <strong>OFF</strong>
-        tratteggiati sono giorni in cui non lavori ma un collega lascia un turno
-        che potresti prendere tu.
+        L'app guarda tutti i tuoi turni e i giorni in cui sei a casa, e ti
+        mostra le ${RULES.rapidoMassimo} richieste dei colleghi che ti convengono di più. Ogni
+        casella dice solo il giorno e quanto va bene a tutti e due.
       </p>
+
+      <p>Tocca una casella: sotto si apre chi è e cosa vi scambiate, che sia un
+        <strong>cambio orario</strong> nello stesso giorno o un <strong>cambio OFF</strong>
+        fra due giornate.</p>
 
       <p class="esempio">
-        Giovedì fai 12:00–21:00 e vuoi staccare prima. Tocchi giovedì e trovi
-        Martina, che quel giorno fa 09:00–15:00 e cerca un turno più tardi.
+        Giovedì fai 12:00–21:00. La prima casella è giovedì al 98%: la tocchi e
+        trovi Martina, che quel giorno fa 09:00–15:00 e cerca un turno più tardi.
       </p>
 
       <p>
-        Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Vedi
-        al massimo ${RULES.rapidoMassimo} richieste, le più affini. Se non
+        Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Se non
         compare niente, pubblica la tua dal calendario nel Profilo: resta in
         bacheca.
       </p>`,
