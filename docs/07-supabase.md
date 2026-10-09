@@ -787,3 +787,6 @@ Spostate qui da `CLAUDE.md`: servono a chi lavora su `supabase/`, `src/core/sinc
 - **`Calendario` non segue i redirect** (`redirect: 'manual'`): l'elenco dei
   domini guarda solo l'indirizzo di partenza, e un redirect da un dominio
   ammesso porterebbe altrove. `Amministrazione` accetta solo id in forma di UUID.
+- **Nelle policy `auth.uid()` si scrive `(select auth.uid())`.** Senza, il
+  database lo ricalcola per ogni riga letta. Dal connettore una policy esistente
+  si cambia con `alter policy`, che non contiene le parole che vanno in timeout.
