@@ -373,6 +373,15 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   display: inline-flex; align-items: center; gap: 6px;
 }
 .chips .chip { padding: 0 12px; font-size: 14px; }
+/* In fondo alla riga dei filtri, a destra: margin-left:auto lo spinge lì anche
+   se i chip vanno a capo. Quando l'ordine è invertito si accende. */
+.tasto-ordine {
+  margin-left: auto; width: var(--bersaglio); min-height: var(--bersaglio);
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--raggio-pill); border: 1px solid var(--bordo);
+  background: var(--superficie); color: var(--testo-tenue); cursor: pointer;
+}
+.tasto-ordine[aria-pressed="true"] { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
 .chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
 .link-btn { font-size: 15px; min-height: var(--bersaglio); display: inline-flex; align-items: center; }
 
