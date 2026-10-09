@@ -97,7 +97,7 @@
   /* Cinque raggi: contenitori, controlli, celle, tendina, pillole. I 3–6px
      restano solo ai campioni di legenda, che disegnano una cella in piccolo. */
   --raggio: 18px;
-  --raggio-s: 13px;
+  --raggio-s: 12px;
   --raggio-cella: 8px;
   --raggio-sheet: 24px;
   --raggio-pill: 999px;
@@ -213,6 +213,8 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .gruppo-giorno > .testo-tenue { font-size: 14px; }
 .occhiello { font-size: 16px; margin: 6px 0 18px; }
 .badge, .tag { font-size: 12px; }
+.esempio { border-radius: var(--raggio-s); }
+.tag { border-radius: var(--raggio-pill); padding: 2px 9px; }
 .badge .pallino-stato {
   display: inline-block; width: 9px; height: 9px; border-radius: 50%;
   margin-right: 2px; vertical-align: 0; background: var(--testo-tenue);
@@ -251,8 +253,9 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   border: 0; padding: var(--spazio-card); box-shadow: var(--ombra);
   margin-bottom: var(--spazio-gruppo); border-radius: var(--raggio);
 }
-.riquadro { border: 0; box-shadow: var(--ombra); padding: 0 16px; margin-bottom: 12px; }
-.tabella-dati, .grazie { border: 0; box-shadow: var(--ombra); }
+.riquadro { border: 0; box-shadow: var(--ombra); padding: 0 16px; margin-bottom: 12px; border-radius: var(--raggio); }
+.tabella-dati { border: 0; box-shadow: var(--ombra); border-radius: var(--raggio); }
+.grazie { border: 0; box-shadow: var(--ombra); border-radius: var(--raggio-s); }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .card,
@@ -291,7 +294,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    si restringe e manda a capo "cede"/"offre" fuori dal suo box. Dentro c'è
    un'icona SVG: senza flex cadrebbe sulla baseline invece che al centro. */
 .tipo-pill {
-  font-size: 12px; padding: 2px 8px; border-radius: var(--raggio-cella);
+  font-size: 12px; padding: 2px 8px; border-radius: var(--raggio-pill);
   white-space: nowrap; flex: 0 0 auto; align-self: center;
   display: inline-flex; align-items: center; gap: 4px;
 }
@@ -1041,7 +1044,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 /* Aiuta un collega: quanto costa un cambio, e chi puoi ricambiare. */
 .etichette-aiuto { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
 .tag.favore { background: color-mix(in srgb, var(--accento) 16%, transparent); color: var(--accento); font-weight: 600; }
-.ricompensa-aiuto { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; margin: 0 0 14px; border-radius: 12px; background: var(--superficie-2); }
+.ricompensa-aiuto { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; margin: 0 0 14px; border-radius: var(--raggio-s); background: var(--superficie-2); }
 .ricompensa-aiuto p { margin: 0; }
 .switch.sotto-opzione { margin-left: 28px; }
 
@@ -1052,8 +1055,8 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    token, così in scuro cambiano tinta da soli. */
 .tile.aiuta {
   position: relative; overflow: hidden;
-  background: var(--aiuta-fondo);
-  border: 1px solid color-mix(in srgb, var(--aiuta-segno) 30%, transparent);
+  background: var(--superficie); border: 0;
+  box-shadow: inset 4px 0 0 var(--aiuta-segno), var(--ombra);
 }
 .tile.aiuta strong, .tile.aiuta .tile-icona { color: var(--aiuta-testo); }
 /* Il testo non deve passare sotto i cuori. */
@@ -1072,10 +1075,8 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   width: 16px; height: 16px; right: 30px; bottom: 10px; transform: rotate(12deg); opacity: .65;
 }
 /* In scuro il cuore pieno a .4 si perdeva sul fondo prugna. */
-:root[data-theme="dark"] .tile.aiuta { border-color: color-mix(in srgb, var(--aiuta-segno) 35%, transparent); }
 :root[data-theme="dark"] .tile.aiuta::before { opacity: .6; }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .tile.aiuta { border-color: color-mix(in srgb, var(--aiuta-segno) 35%, transparent); }
   :root:not([data-theme="light"]) .tile.aiuta::before { opacity: .6; }
 }
 
@@ -1083,8 +1084,8 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    dei cuori, una piena e una solo contornata. È la saetta della sua icona. */
 .tile.cambio-rapido {
   position: relative; overflow: hidden;
-  background: var(--rapido-fondo);
-  border: 1px solid color-mix(in srgb, var(--rapido-segno) 45%, transparent);
+  background: var(--superficie); border: 0;
+  box-shadow: inset 4px 0 0 var(--rapido-segno), var(--ombra);
 }
 .tile.cambio-rapido strong, .tile.cambio-rapido .tile-icona { color: var(--rapido-testo); opacity: 1; }
 .tile.cambio-rapido > span:nth-child(2) { padding-right: 36px; }

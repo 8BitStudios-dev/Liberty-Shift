@@ -936,6 +936,24 @@ decide qualcosa, non quelle in cui si guarda.
 Quali schede sono già state viste sta in `localStorage`, non nello stato: è una
 cosa di questo browser, non un dato dell'app.
 
+## Le tre forme
+
+Ogni scatola dell'app è di una di tre famiglie, e ogni famiglia ha un solo
+raggio. Prima c'erano dieci raggi diversi (da 6 a 18 px) per cose simili, e
+le schede sembravano fatte da mani diverse.
+
+| Forma | Raggio | Cosa è | Esempi |
+|---|---|---|---|
+| **Superficie** | `--raggio` (18) | bianca, con ombra: una cosa a sé | card, riquadri, tile, tabelle |
+| **Incavo** | `--raggio-s` (12) | grigia o tinta, dentro una superficie | LASCI/PRENDI, avvisi, note, ricompensa, campi, bottoni |
+| **Pillola** | `--raggio-pill` | un'etichetta | tipo, tag, chip, badge, conteggi |
+
+Una scatola nuova sceglie una delle tre, non ne inventa una quarta. I tile
+colorati della Home (Cambio rapido, Aiuta un collega) sono superfici come le
+altre: il colore sta nel filo a sinistra, nel titolo e nell'icona. Le celle del
+calendario e i piccoli campioni della legenda restano a misura loro, perché
+devono entrare a pixel.
+
 ## Note d'uso
 Nel Profilo, e per intero dentro l'ultimo passo della prima apertura. Sono
 scritte come le note di un servizio vero: cos'è, cosa non fa, dove stanno i
