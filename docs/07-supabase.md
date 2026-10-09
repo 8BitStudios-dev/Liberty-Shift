@@ -530,6 +530,24 @@ Il percorso, tutto sul server:
 3. un dispositivo che risponde 404 o 410 ha spento le notifiche o non esiste
    più, e la funzione toglie la sua riga da `push_subscriptions`.
 
+**Come si pubblica.** Sul server non va il file intero ma una riga sola, che
+lo importa dal repository fissato a un commit:
+
+```ts
+import 'https://cdn.jsdelivr.net/gh/8BitStudios-dev/Liberty-Shift@<hash del commit>/supabase/functions/send-push/index.ts';
+```
+
+Al momento della pubblicazione Supabase scarica quel commit, `core/` compreso,
+e lo impacchetta: gira esattamente il codice che i test hanno controllato, e
+l'hash lo rende immutabile. Prima si incollavano 70 KB a mano (o dal
+connettore, dove oltre gli 80 KB si piantava), con il rischio di un carattere
+sbagliato che nessun errore avrebbe segnalato. Per aggiornare: push su
+`main`, poi si ripubblica la riga con l'hash nuovo (`verify_jwt` spento) e si
+controlla che una chiamata senza segreto torni `401 {"errore":"non
+autorizzato"}`: vuol dire che il modulo si è caricato e ha letto i segreti.
+Funziona finché il repository è pubblico; se diventasse privato si torna a
+pubblicare i file.
+
 Le risposte della funzione restano per qualche ora in `net._http_response`
 (`{"inviate":1,"rimosse":0,"errori":[]}`): è il primo posto dove guardare se
 una notifica non arriva, prima ancora dei log.
