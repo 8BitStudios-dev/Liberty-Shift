@@ -779,3 +779,11 @@ Spostate qui da `CLAUDE.md`: servono a chi lavora su `supabase/`, `src/core/sinc
   funzione risponda 401 senza segreto. `notifiche_preferenze` non va mai aperta
   in lettura ad admin o colleghi: contiene turni di persone che hanno
   acconsentito solo a questo uso.
+- **`revoke ... from public` non toglie il permesso ad `anon`.** Supabase dà
+  `anon` e `authenticated` un permesso proprio su ogni funzione nuova: per
+  chiuderla davvero si nominano i ruoli (`from public, anon`). Una funzione da
+  trigger li perde tutti e due. Dopo ogni modifica si controlla con
+  `has_function_privilege`, perché il file dice una cosa e il server può farne un'altra.
+- **`Calendario` non segue i redirect** (`redirect: 'manual'`): l'elenco dei
+  domini guarda solo l'indirizzo di partenza, e un redirect da un dominio
+  ammesso porterebbe altrove. `Amministrazione` accetta solo id in forma di UUID.

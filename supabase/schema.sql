@@ -267,7 +267,7 @@ begin
   return nuovo;
 end $$;
 
-revoke all on function public.iscrivi(text, text, text, text, smallint, text) from public;
+revoke all on function public.iscrivi(text, text, text, text, smallint, text) from public, anon;
 grant execute on function public.iscrivi(text, text, text, text, smallint, text) to authenticated;
 
 /**
@@ -286,7 +286,7 @@ language sql security definer stable set search_path = public as $$
   select exists (select 1 from public.profili where id = auth.uid() and attivo);
 $$;
 
-revoke all on function public.e_membro() from public;
+revoke all on function public.e_membro() from public, anon;
 grant execute on function public.e_membro() to authenticated;
 
 /**
@@ -304,7 +304,7 @@ language sql security definer stable set search_path = public as $$
   select coalesce((select admin and attivo from public.profili where id = auth.uid()), false);
 $$;
 
-revoke all on function public.e_admin() from public;
+revoke all on function public.e_admin() from public, anon;
 grant execute on function public.e_admin() to authenticated;
 
 -- ============================================================== sicurezza
@@ -360,7 +360,7 @@ create policy "ognuno modifica il proprio profilo"
 drop function if exists public.blocca_auto_admin() cascade;
 
 create or replace function public.blocca_scritture_privilegiate() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   if auth.role() in ('anon', 'authenticated') then
     new.admin := old.admin;
@@ -1198,7 +1198,9 @@ begin
   end if;
   return new;
 end $$;
-revoke all on function public.registra_aiuto() from public;
+-- `from public` non basta: anon e authenticated hanno un permesso proprio, dato
+-- da Supabase di default, che resta se non lo si toglie per nome.
+revoke all on function public.registra_aiuto() from public, anon, authenticated;
 
 create or replace trigger registra_aiuto
   after insert or update of stato, annullata_il on public.proposte
@@ -1216,3 +1218,13 @@ join public.richieste q on q.id = p.richiesta_id
 where p.stato = 'ACCORDO' and p.annullata_il is null
   and (case when p.da_user_id = q.autore_id then p.a_user_id else p.da_user_id end) <> q.autore_id
 on conflict (proposta_id) do nothing;
+
+
+-- Helper di Supabase che abilita RLS sulle tabelle nuove: non è nostro, ma lì
+-- non serve a nessun client. C'è solo sui progetti che l'hanno ricevuto.
+do $$
+begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    revoke all on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end $$;

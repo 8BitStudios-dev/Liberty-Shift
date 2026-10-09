@@ -169,6 +169,11 @@ Deno.serve(async (req) => {
   const patch = PATCH_PER_AZIONE[corpo.azione || ''];
   if (!patch && corpo.azione !== 'reimposta-password') return risposta({ errore: 'Azione non riconosciuta.' }, 400);
   if (!corpo.id) return risposta({ errore: 'Manca la persona su cui agire.' }, 400);
+  // L'id finisce dentro indirizzi costruiti a mano: se non è un UUID non deve
+  // arrivarci, altrimenti può portarsi dietro parametri o percorsi non suoi.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(corpo.id)) {
+    return risposta({ errore: 'Persona non valida.' }, 400);
+  }
   // Niente lock-out o pasticci con sé stessi: il pannello serve per gli altri.
   if (corpo.id === io) return risposta({ errore: 'Non puoi farlo su te stesso.' }, 400);
 
