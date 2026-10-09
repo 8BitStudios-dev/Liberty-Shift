@@ -1252,7 +1252,6 @@ where p.stato = 'ACCORDO' and p.annullata_il is null
   and (case when p.da_user_id = q.autore_id then p.a_user_id else p.da_user_id end) <> q.autore_id
 on conflict (proposta_id) do nothing;
 
-
 -- Helper di Supabase che abilita RLS sulle tabelle nuove: non è nostro, ma lì
 -- non serve a nessun client. C'è solo sui progetti che l'hanno ricevuto.
 do $$
@@ -1271,3 +1270,151 @@ create index if not exists proposte_a_user_idx on public.proposte (a_user_id);
 create index if not exists ringraziamenti_da_user_idx on public.ringraziamenti (da_user_id);
 create index if not exists ringraziamenti_a_user_idx on public.ringraziamenti (a_user_id);
 create index if not exists aiuti_aiutato_idx on public.aiuti (aiutato_id);
+
+-- ================================================ quello che l'app può scrivere
+--
+-- Le policy dicono chi può toccare una riga, non cosa ci scrive. Bastava
+-- avere una proposta su una richiesta per poterla riscrivere tutta (turno,
+-- giorni cercati, priorità, perfino "chiusa da un admin"), e una proposta
+-- nasceva con il destinatario, lo stato e i sì che il telefono decideva. Le
+-- regole stavano solo nell'app: qui diventano del database.
+--
+-- I due trigger guardano solo le scritture fatte direttamente dal client
+-- (`current_user` è `authenticated`). Dentro una funzione `security definer`
+-- (`turno_impegnato`, la pulizia) `current_user` è il proprietario, e da SQL
+-- Editor anche: quelle scritture passano com'erano. Gli admin restano fuori,
+-- come nelle loro policy. Quello che non è ammesso **si riporta al valore di
+-- prima** invece di dare errore, come `blocca_scritture_privilegiate`: un
+-- errore lascerebbe l'operazione in testa alla coda del telefono, a bloccare
+-- tutte quelle dietro per sempre.
+
+-- Una richiesta. Chi l'ha scritta la muove come vuole, tranne autore,
+-- creazione e la firma di un admin. Chi c'entra solo con una proposta ne
+-- muove lo stato e la data di chiusura, e basta: l'accordo e la chiusura
+-- solo se l'accordo con lui c'è davvero, e mai lo stato di "rimossa" o
+-- "scaduta", che non sono suoi.
+create or replace function public.limita_scritture_richiesta() returns trigger
+language plpgsql set search_path = '' as $$
+declare
+  io uuid := auth.uid();
+begin
+  if current_user not in ('authenticated', 'anon') or public.e_admin() then
+    return new;
+  end if;
+  new.id := old.id;
+  new.autore_id := old.autore_id;
+  new.creata_il := old.creata_il;
+  new.chiusa_da_admin := old.chiusa_da_admin;
+  new.admin_motivo := old.admin_motivo;
+  if io is distinct from old.autore_id then
+    new.tipo := old.tipo;
+    new.priorita_fino_a := old.priorita_fino_a;
+    new.cedo_data := old.cedo_data;
+    new.cedo_start := old.cedo_start;
+    new.cedo_end := old.cedo_end;
+    new.cedo_flessibile := old.cedo_flessibile;
+    new.cerco_giorni := old.cerco_giorni;
+    new.cerco := old.cerco;
+    if new.stato in ('RIMOSSA', 'SCADUTA')
+      or (new.stato in ('ACCORDO', 'CHIUSA') and new.stato is distinct from old.stato
+          and not exists (
+            select 1 from public.proposte p
+            where p.richiesta_id = old.id and p.stato = 'ACCORDO'
+              and io in (p.da_user_id, p.a_user_id)
+          )) then
+      new.stato := old.stato;
+      new.chiusa_il := old.chiusa_il;
+    end if;
+  end if;
+  return new;
+end $$;
+
+revoke all on function public.limita_scritture_richiesta() from public, anon, authenticated;
+
+create or replace trigger limita_scritture_richiesta
+  before update on public.richieste
+  for each row execute function public.limita_scritture_richiesta();
+
+-- Una proposta. Fra chi e su quale richiesta resta com'è nata. Il turno e il
+-- messaggio li cambia solo chi l'ha fatta (quando la riapre). Fra i sì
+-- ciascuno può aggiungere il proprio; chi propone può mettere anche quello
+-- dell'altro, ed è il cambio diretto (`combaciaEsatto`): il turno è proprio
+-- quello che la richiesta chiedeva, e il sì di chi l'ha pubblicata sta già
+-- nella richiesta. Questo è il solo punto in cui il database si fida ancora
+-- del telefono, perché ripetere qui il confronto degli orari vorrebbe dire
+-- tenere una seconda copia del motore in SQL. L'accordo vale solo con
+-- tutti e due i sì, e riaprire una proposta chiusa spetta a chi l'aveva fatta.
+create or replace function public.limita_scritture_proposta() returns trigger
+language plpgsql set search_path = '' as $$
+declare
+  io uuid := auth.uid();
+begin
+  if current_user not in ('authenticated', 'anon') or public.e_admin() then
+    return new;
+  end if;
+  new.id := old.id;
+  new.richiesta_id := old.richiesta_id;
+  new.da_user_id := old.da_user_id;
+  new.a_user_id := old.a_user_id;
+  new.creata_il := old.creata_il;
+  if io is distinct from old.da_user_id then
+    new.turno_data := old.turno_data;
+    new.turno_start := old.turno_start;
+    new.turno_end := old.turno_end;
+    new.messaggio := old.messaggio;
+  end if;
+  -- Chi riceve tocca solo il proprio sì: quello di chi ha proposto resta.
+  -- Chi propone li decide tutti e due (riaprendo riparte dal solo suo).
+  new.accettata_da := array(
+    select distinct x from unnest(
+      case when io = old.da_user_id then new.accettata_da
+        else array_remove(old.accettata_da, io) || (case when io = any(new.accettata_da) then array[io] else '{}'::uuid[] end)
+      end
+    ) x
+    where x in (old.da_user_id, old.a_user_id)
+  );
+  if new.stato = 'ACCORDO' and new.stato is distinct from old.stato
+    and not (old.da_user_id = any(new.accettata_da) and old.a_user_id = any(new.accettata_da)) then
+    new.stato := old.stato;
+  end if;
+  if old.stato = 'RIFIUTATA' and new.stato is distinct from 'RIFIUTATA'
+    and io is distinct from old.da_user_id then
+    new.stato := old.stato;
+  end if;
+  return new;
+end $$;
+
+revoke all on function public.limita_scritture_proposta() from public, anon, authenticated;
+
+create or replace trigger limita_scritture_proposta
+  before update on public.proposte
+  for each row execute function public.limita_scritture_proposta();
+
+-- Una proposta nuova va a chi ha scritto la richiesta, mai a sé stessi, nasce
+-- in attesa con il proprio sì (e quello dell'altro solo nel cambio diretto)
+-- e senza niente di quello che arriva dopo: annullamento, conferma di UKG,
+-- promemoria, cambio inserito. `security definer` perché la richiesta può
+-- essere già un accordo fra altri, che la policy di lettura nasconde.
+create or replace function public.proposta_ammessa(rid uuid, da uuid, a uuid) returns boolean
+language sql stable security definer set search_path = '' as $$
+  select public.e_membro() and exists (
+    select 1 from public.richieste r where r.id = rid and r.autore_id = a and r.autore_id <> da
+  );
+$$;
+
+revoke all on function public.proposta_ammessa(uuid, uuid, uuid) from public, anon;
+grant execute on function public.proposta_ammessa(uuid, uuid, uuid) to authenticated;
+
+alter policy "si propone solo a proprio nome" on public.proposte
+  with check (
+    da_user_id = (select auth.uid())
+    and public.proposta_ammessa(richiesta_id, da_user_id, a_user_id)
+    and stato = 'IN_ATTESA'
+    and da_user_id = any(accettata_da)
+    and accettata_da <@ array[da_user_id, a_user_id]
+    and annullata_il is null
+    and confermata_il is null
+    and promemoria_il is null
+    and motivo_decadenza is null
+    and not cambio_inserito
+  );
