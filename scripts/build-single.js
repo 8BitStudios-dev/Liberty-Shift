@@ -131,7 +131,10 @@ function controllaElenco(percorso, sorgente) {
 async function costruisci() {
   const pezzi = [];
   for (const percorso of MODULI) {
-    let sorgente = await readFile(join(RADICE, percorso), 'utf8');
+    // Nella demo le notifiche push sono finte: stesso nome di modulo, così chi
+    // le importa non se ne accorge, ma niente permesso né iscrizione vera.
+    const origine = DEMO && percorso === 'src/ui/notifiche.js' ? 'demo/notifiche-finte.js' : percorso;
+    let sorgente = await readFile(join(RADICE, origine), 'utf8');
     if (DEMO) sorgente = perLaDemo(percorso, sorgente);
     const mancanti = controllaElenco(percorso, sorgente);
     if (mancanti.length) {

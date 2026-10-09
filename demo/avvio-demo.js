@@ -17,6 +17,23 @@ const stato = statoDemo();
 stato.profilo.versioneNote = VERSIONE_NOTE;
 store.reset(stato);
 
+// Senza server lo store rifiuta di cambiare le notifiche ("serve essere iscritti
+// allo store"). Nella demo la scelta si salva solo qui, così il selettore si
+// può mostrare e girare davvero.
+store.impostaModoNotifiche = (modo) => {
+  const prima = store.state.profilo.notifiche;
+  store.state.profilo.notifiche = {
+    modo, consensoIl: modo === 'compatibili' ? new Date().toISOString() : null, firma: null, favori: prima?.favori !== false,
+  };
+  store.commit();
+  return { ok: true, cambiato: prima?.modo !== modo };
+};
+store.impostaAvvisiFavori = (valore) => {
+  store.state.profilo.notifiche = { ...store.state.profilo.notifiche, favori: Boolean(valore) };
+  store.commit();
+  return { ok: true };
+};
+
 try {
   // Le schede della guida compaiono da sole la prima volta in ogni sezione:
   // con `?guida=1` si lasciano, per riprendere proprio quelle.

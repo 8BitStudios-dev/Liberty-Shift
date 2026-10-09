@@ -966,6 +966,12 @@ differenze:
   quelli della vecchia demo; si cambiano in `SETTIMANA_LORENZO`.
 - **Nessun server e chiavi sue** (`liberty-demo:*`): aprirla non tocca i
   turni veri salvati sullo stesso indirizzo. Ogni apertura riparte da capo.
+- **Il selettore delle notifiche c'è, ma è finto** (`demo/notifiche-finte.js`,
+  che nel file della demo prende il posto di `src/ui/notifiche.js`): nel
+  Profilo il riquadro Notifiche è già acceso, con "Solo le richieste
+  personali" e "Anche i cambi che ti convengono" che si possono girare, il
+  consenso compreso. Il browser non chiede nessun permesso e non parte nessuna
+  iscrizione: la scelta si salva solo nella demo (`demo/avvio-demo.js`).
 - **Una sola notifica, dentro la pagina** (`demo/notifiche-demo.js`): un
   banner in stile iPhone con "Rita ti ha ringraziato", che arriva due secondi
   dopo la prima apertura di Proposte e poi mai più. Cambia anche lo stato: è
