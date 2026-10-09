@@ -293,6 +293,12 @@ export function cambioDalGiorno() {
     </header>`;
 
   const turno = store.shift(dalGiorno.cedoShiftId);
+  if (turno && store.turnoImpegnato(turno.id)) {
+    return html`
+      ${raw(testata)}
+      ${raw(vuoto('Turno già in uno scambio', 'Questo turno è dentro uno scambio concordato: non si cambia finché UKG non lo approva. Se UKG lo blocca, lo annulli da Proposte.',
+    '<button class="btn primario" data-act="vai" data-to="#/inbox">Vai a Proposte</button>'))}`;
+  }
   let domanda;
   let scelto;
   if (azione === 'orario') {

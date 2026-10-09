@@ -340,6 +340,24 @@ cancellata ogni notte, con le proposte che ha dentro. Prima sul server restava
 perdono dalle statistiche le richieste mai concluse: è voluto.
 
 ## Dettagli che portano peso
+- **Un turno si scambia una volta sola, e lo dice prima.** Finché uno scambio
+  è concordato e UKG non l'ha approvato, i due turni (quello lasciato e quello
+  offerto) non entrano in un'altra richiesta né in un'altra proposta
+  (`turnoImpegnato` nello store): il foglio del giorno lo scrive al posto dei
+  tasti, la tendina non li offre, e se qualcosa arriva lo stesso lo store lo
+  rifiuta. Annullato o approvato lo scambio, i turni tornano liberi. Il
+  server fa lo stesso col trigger `turno_impegnato`: qui si dice prima.
+- **Una richiesta scaduta, chiusa o rimossa non si risponde più.** La
+  proposta che le restava attaccata non compare in "Aspettano te" e non si
+  accetta: prima il tasto c'era e faceva un accordo su un giorno passato. Un
+  secondo tocco su Accetta, un accordo che si prova a rifiutare e una
+  richiesta in accordo che si prova a cancellare non fanno più niente: per
+  uscire da uno scambio concordato c'è Annulla lo scambio.
+- **Il calendario che cambia fa cadere quello che non regge più.** Quando
+  l'aggiornamento dei turni mette a lavorare chi offriva quel giorno in un
+  cambio OFF, la richiesta si cancella (non si modifica, cap. 23); una
+  proposta OFF si ritira se chi l'ha fatta adesso lavora il giorno che
+  avrebbe preso.
 - **Il tasto ‹ riporta dove eri.** Ogni schermata lasciata ricorda a che punto
   era (`posizioni` in `app.js`), e il ‹ in cima o l'azione `indietro` la
   riaprono lì: aprire la richiesta numero otto della bacheca e tornare indietro

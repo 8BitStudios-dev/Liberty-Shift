@@ -233,7 +233,24 @@ export const store = {
   turniOfferibili(request) {
     const byId = this.shiftsById();
     return this.shiftsOf(this.state.currentUserId, { soloFuturi: true })
-      .filter((s) => turnoOfferibile(request, s, this.state.shifts, byId, (id) => this.user(id)).ok);
+      .filter((s) => !this.turnoImpegnato(s.id)
+        && turnoOfferibile(request, s, this.state.shifts, byId, (id) => this.user(id)).ok);
+  },
+  /**
+   * Il turno è dentro uno scambio concordato che UKG non ha ancora approvato?
+   *
+   * Un turno si scambia una volta sola: finché l'accordo c'è, quel turno non
+   * è più libero di entrare in un'altra richiesta o in un'altra proposta. Il
+   * server lo garantisce col trigger `turno_impegnato`; qui lo si dice prima,
+   * invece di lasciar fare due accordi sullo stesso turno e scoprirlo dopo.
+   * Un accordo annullato o già approvato non lo impegna più.
+   */
+  turnoImpegnato(shiftId) {
+    if (!shiftId) return false;
+    const approvati = this.state.scambiConfermati || [];
+    return this.state.proposals.some((p) => p.status === 'ACCORDO' && !p.annullataIl && !p.confermataIl
+      && !approvati.includes(p.id)
+      && (p.shiftOffertoId === shiftId || this.request(p.requestId)?.cedo.shiftId === shiftId));
   },
   /**
    * Va detto «al momento non puoi cambiare» su questa richiesta?
@@ -258,10 +275,22 @@ export const store = {
   proposteDi(requestId) {
     return this.state.proposals.filter((p) => p.requestId === requestId);
   },
+  /**
+   * Una proposta che aspetta ancora una risposta ha senso solo finché la sua
+   * richiesta è aperta: scaduta, chiusa o rimossa, nessuno la può più
+   * accettare, e restare in "Aspettano te" per un turno già passato era solo
+   * rumore (e un tasto Accetta che faceva un accordo su ieri).
+   */
+  rispondibile(p) {
+    if (p.status !== 'IN_ATTESA') return true;
+    const r = this.request(p.requestId);
+    return Boolean(r) && isOpen(r);
+  },
   propostePerMe() {
     const me = this.state.currentUserId;
     return this.state.proposals.filter(
-      (p) => (p.daUserId === me || p.aUserId === me) && p.status !== 'RIFIUTATA' && !p.cambioInserito,
+      (p) => (p.daUserId === me || p.aUserId === me) && p.status !== 'RIFIUTATA' && !p.cambioInserito
+        && this.rispondibile(p),
     );
   },
   /**
@@ -482,18 +511,34 @@ export const store = {
     const proposte = [];
     if (!cambiati.size) return { richieste, proposte };
     const me = this.state.currentUserId;
+    // Oggi lavori quel giorno? Il calendario appena letto è quello che conta.
+    const lavoro = (giorno) => this.state.shifts.some((x) => x.userId === me && x.data === giorno && x.tipo === 'WORK');
     for (const r of this.state.requests.filter((x) => x.userId === me && isOpen(x))) {
       const giorno = this.shift(r.cedo.shiftId)?.data;
       if (giorno && cambiati.has(giorno)) {
         this.cancellaRichiesta(r.id);
         richieste.push(giorno);
+        continue;
+      }
+      // Un cambio OFF offre giorni in cui sei libero: se il calendario te ne
+      // ha messo uno a lavorare, quel giorno non si può più dare in cambio, e
+      // una richiesta pubblicata non si modifica (cap. 23): si cancella.
+      const sparito = r.tipo === 'OFF' && (r.cerco.giorni || []).find((g) => cambiati.has(g) && lavoro(g));
+      if (sparito) {
+        this.cancellaRichiesta(r.id);
+        richieste.push(sparito);
       }
     }
     const inAttesa = this.state.proposals.filter((p) => p.daUserId === me
       && p.status !== 'ACCORDO' && p.status !== 'RIFIUTATA');
     for (const p of inAttesa) {
+      const r = this.request(p.requestId);
       const giorno = this.shift(p.shiftOffertoId)?.data;
-      if (giorno && cambiati.has(giorno) && !this.ritiraProposta(p.id)) proposte.push(giorno);
+      // In un cambio OFF chi propone prende il giorno che l'altro lascia: se
+      // adesso ci lavora, la proposta non regge più.
+      const giornoPreso = r?.tipo === 'OFF' ? this.shift(r.cedo.shiftId)?.data : null;
+      const cambiato = (giorno && cambiati.has(giorno)) || (giornoPreso && cambiati.has(giornoPreso) && lavoro(giornoPreso));
+      if (cambiato && !this.ritiraProposta(p.id)) proposte.push(giorno || giornoPreso);
     }
     return { richieste: [...new Set(richieste)].sort(), proposte: [...new Set(proposte)].sort() };
   },
@@ -604,6 +649,9 @@ export const store = {
       { tipo, cedo, cerco, userId: this.state.currentUserId }, this.shiftsById(), this.state.shifts,
     );
     if (errori.length) return { errori };
+    if (this.turnoImpegnato(cedo.shiftId)) {
+      return { errori: ['Questo turno è già dentro uno scambio concordato: finché UKG non lo approva o lo annulli, non puoi metterlo in un\'altra richiesta.'] };
+    }
     // Un secondo tocco su "Pubblica", o una richiesta che sembrava non partita,
     // creavano due richieste identiche: i colleghi le vedevano doppie.
     const doppia = this.state.requests.find((r) => isOpen(r) && r.userId === this.state.currentUserId
@@ -668,7 +716,12 @@ export const store = {
   // Una richiesta pubblicata non si modifica (cap. 23): si cancella e si rifà.
   cancellaRichiesta(id) {
     const r = this.request(id);
-    if (!r) return;
+    if (!r) return null;
+    // Con uno scambio già concordato non si cancella: sparirebbe di nascosto
+    // anche l'accordo, e l'altra persona lo scoprirebbe da sola. Prima si annulla.
+    if (this.state.proposals.some((p) => p.requestId === id && p.status === 'ACCORDO' && !p.annullataIl)) {
+      return 'Lo scambio è già concordato: per cancellare la richiesta annulla prima lo scambio.';
+    }
     r.status = STATUS.CHIUSA;
     r.chiusaIl = new Date().toISOString();
     this.state.proposals
@@ -680,6 +733,7 @@ export const store = {
     this.rispecchiaRichiesta(r);
     this.commit();
     this.spingi();
+    return null;
   },
 
   /**
@@ -733,6 +787,10 @@ export const store = {
     if (!r) return { errori: ['Richiesta non trovata: forse è stata chiusa o cancellata. Aggiorna la pagina.'] };
     const me = this.state.currentUserId;
     if (r.userId === me) return { errori: ['Non puoi proporre uno scambio a te stesso.'] };
+    // Una richiesta già chiusa, in accordo o scaduta non si risponde più: dal
+    // dettaglio, aperto da un vecchio collegamento, il tasto c'era ancora.
+    if (!isOpen(r)) return { errori: ['Questa richiesta non è più aperta: aggiorna la pagina.'] };
+    if (this.turnoImpegnato(r.cedo.shiftId)) return { errori: ['Il turno di questa richiesta è già dentro uno scambio concordato.'] };
     if (this.state.proposals.some((p) => p.requestId === requestId && p.daUserId === me && p.status !== 'RIFIUTATA')) {
       return { errori: ['Hai già una proposta aperta su questa richiesta: la trovi in Proposte. Ritirala se vuoi farne un\'altra.'] };
     }
@@ -740,6 +798,10 @@ export const store = {
     // modulo, così nessuna scorciatoia della UI la aggira.
     const offerto = this.shift(shiftOffertoId);
     if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido: scegli un altro turno.'] };
+    if (offerto.data < todayISO()) return { errori: ['Quel turno è già passato: scegline un altro.'] };
+    if (this.turnoImpegnato(offerto.id)) {
+      return { errori: ['Quel turno è già dentro uno scambio concordato: scegline un altro, oppure annulla lo scambio.'] };
+    }
     const trova = (id) => this.user(id);
     const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById(), trova);
     if (!verifica.ok) return { errori: [verifica.motivo] };
@@ -821,6 +883,10 @@ export const store = {
     const p = this.state.proposals.find((x) => x.id === proposalId);
     if (!p || p.status === 'RIFIUTATA') return;
     const me = this.state.currentUserId;
+    // Un secondo tocco su Accetta non rifà l'accordo (e le sue notifiche), e
+    // chi non è parte dello scambio non lo accetta.
+    if (p.status === 'ACCORDO' || (p.daUserId !== me && p.aUserId !== me)) return;
+    if (!this.rispondibile(p)) return;
     if (!p.accettataDa.includes(me)) p.accettataDa.push(me);
     const r = this.request(p.requestId);
     // Prima parte la proposta, poi quello che ne dipende, tutto nello stesso
@@ -899,6 +965,9 @@ export const store = {
     const p = this.state.proposals.find((x) => x.id === proposalId);
     if (!p) return;
     const me = this.state.currentUserId;
+    // Uno scambio concordato non si rifiuta, si annulla (`annullaScambio`):
+    // rifiutarlo lasciava la richiesta in accordo senza un accordo.
+    if (p.status === 'ACCORDO' || (p.daUserId !== me && p.aUserId !== me)) return;
     p.status = 'RIFIUTATA';
     p.motivoRifiuto = motivo.trim();
     p.rifiutataDa = me;
@@ -1051,7 +1120,7 @@ export const store = {
   inbox() {
     const me = this.state.currentUserId;
     return this.state.proposals
-      .filter((p) => (p.daUserId === me || p.aUserId === me) && !p.cambioInserito)
+      .filter((p) => (p.daUserId === me || p.aUserId === me) && !p.cambioInserito && this.rispondibile(p))
       .map((p) => ({
         proposta: p,
         richiesta: this.request(p.requestId),

@@ -1122,7 +1122,8 @@ const AZIONI = {
 
   cancella: (_, el) => {
     if (!confirm('Cancellare la richiesta? Non si può modificare, solo rifare da capo.')) return;
-    store.cancellaRichiesta(el.dataset.id);
+    const errore = store.cancellaRichiesta(el.dataset.id);
+    if (errore) return toast(errore);
     toast('Richiesta cancellata');
     vai('#/home');
   },

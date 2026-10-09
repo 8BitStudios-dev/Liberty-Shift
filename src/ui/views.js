@@ -1315,6 +1315,11 @@ function azioniCambio(data, turno) {
   if (data < todayISO()) return '';
   const tasto = (azione, testo, classe) => html`
     <button class="btn ${classe}" data-act="cambio-giorno" data-azione="${azione}" data-data="${data}">${testo}</button>`;
+  // Un turno già dentro uno scambio concordato non si mette in un'altra
+  // richiesta: meglio dirlo qui che far fare tutto il giro e rifiutare alla fine.
+  if (turno && store.turnoImpegnato(turno.id)) {
+    return '<p class="testo-tenue">Questo turno è già dentro uno scambio concordato: non si cambia finché UKG non lo approva. Se UKG lo blocca, lo annulli da Proposte.</p>';
+  }
   return turno?.tipo === 'WORK'
     ? `<div class="barra-azioni azioni-giorno">${tasto('orario', 'Cambia orario', 'primario')}${tasto('richiedi-off', 'Richiedi OFF', 'secondario')}</div>`
     : `<div class="barra-azioni azioni-giorno">${tasto('cedi-off', 'Cedi OFF', 'primario')}</div>`;

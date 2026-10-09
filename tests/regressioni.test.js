@@ -18,6 +18,7 @@ const { store } = await import('../src/core/store.js');
 const { seed } = await import('./fixtures/seed.js');
 const { parseICS } = await import('../src/core/ics.js');
 const { STATUS } = await import('../src/core/rules.js');
+const { todayISO } = await import('../src/core/time.js');
 
 const evento = (righe) => `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${righe}\r\nEND:VCALENDAR`;
 
@@ -390,7 +391,9 @@ test('al primo accordo, le altre proposte con lo stesso turno decadono', () => {
   const mio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK');
   const altroMio = store.state.shifts.find((s) => s.userId === me && s.tipo === 'WORK' && s.id !== mio.id);
   const richiesta = (id, autore) => {
-    const cedo = store.state.shifts.find((s) => s.userId === autore.id && s.tipo === 'WORK');
+    // Un turno ancora da venire: una richiesta su un turno passato scade, e
+    // una proposta che la riguarda non si accetta più.
+    const cedo = store.state.shifts.find((s) => s.userId === autore.id && s.tipo === 'WORK' && s.data >= todayISO());
     store.state.requests.push({
       id, userId: autore.id, createdAt: new Date().toISOString(), status: STATUS.APERTA,
       prioritaFinoA: null, tipo: 'ORARIO', cedo: { shiftId: cedo.id, flessibile: false }, cerco: { giorni: [] },
