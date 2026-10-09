@@ -92,33 +92,27 @@ test('favori: chi ti ha aiutato e chi hai aiutato, con l\'ultima volta', () => {
   assert.deepEqual([...chiHaiAiutato('lorenzo', stato).keys()].sort(), ['giulia', 'marco']);
 });
 
-test('occasioni: ultime chiamate, poi chi ricambiare, poi quello che pesa meno; la priorità non conta', () => {
+test('occasioni: prima le ultime chiamate, poi chi aspetta da più tempo, e basta', () => {
   const adesso = new Date('2026-10-12T10:00:00Z');
   const vicino = turno('12:00', '21:00', '2026-10-14');
-  const turni = Object.fromEntries([mattina, mattina2, chiusura, apertura, vicino].map((s) => [s.id, s]));
-  const occasione = (id, userId, cedo, mio, extra = {}) => ({
-    richiesta: { id, userId, cedo: { shiftId: cedo.id }, prioritaFinoA: null, createdAt: '2026-10-11T08:00:00Z', ...extra },
-    match: { shiftOffertoId: mio.id, score: 80 },
+  const lontano = turno('10:00', '19:00', '2026-10-25');
+  const turni = Object.fromEntries([mattina, vicino, lontano].map((s) => [s.id, s]));
+  const occasione = (id, cedo, createdAt, extra = {}) => ({
+    richiesta: { id, userId: id, cedo: { shiftId: cedo.id }, prioritaFinoA: null, createdAt, ...extra },
+    match: { shiftOffertoId: mattina.id, score: 80 },
   });
   const io = { preferenze: { versione: 2, modo: 'generali', fasce: { CHIUSURA: 'evita' }, giorni: {} } };
   const lista = occasioniDiAiuto([
-    occasione('pesa', 'anna', chiusura, mattina),
-    occasione('nulla', 'bruno', mattina2, mattina),
-    occasione('favore', 'giulia', apertura, mattina),
-    occasione('conviene', 'carla', mattina, chiusura),
-    occasione('prioritaria', 'dario', chiusura, mattina, { prioritaFinoA: '2099-01-01T00:00:00Z' }),
-    // Il turno fra due giorni, in bacheca da cinque e da quattro: ultime
-    // chiamate, anche se a me pesano, e prima quella che aspetta da più tempo.
-    occasione('ultima-recente', 'elena', vicino, mattina, { createdAt: '2026-10-08T08:00:00Z' }),
-    occasione('ultima-vecchia', 'fabio', vicino, mattina, { createdAt: '2026-10-07T08:00:00Z' }),
+    occasione('recente', lontano, '2026-10-11T08:00:00Z'),
+    occasione('prioritaria', lontano, '2026-10-10T08:00:00Z', { prioritaFinoA: '2099-01-01T00:00:00Z' }),
+    occasione('vecchia', lontano, '2026-10-01T08:00:00Z'),
+    occasione('ultima-recente', vicino, '2026-10-08T08:00:00Z'),
+    occasione('ultima-vecchia', vicino, '2026-10-07T08:00:00Z'),
     // Turno vicino ma pubblicata ieri: urgente, non ancora ignorata.
-    occasione('troppo-nuova', 'gino', vicino, mattina, { createdAt: '2026-10-11T08:00:00Z' }),
-  ], { io, turno: (id) => turni[id], favori: new Map([['giulia', '2026-10-03']]), adesso });
-  assert.deepEqual(lista.map((o) => o.richiesta.id).slice(0, 2), ['ultima-vecchia', 'ultima-recente']);
-  assert.equal(lista.find((o) => o.richiesta.id === 'troppo-nuova').ultimaChiamata, false);
-  assert.equal(lista[2].richiesta.id, 'favore');
-  const resto = lista.slice(3).map((o) => o.richiesta.id);
-  assert.ok(resto.indexOf('prioritaria') > resto.indexOf('conviene'), 'la priorità non porta in cima');
+    occasione('troppo-nuova', vicino, '2026-10-11T09:00:00Z'),
+  ], { io, turno: (id) => turni[id], favori: new Map([['recente', '2026-10-03']]), adesso });
+  assert.deepEqual(lista.map((o) => o.richiesta.id),
+    ['ultima-vecchia', 'ultima-recente', 'vecchia', 'prioritaria', 'recente', 'troppo-nuova']);
 });
 
 test('ultima chiamata: entro 3 giorni dal turno e da almeno 3 in bacheca, mai per un turno passato', () => {

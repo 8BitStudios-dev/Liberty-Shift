@@ -110,10 +110,6 @@ export function chiHaiAiutato(userId, stato) {
   return ultimoPer(aiutiConclusi(stato).filter((a) => a.aiutante === userId), 'aiutato');
 }
 
-// I costi in ordine: prima quello che conviene, in fondo quello che pesa.
-const ORDINE_COSTO = { conviene: 0, nulla: 1, poco: 2 };
-const rangoCosto = (c) => ORDINE_COSTO[c] ?? (c === 'costa' ? 4 : 3);
-
 const GIORNO_MS = 86400000;
 
 /**
@@ -135,12 +131,11 @@ export function ultimaChiamata(richiesta, cedo, adesso = new Date()) {
  * Le occasioni di aiutare, ognuna col suo costo, il favore da ricambiare e
  * l'ultima chiamata, se ci sono.
  *
- * L'ordine: prima le ultime chiamate, da quella che aspetta da più tempo e
- * poi dal turno più vicino, anche quando ti pesano: aiutare un collega che
- * nessuno ha aiutato è proprio il senso di questa schermata. Poi chi ti ha
- * aiutato, a meno che ricambiare ti costi davvero; poi quello che ti costa
- * meno; a parità, il punteggio. La priorità qui non conta: è visibilità in
- * bacheca, non un motivo per aiutare prima uno dell'altro.
+ * L'ordine è semplice di proposito: prima le ultime chiamate, poi tutte le
+ * altre, e in tutte e due da quella che aspetta da più tempo (a parità, il
+ * turno più vicino). Non conta quanto il cambio pesa a chi guarda, né la
+ * priorità: qui si aiuta chi aspetta da più tempo, e un ordine che cambia
+ * da persona a persona era più difficile da capire che da usare.
  */
 export function occasioniDiAiuto(opportunita, { io, turno, favori = new Map(), adesso = new Date() }) {
   const arricchite = opportunita.map((o) => {
@@ -153,10 +148,6 @@ export function occasioniDiAiuto(opportunita, { io, turno, favori = new Map(), a
     return { ...o, costo, favore, ultimaChiamata: ultimaChiamata(o.richiesta, cedo, adesso), dataTurno: cedo?.data || '' };
   });
   return arricchite.sort((a, b) => (b.ultimaChiamata - a.ultimaChiamata)
-    || (a.ultimaChiamata && b.ultimaChiamata
-      ? (a.richiesta.createdAt.localeCompare(b.richiesta.createdAt) || a.dataTurno.localeCompare(b.dataTurno))
-      : 0)
-    || ((b.favore && b.costo !== 'costa') - (a.favore && a.costo !== 'costa'))
-    || (rangoCosto(a.costo) - rangoCosto(b.costo))
-    || (b.match.score - a.match.score));
+    || (a.richiesta.createdAt || '').localeCompare(b.richiesta.createdAt || '')
+    || a.dataTurno.localeCompare(b.dataTurno));
 }

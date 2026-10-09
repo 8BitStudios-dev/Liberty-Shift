@@ -79,7 +79,8 @@ export const GUIDE = {
         In cima ci sono le <strong>ultime chiamate</strong>: il turno è entro
         ${RULES.ultimaChiamata.giorniAlTurno} giorni e la richiesta aspetta da almeno
         ${RULES.ultimaChiamata.giorniInBacheca} giorni senza che nessuno l'abbia presa.
-        Anche quando a te pesa un po', sono quelle dove il tuo aiuto conta di più.
+        Sono quelle dove il tuo aiuto conta di più. Dopo vengono tutte le
+        altre, da quella che aspetta da più tempo.
       </p>
 
       <p class="esempio">
@@ -88,17 +89,8 @@ export const GUIDE = {
       </p>
 
       <p>
-        Sopra ogni richiesta l'app ti dice <strong>quanto ti costa</strong>,
-        dalle tue preferenze: <em>Ti conviene</em>, <em>Per te non cambia
-        niente</em> o <em>Ti costa poco</em>. Dopo le ultime chiamate vengono
-        le più comode.
-      </p>
-
-      <p>
         Ogni collega che aiuti ti dà <strong>una priorità in più</strong> quando
-        UKG approva il cambio, fino a ${RULES.priority.tetto} al mese. E se qualcuno ti
-        ha aiutato, la sua richiesta te la mostriamo per prima: è il momento di
-        ricambiare.
+        UKG approva il cambio, fino a ${RULES.priority.tetto} al mese.
       </p>
 
       <p class="testo-tenue">

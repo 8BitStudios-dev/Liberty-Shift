@@ -482,10 +482,13 @@ const TESTO_COSTO = {
  * pesa, e se è il tuo turno di ricambiare. Il costo "pesa" non si scrive:
  * la card resta in fondo e il motivo si legge già nei perché.
  */
-function etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }) {
+function etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, soloUltima = false) {
   const u = store.user(richiesta.userId);
   const etichette = [];
   if (ultimaChiamata) etichette.push(['ultima', 'Ultima chiamata']);
+  // In Aiuta un collega resta solo l'ultima chiamata: più etichette erano più
+  // cose da leggere per decidere una cosa sola.
+  if (soloUltima) return etichette.length ? `<p class="etichette-aiuto"><span class="tag ultima">Ultima chiamata</span></p>` : '';
   if (favore && costo !== 'costa') etichette.push(['favore', `${u?.nome} ti ha aiutato ${meseDelFavore(favore)}: puoi ricambiare`]);
   if (TESTO_COSTO[costo]) etichette.push(TESTO_COSTO[costo]);
   if (!etichette.length) return '';
@@ -496,9 +499,9 @@ function etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }) {
  * Una richiesta altrui vista dal lato di chi può risolverla: la percentuale
  * è quanto tu sei una buona risposta per lei, non il contrario.
  *
- * Dentro Aiuta un collega (`aiuta`) niente percentuale né stella della
- * priorità: lì si aiuta chi ha bisogno, e a dire quanto ti pesa ci sono già
- * le etichette.
+ * Dentro Aiuta un collega (`aiuta`) niente percentuale, stella della
+ * priorità o etichette di costo: lì si aiuta chi aspetta da più tempo, e il
+ * solo segno che resta è l'ultima chiamata.
  */
 export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamata }, { aiuta = false } = {}) {
   const u = store.user(richiesta.userId);
@@ -520,7 +523,7 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
         </div>
         ${raw(aiuta ? '' : `<span class="score">${match.score}%</span>`)}
       </header>
-      ${raw(etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }))}
+      ${raw(etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, aiuta))}
       ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
       <div class="scambio-secco">

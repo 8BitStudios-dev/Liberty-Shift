@@ -1115,7 +1115,7 @@ export function aiuta() {
     </header>
     <p class="occhiello">
       Dai una mano a un collega e guadagni una priorità in più per il mese.
-      Vedi solo le richieste che puoi coprire con i tuoi turni: prima le ultime chiamate, poi le più comode per te.
+      Vedi solo le richieste che puoi coprire con i tuoi turni: prima le ultime chiamate, poi quelle che aspettano da più tempo.
     </p>
     ${raw(riquadroRicompensa())}
     ${raw(mie.length && !haPreferenze(store.me.preferenze)
