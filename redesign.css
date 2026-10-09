@@ -250,7 +250,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    parte dopo l'avatar, così l'occhio scende lungo i nomi. */
 .riga-richiesta {
   border: 0; border-radius: 0; margin-bottom: 0;
-  padding: 15px 16px; gap: 13px;
+  padding: 16px; gap: 12px;
   box-shadow: inset 0 -1px 0 var(--filetto);
 }
 .riga-richiesta:last-child { box-shadow: none; }
@@ -322,7 +322,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 }
 .titolo-gruppo { display: flex; align-items: center; gap: 8px; }
 
-.scambio-secco > div { font-size: 15px; padding: 7px 0; border-bottom: 1px solid var(--filetto); }
+.scambio-secco > div { font-size: 15px; padding: 8px 0; border-bottom: 1px solid var(--filetto); }
 .scambio-secco > div:last-child { border-bottom: 0; }
 
 /* Il bordo di sinistra come indice di lato, non come decorazione. */
@@ -349,9 +349,9 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 .marchio { width: 26px; height: 26px; border-radius: var(--raggio-cella); }
-.marchio-riga { gap: 9px; margin-bottom: 14px; }
+.marchio-riga { gap: 8px; margin-bottom: 14px; }
 
-.btn { padding: 15px 20px; border-radius: var(--raggio-s); font-size: 16px; font-weight: 650; }
+.btn { padding: 16px 20px; border-radius: var(--raggio-s); font-size: 16px; font-weight: 650; }
 /* Bianco in entrambi i temi: il gradiente resta scuro anche in scuro. */
 .btn.primario {
   background: var(--marchio); color: #fff;
@@ -359,20 +359,20 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 }
 .btn.secondario { border: 1px solid var(--bordo); }
 /* Bersagli: 44px è il minimo per un pollice, in piedi, con una mano. */
-.btn.piccolo { padding: 9px 14px; font-size: 14px; min-height: var(--bersaglio); }
+.btn.piccolo { padding: 8px 14px; font-size: 14px; min-height: var(--bersaglio); }
 .btn.largo { margin-top: 14px; }
 
 /* Prima l'.icon-btn portava solo un glifo di testo ("?", "‹"), centrato dal
    line-height. Con un'icona SVG dentro serve un centraggio vero. */
 .icon-btn { width: var(--bersaglio); height: var(--bersaglio); font-size: 19px; display: grid; place-items: center; }
-.pill { font-size: 15px; padding: 9px 16px; }
+.pill { font-size: 15px; padding: 8px 16px; }
 /* Icona e testo dei filtri sulla stessa riga: l'svg è un blocco, e andava a
    capo sopra l'etichetta raddoppiando l'altezza del chip. */
 .chip {
   font-size: 15px; padding: 0 16px; min-height: var(--bersaglio);
   display: inline-flex; align-items: center; gap: 6px;
 }
-.chips .chip { padding: 0 13px; font-size: 14px; }
+.chips .chip { padding: 0 12px; font-size: 14px; }
 .chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
 .link-btn { font-size: 15px; min-height: var(--bersaglio); display: inline-flex; align-items: center; }
 
@@ -561,9 +561,9 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 
 /* ------------------------------------------------------------ moduli */
 
-.campo > span { font-size: 14px; margin-bottom: 7px; }
+.campo > span { font-size: 14px; margin-bottom: 8px; }
 input[type="time"], input.testo, input[type="password"], textarea, .select {
-  padding: 13px 14px; border-radius: var(--raggio-s); font-size: 16px;
+  padding: 14px; border-radius: var(--raggio-s); font-size: 16px;
 }
 /* Il fuoco dei campi nel colore dell'app, al posto del contorno nero del browser. */
 input.testo:focus-visible, input[type="password"]:focus-visible, input[type="time"]:focus-visible, textarea:focus-visible {
@@ -613,7 +613,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 
 /* ------------------------------------------------------------ tabbar */
 
-#tabbar { padding: 9px 0 max(env(safe-area-inset-bottom), 8px); border-top-color: var(--filetto); }
+#tabbar { padding: 8px 0 max(env(safe-area-inset-bottom), 8px); border-top-color: var(--filetto); }
 /* Cinque voci al posto di quattro: lo spazio orizzontale non basta più a
    14px di margine per voce, e "Calendario" è l'etichetta più lunga. */
 .tab { position: relative; font-size: 12px; padding: 5px 8px; gap: 4px; }
@@ -634,7 +634,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .vuoto p { font-size: 15px; }
 .sheet { border-radius: var(--raggio-sheet) var(--raggio-sheet) 0 0; padding: 6px 18px max(env(safe-area-inset-bottom), 18px); }
 .sheet-head h2 { font-size: 19px; }
-#toast { font-size: 15px; padding: 13px 20px; box-shadow: var(--ombra-alta); }
+#toast { font-size: 15px; padding: 12px 20px; box-shadow: var(--ombra-alta); }
 .elenco { font-size: 16px; }
 .elenco.piccolo { font-size: 14px; }
 /* icona() mette display:block sull'svg: in mezzo a una frase serve un contenitore in riga. */
@@ -709,7 +709,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .tasto-aggiorna {
   appearance: none; font: inherit; cursor: pointer; position: relative;
   min-height: var(--bersaglio); padding: 0 14px; border-radius: var(--raggio-pill);
-  display: inline-flex; align-items: center; gap: 7px;
+  display: inline-flex; align-items: center; gap: 8px;
   border: 1px solid var(--bordo); background: var(--superficie); color: var(--testo);
   font-size: 14px; font-weight: 600; white-space: nowrap;
 }
@@ -725,7 +725,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    destra una riga di riepilogo. Si capisce cosa contengono senza aprirli. */
 .riquadro > summary,
 .riquadro-testa {
-  font-size: 17px; font-weight: 600; padding: 17px 0;
+  font-size: 17px; font-weight: 600; padding: 16px 0;
   display: flex; align-items: center; gap: 8px;
 }
 .riquadro-testa { padding-bottom: 6px; }
@@ -747,13 +747,6 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   margin: 22px 0 6px; font-size: 15px; font-weight: 700;
   text-transform: none; letter-spacing: 0; color: var(--testo);
 }
-.pref-nota { margin: 0 0 4px; }
-.pref-fasce { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
-.pref-fasce li {
-  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-  padding: 9px 12px; border-radius: var(--raggio-cella); background: var(--superficie-2); font-size: 15px;
-}
-.pref-fasce li span { color: var(--testo-tenue); font-size: 14px; text-align: right; }
 
 /* I tre pulsanti sotto il calendario: Sincronizza turni, Preferenze,
    Notifiche. Quadrati, una riga sola, ciascuno con il suo stato in due

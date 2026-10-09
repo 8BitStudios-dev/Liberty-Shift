@@ -339,12 +339,12 @@ export function cardMatch(match, opzioni = {}) {
         <details class="perche-aperto">
           <summary>Perché${match.avvisi.length ? ' · un avviso' : ''}</summary>
           <ul class="perche">${raw(match.reasons.map((r) => `<li>${r}</li>`).join(''))}</ul>
-          ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${match.avvisi.join(' ')}</div>` : '')}
+          ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${match.avvisi.join(' ')}</div>` : '')}
         </details>` : html`
         <ul class="perche">
           ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
         </ul>
-        ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${match.avvisi.join(' ')}</div>` : '')}`)}
+        ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${match.avvisi.join(' ')}</div>` : '')}`)}
       ${raw(azioneMatch(match, opzioni))}
     </article>`;
 }
@@ -532,7 +532,7 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
       ${raw(adattamento(match) ? notaStima() : '')}
       ${raw(notaPausa([mioTurno, store.shift(richiesta.cedo.shiftId)]))}
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
-      ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 17 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
+      ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
               data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}">
         Proponi lo scambio
