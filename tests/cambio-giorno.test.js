@@ -18,7 +18,7 @@ const { store } = await import('../src/core/store.js');
 const { addDays, todayISO, appleWeekKey } = await import('../src/core/time.js');
 const { satisfies, validateRequest, findMatches } = await import('../src/core/engine.js');
 const { orariStandard, wantLabel } = await import('../src/core/model.js');
-const { WANT_MODE, TIPO_CAMBIO } = await import('../src/core/rules.js');
+const { WANT_MODE, TIPO_CAMBIO, RULES } = await import('../src/core/rules.js');
 const F = await import('../src/ui/flows.js');
 
 // Una settimana tutta nel futuro: sabato prossimo e i giorni dopo.
@@ -132,7 +132,7 @@ test('Cedi OFF vale anche su un giorno senza turno', () => {
 test('Richiedi OFF: si offrono al massimo tre giorni, i primi tre già scelti', () => {
   settimana();
   F.apriDalGiorno(giorno(3), 'richiedi-off');
-  assert.equal(F.GIORNI_OFF_MASSIMO, 3);
+  assert.equal(RULES.giorniOffertiMax, 3);
   assert.ok(F.dalGiorno.giorni.length <= 3, `giorni offerti: ${F.dalGiorno.giorni.length}`);
   // Il foglio lo dice e non lascia aggiungerne un quarto: la schermata mostra "3 su 3".
   assert.match(String(F.cambioDalGiorno()), /fino a 3/);
@@ -152,4 +152,16 @@ test('chi risponde a un OFF vede in rosso i giorni offerti in cui è già OFF', 
   const righe = sheet.match(/<li>[^<]*<strong>sei già OFF<\/strong><\/li>/g) || [];
   assert.equal(righe.length, 1, righe.join(''));
   assert.ok(io);
+});
+
+test('il motore rifiuta un cambio OFF che offre più di tre giorni', () => {
+  settimana();
+  const base = (giorni) => ({
+    id: 'r', userId: store.state.currentUserId, tipo: TIPO_CAMBIO.OFF, cedo: { shiftId: 'mio-3' },
+    cerco: { giorni, mode: WANT_MODE.ANY },
+  });
+  const sette = [0, 1, 2, 4, 5, 6].map((n) => giorno(n));
+  assert.deepEqual(validateRequest(base(sette.slice(0, 3).filter((g) => g !== giorno(1))), store.shiftsById()), []);
+  const errori = validateRequest(base([giorno(0), giorno(2), giorno(4), giorno(5)]), store.shiftsById());
+  assert.ok(errori.some((e) => /al massimo 3 giorni/.test(e)), errori.join(' | '));
 });

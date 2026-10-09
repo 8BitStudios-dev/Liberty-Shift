@@ -192,15 +192,6 @@ function testataRapido() {
  * diventerebbero più richieste sullo stesso OFF, e due accordi insieme
  * ti farebbero lavorare due volte.
  */
-/**
- * Quanti giorni al massimo si possono offrire in un Richiedi OFF.
- *
- * È un limite del foglio, come "un solo giorno" per il Cedi OFF: chi risponde
- * sceglie *uno* di quei giorni, e più di tre voleva dire una lista da scorrere
- * per dire la stessa cosa. Il motore non lo controlla (`validateRequest`).
- */
-export const GIORNI_OFF_MASSIMO = 3;
-
 export const dalGiorno = {
   data: null, azione: null, orari: [], giorni: [], cedoShiftId: null, usaPriorita: false, note: '',
   // Il cambio orario si chiede in due modi: orari precisi, o una fascia con un
@@ -219,7 +210,7 @@ export function apriDalGiorno(data, azione) {
     dalGiorno.cedoShiftId = turno?.id || null;
     // Come sempre i giorni liberi sono già scelti, ma ora ce n'è un tetto:
     // con di più partono i primi tre, i più vicini, e si cambia a tocchi.
-    dalGiorno.giorni = giorniLiberi(me, data, store.state.shifts).slice(0, GIORNI_OFF_MASSIMO);
+    dalGiorno.giorni = giorniLiberi(me, data, store.state.shifts).slice(0, RULES.giorniOffertiMax);
   }
   if (azione === 'orario') dalGiorno.cedoShiftId = turno?.id || null;
 }
@@ -346,11 +337,11 @@ export function cambioDalGiorno() {
     scelto = dalGiorno.modo === 'fascia' ? Boolean(dalGiorno.ora) : dalGiorno.orari.length > 0;
   } else if (azione === 'richiedi-off') {
     const liberi = giorniLiberi(store.state.currentUserId, data, store.state.shifts);
-    const alMassimo = dalGiorno.giorni.length >= GIORNI_OFF_MASSIMO;
+    const alMassimo = dalGiorno.giorni.length >= RULES.giorniOffertiMax;
     domanda = html`
       <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
       <h2 class="titolo-gruppo">In quali giorni lavoreresti in cambio?</h2>
-      <p class="testo-tenue">Sono i tuoi giorni liberi della stessa settimana, da sabato a venerdì. Ne puoi offrire fino a ${GIORNI_OFF_MASSIMO}: chi risponde ne sceglie uno${liberi.length ? ` (${dalGiorno.giorni.length} su ${GIORNI_OFF_MASSIMO})` : ''}.</p>
+      <p class="testo-tenue">Sono i tuoi giorni liberi della stessa settimana, da sabato a venerdì. Ne puoi offrire fino a ${RULES.giorniOffertiMax}: chi risponde ne sceglie uno${liberi.length ? ` (${dalGiorno.giorni.length} su ${RULES.giorniOffertiMax})` : ''}.</p>
       ${raw(liberi.length ? `<div class="chips">${liberi.map((g) => html`
         <button class="pill ${dalGiorno.giorni.includes(g) ? 'attivo' : ''} ${alMassimo && !dalGiorno.giorni.includes(g) ? 'spento' : ''}" data-act="giorno-libero" data-data="${g}">${formatDay(g)}</button>`).join('')}</div>`
     : '<p class="motivo-non-puoi">Al momento non puoi cambiare: in questa settimana non hai altri giorni liberi.</p>')}`;

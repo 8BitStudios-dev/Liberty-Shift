@@ -132,6 +132,11 @@ export const RULES = {
   // non aiuta a scegliere, e chi apre questa schermata vuole decidere in fretta.
   rapidoMassimo: 5,
 
+  // Quanti giorni al massimo si offrono in un cambio OFF. Chi risponde ne
+  // sceglie uno solo: più di tre voleva dire una lista da scorrere per dire
+  // la stessa cosa. Vale alla creazione (`validateRequest`) e nel foglio.
+  giorniOffertiMax: 3,
+
   // "Ultima chiamata" in Aiuta un collega: il turno è vicino e la richiesta
   // aspetta da giorni senza che nessuno l'abbia presa. È solo un bollino e un
   // posto in cima: non dà priorità né altro a nessuno.

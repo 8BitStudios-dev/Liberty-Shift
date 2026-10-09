@@ -364,6 +364,13 @@ deve essere libera nel giorno che prende: altrimenti qualcuno si ritroverebbe
 con due turni nello stesso giorno. La regola è applicata alla creazione e nella
 scelta dei giorni, dove compaiono solo i tuoi OFF.
 
+Si offrono **al massimo tre giorni** (`RULES.giorniOffertiMax`): chi risponde ne
+sceglie uno solo, e una lista più lunga non diceva niente di più. Il limite è
+nel motore (`validateRequest` rifiuta una richiesta con più di tre giorni) e nel
+foglio del calendario, che non lascia sceglierne un quarto. Chi risponde vede
+in rosso i giorni offerti in cui è già OFF, perché quelli non si possono
+scegliere.
+
 Nel cambio orario il problema non si pone: si resta dentro una giornata sola.
 
 ## R18 — Import dei turni

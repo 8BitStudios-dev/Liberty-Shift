@@ -123,6 +123,9 @@ export function validateRequest(request, shiftsById, shifts = null) {
   }
 
   if (mio && tipo === TIPO_CAMBIO.OFF) {
+    if (giorni.length > RULES.giorniOffertiMax) {
+      errori.push(`Puoi offrire al massimo ${RULES.giorniOffertiMax} giorni: ne hai scelti ${giorni.length}.`);
+    }
     for (const g of giorni) {
       if (g === mio.data) {
         errori.push('Il giorno che vuoi avere OFF non può essere anche quello che offri.');

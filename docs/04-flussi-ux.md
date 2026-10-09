@@ -69,10 +69,10 @@ del giorno offre la domanda giusta per quel giorno:
   un'app più vecchia.
 - giorno di lavoro → **Richiedi OFF**: i giorni liberi della stessa
   settimana si offrono come giorni in cui si lavorerebbe, **fino a tre**
-  (`GIORNI_OFF_MASSIMO` in `flows.js`): ne partono già scelti i primi tre e un
-  quarto tocco dice che il massimo è tre. Chi risponde ne sceglie uno solo. È
-  un limite del foglio: il motore non lo controlla, e il wizard di `#/nuovo`
-  non ce l'ha.
+  (`RULES.giorniOffertiMax`, regola R16 del regolamento): ne partono già scelti
+  i primi tre e un quarto tocco dice che il massimo è tre. Chi risponde ne
+  sceglie uno solo. Il motore rifiuta anche una richiesta con più di tre
+  giorni, da qualunque schermata arrivi.
 - giorno OFF o senza turno → **Cedi OFF**: si sceglie *un* giorno di lavoro della stessa
   settimana da avere libero. Esce una normale richiesta di OFF su quel
   giorno, con il giorno OFF come unico giorno offerto. Un giorno solo:
