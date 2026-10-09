@@ -557,9 +557,9 @@ test('la stessa richiesta OFF cambia ruolo a seconda del giorno che si guarda', 
   assert.doesNotMatch(lunedi.sintesi, /1[46]/);
 });
 
-// Un cambio orario sta fra chi offre: da fuori è un turno che si può prendere,
-// esattamente come una giornata messa a disposizione.
-test('un cambio orario è una proposta, quindi sta fra chi offre', () => {
+// Un cambio orario ha un giorno solo e un colore suo: blu e verde sono dei
+// cambi OFF, che lasciano un giorno e ne offrono un altro.
+test('un cambio orario ha un ruolo suo, diverso da chi cerca e da chi offre', () => {
   const cedo = { id: 's2', userId: 'u_lea', data: '2026-09-15', tipo: 'WORK', start: '12:00', end: '21:00' };
   const richiesta = {
     id: 'r2',
@@ -569,7 +569,7 @@ test('un cambio orario è una proposta, quindi sta fra chi offre', () => {
     cerco: { giorni: ['2026-09-15'], mode: WANT_MODE.RANGE, entroLe: '19:00' },
   };
   const r = ruoloNelGiorno(richiesta, '2026-09-15', cedo);
-  assert.equal(r.ruolo, 'OFFRE');
+  assert.equal(r.ruolo, 'ORARIO');
   assert.match(r.sintesi, /12:00–21:00/);
   assert.match(r.sintesi, /entro le 19:00/);
 });

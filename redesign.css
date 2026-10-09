@@ -54,6 +54,12 @@
   --cedo-tenue: var(--accento-tenue);
   --prendo: #0b7a52;
   --prendo-tenue: #e4f6ee;
+  /* Il cambio orario ha un colore suo: ha un giorno solo, non lascia né offre. */
+  --orario: #7a45d6;
+  /* Chi cerca un OFF ha un arancio suo: il blu è di chi lascia un turno nelle
+     schede, e nel Calendario "cerca" e "lascia" non si capivano. Anche la
+     pillola "Cambio OFF" lo usa: chi pubblica un OFF è sempre chi lo cerca. */
+  --cerca-off: #e0620d;
   /* Nome storico di --prendo, ancora usato da styles.css. */
   --verde: var(--prendo);
   --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
@@ -122,6 +128,8 @@
     --accento-tenue: #16263f;
     --prendo: #45d19a;
     --prendo-tenue: #12302a;
+    --orario: #b496ff;
+    --cerca-off: #ff9a52;
     --rosso: #ff7b80;
     --ambra: #ffb066;
     --oro: #e8c04c;
@@ -161,6 +169,8 @@
   --accento-tenue: #16263f;
   --prendo: #45d19a;
   --prendo-tenue: #12302a;
+  --orario: #b496ff;
+  --cerca-off: #ff9a52;
   --rosso: #ff7b80;
   --ambra: #ffb066;
   --oro: #e8c04c;
@@ -203,6 +213,15 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .gruppo-giorno > .testo-tenue { font-size: 14px; }
 .occhiello { font-size: 16px; margin: 6px 0 18px; }
 .badge, .tag { font-size: 12px; }
+.badge .pallino-stato {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  margin-right: 2px; vertical-align: 0; background: var(--testo-tenue);
+}
+.stato-APERTA .pallino-stato { background: var(--oro); }
+.stato-PROPOSTA .pallino-stato { background: var(--accento); }
+.stato-IN_ATTESA .pallino-stato { background: var(--ambra); }
+.stato-ACCORDO .pallino-stato { background: var(--prendo); }
+.stato-RIMOSSA .pallino-stato { background: var(--rosso); }
 .perche { font-size: 14px; line-height: 1.55; }
 .perche li { margin: 5px 0; }
 
@@ -261,8 +280,9 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .riga-richiesta.prioritaria {
   border: 0; box-shadow: inset 3px 0 0 var(--oro), inset 0 -1px 0 var(--filetto);
 }
-.riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cedo), inset 0 -1px 0 var(--filetto); }
+.riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cerca-off), inset 0 -1px 0 var(--filetto); }
 .riga-richiesta.ruolo-OFFRE { border-left: 0; box-shadow: inset 3px 0 0 var(--prendo), inset 0 -1px 0 var(--filetto); }
+.riga-richiesta.ruolo-ORARIO { border-left: 0; box-shadow: inset 3px 0 0 var(--orario), inset 0 -1px 0 var(--filetto); }
 .riga-titolo { font-size: 16px; gap: 8px; }
 /* La stella della priorità prende l'oro, come il filo a sinistra: in
    currentColor era nera in chiaro e bianca in scuro. */
@@ -321,6 +341,31 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   display: flex; align-items: center; gap: 6px;
 }
 .titolo-gruppo { display: flex; align-items: center; gap: 8px; }
+/* La pillola del tipo di cambio: tono su tono, come i tag. Il colore passa da
+   --tipo, così pillola piccola e grande non possono divergere. */
+.tipo-etichetta[data-tipo="ORARIO"], .tipo-pill[data-tipo="ORARIO"], .cerchio-tipo[data-tipo="ORARIO"] { --tipo: var(--orario); }
+.tipo-etichetta[data-tipo="OFF"], .tipo-pill[data-tipo="OFF"], .cerchio-tipo[data-tipo="OFF"] { --tipo: var(--cerca-off); }
+/* Nelle righe delle richieste il cerchio dice il tipo al posto delle iniziali:
+   il nome sta già scritto sopra, e il colore si legge prima di qualsiasi testo. */
+.avatar.cerchio-tipo {
+  width: 48px; height: 48px; flex: none; gap: 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.cerchio-testo { font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
+.cerchio-tipo[data-tipo] { color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent); }
+.tipo-etichetta, .tipo-pill[data-tipo] {
+  color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent);
+}
+.tipo-etichetta {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 700; letter-spacing: 0;
+  padding: 4px 11px; border-radius: var(--raggio-pill);
+}
+.tipo-pill[data-tipo] { font-weight: 600; }
+/* I filtri della Bacheca portano il colore del tipo che filtrano, da spenti:
+   da accesi il fondo pieno dice già che sono scelti. */
+.chip[data-filtro="ORARIO"]:not(.attivo) { color: var(--orario); }
+.chip[data-filtro="OFF"]:not(.attivo) { color: var(--cerca-off); }
 
 .scambio-secco > div { font-size: 15px; padding: 8px 0; border-bottom: 1px solid var(--filetto); }
 .scambio-secco > div:last-child { border-bottom: 0; }
@@ -331,11 +376,13 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .card.da-fare { border-left: 4px solid var(--accento); }
 .tile.scelta.verde { border-left: 4px solid var(--prendo); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
-.gruppo-giorno.CERCA h3::before { background: var(--cedo); }
+.gruppo-giorno.CERCA h3::before { background: var(--cerca-off); }
 .gruppo-giorno.OFFRE h3::before { background: var(--prendo); }
+.gruppo-giorno.ORARIO h3::before { background: var(--orario); }
 .gruppo-giorno h3 { font-size: 14px; }
-.barre .cerca { background: var(--cedo); }
+.barre .cerca { background: var(--cerca-off); }
 .barre .offre { background: var(--prendo); }
+.barre .orario { background: var(--orario); }
 .tabella-dati th:first-child { color: var(--prendo); }
 .tabella-dati th:last-child { color: var(--cedo); }
 

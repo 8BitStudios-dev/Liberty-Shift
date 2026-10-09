@@ -232,6 +232,7 @@ p { margin: 8px 0; }
   background: var(--superficie); color: inherit; font: inherit; text-align: left;
   cursor: pointer; box-shadow: var(--ombra); margin-bottom: 10px;
 }
+a.tile { text-decoration: none; }
 .tile > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
 .tile em { font-style: normal; color: var(--testo-tenue); font-size: 14px; }
 .tile-icona { font-size: 24px; }
@@ -271,6 +272,7 @@ p { margin: 8px 0; }
 .barre i { flex: 1; border-radius: 2px; }
 .barre .cerca { background: var(--rosso); }
 .barre .offre { background: var(--verde); }
+.barre .orario { background: var(--orario, #7a45d6); }
 
 .barre.in-legenda { display: inline-flex; width: 16px; vertical-align: middle; margin-left: 4px; }
 
@@ -282,9 +284,11 @@ p { margin: 8px 0; }
 .gruppo-giorno h3::before { content: ''; width: 14px; height: 3px; border-radius: 2px; }
 .gruppo-giorno.CERCA h3::before { background: var(--rosso); }
 .gruppo-giorno.OFFRE h3::before { background: var(--verde); }
+.gruppo-giorno.ORARIO h3::before { background: var(--orario, #7a45d6); }
 .gruppo-giorno > .testo-tenue { font-size: 12px; margin: 0 0 8px; }
 .riga-richiesta.ruolo-CERCA { border-left: 3px solid var(--rosso); }
 .riga-richiesta.ruolo-OFFRE { border-left: 3px solid var(--verde); }
+.riga-richiesta.ruolo-ORARIO { border-left: 3px solid var(--orario, #7a45d6); }
 
 /* Il limite reale, detto dove si decide: piccolo, ma non nascosto. */
 .non-puoi {

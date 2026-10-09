@@ -119,6 +119,25 @@ function schermataAccesso(errore = '', avviso = '') {
     </div>`;
 }
 
+/*
+ * Dove eri nelle schermate che hai lasciato.
+ *
+ * Ogni volta che si cambia schermata si ricorda a che punto era quella che si
+ * lascia; il tasto ‹ la riapre lì, invece che in cima. Un'altra strada (un
+ * riquadro, la barra in basso) apre sempre una schermata nuova, dall'inizio:
+ * ritrovarsi a metà di una bacheca già vista, dopo un tocco che promette "vai
+ * alla bacheca", sarebbe peggio. Le posizioni vivono finché l'app è aperta.
+ */
+const posizioni = new Map();
+let hashAperto = null;
+let tornando = false;
+history.scrollRestoration = 'manual';
+
+/** È un tasto "indietro"? Il ‹ in cima alla schermata, o l'azione `indietro`. */
+function eIndietro(el) {
+  return el.dataset.act === 'indietro' || (el.closest('.testata') && el.textContent.trim() === '‹');
+}
+
 // `fermo`: un ridisegno chiesto da un aggiornamento in sottofondo, non da chi
 // usa l'app. Resta dov'era: tornare in cima ogni dieci minuti a chi sta
 // leggendo la bacheca sarebbe peggio di una bacheca vecchia di dieci minuti.
@@ -126,6 +145,19 @@ function schermataAccesso(errore = '', avviso = '') {
 function render({ fermo = false } = {}) {
   const { percorso, params } = parseHash();
   const posizione = fermo ? { app: app.scrollTop, finestra: window.scrollY } : null;
+
+  // Prima di sostituire la schermata si ricorda a che punto era; arrivando
+  // da un tasto indietro, si riprende il punto dove si era lasciata questa.
+  const corrente = location.hash;
+  if (!fermo && hashAperto && hashAperto !== corrente) {
+    posizioni.set(hashAperto, { app: app.scrollTop, finestra: window.scrollY });
+  }
+  const cambiata = !fermo && hashAperto !== corrente;
+  const ripresa = cambiata && tornando ? posizioni.get(corrente) : null;
+  if (!fermo) {
+    tornando = false;
+    hashAperto = corrente;
+  }
 
   // La porta c'è solo quando c'è una password da chiedere: alla primissima
   // apertura si va dritti alla creazione del profilo.
@@ -178,11 +210,15 @@ function render({ fermo = false } = {}) {
   };
   const vista = viste[percorso] || V.home;
   app.innerHTML = vista(params);
-  if (posizione) {
-    app.scrollTop = posizione.app;
-    window.scrollTo(0, posizione.finestra);
+  const dove = posizione || ripresa;
+  if (dove) {
+    app.scrollTop = dove.app;
+    window.scrollTo(0, dove.finestra);
   } else {
     app.scrollTop = 0;
+    // Una schermata nuova parte dall'inizio. Un ridisegno sulla stessa no: i
+    // tanti `render()` che seguono un tocco devono lasciare la pagina dov'è.
+    if (cambiata) window.scrollTo(0, 0);
   }
 
   // La guida della sezione, la prima volta che ci si entra.
@@ -815,6 +851,18 @@ const AZIONI = {
     F.dalGiorno.orari = orari.some((o) => o.start === start)
       ? orari.filter((o) => o.start !== start)
       : [...orari, { start, end }].sort((a, b) => a.start.localeCompare(b.start));
+    render({ fermo: true });
+  },
+  'giorno-modo': (_, el) => {
+    F.dalGiorno.modo = el.dataset.modo;
+    render({ fermo: true });
+  },
+  'giorno-limite': (_, el) => {
+    F.dalGiorno.limite = el.dataset.limite;
+    render({ fermo: true });
+  },
+  'ora-giorno': (e) => {
+    F.dalGiorno.ora = e.target.value;
     render({ fermo: true });
   },
   'giorno-libero': (_, el) => {
@@ -1492,6 +1540,7 @@ on(document.body, 'click', '[data-act]', (e, el) => {
   // terrebbe chiuso.
   if (el.tagName === 'SELECT') return;
   if (el.tagName !== 'INPUT') e.preventDefault();
+  tornando = Boolean(eIndietro(el));
   fn(e, el);
 });
 

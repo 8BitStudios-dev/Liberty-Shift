@@ -56,7 +56,11 @@ giuste.
 sta più in Home. Si tocca un giorno nel calendario del Profilo, e il foglio
 del giorno offre la domanda giusta per quel giorno:
 
-- giorno di lavoro → **Cambia orario**: uno o più orari standard, scelti a
+- giorno di lavoro → **Cambia orario**, in due modi (due tasti in cima):
+  **Orario preciso** o **Una fascia**. La fascia ha *un solo* limite, a
+  scelta fra "Inizia dopo le…" e "Finisce entro le…", con un campo ora; si
+  pubblica come cambio orario `RANGE`, e chi risponde propone sempre (vedi
+  `combaciaEsatto`). Con l'orario preciso: uno o più orari standard, scelti a
   tocchi. Sono le partenze di `RULES.cambioOrario` con la durata del turno
   che si ha già (chi cambia non cambia il monte ore): per un Full Time
   8–17, 9–18, 9:30–18:30, 10–19, 11–20, 12–21. Si pubblica come cambio
@@ -163,12 +167,15 @@ offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo.
 
 **Il cambio che combacia non chiede un secondo sì.** Se il turno che offri è
-esattamente quello che la richiesta cerca (orario o fascia rispettati, nessun
+esattamente quello che la richiesta cerca (orario preciso rispettato, nessun
 adattamento al contratto: `combaciaEsatto` in `engine.js`), il tasto diventa
 "Accetta il cambio" e lo scambio è concordato subito. Chi ha pubblicato riceve
 "Cambio accettato: inseritelo su UKG, basta che lo faccia uno dei due"; chi ha
 accettato legge un foglio "Cambio fatto" che gli dice la stessa cosa. Un
-orario adattato o qualche minuto di scarto restano una proposta normale. Dopo l'accordo il riquadro dello scambio va per passi
+orario adattato o qualche minuto di scarto restano una proposta normale. **Una
+fascia non combacia mai**: con "inizia dopo le 11" o "finisce entro le 19" chi
+risponde propone sempre il suo turno, anche se sta dentro la fascia, e chi ha
+chiesto decide se accettarlo. Dopo l'accordo il riquadro dello scambio va per passi
 (`passoAccordo` in `flows.js`):
 
 1. **Scambio concordato**: inseriscilo in UKG, poi tocca "Ho inserito il
@@ -298,6 +305,13 @@ cancellata ogni notte, con le proposte che ha dentro. Prima sul server restava
 perdono dalle statistiche le richieste mai concluse: è voluto.
 
 ## Dettagli che portano peso
+- **Il tasto ‹ riporta dove eri.** Ogni schermata lasciata ricorda a che punto
+  era (`posizioni` in `app.js`), e il ‹ in cima o l'azione `indietro` la
+  riaprono lì: aprire la richiesta numero otto della bacheca e tornare indietro
+  non rimanda in cima. Le altre strade (un riquadro, la barra in basso) aprono
+  una schermata nuova dall'inizio, anche quando è già stata vista: dopo un
+  tocco che dice "vai alla bacheca" ci si aspetta di vedere le richieste più
+  recenti. Le posizioni vivono finché l'app resta aperta, non si salvano.
 - In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
   ("cerca OFF Sab 12 · offre Lun 14 o Mer 16"). Orari, note, stato e
   proposte stanno nel dettaglio, che si apre toccandola. Prima ogni richiesta
@@ -325,14 +339,18 @@ Ora il ruolo si calcola sul giorno che si sta guardando (`ruoloNelGiorno`), e il
 dettaglio della giornata ha due soli blocchi, perché due sono le domande che uno
 si fa aprendo un giorno:
 
-| Blocco | Chi c'è dentro |
-|---|---|
-| **Cercano** | chi vuole libero questo giorno: se tu sei a casa, puoi prendere il suo turno |
-| **Offrono** | tutto quello che è a disposizione: le giornate offerte in un cambio OFF e i turni di un cambio orario |
+| Blocco | Colore | Chi c'è dentro |
+|---|---|---|
+| **Cercano** | arancio | chi vuole libero questo giorno (cambio OFF): se tu sei a casa, puoi prendere il suo turno |
+| **Offrono** | verde | le giornate che si offrono in cambio in un cambio OFF |
+| **Cambi orario** | viola | chi vuole un orario diverso in questo giorno: se lavori, puoi scambiare il tuo |
 
-Il cambio orario sta fra chi offre e non in un gruppo suo: da fuori è un turno
-che si può prendere, esattamente come una giornata messa a disposizione. Chi
-guarda non ha bisogno di sapere come l'app classifica la richiesta.
+Il cambio orario ha un colore suo perché ha una faccia sola: un giorno, un
+orario da scambiare. Il cambio OFF ne ha due su giorni diversi, e per quello
+servono "cerca" e "offre". Prima il cambio orario stava fra chi offre, e lo
+stesso verde diceva due cose diverse (un turno da prendere, una giornata in cui
+qualcuno lavorerebbe). La legenda ora lo dice: "cambio orario", "OFF: qualcuno
+cerca", "OFF: qualcuno offre".
 
 La sintesi è riscritta dal punto di vista della data: sul 14 si legge "offre di
 lavorare questo giorno · in cambio vuole libero Sab 12", e gli altri giorni che
@@ -340,7 +358,7 @@ la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
 Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un
-segmento per ruolo presente: blu chi cerca, verde chi offre, bordo oro per la
+segmento per ruolo presente: viola un cambio orario, arancio chi cerca un OFF, verde chi offre un OFF, bordo oro per la
 priorità. Un segmento per ruolo e non uno per richiesta: dal mese serve sapere
 se su quel giorno qualcuno se ne vuole andare, qualcuno vuole venire, o tutte e
 due le cose.
@@ -624,7 +642,7 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
 (settimane Apple, dal sabato al venerdì) e contenuti divisi senza eccezioni:
 
 - **Calendario pubblico** (il tab): il negozio. Le richieste aperte dei
-  colleghi, mai le tue; le barre di chi cerca (blu) e di chi offre (verde),
+  colleghi, mai le tue; le barre di chi cerca (arancio) e di chi offre (verde),
   in un cerchio grigio quante richieste toccano il giorno, il bordo oro della
   priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
   giorno: chi puoi aiutare, poi Cercano e Offrono.
@@ -878,6 +896,11 @@ nello stesso tocco. Su iPhone da Safari l'invito mostra i tre passi per
 aggiungere l'app alla schermata Home. "Non ora" lo nasconde per una
 settimana; sparisce da solo quando le notifiche sono attive, bloccate o non
 supportate.
+
+Nelle Impostazioni c'è anche **Feedback e consigli**: un collegamento `mailto:`
+che apre la posta del telefono già indirizzata a chi ha fatto l'app, con
+oggetto "Liberty Shift". Serve per un bug, un'idea o un grazie; l'app non
+manda niente da sola e non allega dati.
 
 ## La guida
 Sette schede, una per schermata: Home, Cambio rapido, Aiuta un collega, Nuovo

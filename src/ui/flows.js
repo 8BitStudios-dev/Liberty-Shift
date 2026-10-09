@@ -194,6 +194,9 @@ function testataRapido() {
  */
 export const dalGiorno = {
   data: null, azione: null, orari: [], giorni: [], cedoShiftId: null, usaPriorita: false, note: '',
+  // Il cambio orario si chiede in due modi: orari precisi, o una fascia con un
+  // solo limite ("inizia dopo le…" oppure "finisce entro le…", mai tutti e due).
+  modo: 'orari', limite: 'dopo', ora: '',
 };
 
 export function apriDalGiorno(data, azione) {
@@ -201,6 +204,7 @@ export function apriDalGiorno(data, azione) {
   const turno = store.state.shifts.find((s) => s.userId === me && s.data === data);
   Object.assign(dalGiorno, {
     data, azione, orari: [], giorni: [], cedoShiftId: null, usaPriorita: false, note: '',
+    modo: 'orari', limite: 'dopo', ora: '',
   });
   if (azione === 'richiedi-off') {
     dalGiorno.cedoShiftId = turno?.id || null;
@@ -231,6 +235,18 @@ export function bozzaDalGiorno() {
     prioritaFinoA: null,
     cedo: { shiftId: dalGiorno.cedoShiftId, flessibile: false },
   };
+  if (dalGiorno.azione === 'orario' && dalGiorno.modo === 'fascia') {
+    return {
+      ...base,
+      tipo: TIPO_CAMBIO.ORARIO,
+      cerco: {
+        giorni: [dalGiorno.data], mode: WANT_MODE.RANGE, start: '', end: '',
+        entroLe: dalGiorno.limite === 'entro' ? dalGiorno.ora : '',
+        dalleOre: dalGiorno.limite === 'dopo' ? dalGiorno.ora : '',
+        evitaChiusura: false, note: dalGiorno.note,
+      },
+    };
+  }
   if (dalGiorno.azione === 'orario') {
     const [primo] = dalGiorno.orari;
     return {
@@ -293,14 +309,30 @@ export function cambioDalGiorno() {
     const blocco = (titolo, lista) => (lista.length
       ? `<div class="orari-gruppo"><span class="orari-fascia">${titolo}</span><div class="chips">${lista.map(chip).join('')}</div></div>`
       : '');
-    domanda = html`
-      <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
-      <h2 class="titolo-gruppo">In quale orario vorresti lavorare?</h2>
-      <p class="testo-tenue">Puoi sceglierne più di uno: vedrai i colleghi che hanno almeno uno di questi orari.</p>
-      ${raw(gruppi.map((g) => blocco(g.nome, g.lista)).join(''))}
-      ${raw(blocco('Altri', senzaFascia))}
-      ${raw(blocco('Rari', rari))}`;
-    scelto = dalGiorno.orari.length > 0;
+    const modi = [['orari', 'Orario preciso'], ['fascia', 'Una fascia']].map(([k, label]) => html`
+      <button class="chip ${dalGiorno.modo === k ? 'attivo' : ''}" data-act="giorno-modo" data-modo="${k}">${label}</button>`).join('');
+    const limiti = [['dopo', 'Inizia dopo le'], ['entro', 'Finisce entro le']].map(([k, label]) => html`
+      <button class="chip ${dalGiorno.limite === k ? 'attivo' : ''}" data-act="giorno-limite" data-limite="${k}">${label}</button>`).join('');
+    domanda = dalGiorno.modo === 'fascia'
+      ? html`
+        <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
+        <div class="chips">${raw(modi)}</div>
+        <h2 class="titolo-gruppo">Che fascia cerchi?</h2>
+        <div class="chips">${raw(limiti)}</div>
+        <label class="campo">
+          <span>Orario</span>
+          <input type="time" data-act="ora-giorno" value="${dalGiorno.ora}">
+        </label>
+        <p class="testo-tenue">Un limite solo. Chi risponde ti propone il suo turno e tu decidi se accettarlo: con una fascia lo scambio non è mai immediato.</p>`
+      : html`
+        <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
+        <div class="chips">${raw(modi)}</div>
+        <h2 class="titolo-gruppo">In quale orario vorresti lavorare?</h2>
+        <p class="testo-tenue">Puoi sceglierne più di uno: vedrai i colleghi che hanno almeno uno di questi orari.</p>
+        ${raw(gruppi.map((g) => blocco(g.nome, g.lista)).join(''))}
+        ${raw(blocco('Altri', senzaFascia))}
+        ${raw(blocco('Rari', rari))}`;
+    scelto = dalGiorno.modo === 'fascia' ? Boolean(dalGiorno.ora) : dalGiorno.orari.length > 0;
   } else if (azione === 'richiedi-off') {
     const liberi = giorniLiberi(store.state.currentUserId, data, store.state.shifts);
     domanda = html`
@@ -375,7 +407,7 @@ export function scelta() {
     </button>
 
     <button class="tile scelta verde" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.OFF}">
-      <span class="tile-icona">${raw(icona('calendario'))}</span>
+      <span class="tile-icona">${raw(icona('ombrellone'))}</span>
       <span>
         <strong>Cambio OFF</strong>
         <em>Vuoi un giorno OFF e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>

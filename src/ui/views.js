@@ -2,7 +2,7 @@ import { html, raw, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno, testoPromemoria, iconaTipo, formPreferenze, contaPreferenze,
+  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
@@ -75,7 +75,7 @@ export function home() {
             <span class="pallino ${inAttesaDiMe ? 'urgente' : ''} ${accordo ? 'fatto' : ''}"></span>
             <div>
               <strong>${titolo}</strong>
-              <div class="meta">Scambio con ${nomeUtente(altro)}</div>
+              <div class="meta">Scambio con ${nomeUtente(altro)}${raw(r ? ` ${pillolaTipo(r.tipo)}` : '')}</div>
               ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             </div>
             <span class="chevron">›</span>
@@ -86,7 +86,7 @@ export function home() {
           <span class="pallino"></span>
           <div>
             <strong>${raw(hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '')}Cedi ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
-            <div class="meta">${raw(badgeStato(r.status))}</div>
+            <div class="meta">${raw(pillolaTipo(r.tipo))} ${raw(badgeStato(r.status))}</div>
           </div>
           <span class="chevron">›</span>
         </div>`),
@@ -166,8 +166,9 @@ export function home() {
 function legendaPubblica() {
   return `
     <ul class="legenda-mese">
-      <li><span class="barre in-legenda"><i class="cerca"></i></span>qualcuno cerca</li>
-      <li><span class="barre in-legenda"><i class="offre"></i></span>qualcuno offre</li>
+      <li><span class="barre in-legenda"><i class="orario"></i></span>cambio orario</li>
+      <li><span class="barre in-legenda"><i class="cerca"></i></span>OFF: qualcuno cerca</li>
+      <li><span class="barre in-legenda"><i class="offre"></i></span>OFF: qualcuno offre</li>
       <li><span class="campione prioritaria"></span>priorità</li>
       <li><span class="conta-giorno in-legenda">2</span>richieste del giorno</li>
       <li><span class="quota campione-quota">%</span>puoi aiutare</li>
@@ -231,7 +232,8 @@ export function calendario(params) {
  */
 const GRUPPI_GIORNO = [
   { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno libero. Se tu non lavori, puoi prendere il loro turno.' },
-  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate che i colleghi lasciano: puoi prenderli tu.' },
+  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Giornate che i colleghi offrono in cambio: puoi prenderle tu.' },
+  { ruolo: 'ORARIO', titolo: 'Cambi orario', nota: 'Vogliono un orario diverso in questo giorno. Se lavori, puoi scambiare il tuo.' },
 ];
 
 // -------------------------------------------------------------- BACHECA
@@ -239,7 +241,7 @@ const GRUPPI_GIORNO = [
 const FILTRI = {
   TUTTI: { label: 'Tutti', icona: null, test: () => true },
   ORARIO: { label: 'Orario', icona: 'orario', test: (r) => r.tipo === TIPO_CAMBIO.ORARIO },
-  OFF: { label: 'OFF', icona: 'calendario', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
+  OFF: { label: 'OFF', icona: 'ombrellone', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
 };
 
 export function bacheca(params) {
@@ -260,7 +262,7 @@ export function bacheca(params) {
     </header>
     <div class="chips">
       ${Object.entries(FILTRI).map(([k, v]) => raw(
-    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 16 }) : ''}${v.label}</button>`,
+    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-filtro="${k}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 16 }) : ''}${v.label}</button>`,
   ))}
       <button class="tasto-ordine" data-act="ordine-bacheca" aria-pressed="${ordineColleghi.dalMenoRecente ? 'true' : 'false'}"
               title="${ordineColleghi.dalMenoRecente ? 'Dalla meno recente: tocca per partire dalla più recente' : 'Dalla più recente: tocca per partire dalla meno recente'}"
@@ -583,6 +585,14 @@ export function impostazioni() {
         </span>
         <span class="chevron">›</span>
       </button>
+      <a class="tile" href="mailto:lbandini92@gmail.com?subject=Liberty%20Shift">
+        <span class="tile-icona">${raw(icona('invita'))}</span>
+        <span>
+          <strong>Feedback e consigli</strong>
+          <em>Un bug, un'idea o solo un grazie: si apre la tua mail</em>
+        </span>
+        <span class="chevron">›</span>
+      </a>
       ${raw(store.state.profilo?.idServer ? `
         <button class="tile" data-act="invita">
           <span class="tile-icona">${icona('invita')}</span>
@@ -1134,7 +1144,7 @@ export function mesePubblico(mese) {
     cella: (data) => {
       const delGiorno = richieste.get(data) || [];
       const ruoli = new Set(delGiorno.map((r) => ruoloNelGiorno(r, data).ruolo));
-      const barre = ['CERCA', 'OFFRE'].filter((k) => ruoli.has(k)).map((k) => `<i class="${k.toLowerCase()}"></i>`).join('');
+      const barre = ['CERCA', 'OFFRE', 'ORARIO'].filter((k) => ruoli.has(k)).map((k) => `<i class="${k.toLowerCase()}"></i>`).join('');
       const migliore = (opportunita.get(data) || [])[0];
       return html`
         <button class="mese-giorno ${classiGiorno(data, mese, oggi)} ${delGiorno.some(hasPriority) ? 'prioritaria' : ''}"
@@ -1247,7 +1257,7 @@ function rigaMiaRichiesta(r) {
     <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
       ${raw(segnoCambio('richiesta', 15))}
       <div>
-        <strong>${raw(iconaTipo(r.tipo))} ${r.tipo === TIPO_CAMBIO.OFF ? 'Cambio OFF' : 'Cambio orario'}</strong>
+        <strong>${raw(etichettaTipo(r.tipo, r.tipo === TIPO_CAMBIO.OFF ? 'Cambio OFF' : 'Cambio orario', 15))}</strong>
         <div class="meta">${cosa}</div>
         <div class="meta">${raw(badgeStato(r.status))}</div>
       </div>

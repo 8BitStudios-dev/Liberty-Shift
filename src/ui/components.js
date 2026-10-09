@@ -16,9 +16,25 @@ import { icona } from './icone.js';
  * `TIPO_META` in rules.js porta ancora un'emoji: è il dato del regolamento,
  * condiviso col server, e qui si sceglie solo come mostrarlo.
  */
-const ICONA_TIPO = { ORARIO: 'orario', OFF: 'calendario' };
+const ICONA_TIPO = { ORARIO: 'orario', OFF: 'ombrellone' };
 export function iconaTipo(tipo, px = 14) {
   return `<span class="icona-in-riga">${icona(ICONA_TIPO[tipo] || 'orario', { px })}</span>`;
+}
+
+/**
+ * Il tipo di cambio come pillola colorata: la prima cosa che si deve leggere
+ * in una scheda. Gli stessi colori del Calendario: viola per l'orario, arancio
+ * per OFF (chi pubblica un OFF è chi lo cerca). Il blu e il verde restano ai
+ * due lati di uno scambio, LASCI e PRENDI.
+ */
+export function etichettaTipo(tipo, testo, px = 16) {
+  return `<span class="tipo-etichetta" data-tipo="${esc(tipo)}">${iconaTipo(tipo, px)} ${esc(testo)}</span>`;
+}
+
+/** La versione piccola, accanto a un nome o a un giorno: icona e "OFF" o "orario". */
+export function pillolaTipo(tipo) {
+  const meta = TIPO_META[tipo] || TIPO_META.ORARIO;
+  return `<span class="tipo-pill" data-tipo="${esc(tipo)}">${iconaTipo(tipo, 13)} ${meta.breve}</span>`;
 }
 
 export function nomeUtente(u) {
@@ -68,9 +84,14 @@ export function chipsOrariTipici(inizioAttuale = '') {
     </div>`;
 }
 
+/**
+ * Lo stato di una richiesta, con un pallino disegnato in CSS al posto
+ * dell'emoji di `STATUS_META.dot`: le emoji cambiano forma su ogni telefono
+ * e non stanno con il resto dei segni. Il colore sta in `.stato-*`.
+ */
 export function badgeStato(status) {
-  const m = STATUS_META[status] || { dot: '', label: status };
-  return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
+  const m = STATUS_META[status] || { label: status };
+  return html`<span class="badge stato-${status}"><i class="pallino-stato"></i> ${m.label}</span>`;
 }
 
 /**
@@ -103,7 +124,7 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } =
 
   const lati = (sinistra, destra) => html`
     <div class="coppia ${compatto ? 'compatta' : ''}">
-      <div class="tipo-cambio">${raw(iconaTipo(request.tipo))} ${meta.label}</div>
+      <div class="tipo-cambio">${raw(etichettaTipo(request.tipo, meta.label))}</div>
       <div class="lati">
         <div class="lato cedo">${raw(sinistra)}</div>
         <div class="freccia">⇄</div>
@@ -234,11 +255,10 @@ export function cardRichiesta(request, giorno = null) {
   return html`
     <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${nonPerMe ? 'non-per-me' : ''} ${mia ? 'mia' : ''}"
             data-act="apri-richiesta" data-id="${request.id}">
-      <span class="avatar piccolo">${iniziali(autore)}</span>
+      <span class="avatar cerchio-tipo" data-tipo="${request.tipo}">${raw(icona(ICONA_TIPO[request.tipo] || 'orario', { px: 17 }))}<span class="cerchio-testo">${meta.breve}</span></span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
-          <span class="tipo-pill">${raw(iconaTipo(request.tipo, 13))} ${ctx ? ctx.verbo : meta.breve}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
         ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}

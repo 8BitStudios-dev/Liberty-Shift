@@ -525,11 +525,12 @@ export function isOpen(request) {
 export function ruoloNelGiorno(request, giorno, cedo) {
   const giorni = request.cerco.giorni || [];
 
-  // Un cambio orario è un turno messo a disposizione: chi lo pubblica offre
-  // la propria giornata a chiunque quel giorno voglia un orario diverso.
+  // Un cambio orario ha un giorno solo e non lascia né offre: scambia l'orario
+  // di quella giornata. Ha un ruolo suo, e nel calendario un colore suo: blu e
+  // verde restano ai cambi OFF, che hanno due lati su giorni diversi.
   if (request.tipo === TIPO_CAMBIO.ORARIO) {
     return {
-      ruolo: 'OFFRE',
+      ruolo: 'ORARIO',
       icona: '🕐',
       verbo: 'offre orario',
       sintesi: `offre ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
