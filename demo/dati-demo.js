@@ -107,9 +107,7 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   const ore = (h) => new Date(adesso.getTime() - h * 3600 * 1000).toISOString();
 
   // ---- persone e turni
-  // Il weekend libero lo scrive il formato nuovo, non il vecchio: sabato e
-  // domenica che riceve pesano come una fascia che evita.
-  const prefLorenzo = { ...normalizzaPreferenze({ preferisceMattine: true, evitaChiusure: true, evitaNotti: true }), weekendOff: true };
+  const prefLorenzo = normalizzaPreferenze({ preferisceMattine: true, evitaChiusure: true, evitaNotti: true });
   const users = [{
     id: L, nome: 'Lorenzo', cognome: 'Bandini', cognomeIniziale: 'B', contratto: 'FT', genere: 'M',
     oreSettimanali: 40, admin: true, superAdmin: false, attivo: true,
@@ -184,10 +182,9 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
     { giorni: offerti, mode: WANT_MODE.ANY, note }, extra);
 
   // Le percentuali del Cambio rapido sono di chi guarda: contano le sue
-  // preferenze (Lorenzo vuole il weekend libero: -30 su un sabato o una
-  // domenica da lavorare) e le ore adattate (un Part Time che cede il suo turno
-  // a un Full Time: -5). Per averle miste, fra i colleghi da copione ci sono
-  // turni infrasettimanali (100), da Part Time (95) e nel weekend (65 o 70).
+  // preferenze (eviti le notti: -30) e le ore adattate (un Part Time che
+  // cede il suo turno a un Full Time: -5). Per averle miste, fra i colleghi
+  // da copione ci sono turni normali (100), da Part Time (95) e notturni (70).
   //
   // Aiuta un collega: sette richieste che Lorenzo può coprire, di cui due che
   // gli convengono (lascia una chiusura, prende una mattina), una che gli
@@ -210,13 +207,13 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   imponi('giorgio', giorno(w1, 4), OFF);
   off('rq_giorgio', 'giorgio', giorno(w1, 1), [giorno(w1, 2), giorno(w1, 3), giorno(w1, 4)], 'Cena di famiglia, la domenica non si tocca.', { oreFa: 40 });
 
-  imponi('elisa', giorno(w2, 3), ['09:30', '18:30']);
+  imponi('elisa', giorno(w2, 3), ['22:00', '06:30']);
   imponi('elisa', giorno(w2, 4), ['12:00', '21:00']);
   imponi('elisa', giorno(w2, 5), OFF);
   imponi('elisa', giorno(w2, 6), OFF);
-  off('rq_elisa', 'elisa', giorno(w2, 3), [giorno(w2, 5), giorno(w2, 6)], 'Mi serve il martedì libero per un documento.', { oreFa: 9, priorita: 40 });
+  off('rq_elisa', 'elisa', giorno(w2, 3), [giorno(w2, 5), giorno(w2, 6)], 'Martedì notte non riesco, ho un impegno.', { oreFa: 9, priorita: 40 });
 
-  imponi('valentina', giorno(w2, 6), ['11:00', '20:00']);
+  imponi('valentina', giorno(w2, 6), ['22:00', '06:30']);
   orario('rq_valentina', 'valentina', giorno(w2, 6), { entroLe: '17:30' }, { oreFa: 52 });
 
   imponi('davide', giorno(w1, 0), ['08:00', '17:00']);
