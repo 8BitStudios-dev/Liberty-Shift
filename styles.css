@@ -183,10 +183,6 @@ p { margin: 8px 0; }
   background: var(--superficie-2); border-radius: 12px; padding: 12px;
 }
 .coppia .lati { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; }
-.tipo-cambio {
-  font-size: 12px; font-weight: 700; letter-spacing: .04em;
-  color: var(--testo-tenue); margin-bottom: 10px;
-}
 .coppia .lato { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .coppia .etichetta { font-size: 12px; letter-spacing: .06em; font-weight: 700; }
 .coppia .cedo .etichetta { color: var(--rosso); }
@@ -196,7 +192,6 @@ p { margin: 8px 0; }
 .coppia .freccia { align-self: center; color: var(--testo-tenue); font-size: 17px; }
 .coppia .nota { font-size: 12px; color: var(--testo-tenue); font-style: italic; }
 .coppia.compatta { padding: 8px; }
-.coppia.compatta .tipo-cambio { margin-bottom: 6px; }
 .coppia.compatta strong { font-size: 14px; }
 .coppia.compatta .orario { font-size: 12px; }
 .coppia.compatta .nota { display: none; }

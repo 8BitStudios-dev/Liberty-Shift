@@ -150,9 +150,9 @@ export function boxScambio(tipo, prendi, lasci, { compatto = false } = {}) {
       ${raw(m.nota ? `<div class="nota">${m.nota}</div>` : '')}
     </div>`;
   return html`
-    <div class="coppia ${compatto ? 'compatta' : ''}">
-      <div class="tipo-cambio">${raw(etichettaTipo(tipo, meta.label))}</div>
+    <div class="coppia ${compatto ? 'compatta' : ''}" data-tipo="${esc(tipo)}">
       <div class="lati">
+        <span class="avatar cerchio-tipo" data-tipo="${esc(tipo)}">${raw(icona(ICONA_TIPO[tipo] || 'orario', { px: 17 }))}<span class="cerchio-testo">${meta.breve}</span></span>
         ${raw(lato('cerco', 'prendi', 'prendo', prendi))}
         <div class="freccia">⇄</div>
         ${raw(lato('cedo', 'lasci', 'cedo', lasci))}
@@ -314,7 +314,6 @@ export function cardRichiesta(request, giorno = null) {
   return html`
     <div role="button" tabindex="0" class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${nonPerMe ? 'non-per-me' : ''} ${mia ? 'mia' : ''}"
             data-act="apri-richiesta" data-id="${request.id}">
-      <span class="avatar cerchio-tipo" data-tipo="${request.tipo}">${raw(icona(ICONA_TIPO[request.tipo] || 'orario', { px: 17 }))}<span class="cerchio-testo">${meta.breve}</span></span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
@@ -322,7 +321,6 @@ export function cardRichiesta(request, giorno = null) {
         ${raw(coppiaCedoCerco(request, { compatto: true, riga: true }))}
         ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}
       </span>
-      <span class="chevron">›</span>
     </div>`;
 }
 

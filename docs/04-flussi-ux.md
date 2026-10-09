@@ -970,6 +970,14 @@ le schede sembravano fatte da mani diverse.
 | **Incavo** | `--raggio-s` (12) | grigia o tinta, dentro una superficie | LASCI/PRENDI, avvisi, note, ricompensa, campi, bottoni |
 | **Pillola** | `--raggio-pill` | un'etichetta | tipo, tag, chip, badge, conteggi |
 
+La box dello scambio (`boxScambio` in `components.js`, l'unico punto dove si
+disegna) è un incavo che porta il colore del tipo: viola per l'orario, arancio
+per OFF. Dentro, a sinistra, il cerchio con icona e scritta ("OFF", "orario"),
+poi *prendi* in verde, la freccia e *lasci* in blu. Sta uguale nelle liste
+(Home, Bacheca, giorno del Calendario), nella scheda grande e nel Cambio
+rapido: nelle liste non c'è più un cerchio fuori dalla box né la freccia `›`,
+perché lasciavano troppo bianco. Sotto i 375 px il cerchio si rimpicciolisce.
+
 Una scatola nuova sceglie una delle tre, non ne inventa una quarta. I tile
 colorati della Home (Cambio rapido, Aiuta un collega) sono superfici come le
 altre: il colore sta nel filo a sinistra, nel titolo e nell'icona. Le celle del

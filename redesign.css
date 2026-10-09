@@ -332,10 +332,21 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    dell'etichetta, che è anche il colore che il resto dell'app usa per
    dire la stessa cosa. */
 .coppia { background: none; padding: 0; border-radius: 0; }
+/* La box porta il colore del tipo (viola l'orario, arancio OFF) e dentro, a
+   sinistra, il cerchio con icona e scritta: il tipo si legge prima di tutto. */
+.coppia[data-tipo="ORARIO"] { --tipo: var(--orario); }
+.coppia[data-tipo="OFF"] { --tipo: var(--cerca-off); }
 .coppia .lati {
-  gap: 12px; align-items: stretch;
-  padding: 14px; border-radius: var(--raggio-s);
-  background: var(--superficie-2);
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: 12px; align-items: center;
+  padding: 14px 12px; border-radius: var(--raggio-s);
+  background: color-mix(in srgb, var(--tipo) 14%, var(--superficie));
+  border: 1px solid color-mix(in srgb, var(--tipo) 35%, transparent);
+}
+.coppia .lato { align-self: start; }
+.coppia .lati .cerchio-tipo {
+  background: var(--superficie);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tipo) 40%, transparent);
 }
 .coppia .etichetta {
   font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
@@ -345,14 +356,11 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .coppia .cerco .etichetta { color: var(--prendo); }
 .coppia strong { font-size: 16px; }
 .coppia .nota { font-size: 14px; }
-.coppia.compatta .lati { padding: 11px; }
+.coppia.compatta { padding: 0; }
+.coppia.compatta .lati { padding: 12px; }
 .coppia.compatta strong { font-size: 15px; }
 .coppia.compatta .orario { font-size: 14px; }
 .coppia .freccia { color: var(--testo-tenue); font-size: 20px; }
-.tipo-cambio {
-  font-size: 12px; letter-spacing: .03em; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 6px;
-}
 .titolo-gruppo { display: flex; align-items: center; gap: 8px; }
 /* La pillola del tipo di cambio: tono su tono, come i tag. Il colore passa da
    --tipo, così pillola piccola e grande non possono divergere. */
@@ -365,6 +373,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .turno-offerto strong, .turno-ceduto strong { white-space: nowrap; }
+.coppia .stima-contratto { display: block; margin-left: 0; }
 .stima-contratto { font-size: 12px; font-weight: 500; color: var(--testo-tenue); margin-left: 4px; white-space: nowrap; }
 .cerchio-testo { font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
 .cerchio-tipo[data-tipo] { color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent); }
@@ -1125,12 +1134,17 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .riquadro.problema p { margin: 8px 0 2px; }
 
 /* Le righe delle liste portano la stessa box di tutta l'app, in piccolo: il
-   tipo lo dice già il cerchio a sinistra, il nome sta sopra. */
+   tipo lo dice il cerchio dentro la box, il nome sta sopra. */
 .riga-richiesta .riga-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.riga-richiesta .coppia .tipo-cambio { display: none; }
-.riga-richiesta .coppia .lati { padding: 9px 10px; gap: 6px; }
+.riga-richiesta .coppia .lati { padding: 12px; gap: 10px; }
 .riga-richiesta .coppia strong { font-size: 14px; }
 .riga-richiesta .coppia .orario { font-size: 13px; }
 .riga-richiesta { cursor: pointer; }
 .riga-richiesta { align-items: flex-start; }
-.riga-richiesta .chevron { align-self: center; }
+.riga-richiesta.non-per-me .coppia { opacity: .62; }
+/* Fino a 374px la box si stringe: cerchio più piccolo, spazi minori. */
+@media (max-width: 374px) {
+  .coppia .lati, .riga-richiesta .coppia .lati { gap: 8px; padding: 12px 10px; }
+  .coppia .lati .cerchio-tipo { width: 40px; height: 40px; }
+  .coppia .cerchio-testo { font-size: 9px; }
+}
