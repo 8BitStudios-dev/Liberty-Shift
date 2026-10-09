@@ -64,9 +64,10 @@ export const GUIDE = {
       </p>
 
       <p>
-        Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Se non
-        compare nessuno, per ora non c'è un collega adatto: pubblica la
-        richiesta con <strong>Crea la richiesta</strong> e resta in bacheca.
+        Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Vedi
+        al massimo ${RULES.rapidoMassimo} colleghi, i più compatibili. Se non
+        compare nessuno, pubblica la richiesta dal tuo calendario nel Profilo:
+        resta in bacheca.
       </p>`,
   },
 

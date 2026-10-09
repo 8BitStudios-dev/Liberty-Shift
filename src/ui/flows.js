@@ -90,19 +90,28 @@ export function vistaRapida() {
   const conteggi = new Map(miei.map((s) => [s.id, cambioRapido(s.id, store.state).length]));
   const sceltaTurno = calendarioTurni(miei, perGiorno, conteggi);
 
+  const massimo = RULES.rapidoMassimo;
+  const notaPiu = (mostrati, tutti) => (tutti > mostrati
+    ? `<p class="testo-tenue">I ${mostrati} più compatibili su ${tutti}.</p>`
+    : '');
+
   if (rapido.giorno) {
-    const lista = perGiorno.get(rapido.giorno);
+    const tutte = perGiorno.get(rapido.giorno);
+    const lista = [...tutte].sort((a, b) => b.match.score - a.match.score).slice(0, massimo);
     return html`
       ${raw(testataRapido())}
       <p class="occhiello">Quale turno vuoi lasciare?</p>
       ${raw(sceltaTurno)}
       <h2 class="titolo-gruppo">${raw(iconaTipo(TIPO_CAMBIO.OFF, 17))} Puoi prendere un turno (${lista.length})</h2>
       <p class="testo-tenue">${formatDay(rapido.giorno)} non lavori: prendi il turno di un collega e in cambio gli lasci uno dei tuoi.</p>
-      ${raw(store.occasioni(lista).map((o) => cardOpportunita(o)).join(''))}`;
+      ${raw(store.occasioni(lista).map((o) => cardOpportunita(o)).join(''))}
+      ${raw(notaPiu(lista.length, tutte.length))}`;
   }
 
   const cedo = store.shift(rapido.shiftId);
-  const risultati = cambioRapido(rapido.shiftId, store.state);
+  const tutti = cambioRapido(rapido.shiftId, store.state);
+  // I più compatibili, fra orario e OFF insieme: poi ognuno nel suo gruppo.
+  const risultati = [...tutti].sort((a, b) => b.score - a.score).slice(0, massimo);
   const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
   const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
 
@@ -127,10 +136,10 @@ export function vistaRapida() {
     off,
   ))}
 
+    ${raw(notaPiu(risultati.length, tutti.length))}
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
-    `Per ${formatDay(cedo.data)} al momento nessun collega ha un turno adatto. Pubblica la richiesta: resta in bacheca e qualcuno può risponderti.`,
-    html`<button class="btn primario" data-act="cambio-giorno" data-azione="orario" data-data="${cedo.data}">Crea la richiesta</button>`,
+    `Per ${formatDay(cedo.data)} al momento nessun collega ha un turno adatto. Puoi pubblicare la richiesta toccando il giorno nel tuo calendario, nel Profilo.`,
   ))}
 `;
 }

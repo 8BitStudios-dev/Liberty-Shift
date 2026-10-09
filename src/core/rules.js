@@ -128,6 +128,10 @@ export const RULES = {
   // di un turno trovato e basta.
   disponibilitaBonus: 10,
 
+  // Cambio rapido mostra solo i colleghi più compatibili: una lista lunga
+  // non aiuta a scegliere, e chi apre questa schermata vuole decidere in fretta.
+  rapidoMassimo: 5,
+
   // Grazie ricevuti e traguardi (il "karma"). Si conta solo quello che resta:
   // i ringraziamenti sopravvivono alla pulizia dei 90 giorni, gli scambi no.
   // Una scala sola, sui grazie: undici gradini, larghi all'inizio perché il

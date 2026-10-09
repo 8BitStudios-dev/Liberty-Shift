@@ -38,6 +38,12 @@ ma spento. Compaiono anche i giorni in cui non lavori ma un collega lascia un
 turno che potresti prendere tu (bordo tratteggiato, scritta OFF): toccandoli
 si vedono quelle richieste, le stesse di Aiuta un collega per quel giorno.
 
+Si vedono al massimo i cinque colleghi più compatibili (`RULES.rapidoMassimo`),
+orario e OFF insieme, ciascuno poi nel suo gruppo; se ce ne sono di più lo si
+dice sotto. Niente tasto per creare la richiesta: quando non c'è nessuno, la
+schermata rimanda al calendario del Profilo, da dove una richiesta si pubblica
+con le domande giuste.
+
 **Il cambio dal calendario** sostituisce il vecchio Nuovo cambio, che non
 sta più in Home. Si tocca un giorno nel calendario del Profilo, e il foglio
 del giorno offre la domanda giusta per quel giorno:
