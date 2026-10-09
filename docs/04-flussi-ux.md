@@ -452,7 +452,10 @@ Profilo, in una sezione con due strade in ordine di comodità:
    Quelle della prima versione erano sbagliate. Parlavano di esportare un file
    `.ics`, e il calendario dei turni non è un file: è una **sottoscrizione**, un
    indirizzo che il telefono interroga. Oggi si incolla quell'indirizzo e si
-   tocca *Scarica*: a leggerlo è la funzione `Calendario` sul server, perché il
+   tocca *Importa*, un tasto solo (prima c'erano *Scarica* e *Importa*, e
+   nessuno voleva scegliere fra i due passi): davanti a un indirizzo scarica e
+   importa insieme, davanti al contenuto importa. A leggerlo è la funzione
+   `Calendario` sul server, perché il
    browser non può (il server di Apple non manda le intestazioni CORS). Il
    passaggio dall'app Comandi, che era l'unica strada prima, è caduto: la prima
    persona che ci ha provato si è fermata lì.

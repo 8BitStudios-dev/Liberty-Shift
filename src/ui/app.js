@@ -374,6 +374,29 @@ function vai(to) {
   else location.hash = to;
 }
 
+/**
+ * Scarica il calendario dall'indirizzo incollato nel foglio dell'import e lo
+ * mette nel campo, da dove l'anteprima lo legge. Vero se è andata a buon fine.
+ *
+ * Passa dal server perché il browser non può: Apple non manda le
+ * intestazioni CORS. L'indirizzo resta su questo dispositivo, così la volta
+ * dopo è già nel campo e aggiornare i turni è un tocco.
+ */
+async function scaricaNelFoglio(wrap) {
+  const indirizzo = wrap._indirizzo || wrap.querySelector('[data-campo="ics"]').value.trim();
+  if (!indirizzo) return false;
+  const { dati, errore } = await scaricaCalendario(indirizzo);
+  if (errore) {
+    wrap.querySelector('[data-anteprima]').innerHTML = `<p class="avviso">${errore}</p>`;
+    return false;
+  }
+  store.ricordaCalendario(indirizzo);
+  const area = wrap.querySelector('[data-campo="ics"]');
+  area.value = dati;
+  area.dispatchEvent(new Event('input'));
+  return true;
+}
+
 /** Una modifica alle preferenze, sulle tue o su quelle della registrazione. */
 function cambiaPreferenze(el, modifica) {
   if (el.dataset.ambito === 'bozza') {
@@ -1203,8 +1226,10 @@ const AZIONI = {
                   placeholder="https://…  oppure  BEGIN:VCALENDAR…">${store.state.profilo?.calendarioUrl || ''}</textarea>
       </label>
       <div data-anteprima></div>`, {
-      azioni: '<button class="btn secondario largo" data-act="scarica-calendario">Scarica</button>'
-        + '<button class="btn primario largo" data-act="conferma-import" disabled>Importa</button>',
+      // Un tasto solo: davanti a un indirizzo scarica e importa, davanti al
+      // contenuto importa. Due tasti facevano scegliere un passo che nessuno
+      // vuole scegliere.
+      azioni: '<button class="btn primario largo" data-act="conferma-import" disabled>Importa</button>',
     });
 
     const area = w.el.querySelector('[data-campo="ics"]');
@@ -1213,25 +1238,25 @@ const AZIONI = {
 
     // Anteprima mentre si incolla: si vede cosa è stato capito prima di
     // toccare il proprio calendario.
-    const scarica = w.el.querySelector('[data-act="scarica-calendario"]');
     const aggiorna = () => {
       const { turni, ignorati, errore, indirizzo } = parseICS(area.value);
       w.el._turni = turni;
       w.el._ignorati = ignorati;
       w.el._indirizzo = indirizzo || '';
-      bottone.disabled = turni.length === 0;
-      // Il pulsante Scarica ha senso solo davanti a un indirizzo, e solo se
-      // c'è un server che possa scaricarlo. Si nasconde con lo stile e non con
-      // `hidden`: la regola di .btn.largo è display:block e vincerebbe lei.
-      scarica.style.display = indirizzo && serverConfigurato() ? '' : 'none';
+      // Davanti a un indirizzo l'import si può fare se c'è un server che
+      // possa scaricarlo: è lui a leggere il calendario, il browser non può.
+      const scaricabile = Boolean(indirizzo) && serverConfigurato();
+      bottone.disabled = turni.length === 0 && !scaricabile;
       if (!area.value.trim()) { box.innerHTML = ''; return; }
       if (errore) {
-        // Davanti a un indirizzo il consiglio dipende da cosa c'è: col server
-        // basta un tocco, senza server tocca passare dai Comandi.
-        const consiglio = !indirizzo ? ''
-          : serverConfigurato()
-            ? ' Tocca <strong>Scarica</strong> qui sotto.'
-            : ' Serve il testo che restituisce: nell\'app Comandi, «Ottieni contenuto di URL» e «Copia negli appunti».';
+        // Col server basta un tocco su Importa; senza, tocca passare dai Comandi.
+        if (scaricabile) {
+          box.innerHTML = '<p class="testo-tenue">Indirizzo riconosciuto. Tocca <strong>Importa</strong>: i turni si scaricano e si importano.</p>';
+          return;
+        }
+        const consiglio = indirizzo
+          ? ' Serve il testo che restituisce: nell\'app Comandi, «Ottieni contenuto di URL» e «Copia negli appunti».'
+          : '';
         box.innerHTML = `<p class="avviso">${errore}${consiglio}</p>`;
         return;
       }
@@ -1266,7 +1291,7 @@ const AZIONI = {
     area.value = esito;
     area.dispatchEvent(new Event('input'));
     if (wrap._indirizzo && serverConfigurato()) {
-      wrap.querySelector('[data-act="scarica-calendario"]').click();
+      await scaricaNelFoglio(wrap);
     } else if (!wrap._indirizzo) {
       box.innerHTML = '<p class="avviso">Questo QR non contiene l\'indirizzo di un calendario.</p>';
     }
@@ -1276,34 +1301,6 @@ const AZIONI = {
   'importa-qr': () => {
     AZIONI.importa();
     document.querySelector('[data-act="scansiona-calendario"]')?.click();
-  },
-
-  /**
-   * Scarica il calendario dall'indirizzo incollato.
-   *
-   * Passa dal server perché il browser non può: Apple non manda le
-   * intestazioni CORS. L'indirizzo resta su questo dispositivo, così la volta
-   * dopo è già nel campo e aggiornare i turni è un tocco.
-   */
-  'scarica-calendario': async (_, el) => {
-    const wrap = el.closest('.sheet-backdrop');
-    const indirizzo = wrap._indirizzo || wrap.querySelector('[data-campo="ics"]').value.trim();
-    if (!indirizzo) return;
-
-    el.disabled = true;
-    el.textContent = 'Scarico…';
-    const { dati, errore } = await scaricaCalendario(indirizzo);
-    el.disabled = false;
-    el.textContent = 'Scarica';
-
-    if (errore) {
-      wrap.querySelector('[data-anteprima]').innerHTML = `<p class="avviso">${errore}</p>`;
-      return;
-    }
-    store.ricordaCalendario(indirizzo);
-    const area = wrap.querySelector('[data-campo="ics"]');
-    area.value = dati;
-    area.dispatchEvent(new Event('input'));
   },
 
   /**
@@ -1432,8 +1429,17 @@ const AZIONI = {
     if (!annunciaScambiChiusi(esito)) toast(riassuntoImport(esito));
   },
 
-  'conferma-import': (_, el) => {
+  'conferma-import': async (_, el) => {
     const wrap = el.closest('.sheet-backdrop');
+    // Davanti a un indirizzo si scarica prima, poi si importa: un tocco solo.
+    if (!(wrap._turni || []).length && wrap._indirizzo && serverConfigurato()) {
+      el.disabled = true;
+      el.textContent = 'Scarico…';
+      const scaricato = await scaricaNelFoglio(wrap);
+      el.textContent = 'Importa';
+      // Se è andata bene l'anteprima ha già riacceso il tasto; se no, si può riprovare.
+      if (!scaricato) { el.disabled = false; return; }
+    }
     const turni = wrap._turni || [];
     if (!turni.length) return toast('Niente da importare: il calendario non ha turni nelle date che coprite. Controllalo nell\'app aziendale');
     const esito = store.importaTurni(turni, { ignorati: wrap._ignorati || [] });

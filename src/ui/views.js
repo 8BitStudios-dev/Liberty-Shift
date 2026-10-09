@@ -644,7 +644,7 @@ const PROBLEMI = [
     ['Nessun calendario collegato', 'Collegalo da Profilo, Sincronizza turni: si fa una volta sola.'],
     ['Nessun turno nel calendario, oppure Niente da importare', 'Controlla nell\'app aziendale di avere turni nelle prossime settimane, poi riprova.'],
     ['Non sembra un calendario', 'Copia di nuovo il link del calendario dall\'app aziendale: forse ne è stato copiato solo un pezzo.'],
-    ['Questo è l\'indirizzo del calendario, non il suo contenuto', 'Incollalo nel campo dell\'indirizzo e tocca Scarica.'],
+    ['Questo è l\'indirizzo del calendario, non il suo contenuto', 'Incollalo nel campo dell\'indirizzo e tocca Importa.'],
     ['I turni non sono aggiornati', 'Tocca il tasto per aggiornare in Profilo. Se un cambio approvato su UKG non compare, UKG può metterci un po\'.'],
   ]],
   ['Accesso e iscrizione', [
