@@ -290,6 +290,10 @@ perdono dalle statistiche le richieste mai concluse: è voluto.
   turno di quel giorno.
 
 ## Il calendario dice chi cerca e chi offre
+Le settimane già finite non si vedono: il mese parte dalla settimana di oggi,
+perché in una settimana passata non c'è più niente da cambiare. Un mese tutto
+passato, sfogliato all'indietro, resta invece intero.
+
 Una richiesta di cambio OFF tocca più giornate con ruoli opposti: nel giorno che
 l'autore vuole liberare **cerca**, nei giorni che mette sul piatto **offre**.
 Prima la stessa riga compariva identica su tutte le caselle, e chi apriva il 16

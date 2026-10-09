@@ -986,12 +986,18 @@ function settimaneDel(mese) {
 }
 
 /** La griglia comune ai due mesi: intestazione, una riga per settimana, la cella la decide chi chiama. */
-function grigliaMese(mese, { cella, testaSettimana, classe, settimaneMax = null }) {
+function grigliaMese(mese, { cella, testaSettimana, classe, settimaneMax = null, senzaPassate = false }) {
   const settimane = settimaneDel(mese);
   // Un mese può toccare sei settimane: quando sono troppe si tolgono da
   // sopra quelle già finite, che sono le meno utili da guardare.
   const oggi = todayISO();
   while (settimaneMax && settimane.length > settimaneMax && addDays(settimane[0], 6) < oggi) settimane.shift();
+  // Nel Calendario del negozio una settimana già finita non ha più niente da
+  // cambiare: si toglie sempre. Un mese tutto passato invece resta intero,
+  // altrimenti sfogliandolo indietro si troverebbe una pagina vuota.
+  if (senzaPassate && settimane.some((wk) => addDays(wk, 6) >= oggi)) {
+    while (addDays(settimane[0], 6) < oggi) settimane.shift();
+  }
   const intestazione = Array.from({ length: 7 }, (_, i) => html`
     <span class="dow-fisso">${GIORNI[weekday(addDays(settimane[0], i))]}</span>`).join('');
   const righe = settimane.map((wk) => html`
@@ -1040,6 +1046,7 @@ export function mesePubblico(mese) {
 
   return grigliaMese(mese, {
     classe: 'mese-pubblico',
+    senzaPassate: true,
     testaSettimana: (wk) => html`<h3>${formatDay(wk)} → ${formatDay(addDays(wk, 6))}</h3>`,
     cella: (data) => {
       const delGiorno = richieste.get(data) || [];
