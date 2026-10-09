@@ -407,7 +407,7 @@ export function scelta() {
     </button>
 
     <button class="tile scelta verde" data-act="tipo-cambio" data-tipo="${TIPO_CAMBIO.OFF}">
-      <span class="tile-icona">${raw(icona('calendario'))}</span>
+      <span class="tile-icona">${raw(icona('ombrellone'))}</span>
       <span>
         <strong>Cambio OFF</strong>
         <em>Vuoi un giorno OFF e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>

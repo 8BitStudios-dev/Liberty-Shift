@@ -2,7 +2,7 @@ import { html, raw, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, formPreferenze, contaPreferenze,
+  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
@@ -75,7 +75,7 @@ export function home() {
             <span class="pallino ${inAttesaDiMe ? 'urgente' : ''} ${accordo ? 'fatto' : ''}"></span>
             <div>
               <strong>${titolo}</strong>
-              <div class="meta">Scambio con ${nomeUtente(altro)}</div>
+              <div class="meta">Scambio con ${nomeUtente(altro)}${raw(r ? ` ${pillolaTipo(r.tipo)}` : '')}</div>
               ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
             </div>
             <span class="chevron">›</span>
@@ -86,7 +86,7 @@ export function home() {
           <span class="pallino"></span>
           <div>
             <strong>${raw(hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '')}Cedi ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
-            <div class="meta">${raw(badgeStato(r.status))}</div>
+            <div class="meta">${raw(pillolaTipo(r.tipo))} ${raw(badgeStato(r.status))}</div>
           </div>
           <span class="chevron">›</span>
         </div>`),

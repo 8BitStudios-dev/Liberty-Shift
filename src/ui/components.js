@@ -31,6 +31,12 @@ export function etichettaTipo(tipo, testo, px = 16) {
   return `<span class="tipo-etichetta" data-tipo="${esc(tipo)}">${iconaTipo(tipo, px)} ${esc(testo)}</span>`;
 }
 
+/** La versione piccola, accanto a un nome o a un giorno: icona e "OFF" o "orario". */
+export function pillolaTipo(tipo) {
+  const meta = TIPO_META[tipo] || TIPO_META.ORARIO;
+  return `<span class="tipo-pill" data-tipo="${esc(tipo)}">${iconaTipo(tipo, 13)} ${meta.breve}</span>`;
+}
+
 export function nomeUtente(u) {
   return u ? `${u.nome} ${u.cognomeIniziale}.` : '—';
 }
