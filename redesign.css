@@ -1050,3 +1050,4 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   --saetta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z' fill='none' stroke='black' stroke-width='1.9' stroke-linejoin='round'/%3E%3C/svg%3E");
   width: 16px; height: 16px; right: 30px; bottom: 10px; transform: rotate(14deg); opacity: .9;
 }
+.tag.ultima { background: color-mix(in srgb, var(--rosso) 16%, transparent); color: var(--rosso); font-weight: 700; }

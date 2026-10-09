@@ -72,8 +72,14 @@ export const GUIDE = {
 
       <p>
         Per ognuna vedi <strong>cosa faresti tu</strong> e cosa farebbe l'altra
-        persona, già con gli orari giusti. La percentuale dice quanto lo scambio
-        va bene a tutti e due.
+        persona, già con gli orari giusti.
+      </p>
+
+      <p>
+        In cima ci sono le <strong>ultime chiamate</strong>: il turno è entro
+        ${RULES.ultimaChiamata.giorniAlTurno} giorni e la richiesta aspetta da almeno
+        ${RULES.ultimaChiamata.giorniInBacheca} giorni senza che nessuno l'abbia presa.
+        Anche quando a te pesa un po', sono quelle dove il tuo aiuto conta di più.
       </p>
 
       <p class="esempio">
@@ -84,7 +90,8 @@ export const GUIDE = {
       <p>
         Sopra ogni richiesta l'app ti dice <strong>quanto ti costa</strong>,
         dalle tue preferenze: <em>Ti conviene</em>, <em>Per te non cambia
-        niente</em> o <em>Ti costa poco</em>. Le prime sono in cima.
+        niente</em> o <em>Ti costa poco</em>. Dopo le ultime chiamate vengono
+        le più comode.
       </p>
 
       <p>

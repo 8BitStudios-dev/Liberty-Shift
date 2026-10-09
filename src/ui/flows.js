@@ -1115,14 +1115,14 @@ export function aiuta() {
     </header>
     <p class="occhiello">
       Dai una mano a un collega e guadagni una priorità in più per il mese.
-      Vedi solo le richieste che puoi coprire con i tuoi turni, prima quelle più comode per te.
+      Vedi solo le richieste che puoi coprire con i tuoi turni: prima le ultime chiamate, poi le più comode per te.
     </p>
     ${raw(riquadroRicompensa())}
     ${raw(mie.length && !haPreferenze(store.me.preferenze)
     ? '<p class="testo-tenue">Imposta le tue preferenze nel Profilo e qui vedrai anche quanto ti costa ogni cambio.</p>'
     : '')}
     ${raw(mie.length
-    ? store.occasioni(mie).map((o) => cardOpportunita(o)).join('')
+    ? store.occasioni(mie).map((o) => cardOpportunita(o, { aiuta: true })).join('')
     : vuoto(
       'Niente da fare, per ora',
       'Per ora nessuna richiesta è compatibile con i tuoi turni. Se il calendario non è aggiornato, aggiornalo dal Profilo.',

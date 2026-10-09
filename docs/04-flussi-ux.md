@@ -383,9 +383,18 @@ schermata risponde a tutte e due le domande.
   niente classifiche, che in un negozio mettono in imbarazzo chi ha vincoli
   veri.
 
-L'ordine (`occasioniDiAiuto` in `karma.js`): le prioritarie, poi i favori da
-ricambiare (salvo che ricambiare ti pesi), poi dal costo più basso, a parità
-la percentuale.
+L'ordine (`occasioniDiAiuto` in `karma.js`): prima le **ultime chiamate**
+(turno entro 3 giorni, richiesta in bacheca da almeno 3 senza accordo,
+`RULES.ultimaChiamata`), da quella che aspetta da più tempo e poi dal turno
+più vicino, anche quando ti pesano: aiutare chi nessuno ha aiutato è il senso
+della schermata. Poi i favori da ricambiare (salvo che ricambiare ti pesi),
+poi dal costo più basso, a parità il punteggio. L'ultima chiamata è solo un
+bollino rosso e un posto in cima: non dà priorità a nessuno.
+
+Qui la priorità non esiste: niente stella e nessun posto in più per chi l'ha
+usata, perché è visibilità in bacheca, non un motivo per aiutare uno prima di
+un altro. E niente percentuale: a dire quanto ti pesa un cambio ci sono le
+etichette.
 
 ## Da dove arrivano i turni
 La voce "Inserisci i tuoi turni" non sta più in fondo al calendario, dove era un

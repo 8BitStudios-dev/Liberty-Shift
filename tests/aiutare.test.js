@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { costoDelCambio } from '../src/core/compatibili.js';
 import {
-  aiutiConclusi, aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
+  aiutiConclusi, aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto, ultimaChiamata,
 } from '../src/core/karma.js';
 
 const D = '2026-10-14'; // un mercoledì
@@ -92,10 +92,12 @@ test('favori: chi ti ha aiutato e chi hai aiutato, con l\'ultima volta', () => {
   assert.deepEqual([...chiHaiAiutato('lorenzo', stato).keys()].sort(), ['giulia', 'marco']);
 });
 
-test('occasioni: prioritarie, poi chi ricambiare, poi quello che pesa meno', () => {
-  const turni = Object.fromEntries([mattina, mattina2, chiusura, apertura].map((s) => [s.id, s]));
+test('occasioni: ultime chiamate, poi chi ricambiare, poi quello che pesa meno; la priorità non conta', () => {
+  const adesso = new Date('2026-10-12T10:00:00Z');
+  const vicino = turno('12:00', '21:00', '2026-10-14');
+  const turni = Object.fromEntries([mattina, mattina2, chiusura, apertura, vicino].map((s) => [s.id, s]));
   const occasione = (id, userId, cedo, mio, extra = {}) => ({
-    richiesta: { id, userId, cedo: { shiftId: cedo.id }, prioritaFinoA: null, ...extra },
+    richiesta: { id, userId, cedo: { shiftId: cedo.id }, prioritaFinoA: null, createdAt: '2026-10-11T08:00:00Z', ...extra },
     match: { shiftOffertoId: mio.id, score: 80 },
   });
   const io = { preferenze: { versione: 2, modo: 'generali', fasce: { CHIUSURA: 'evita' }, giorni: {} } };
@@ -103,10 +105,27 @@ test('occasioni: prioritarie, poi chi ricambiare, poi quello che pesa meno', () 
     occasione('pesa', 'anna', chiusura, mattina),
     occasione('nulla', 'bruno', mattina2, mattina),
     occasione('favore', 'giulia', apertura, mattina),
-    occasione('favore-pesa', 'giulia', chiusura, apertura),
     occasione('conviene', 'carla', mattina, chiusura),
     occasione('prioritaria', 'dario', chiusura, mattina, { prioritaFinoA: '2099-01-01T00:00:00Z' }),
-  ], { io, turno: (id) => turni[id], favori: new Map([['giulia', '2026-10-03']]) });
-  assert.deepEqual(lista.map((o) => o.richiesta.id), ['prioritaria', 'favore', 'conviene', 'nulla', 'pesa', 'favore-pesa']);
-  assert.equal(lista.find((o) => o.richiesta.id === 'favore').favore, '2026-10-03');
+    // Il turno fra due giorni, in bacheca da cinque e da quattro: ultime
+    // chiamate, anche se a me pesano, e prima quella che aspetta da più tempo.
+    occasione('ultima-recente', 'elena', vicino, mattina, { createdAt: '2026-10-08T08:00:00Z' }),
+    occasione('ultima-vecchia', 'fabio', vicino, mattina, { createdAt: '2026-10-07T08:00:00Z' }),
+    // Turno vicino ma pubblicata ieri: urgente, non ancora ignorata.
+    occasione('troppo-nuova', 'gino', vicino, mattina, { createdAt: '2026-10-11T08:00:00Z' }),
+  ], { io, turno: (id) => turni[id], favori: new Map([['giulia', '2026-10-03']]), adesso });
+  assert.deepEqual(lista.map((o) => o.richiesta.id).slice(0, 2), ['ultima-vecchia', 'ultima-recente']);
+  assert.equal(lista.find((o) => o.richiesta.id === 'troppo-nuova').ultimaChiamata, false);
+  assert.equal(lista[2].richiesta.id, 'favore');
+  const resto = lista.slice(3).map((o) => o.richiesta.id);
+  assert.ok(resto.indexOf('prioritaria') > resto.indexOf('conviene'), 'la priorità non porta in cima');
+});
+
+test('ultima chiamata: entro 3 giorni dal turno e da almeno 3 in bacheca, mai per un turno passato', () => {
+  const adesso = new Date('2026-10-12T10:00:00Z');
+  const r = (createdAt) => ({ createdAt });
+  assert.equal(ultimaChiamata(r('2026-10-09T09:00:00Z'), { data: '2026-10-15' }, adesso), true);
+  assert.equal(ultimaChiamata(r('2026-10-09T09:00:00Z'), { data: '2026-10-16' }, adesso), false);
+  assert.equal(ultimaChiamata(r('2026-10-10T09:00:00Z'), { data: '2026-10-13' }, adesso), false);
+  assert.equal(ultimaChiamata(r('2026-10-01T09:00:00Z'), { data: '2026-10-11' }, adesso), false);
 });

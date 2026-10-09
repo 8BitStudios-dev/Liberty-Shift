@@ -482,9 +482,10 @@ const TESTO_COSTO = {
  * pesa, e se è il tuo turno di ricambiare. Il costo "pesa" non si scrive:
  * la card resta in fondo e il motivo si legge già nei perché.
  */
-function etichetteAiuto({ richiesta, costo, favore }) {
+function etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }) {
   const u = store.user(richiesta.userId);
   const etichette = [];
+  if (ultimaChiamata) etichette.push(['ultima', 'Ultima chiamata']);
   if (favore && costo !== 'costa') etichette.push(['favore', `${u?.nome} ti ha aiutato ${meseDelFavore(favore)}: puoi ricambiare`]);
   if (TESTO_COSTO[costo]) etichette.push(TESTO_COSTO[costo]);
   if (!etichette.length) return '';
@@ -494,8 +495,12 @@ function etichetteAiuto({ richiesta, costo, favore }) {
 /**
  * Una richiesta altrui vista dal lato di chi può risolverla: la percentuale
  * è quanto tu sei una buona risposta per lei, non il contrario.
+ *
+ * Dentro Aiuta un collega (`aiuta`) niente percentuale né stella della
+ * priorità: lì si aiuta chi ha bisogno, e a dire quanto ti pesa ci sono già
+ * le etichette.
  */
-export function cardOpportunita({ richiesta, match, costo, favore }) {
+export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamata }, { aiuta = false } = {}) {
   const u = store.user(richiesta.userId);
   const verde = match.tipo === 'MATCH';
   const mioTurno = store.shift(match.shiftOffertoId);
@@ -504,17 +509,18 @@ export function cardOpportunita({ richiesta, match, costo, favore }) {
   const perLei = match.adattato?.trasformato
     ? `${match.adattato.start}–${match.adattato.end}`
     : shiftLabel(mioTurno);
+  const stella = !aiuta && hasPriority(richiesta);
   return html`
-    <article class="card match ${verde ? 'verde' : 'giallo'} ${hasPriority(richiesta) ? 'prioritaria' : ''}">
+    <article class="card match ${verde ? 'verde' : 'giallo'} ${stella ? 'prioritaria' : ''}">
       <header class="card-head">
         <span class="avatar">${iniziali(u)}</span>
         <div>
-          <strong>${raw(hasPriority(richiesta) ? `${icona('priorita', { px: 14 })} ` : '')}${nomeUtente(u)}</strong>
+          <strong>${raw(stella ? `${icona('priorita', { px: 14 })} ` : '')}${nomeUtente(u)}</strong>
           <div class="meta">${u?.contratto}</div>
         </div>
-        <span class="score">${match.score}%</span>
+        ${raw(aiuta ? '' : `<span class="score">${match.score}%</span>`)}
       </header>
-      ${raw(etichetteAiuto({ richiesta, costo, favore }))}
+      ${raw(etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }))}
       ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
       <div class="scambio-secco">

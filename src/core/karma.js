@@ -10,7 +10,6 @@
 
 import { RULES, STATUS } from './rules.js';
 import { costoDelCambio } from './compatibili.js';
-import { hasPriority } from './model.js';
 
 export function karma(ringraziamenti, userId) {
   const ricevuti = ringraziamenti.filter((g) => g.aUserId === userId);
@@ -115,13 +114,33 @@ export function chiHaiAiutato(userId, stato) {
 const ORDINE_COSTO = { conviene: 0, nulla: 1, poco: 2 };
 const rangoCosto = (c) => ORDINE_COSTO[c] ?? (c === 'costa' ? 4 : 3);
 
+const GIORNO_MS = 86400000;
+
 /**
- * Le occasioni di aiutare, ognuna col suo costo e con il favore da
- * ricambiare, se c'è.
+ * Ultima chiamata: il turno è entro pochi giorni e la richiesta è in bacheca
+ * da giorni senza un accordo (una richiesta con un accordo non è più aperta,
+ * e qui non arriva). Una pubblicata stamattina per domani è urgente, ma
+ * nessuno l'ha ancora ignorata.
+ */
+export function ultimaChiamata(richiesta, cedo, adesso = new Date()) {
+  if (!cedo?.data || !richiesta?.createdAt) return false;
+  const { giorniAlTurno, giorniInBacheca } = RULES.ultimaChiamata;
+  const oggi = Date.parse(`${adesso.toISOString().slice(0, 10)}T00:00:00Z`);
+  const alTurno = (Date.parse(`${cedo.data}T00:00:00Z`) - oggi) / GIORNO_MS;
+  const inBacheca = (adesso.getTime() - Date.parse(richiesta.createdAt)) / GIORNO_MS;
+  return alTurno >= 0 && alTurno <= giorniAlTurno && inBacheca >= giorniInBacheca;
+}
+
+/**
+ * Le occasioni di aiutare, ognuna col suo costo, il favore da ricambiare e
+ * l'ultima chiamata, se ci sono.
  *
- * L'ordine: prima le prioritarie, che qualcuno ha pagato per far vedere; poi
- * chi ti ha aiutato, a meno che ricambiare ti costi davvero; poi quello che
- * ti costa meno; a parità, il punteggio.
+ * L'ordine: prima le ultime chiamate, da quella che aspetta da più tempo e
+ * poi dal turno più vicino, anche quando ti pesano: aiutare un collega che
+ * nessuno ha aiutato è proprio il senso di questa schermata. Poi chi ti ha
+ * aiutato, a meno che ricambiare ti costi davvero; poi quello che ti costa
+ * meno; a parità, il punteggio. La priorità qui non conta: è visibilità in
+ * bacheca, non un motivo per aiutare prima uno dell'altro.
  */
 export function occasioniDiAiuto(opportunita, { io, turno, favori = new Map(), adesso = new Date() }) {
   const arricchite = opportunita.map((o) => {
@@ -131,10 +150,12 @@ export function occasioniDiAiuto(opportunita, { io, turno, favori = new Map(), a
       : cedo;
     const costo = costoDelCambio(io?.preferenze, turno(o.match.shiftOffertoId), prende);
     const favore = favori.get(o.richiesta.userId) || null;
-    return { ...o, costo, favore };
+    return { ...o, costo, favore, ultimaChiamata: ultimaChiamata(o.richiesta, cedo, adesso), dataTurno: cedo?.data || '' };
   });
-  const prioritaria = (o) => hasPriority(o.richiesta, adesso);
-  return arricchite.sort((a, b) => (prioritaria(b) - prioritaria(a))
+  return arricchite.sort((a, b) => (b.ultimaChiamata - a.ultimaChiamata)
+    || (a.ultimaChiamata && b.ultimaChiamata
+      ? (a.richiesta.createdAt.localeCompare(b.richiesta.createdAt) || a.dataTurno.localeCompare(b.dataTurno))
+      : 0)
     || ((b.favore && b.costo !== 'costa') - (a.favore && a.costo !== 'costa'))
     || (rangoCosto(a.costo) - rangoCosto(b.costo))
     || (b.match.score - a.match.score));
