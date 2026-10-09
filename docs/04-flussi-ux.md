@@ -33,14 +33,16 @@ strade e tutti i giorni in cui sei libero. È il principio UX numero 4 preso
 alla lettera.
 
 I turni stanno in un calendario di settimane Apple. Su ogni turno un bollino
-verde dice quanti colleghi vanno bene; un turno senza nessuno resta toccabile
+verde dice quante richieste vanno bene; un turno senza nessuno resta toccabile
 ma spento. Compaiono anche i giorni in cui non lavori ma un collega lascia un
 turno che potresti prendere tu (bordo tratteggiato, scritta OFF): toccandoli
 si vedono quelle richieste, le stesse di Aiuta un collega per quel giorno.
 
-Si vedono al massimo i cinque colleghi più compatibili (`RULES.rapidoMassimo`),
-orario e OFF insieme, ciascuno poi nel suo gruppo; se ce ne sono di più lo si
-dice sotto. Niente tasto per creare la richiesta: quando non c'è nessuno, la
+Si vedono solo le richieste già pubblicate dai colleghi, le cinque più affini
+(`richiesteRapide`, `RULES.rapidoMassimo`), orario e OFF insieme, ciascuna poi
+nel suo gruppo; se ce ne sono di più lo si dice sotto. I Potenziali trovati
+dal calendario di chi non ha chiesto niente qui non compaiono: stavano nella
+stessa lista con un altro tasto, e non si capiva la differenza. Niente tasto per creare la richiesta: quando non c'è nessuno, la
 schermata rimanda al calendario del Profilo, da dove una richiesta si pubblica
 con le domande giuste.
 

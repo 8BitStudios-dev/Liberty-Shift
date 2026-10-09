@@ -633,6 +633,20 @@ export function cambioRapido(shiftId, ctx) {
 }
 
 /**
+ * Cambio rapido come lo si mostra: solo i colleghi che hanno già pubblicato
+ * una richiesta compatibile, dal più affine.
+ *
+ * Accanto ai Match c'erano i Potenziali, trovati dal calendario di chi non
+ * aveva chiesto niente: due tipi di risultato con due tasti diversi nella
+ * stessa lista, e non si capiva la differenza. Qui c'è solo chi vuole già
+ * cambiare. `tutte` serve a dire quante ce ne sono oltre quelle mostrate.
+ */
+export function richiesteRapide(shiftId, ctx, massimo = RULES.rapidoMassimo) {
+  const tutte = cambioRapido(shiftId, ctx).filter((m) => m.origine === 'RICHIESTA');
+  return { mostrate: tutte.slice(0, massimo), tutte: tutte.length };
+}
+
+/**
  * La disponibilità di una persona, ricalcolata: per ogni giorno da oggi in
  * poi vale la scelta fatta a mano su quel giorno, se c'è, altrimenti quella
  * che viene dalle preferenze. I giorni passati restano com'erano.

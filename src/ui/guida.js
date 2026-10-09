@@ -43,7 +43,7 @@ export const GUIDE = {
     corpo: () => html`
       <p>Il modo più veloce per liberarti un turno.</p>
 
-      <p>Scegli il turno in alto. Sotto compare chi può prenderlo, in due gruppi:</p>
+      <p>Scegli il turno in alto. Sotto compaiono le richieste già pubblicate dai colleghi che vanno bene con quel turno, in due gruppi:</p>
       <ul class="elenco piccolo">
         <li><strong>Cambio orario</strong> — restate nello stesso giorno e vi
           scambiate l'orario;</li>
@@ -52,8 +52,8 @@ export const GUIDE = {
       </ul>
 
       <p>
-        Il bollino verde su un giorno dice quanti colleghi vanno bene: i turni
-        senza bollino, per ora, non hanno nessuno. I giorni <strong>OFF</strong>
+        Il bollino verde su un giorno dice quante richieste vanno bene: i turni
+        senza bollino, per ora, non ne hanno nessuna. I giorni <strong>OFF</strong>
         tratteggiati sono giorni in cui non lavori ma un collega lascia un turno
         che potresti prendere tu.
       </p>
@@ -65,9 +65,9 @@ export const GUIDE = {
 
       <p>
         Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Vedi
-        al massimo ${RULES.rapidoMassimo} colleghi, i più compatibili. Se non
-        compare nessuno, pubblica la richiesta dal tuo calendario nel Profilo:
-        resta in bacheca.
+        al massimo ${RULES.rapidoMassimo} richieste, le più affini. Se non
+        compare niente, pubblica la tua dal calendario nel Profilo: resta in
+        bacheca.
       </p>`,
   },
 

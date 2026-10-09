@@ -4,7 +4,7 @@
 import { html, raw, toast, esc } from './dom.js';
 import { store } from '../core/store.js';
 import {
-  findMatches, validateRequest, cambioRapido, giorniLiberi, turnoOfferibile,
+  findMatches, validateRequest, richiesteRapide, giorniLiberi, turnoOfferibile,
   opportunitaPerMe, combaciaEsatto, ordinaProposte,
 } from '../core/engine.js';
 import { RULES, WANT_MODE, STATUS, TIPO_CAMBIO, TIPO_META } from '../core/rules.js';
@@ -79,20 +79,20 @@ export function vistaRapida() {
     '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}`;
   }
 
+  const conteggi = new Map(miei.map((s) => [s.id, richiesteRapide(s.id, store.state).tutte]));
+
   // Un giorno libero scelto resta scelto finché ha ancora richieste; se no si
-  // torna al primo turno, come prima.
+  // parte dal primo turno che ne ha, così la schermata non si apre vuota.
   if (rapido.giorno && !perGiorno.has(rapido.giorno)) rapido.giorno = null;
   if (!rapido.giorno && (!rapido.shiftId || !miei.some((s) => s.id === rapido.shiftId))) {
-    if (miei.length) rapido.shiftId = miei[0].id;
+    if (miei.length) rapido.shiftId = (miei.find((s) => conteggi.get(s.id) > 0) || miei[0]).id;
     else rapido.giorno = [...perGiorno.keys()].sort()[0];
   }
-
-  const conteggi = new Map(miei.map((s) => [s.id, cambioRapido(s.id, store.state).length]));
   const sceltaTurno = calendarioTurni(miei, perGiorno, conteggi);
 
   const massimo = RULES.rapidoMassimo;
   const notaPiu = (mostrati, tutti) => (tutti > mostrati
-    ? `<p class="testo-tenue">I ${mostrati} più compatibili su ${tutti}.</p>`
+    ? `<p class="testo-tenue">Le ${mostrati} richieste più affini su ${tutti}.</p>`
     : '');
 
   if (rapido.giorno) {
@@ -109,9 +109,8 @@ export function vistaRapida() {
   }
 
   const cedo = store.shift(rapido.shiftId);
-  const tutti = cambioRapido(rapido.shiftId, store.state);
-  // I più compatibili, fra orario e OFF insieme: poi ognuno nel suo gruppo.
-  const risultati = [...tutti].sort((a, b) => b.score - a.score).slice(0, massimo);
+  // Le più affini, fra orario e OFF insieme: poi ognuna nel suo gruppo.
+  const { mostrate: risultati, tutte: tutti } = richiesteRapide(rapido.shiftId, store.state, massimo);
   const orario = risultati.filter((m) => m.cambio === TIPO_CAMBIO.ORARIO);
   const off = risultati.filter((m) => m.cambio === TIPO_CAMBIO.OFF);
 
@@ -136,10 +135,10 @@ export function vistaRapida() {
     off,
   ))}
 
-    ${raw(notaPiu(risultati.length, tutti.length))}
+    ${raw(notaPiu(risultati.length, tutti))}
     ${raw(risultati.length ? '' : vuoto(
     'Nessuno per ora',
-    `Per ${formatDay(cedo.data)} al momento nessun collega ha un turno adatto. Puoi pubblicare la richiesta toccando il giorno nel tuo calendario, nel Profilo.`,
+    `Per ${formatDay(cedo.data)} al momento nessun collega ha pubblicato una richiesta compatibile. Puoi pubblicare la tua toccando il giorno nel tuo calendario, nel Profilo.`,
   ))}
 `;
 }
@@ -203,7 +202,7 @@ function calendarioTurni(miei, perGiorno, conteggi) {
     <div class="cal-turni">
       <div class="cal-turni-testa">${intestazione}</div>
       <div class="cal-turni-griglia">${righe}</div>
-      <p class="cal-turni-legenda"><span><i class="cal-conta">2</i> colleghi compatibili</span><span><em>OFF</em> un turno da prendere</span></p>
+      <p class="cal-turni-legenda"><span><i class="cal-conta">2</i> richieste compatibili</span><span><em>OFF</em> un turno da prendere</span></p>
     </div>`;
 }
 

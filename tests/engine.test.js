@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { appleWeekKey, sameAppleWeek, addDays } from '../src/core/time.js';
 import {
-  satisfies, validateRequest, findMatches, disponibileIl, cambioRapido, turnoOfferibile,
+  satisfies, validateRequest, findMatches, disponibileIl, cambioRapido, richiesteRapide, turnoOfferibile,
   opportunitaPerMe, richiesteSulGiorno, slotSettimana,
 } from '../src/core/engine.js';
 import { WANT_MODE, RULES, TIPO_CAMBIO } from '../src/core/rules.js';
@@ -876,4 +876,17 @@ test('chi non si sa se sia libero non viene proposto', () => {
   assert.equal(findMatches(bozza, { ...ctx, users: [martina, disponibile] }).some((m) => m.userId === 'marco'), true);
   // Dove i calendari sono interi (le notifiche) un giorno senza turno è libero.
   assert.equal(findMatches(bozza, { ...ctx, calendariCompleti: true }).some((m) => m.userId === 'marco'), true);
+});
+
+test('Cambio rapido mostra solo le richieste pubblicate, le più affini, al massimo cinque', () => {
+  const s = seed();
+  const turni = s.shifts.filter((x) => x.userId === s.currentUserId && x.tipo === 'WORK');
+  for (const t of turni) {
+    const tutti = cambioRapido(t.id, s);
+    const { mostrate, tutte } = richiesteRapide(t.id, s, 2);
+    assert.equal(tutte, tutti.filter((m) => m.origine === 'RICHIESTA').length);
+    assert.ok(mostrate.length <= 2);
+    assert.ok(mostrate.every((m) => m.origine === 'RICHIESTA'), 'niente Potenziali dal calendario');
+    for (let i = 1; i < mostrate.length; i += 1) assert.ok(mostrate[i - 1].score >= mostrate[i].score);
+  }
 });
