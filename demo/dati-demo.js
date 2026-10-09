@@ -33,7 +33,7 @@ const COLLEGHI = [
   ['chiara', 'Chiara', 'Galli', 'F', 'FT', 40, { preferisceChiusure: true }],
   ['matteo', 'Matteo', 'Serra', 'M', 'PT', 25, {}],
   ['sofia', 'Sofia', 'Marchetti', 'F', 'FT', 40, { evitaChiusure: true }],
-  ['giorgio', 'Giorgio', 'Fontana', 'M', 'PT', 30, {}],
+  ['giorgio', 'Giorgio', 'Fontana', 'M', 'PT', 20, {}],
   ['elisa', 'Elisa', 'Conti', 'F', 'FT', 40, { preferisceMattine: true }],
   ['valentina', 'Valentina', 'Costa', 'F', 'FT', 40, { preferisceChiusure: true }],
   ['davide', 'Davide', 'Ferri', 'M', 'FT', 40, { evitaAperture: true }],
@@ -57,7 +57,7 @@ const COLLEGHI = [
 /** Chi ha già una richiesta "da copione" o un ruolo negli accordi: niente richiesta di sfondo. */
 const CON_RUOLO = new Set([
   'chiara', 'matteo', 'sofia', 'giorgio', 'elisa', 'valentina', 'davide', // aiuti
-  'rita', 'tommaso', 'ilaria', 'nicola', // scambi già conclusi
+  'rita', 'ilaria', 'nicola', // scambi già conclusi
   'federica',
 ]);
 
@@ -199,10 +199,13 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   imponi('sofia', giorno(w1, 2), ['12:00', '21:00']);
   orario('rq_sofia', 'sofia', giorno(w1, 2), { entroLe: '17:45', note: 'Saggio di danza di mia figlia, devo uscire prima.' }, { oreFa: 22 });
 
-  imponi('giorgio', giorno(w1, 1), ['09:30', '15:30']);
+  // Tre giorni offerti, il massimo: Lorenzo lavora lunedì e mercoledì, ma il
+  // martedì è già OFF, e nella proposta lo vede scritto in rosso.
+  imponi('giorgio', giorno(w1, 1), ['09:30', '14:30']);
   imponi('giorgio', giorno(w1, 2), OFF);
+  imponi('giorgio', giorno(w1, 3), OFF);
   imponi('giorgio', giorno(w1, 4), OFF);
-  off('rq_giorgio', 'giorgio', giorno(w1, 1), [giorno(w1, 2), giorno(w1, 4)], 'Cena di famiglia, la domenica non si tocca.', { oreFa: 40 });
+  off('rq_giorgio', 'giorgio', giorno(w1, 1), [giorno(w1, 2), giorno(w1, 3), giorno(w1, 4)], 'Cena di famiglia, la domenica non si tocca.', { oreFa: 40 });
 
   imponi('elisa', giorno(w2, 3), ['22:00', '06:30']);
   imponi('elisa', giorno(w2, 4), ['12:00', '21:00']);
@@ -216,28 +219,17 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   imponi('davide', giorno(w1, 0), ['08:00', '17:00']);
   orario('rq_davide', 'davide', giorno(w1, 0), { dalleOre: '10:00', note: 'Domani mi serve la mattina libera, qualcuno può aiutarmi?' }, { oreFa: 120 });
 
-  // Le richieste di Lorenzo.
+  // La Home di Lorenzo ha cinque righe, né più né meno: una proposta che
+  // aspetta lui (Anna), due che aspettano un collega (Matteo, Valentina), uno
+  // scambio concordato (Rita) e la sua unica richiesta ancora aperta.
   imponi('anna', giorno(w1, 5), ['10:00', '15:00']);
-  imponi('luca', giorno(w1, 5), ['09:30', '18:30']);
   orario('rq_lorenzo_1', 'lorenzo', giorno(w1, 5), { entroLe: '19:00', note: 'Il giovedì sera ho il corso di inglese.' }, { oreFa: 10 });
-
-  imponi('paolo', giorno(w2, 0), OFF);
-  imponi('paolo', giorno(w2, 1), ['09:30', '18:30']);
-  richiesta('rq_lorenzo_2', L, TIPO_CAMBIO.OFF, giorno(w2, 0),
-    { giorni: [giorno(w2, 1), giorno(w2, 3)], mode: WANT_MODE.ANY, note: 'Sabato ho un impegno, lavoro volentieri domenica o martedì.' },
-    { oreFa: 3, priorita: 44 });
-
-  richiesta('rq_lorenzo_3', L, TIPO_CAMBIO.ORARIO, giorno(w2, 4),
-    { giorni: [giorno(w2, 4)], mode: WANT_MODE.RANGE, dalleOre: '12:00', note: '' }, { oreFa: 2 });
 
   // Scambi già concordati o conclusi.
   imponi('rita', giorno(w2, 2), ['11:00', '20:00']);
   richiesta('rq_lorenzo_4', L, TIPO_CAMBIO.ORARIO, giorno(w2, 2),
     { giorni: [giorno(w2, 2)], mode: WANT_MODE.RANGE, dalleOre: '11:00', note: 'Lunedì mattina ho la visita.' },
     { oreFa: 52, status: STATUS.ACCORDO, chiusaFa: 30 });
-
-  imponi('tommaso', giorno(w1, 6), ['10:00', '19:00']);
-  orario('rq_tommaso', 'tommaso', giorno(w1, 6), { entroLe: '17:30' }, { oreFa: 60, status: STATUS.ACCORDO, chiusaFa: 20 });
 
   // Due favori già approvati su UKG, questo mese: fanno salire le priorità.
   imponi('ilaria', giorno(w0, 2), ['10:00', '15:00']);
@@ -285,23 +277,17 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   });
   const U = idUtente;
 
-  // Aspettano Lorenzo: due persone sullo stesso turno, e una sul sabato.
+  // Aspetta Lorenzo: una sola proposta, sulla sua unica richiesta ancora aperta.
   proposta('pr_anna', 'rq_lorenzo_1', U('anna'), L, idTurno(U('anna'), giorno(w1, 5)), [U('anna')], STATUS.IN_ATTESA, 7,
     'Io giovedì finisco alle 15, ti va bene?');
-  proposta('pr_luca', 'rq_lorenzo_1', U('luca'), L, idTurno(U('luca'), giorno(w1, 5)), [U('luca')], STATUS.IN_ATTESA, 4,
-    'Il mio giovedì è una mattina, per te va bene?');
-  proposta('pr_paolo', 'rq_lorenzo_2', U('paolo'), L, idTurno(U('paolo'), giorno(w2, 1)), [U('paolo')], STATUS.IN_ATTESA, 1,
-    'Il sabato lo prendo io, domenica lavori tu.');
 
   // Aspetta l'altro: Lorenzo ha proposto, nessuno ha ancora risposto.
   proposta('pr_lorenzo_matteo', 'rq_matteo', L, U('matteo'), idTurno(L, giorno(w1, 4)), [L], STATUS.IN_ATTESA, 5,
     'Il mio mercoledì inizia alle 10, dovrebbe andare.');
   proposta('pr_lorenzo_valentina', 'rq_valentina', L, U('valentina'), idTurno(L, giorno(w2, 6)), [L], STATUS.IN_ATTESA, 3);
 
-  // Concordati e da ringraziare.
+  // Concordato e da ringraziare.
   proposta('pr_rita', 'rq_lorenzo_4', U('rita'), L, idTurno(U('rita'), giorno(w2, 2)), [U('rita'), L], STATUS.ACCORDO, 30);
-  proposta('pr_lorenzo_tommaso', 'rq_tommaso', L, U('tommaso'), idTurno(L, giorno(w1, 6)), [U('tommaso'), L], STATUS.ACCORDO, 22,
-    'Il mio venerdì finisce alle 17.');
 
   // Conclusi e approvati su UKG: il favore c'è, la proposta non si vede più.
   const approvata = (id, richiestaId, userId, da, shiftOfferto, fa) => {

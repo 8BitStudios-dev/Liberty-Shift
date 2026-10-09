@@ -34,15 +34,17 @@ test('demo: Aiuta un collega ha richieste che convengono, che costano e un\'ulti
   assert.ok(occasioni.some((o) => o.ultimaChiamata), 'manca un\'ultima chiamata');
 });
 
-test('demo: Lorenzo ha proposte da accettare, da attendere e scambi da ringraziare', () => {
+test('demo: la Home di Lorenzo ha cinque righe: 1 da rispondere, 2 in attesa, 1 concordata, 1 aperta', () => {
   const s = stato();
   const io = s.currentUserId;
-  const inAttesa = s.proposals.filter((p) => p.status === 'IN_ATTESA');
-  assert.ok(inAttesa.filter((p) => !p.accettataDa.includes(io)).length >= 3, 'servono proposte che aspettano Lorenzo');
-  assert.ok(inAttesa.some((p) => p.accettataDa.includes(io)), 'serve una proposta in cui Lorenzo aspetta');
-  const daRingraziare = s.proposals.filter((p) => p.status === 'ACCORDO' && !p.cambioInserito
-    && !s.ringraziamenti.some((g) => g.proposalId === p.id && g.daUserId === io));
-  assert.ok(daRingraziare.length >= 2);
+  const aperte = s.requests.filter((r) => r.userId === io && isOpen(r));
+  const proposte = s.proposals.filter((p) => (p.daUserId === io || p.aUserId === io) && !p.cambioInserito);
+  const aspettaMe = proposte.filter((p) => p.status === 'IN_ATTESA' && !p.accettataDa.includes(io));
+  const aspettaAltri = proposte.filter((p) => p.status === 'IN_ATTESA' && p.accettataDa.includes(io));
+  const concordate = proposte.filter((p) => p.status === 'ACCORDO');
+  assert.deepEqual([aspettaMe.length, aspettaAltri.length, concordate.length, aperte.length], [1, 2, 1, 1]);
+  // Lo scambio concordato non è ancora stato ringraziato: è quello del grazie in arrivo.
+  assert.ok(!s.ringraziamenti.some((g) => g.proposalId === concordate[0].id && g.daUserId === io));
 });
 
 test('demo: i favori approvati danno priorità e i grazie fanno un traguardo', () => {

@@ -233,6 +233,9 @@ p { margin: 8px 0; }
   cursor: pointer; box-shadow: var(--ombra); margin-bottom: 10px;
 }
 a.tile { text-decoration: none; }
+.giorni-gia-off { list-style: none; margin: 0 0 12px; padding: 0; }
+.giorni-gia-off li { color: var(--rosso); font-size: 14px; }
+.pill.spento { opacity: .45; }
 .tile > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
 .tile em { font-style: normal; color: var(--testo-tenue); font-size: 14px; }
 .tile-icona { font-size: 24px; }

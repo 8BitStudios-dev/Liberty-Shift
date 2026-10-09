@@ -868,6 +868,9 @@ const AZIONI = {
   'giorno-libero': (_, el) => {
     const g = el.dataset.data;
     const giorni = F.dalGiorno.giorni;
+    if (!giorni.includes(g) && giorni.length >= F.GIORNI_OFF_MASSIMO) {
+      return toast(`Puoi offrire al massimo ${F.GIORNI_OFF_MASSIMO} giorni: toglierne uno per sceglierne un altro`);
+    }
     F.dalGiorno.giorni = giorni.includes(g) ? giorni.filter((x) => x !== g) : [...giorni, g].sort();
     render({ fermo: true });
   },

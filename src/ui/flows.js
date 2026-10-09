@@ -192,6 +192,15 @@ function testataRapido() {
  * diventerebbero più richieste sullo stesso OFF, e due accordi insieme
  * ti farebbero lavorare due volte.
  */
+/**
+ * Quanti giorni al massimo si possono offrire in un Richiedi OFF.
+ *
+ * È un limite del foglio, come "un solo giorno" per il Cedi OFF: chi risponde
+ * sceglie *uno* di quei giorni, e più di tre voleva dire una lista da scorrere
+ * per dire la stessa cosa. Il motore non lo controlla (`validateRequest`).
+ */
+export const GIORNI_OFF_MASSIMO = 3;
+
 export const dalGiorno = {
   data: null, azione: null, orari: [], giorni: [], cedoShiftId: null, usaPriorita: false, note: '',
   // Il cambio orario si chiede in due modi: orari precisi, o una fascia con un
@@ -208,7 +217,9 @@ export function apriDalGiorno(data, azione) {
   });
   if (azione === 'richiedi-off') {
     dalGiorno.cedoShiftId = turno?.id || null;
-    dalGiorno.giorni = giorniLiberi(me, data, store.state.shifts);
+    // Come sempre i giorni liberi sono già scelti, ma ora ce n'è un tetto:
+    // con di più partono i primi tre, i più vicini, e si cambia a tocchi.
+    dalGiorno.giorni = giorniLiberi(me, data, store.state.shifts).slice(0, GIORNI_OFF_MASSIMO);
   }
   if (azione === 'orario') dalGiorno.cedoShiftId = turno?.id || null;
 }
@@ -335,12 +346,13 @@ export function cambioDalGiorno() {
     scelto = dalGiorno.modo === 'fascia' ? Boolean(dalGiorno.ora) : dalGiorno.orari.length > 0;
   } else if (azione === 'richiedi-off') {
     const liberi = giorniLiberi(store.state.currentUserId, data, store.state.shifts);
+    const alMassimo = dalGiorno.giorni.length >= GIORNI_OFF_MASSIMO;
     domanda = html`
       <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
       <h2 class="titolo-gruppo">In quali giorni lavoreresti in cambio?</h2>
-      <p class="testo-tenue">Sono i tuoi giorni liberi della stessa settimana, da sabato a venerdì.</p>
+      <p class="testo-tenue">Sono i tuoi giorni liberi della stessa settimana, da sabato a venerdì. Ne puoi offrire fino a ${GIORNI_OFF_MASSIMO}: chi risponde ne sceglie uno${liberi.length ? ` (${dalGiorno.giorni.length} su ${GIORNI_OFF_MASSIMO})` : ''}.</p>
       ${raw(liberi.length ? `<div class="chips">${liberi.map((g) => html`
-        <button class="pill ${dalGiorno.giorni.includes(g) ? 'attivo' : ''}" data-act="giorno-libero" data-data="${g}">${formatDay(g)}</button>`).join('')}</div>`
+        <button class="pill ${dalGiorno.giorni.includes(g) ? 'attivo' : ''} ${alMassimo && !dalGiorno.giorni.includes(g) ? 'spento' : ''}" data-act="giorno-libero" data-data="${g}">${formatDay(g)}</button>`).join('')}</div>`
     : '<p class="motivo-non-puoi">Al momento non puoi cambiare: in questa settimana non hai altri giorni liberi.</p>')}`;
     scelto = dalGiorno.giorni.length > 0;
   } else {
@@ -801,6 +813,25 @@ export function formMotivoAdmin(requestId, azione) {
 /** I turni che posso davvero offrire su una richiesta. Il calcolo sta nello store. */
 export const turniOfferibili = (request) => store.turniOfferibili(request);
 
+/**
+ * I giorni offerti in cui chi risponde è già OFF, in rosso.
+ *
+ * Un Richiedi OFF offre fino a tre giorni e chi risponde ne sceglie uno: quelli
+ * in cui lui non lavora non si possono scegliere, e sparire dal menu senza
+ * dire perché lasciava solo il dubbio di una richiesta incompleta.
+ */
+function giorniGiaOff(request) {
+  if (request.tipo !== TIPO_CAMBIO.OFF) return '';
+  const me = store.state.currentUserId;
+  const off = (request.cerco.giorni || []).filter((g) => {
+    const t = store.state.shifts.find((s) => s.userId === me && s.data === g);
+    return !t || t.tipo === 'OFF';
+  });
+  return off.length
+    ? html`<ul class="giorni-gia-off">${raw(off.map((g) => html`<li>${formatDay(g)} · <strong>sei già OFF</strong></li>`).join(''))}</ul>`
+    : '';
+}
+
 /** Contenuto della sheet "proponi scambio". */
 export function formProposta(request, shiftSuggerito) {
   // Si può offrire solo qualcosa che soddisfa davvero il CERCO: se cercano
@@ -812,6 +843,7 @@ export function formProposta(request, shiftSuggerito) {
     return html`
       <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
       <p class="avviso"><span class="icona-in-riga">${raw(icona('avviso', { px: 16 }))}</span> Non hai niente da offrire su questo cambio.</p>
+      ${raw(giorniGiaOff(request))}
       <p class="motivo-non-puoi">${motivoNonOfferibile(request)}</p>`;
   }
 
@@ -830,6 +862,7 @@ export function formProposta(request, shiftSuggerito) {
   })}
       </select>
     </label>
+    ${raw(giorniGiaOff(request))}
     ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo, personaDi).trasformato)
     ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe.</p>${notaStima()}`
     : '')}

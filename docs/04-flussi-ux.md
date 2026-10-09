@@ -68,7 +68,11 @@ del giorno offre la domanda giusta per quel giorno:
   l'orario più vicino; il primo resta anche in `start`/`end` per chi ha
   un'app più vecchia.
 - giorno di lavoro → **Richiedi OFF**: i giorni liberi della stessa
-  settimana sono già scelti come giorni in cui si lavorerebbe.
+  settimana si offrono come giorni in cui si lavorerebbe, **fino a tre**
+  (`GIORNI_OFF_MASSIMO` in `flows.js`): ne partono già scelti i primi tre e un
+  quarto tocco dice che il massimo è tre. Chi risponde ne sceglie uno solo. È
+  un limite del foglio: il motore non lo controlla, e il wizard di `#/nuovo`
+  non ce l'ha.
 - giorno OFF o senza turno → **Cedi OFF**: si sceglie *un* giorno di lavoro della stessa
   settimana da avere libero. Esce una normale richiesta di OFF su quel
   giorno, con il giorno OFF come unico giorno offerto. Un giorno solo:
@@ -165,6 +169,11 @@ si passa da dieci a cento richieste, e il motore la sa già calcolare.
 Il pulsante "Proponi uno scambio" compare **solo se hai davvero qualcosa da
 offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo.
+
+Su un Richiedi OFF la proposta si fa scegliendo *uno* dei giorni offerti, e nel
+foglio compaiono sotto il menu, in rosso, quelli in cui chi risponde è già OFF
+("Mar 13/10 · sei già OFF"): non si possono scegliere, e sparire dal menu senza
+una parola lasciava il dubbio di una richiesta incompleta.
 
 **Il cambio che combacia non chiede un secondo sì.** Se il turno che offri è
 esattamente quello che la richiesta cerca (orario preciso rispettato, nessun
@@ -951,8 +960,9 @@ differenze:
 
 - **Lorenzo e 25 colleghi inventati** (`demo/dati-demo.js`): venti con una
   richiesta aperta, sette che Lorenzo può coprire (due gli convengono, una gli
-  costa, una è in ultima chiamata), tre proposte che lo aspettano, due scambi
-  da ringraziare, due favori già approvati su UKG. I turni di Lorenzo sono
+  costa, una è in ultima chiamata), una Home di cinque righe (una proposta che
+  lo aspetta, due in attesa di un collega, uno scambio concordato da
+  ringraziare, una sua richiesta aperta), due favori già approvati su UKG. I turni di Lorenzo sono
   quelli della vecchia demo; si cambiano in `SETTIMANA_LORENZO`.
 - **Nessun server e chiavi sue** (`liberty-demo:*`): aprirla non tocca i
   turni veri salvati sullo stesso indirizzo. Ogni apertura riparte da capo.
