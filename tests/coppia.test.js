@@ -45,7 +45,7 @@ const testo = (h) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 test("a chi propone, il blocco parla del suo scambio: prende quello dell'autore, lascia il suo turno", () => {
   const { richiesta, mio } = scena();
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: mio }));
-  assert.match(t, /prendi .*11–20 .*lasci .*09:30–18:30/);
+  assert.match(t, /prendi .*11:00–20:00 .*lasci .*09:30–18:30/);
   assert.doesNotMatch(t, /lascio|cerco/, 'le parole dell\'autore non devono arrivare a chi guarda');
 });
 
@@ -53,15 +53,15 @@ test('il turno preso si legge con le ore che farebbe davvero chi guarda', () => 
   // Il mio turno dura sei ore: quello di Lorenzo, nove, si adatta a me.
   const { richiesta, mio } = scena({ mioOrario: ['09:00', '15:00'] });
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: mio }));
-  assert.doesNotMatch(t, /prendi \S+ \S+ 11–20/, "l'orario intero di Lorenzo non è quello che farei");
-  assert.match(t, /11–20 adattato al tuo contratto/);
+  assert.doesNotMatch(t, /prendi \S+ \S+ 11:00–20:00/, "l'orario intero di Lorenzo non è quello che farei");
+  assert.match(t, /11:00–20:00 adattato al tuo contratto/);
 });
 
 test('prima di scegliere un turno, un collega legge cosa prende e cosa lascia, senza il nome dell\'autore', () => {
   const { richiesta } = scena();
   const t = testo(coppiaCedoCerco(richiesta));
   // Prima cosa prende (il turno che l'autore lascia), poi cosa lascia (quello che l'autore cerca).
-  assert.match(t, /prendi .*11–20 .*lasci .*stesso giorno/);
+  assert.match(t, /prendi .*11:00–20:00 .*lasci .*stesso giorno/);
   assert.doesNotMatch(t, /lascio|cerco /);
   // Il punto di vista dell'altra persona viene dopo, e solo lì compare il nome.
   assert.ok(t.indexOf('prendi') < t.indexOf('Lorenzo: lascia'), 'prima io, poi lui');
@@ -72,6 +72,6 @@ test("all'autore il blocco parla con le sue parole", () => {
   const { richiesta } = scena();
   store.state.currentUserId = 'lorenzo';
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: store.shift('sh-mio') }));
-  assert.match(t, /prendi .*stesso giorno .*lasci .*11–20/);
+  assert.match(t, /prendi .*stesso giorno .*lasci .*11:00–20:00/);
   assert.doesNotMatch(t, /lascio|cerco|Lorenzo/);
 });

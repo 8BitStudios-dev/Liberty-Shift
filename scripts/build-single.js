@@ -35,6 +35,7 @@ const MODULI_APP = [
   'src/core/karma.js',
   'src/core/store.js',
   'src/ui/dom.js',
+  'src/ui/ore.js',
   'src/ui/jsqr.js',
   'src/ui/scanner.js',
   'src/ui/icone.js',

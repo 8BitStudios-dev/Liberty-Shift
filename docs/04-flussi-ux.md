@@ -968,14 +968,19 @@ il giorno è lo stesso; per OFF dice i giorni. Gli stati: rosso "Ti aspetta una
 risposta", grigio "In attesa di…", verde "Concordato, manca UKG", giallo vivo "Aperta".
 Prima vengono i cambi che aspettano una tua risposta, poi gli altri.
 
-## Gli orari abbreviati
+## Gli orari corti
 
-Dove lo spazio è poco gli orari si scrivono corti: le ore tonde senza i minuti
-("10:00–19:00" diventa "10–19", "dopo le 11:00" diventa "dopo le 11"), le mezze
-restano com'erano ("09:30–18:30"). Vale nella box dello scambio, nelle righe di
-"I tuoi cambi" e nella frase di sintesi delle richieste (`abbreviaOre` in
-`components.js`). Il resto dell'app, per ora, scrive ancora gli orari per
-esteso: calendario, tendine, spiegazioni dei match.
+Gli orari si leggono corti in tutta l'app: le ore tonde senza i minuti
+("10:00–19:00" diventa "10–19", "dopo le 11:00" diventa "dopo le 11") e nessuna
+ora con lo zero davanti ("09:30–18:30" diventa "9:30–18:30"). Vale anche per le
+celle del calendario e per le spiegazioni dei match che nascono nel core.
+
+Non è scritto testo per testo: `src/ui/ore.js` ha `abbreviaOre`, una funzione
+pura con i suoi test, e un osservatore (`avviaOreBrevi`, chiamato all'avvio in
+`app.js`) che riscrive i testi appena compaiono sullo schermo. Per questo il
+core e il server continuano a scrivere "09:30–18:30", e i campi orario
+(`<input type="time">`) restano com'erano. Un pezzo che deve restare intero si
+segna con `data-ore-intere`. Mezzanotte resta "00:00".
 
 ## Le tre forme
 

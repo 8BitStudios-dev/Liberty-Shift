@@ -2,7 +2,7 @@ import { html, raw, esc, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, cerchioTipo, pillolaStato, abbreviaOre, formPreferenze, contaPreferenze,
+  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, cerchioTipo, pillolaStato, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
@@ -61,7 +61,7 @@ export function home() {
   // il nome, cosa prendi e cosa lasci in una frase e lo stato in una pillola.
   // Per l'orario si scrivono le ore (il giorno è lo stesso), per OFF i giorni.
   const pezzo = (tipo, turno) => (tipo === TIPO_CAMBIO.OFF ? formatDay(turno?.data) : shiftLabel(turno));
-  const frase = (prendo, lascio) => `prendi <b>${esc(abbreviaOre(prendo))}</b> · lasci <b>${esc(abbreviaOre(lascio))}</b>`;
+  const frase = (prendo, lascio) => `prendi <b>${esc(prendo)}</b> · lasci <b>${esc(lascio)}</b>`;
   const riga = ({ tipo, nome, testa = '', frase: f, stato, id, extra = '' }) => html`
     <div class="cambio-home" role="button" tabindex="0" data-act="apri-richiesta" data-id="${id}">
       ${raw(cerchioTipo(tipo))}
