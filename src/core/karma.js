@@ -45,7 +45,7 @@ export function traguardiNuovi(stato, sogliaVista) {
  * Aiuta chi risponde, non chi chiede: l'autore della richiesta è l'aiutato,
  * l'altra parte della proposta l'aiutante, chiunque dei due l'abbia scritta.
  * Conta solo un accordo ancora valido: uno annullato dopo non ha aiutato
- * nessuno. Le proposte spariscono con la pulizia dei 90 giorni, e con loro
+ * nessuno. Le proposte spariscono con la pulizia dei 100 giorni, e con loro
  * il ricordo del favore: è voluto, un favore di sei mesi fa non si rinfaccia.
  *
  * `quando` è la chiusura della richiesta, cioè il giorno dell'accordo;

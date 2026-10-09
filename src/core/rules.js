@@ -137,8 +137,16 @@ export const RULES = {
   // posto in cima: non dà priorità né altro a nessuno.
   ultimaChiamata: { giorniAlTurno: 3, giorniInBacheca: 3 },
 
+  // Per quanto un aiuto resta un favore da ricambiare: chi ti ha aiutato
+  // riceve "Puoi ricambiare un favore" per questi giorni dall'accordo. È il
+  // registro `aiuti` sul server a ricordarlo, e la pulizia notturna lo tiene
+  // per lo stesso tempo (`supabase/schema.sql`, un test controlla che i due
+  // numeri coincidano). Cento giorni perché la promessa è "almeno tre mesi",
+  // e novanta giorni a volte sono meno.
+  favore: { giorni: 100 },
+
   // Grazie ricevuti e traguardi (il "karma"). Si conta solo quello che resta:
-  // i ringraziamenti sopravvivono alla pulizia dei 90 giorni, gli scambi no.
+  // i ringraziamenti sopravvivono alla pulizia dei 100 giorni, gli scambi no.
   // Una scala sola, sui grazie: undici gradini, larghi all'inizio perché il
   // primo traguardo arrivi presto, poi sempre più distanti. Nel Profilo si
   // vedono quelli raggiunti e il prossimo; gli altri si scoprono strada facendo.

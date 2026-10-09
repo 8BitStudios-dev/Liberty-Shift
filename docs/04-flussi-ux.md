@@ -205,7 +205,7 @@ riceve la notifica "Proposta ritirata" e la vede sparire alla prossima
 sincronizzazione. La notifica parte dal trigger `notifica_proposta`, che
 ascolta anche le cancellazioni ma avvisa solo quando a cancellare una
 proposta ancora in attesa è chi l'aveva fatta: le cancellazioni a cascata
-(pulizia dei 90 giorni, richiesta tolta dal suo autore) non sono un ritiro. Sul server
+(pulizia dei 100 giorni, richiesta tolta dal suo autore) non sono un ritiro. Sul server
 la cancellazione è permessa solo a chi l'ha fatta; prima si riporta la
 richiesta del collega allo stato giusto, perché quella si può aggiornare solo
 finché la proposta che vi lega esiste.
@@ -587,7 +587,7 @@ arriva al primo grazie.
 
 È il "karma" dell'app, e non è un sistema di punti: conta i grazie ricevuti,
 che esistono solo dopo uno scambio chiuso, uno per persona e per scambio, e
-sopravvivono alla pulizia dei 90 giorni. Sotto, i traguardi: undici gradini
+sopravvivono alla pulizia dei 100 giorni. Sotto, i traguardi: undici gradini
 con un nome (1, 3, 5, 10, 15, 25, 50, 75, 100, 125, 150 grazie, nomi e soglie
 in `RULES.karma`), dal "Primo grazie" alla "Leggenda Liberty". Si vedono quelli
 raggiunti e il prossimo, con l'avanzamento; gli altri si scoprono strada

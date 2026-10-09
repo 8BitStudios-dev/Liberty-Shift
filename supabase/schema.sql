@@ -509,15 +509,17 @@ create policy "si ringrazia a proprio nome"
 --     toglieva. Se nessuno preme "Cambio inserito" non resta in sospeso per
 --     sempre; la proposta passa a "cambio inserito" così da sparire dalla
 --     posta di entrambi.
---  3. toglie le richieste chiuse o rimosse da più di 90 giorni e le
---     disponibilità di settimane passate da più di 60.
+--  3. toglie le richieste chiuse o rimosse da più di 100 giorni e le
+--     disponibilità di settimane passate da più di 60;
+--  4. toglie dal registro `aiuti` gli aiuti più vecchi di 100 giorni e quelli
+--     annullati (vedi la sua sezione, in fondo).
 --
 -- Le proposte se ne vanno da sole con la richiesta, perché la chiave esterna
 -- su `richieste` è `on delete cascade`. I ringraziamenti restano: non sono un
 -- "cambio pubblicato" ma l'unica cosa che si è deciso dovesse sopravvivere al
 -- cambio stesso (vedi il commento sulla tabella).
 --
--- **Assunzione**: 90 e 60 giorni sono punti di partenza, non un vincolo del
+-- **Assunzione**: 100 e 60 giorni sono punti di partenza, non un vincolo del
 -- regolamento; si cambiano qui, senza toccare il client. Le date sono quelle
 -- di Roma: alle 03:00 UTC è già l'alba italiana, e "oggi" è lo stesso giorno.
 create or replace function public.pulizia_periodica() returns void
@@ -549,10 +551,14 @@ begin
 
   delete from public.richieste
   where stato in ('CHIUSA', 'SCADUTA', 'RIMOSSA')
-    and coalesce(chiusa_il, creata_il) < now() - interval '90 days';
+    and coalesce(chiusa_il, creata_il) < now() - interval '100 days';
 
   delete from public.disponibilita
   where settimana < (current_date - interval '60 days')::date;
+
+  -- Lo stesso numero di `RULES.favore.giorni` in src/core/rules.js.
+  delete from public.aiuti
+  where quando < now() - interval '100 days' or annullato_il is not null;
 end $$;
 
 -- Solo il ruolo che possiede lo schema (e il job pianificato sotto, che gira
@@ -642,7 +648,7 @@ begin
     return new;
   end if;
   -- Un ritiro è solo una proposta ancora in attesa cancellata da chi l'ha
-  -- fatta. Le cancellazioni a cascata (la pulizia dei 90 giorni, una
+  -- fatta. Le cancellazioni a cascata (la pulizia dei 100 giorni, una
   -- richiesta tolta dal suo autore) non sono un ritiro e non avvisano nessuno.
   -- (`not in ('INSERT', 'UPDATE')` è la cancellazione: scritto così passa
   -- anche dal connettore Supabase, che si blocca sulla parola.)
@@ -1139,3 +1145,74 @@ create unique index if not exists proposte_un_accordo_per_richiesta
 -- da un altro telefono non la raddoppia in bacheca.
 create unique index if not exists richieste_una_aperta_per_giorno
   on public.richieste (autore_id, tipo, cedo_data) where stato in ('APERTA', 'PROPOSTA', 'IN_ATTESA');
+
+-- ================================================== registro degli aiuti
+--
+-- Chi ha aiutato chi, e quando. Serve a una cosa sola: mandare "Puoi
+-- ricambiare un favore" a chi è stato aiutato, quando chi l'ha aiutato
+-- pubblica una richiesta che può coprire (`aiutatiDa` in send-push).
+--
+-- Prima il favore si ricostruiva dalle proposte, e durava quanto la
+-- richiesta: la pulizia la cancellava, e con lei la proposta e il ricordo.
+-- Qui ogni accordo lascia una riga sua, che non dipende dalla richiesta (non
+-- c'è chiave esterna verso `proposte`, apposta) e resta 100 giorni
+-- (`RULES.favore.giorni`), poi la toglie la pulizia notturna.
+--
+-- La scrive solo il trigger qui sotto, mai l'app: nessuna chiave dell'app la
+-- legge né la scrive (RLS accesa e nessuna policy), la legge solo send-push
+-- con `service_role`. Chi ha aiutato chi lo sanno già le due persone; non
+-- deve diventare una classifica.
+create table if not exists public.aiuti (
+  proposta_id  uuid primary key,
+  aiutante_id  uuid not null references public.profili(id) on delete cascade,
+  aiutato_id   uuid not null references public.profili(id) on delete cascade,
+  quando       timestamptz not null default now(),
+  annullato_il timestamptz
+);
+create index if not exists aiuti_aiutante_idx on public.aiuti (aiutante_id, quando);
+alter table public.aiuti enable row level security;
+revoke all on public.aiuti from anon, authenticated;
+
+-- Un accordo registra l'aiuto: l'aiutante è chi non ha scritto la richiesta,
+-- come in `aiutiConclusi` (src/core/karma.js). Un accordo annullato non si
+-- cancella qui ma si segna, e lo toglie la pulizia: un aiuto che non c'è
+-- stato non deve valere un favore nemmeno per un giorno.
+create or replace function public.registra_aiuto() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare
+  autore   uuid;
+  aiutante uuid;
+begin
+  if new.stato = 'ACCORDO' and new.annullata_il is null then
+    select autore_id into autore from public.richieste where id = new.richiesta_id;
+    aiutante := case when new.da_user_id = autore then new.a_user_id else new.da_user_id end;
+    if autore is null or aiutante is null or aiutante = autore then
+      return new;
+    end if;
+    insert into public.aiuti (proposta_id, aiutante_id, aiutato_id)
+    values (new.id, aiutante, autore)
+    on conflict (proposta_id) do nothing;
+  elsif tg_op = 'UPDATE' and old.stato = 'ACCORDO' then
+    update public.aiuti set annullato_il = now()
+    where proposta_id = new.id and annullato_il is null;
+  end if;
+  return new;
+end $$;
+revoke all on function public.registra_aiuto() from public;
+
+create or replace trigger registra_aiuto
+  after insert or update of stato, annullata_il on public.proposte
+  for each row execute function public.registra_aiuto();
+
+-- Gli accordi che c'erano già prima del registro: rilanciare lo script non li
+-- raddoppia (`on conflict`). La data è quella che l'app mostrava già.
+insert into public.aiuti (proposta_id, aiutante_id, aiutato_id, quando)
+select p.id,
+       case when p.da_user_id = q.autore_id then p.a_user_id else p.da_user_id end,
+       q.autore_id,
+       coalesce(q.chiusa_il, p.confermata_il, p.creata_il)
+from public.proposte p
+join public.richieste q on q.id = p.richiesta_id
+where p.stato = 'ACCORDO' and p.annullata_il is null
+  and (case when p.da_user_id = q.autore_id then p.a_user_id else p.da_user_id end) <> q.autore_id
+on conflict (proposta_id) do nothing;

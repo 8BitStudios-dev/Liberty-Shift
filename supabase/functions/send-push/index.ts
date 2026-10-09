@@ -21,7 +21,6 @@
 import webpush from 'npm:web-push@3.6.7';
 import { candidatiCompatibili, richiesteSpeculari } from './core/compatibili.js';
 import { RULES } from './core/rules.js';
-import { chiHaiAiutato } from './core/karma.js';
 import { decifra } from './core/cifratura.js';
 import { oreRetribuite } from './core/model.js';
 
@@ -329,25 +328,22 @@ async function avvisaSpeculari(riga: RigaRichiesta) {
 }
 
 /**
- * I colleghi che l'autore ha aiutato, con l'ultima volta (vedi
- * `chiHaiAiutato`): a loro una richiesta sua arriva come un favore da
- * ricambiare, anche quando il cambio non è di quelli che convengono.
+ * I colleghi che l'autore ha aiutato negli ultimi `RULES.favore.giorni`, con
+ * l'ultima volta: a loro una richiesta sua arriva come un favore da
+ * ricambiare, anche quando il cambio non è di quelli che convengono. Si legge
+ * dal registro `aiuti` (vedi supabase/schema.sql), che resta anche dopo che la
+ * richiesta è stata cancellata dalla pulizia.
  */
 async function aiutatiDa(autore: string): Promise<Map<string, string>> {
-  const proposte = await leggi(
-    `proposte?stato=eq.ACCORDO&annullata_il=is.null&or=(da_user_id.eq.${autore},a_user_id.eq.${autore})`
-    + '&select=id,richiesta_id,da_user_id,a_user_id,stato,annullata_il,confermata_il,creata_il',
+  const dal = new Date(Date.now() - RULES.favore.giorni * 86400000).toISOString();
+  const righe = await leggi(
+    `aiuti?aiutante_id=eq.${autore}&annullato_il=is.null&quando=gte.${dal}&select=aiutato_id,quando`,
   );
-  if (!proposte.length) return new Map();
-  const ids = [...new Set(proposte.map((p: { richiesta_id: string }) => p.richiesta_id))].join(',');
-  const richieste = await leggi(`richieste?id=in.(${ids})&select=id,autore_id,chiusa_il`);
-  return chiHaiAiutato(autore, {
-    proposals: proposte.map((p: Record<string, string>) => ({
-      id: p.id, requestId: p.richiesta_id, daUserId: p.da_user_id, aUserId: p.a_user_id,
-      status: p.stato, annullataIl: p.annullata_il, confermataIl: p.confermata_il, createdAt: p.creata_il,
-    })),
-    requests: richieste.map((r: Record<string, string>) => ({ id: r.id, userId: r.autore_id, chiusaIl: r.chiusa_il })),
-  });
+  const ultimi = new Map<string, string>();
+  for (const r of righe as { aiutato_id: string; quando: string }[]) {
+    if ((ultimi.get(r.aiutato_id) || '') < r.quando) ultimi.set(r.aiutato_id, r.quando);
+  }
+  return ultimi;
 }
 
 /** "questo mese" o "a settembre", come nell'app. */
