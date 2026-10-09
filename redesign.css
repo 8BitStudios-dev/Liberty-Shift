@@ -318,6 +318,21 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .non-puoi { font-size: 14px; }
 .motivo-non-puoi { color: color-mix(in srgb, var(--rosso) 65%, var(--testo-tenue)); font-size: 14px; margin: 8px 0 0; }
 
+/* "I tuoi cambi" in Home: una riga per cambio, con il cerchio del tipo a sinistra
+   e lo stato in una pillola tono su tono. */
+.cambio-home { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--filetto); cursor: pointer; }
+.cambio-home:last-child { border-bottom: 0; }
+.cambio-home-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.cambio-home-testo strong { font-size: 16px; display: inline-flex; align-items: center; gap: 6px; }
+.cambio-home-frase { font-size: 14px; line-height: 1.35; color: var(--testo-tenue); }
+.cambio-home-frase b { color: var(--testo); font-weight: 600; }
+.stato-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 650; padding: 3px 10px; border-radius: var(--raggio-pill); white-space: nowrap; margin-top: 2px; }
+.stato-pill .pallino-stato { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: 0; }
+.stato-pill.rosso { color: var(--rosso); background: color-mix(in srgb, var(--rosso) 14%, transparent); }
+.stato-pill.ambra { color: var(--ambra); background: color-mix(in srgb, var(--ambra) 16%, transparent); }
+.stato-pill.verde { color: var(--concordato-segno); background: var(--concordato); }
+.stato-pill.oro { color: var(--oro); background: color-mix(in srgb, var(--oro) 15%, transparent); }
+.stato-pill.blu { color: var(--accento); background: var(--accento-tenue); }
 .lista-cambi, .lista-turni { border: 0; box-shadow: var(--ombra); }
 .riga-cambio, .riga-turno {
   padding: 16px; gap: 14px; border-bottom: 1px solid var(--filetto);

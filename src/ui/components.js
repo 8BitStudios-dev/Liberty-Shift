@@ -134,6 +134,20 @@ export function badgeStato(status) {
  * I colori restano veri e non seguono la posizione: il blu è sempre il turno
  * che lascia chi guarda, il verde quello che prende.
  */
+/** Il cerchio del tipo di cambio, con icona e scritta ("OFF", "orario"): lo stesso nella box e nelle liste. */
+export function cerchioTipo(tipo) {
+  const meta = TIPO_META[tipo] || TIPO_META.ORARIO;
+  return `<span class="avatar cerchio-tipo" data-tipo="${esc(tipo)}">${icona(ICONA_TIPO[tipo] || 'orario', { px: 17 })}<span class="cerchio-testo">${meta.breve}</span></span>`;
+}
+
+/**
+ * Lo stato di un cambio in una pillola tono su tono: rosso se aspetta te, ambra
+ * se aspetta l'altra persona, verde se è concordato, oro se è aperto.
+ */
+export function pillolaStato(tono, testo) {
+  return `<span class="stato-pill ${esc(tono)}"><i class="pallino-stato"></i>${esc(testo)}</span>`;
+}
+
 /**
  * L'unico punto dove si disegna la box: due metà, prima quello che prendi
  * (verde) e poi quello che lasci (blu). Ogni metà è un giorno, un orario e,
@@ -152,7 +166,7 @@ export function boxScambio(tipo, prendi, lasci, { compatto = false } = {}) {
   return html`
     <div class="coppia ${compatto ? 'compatta' : ''}" data-tipo="${esc(tipo)}">
       <div class="lati">
-        <span class="avatar cerchio-tipo" data-tipo="${esc(tipo)}">${raw(icona(ICONA_TIPO[tipo] || 'orario', { px: 17 }))}<span class="cerchio-testo">${meta.breve}</span></span>
+        ${raw(cerchioTipo(tipo))}
         ${raw(lato('cerco', 'prendi', 'prendo', prendi))}
         <div class="freccia">⇄</div>
         ${raw(lato('cedo', 'lasci', 'cedo', lasci))}

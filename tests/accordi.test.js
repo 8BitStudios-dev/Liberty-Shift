@@ -84,7 +84,7 @@ test('la Home mostra il promemoria sull\'accordo vicino', async () => {
   accordo({ mio: addDays(oggi, 1), suo: addDays(oggi, 1) });
   store.state.profilo = { ...store.state.profilo, completato: true };
   const pagina = home();
-  assert.match(pagina, /Scambio concordato/);
+  assert.match(pagina, /Concordato, manca UKG/);
   assert.match(pagina, /l'hai già inserito in UKG\?/);
 
   accordo({ mio: addDays(oggi, 15), suo: addDays(oggi, 15) });

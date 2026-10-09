@@ -1,8 +1,8 @@
-import { html, raw, riquadriAperti } from './dom.js';
+import { html, raw, esc, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, formPreferenze, contaPreferenze,
+  ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, cerchioTipo, pillolaStato, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
 import { STATO, statoNoto } from './notifiche.js';
@@ -13,7 +13,7 @@ import {
 import {
   slotSettimana, opportunitaPerMe, disponibileIl,
 } from '../core/engine.js';
-import { RULES, TIPO_CAMBIO } from '../core/rules.js';
+import { RULES, TIPO_CAMBIO, STATUS_META } from '../core/rules.js';
 import { karma } from '../core/karma.js';
 import { VERSIONE_APP } from '../core/config.js';
 import { letteraDi, rotazioneVuota } from '../core/rotazione.js';
@@ -57,40 +57,57 @@ export function home() {
   const altrui = store.bacheca().filter((r) => r.userId !== me.id).slice(0, 3);
   const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
-  const bloccoMiei = miei.length || proposte.length
-    ? [
-      ...proposte.map((p) => {
-        const r = store.request(p.requestId);
-        const altro = store.user(p.daUserId === me.id ? p.aUserId : p.daUserId);
-        const accordo = p.status === 'ACCORDO';
-        const inAttesaDiMe = !accordo && !p.accettataDa.includes(me.id);
-        // Uno scambio già concordato non aspetta più nessuno: dire "in attesa
-        // di Giulia" quando Giulia ha già accettato manda a cercare un
-        // problema che non c'è.
-        const titolo = accordo
-          ? 'Scambio concordato'
-          : inAttesaDiMe ? 'Ti aspetta una risposta' : `In attesa di ${nomeUtente(altro)}`;
-        return html`
-          <div class="riga-cambio" data-act="apri-richiesta" data-id="${r?.id}">
-            <span class="pallino ${inAttesaDiMe ? 'urgente' : ''} ${accordo ? 'fatto' : ''}"></span>
-            <div>
-              <strong>${titolo}</strong>
-              <div class="meta">Scambio con ${nomeUtente(altro)}${raw(r ? ` ${pillolaTipo(r.tipo)}` : '')}</div>
-              ${raw(testoPromemoria(store.promemoriaAccordo(p)))}
-            </div>
-            <span class="chevron">›</span>
-          </div>`;
+  // Una riga per cambio, come le liste del resto dell'app: il cerchio del tipo,
+  // il nome, cosa prendi e cosa lasci in una frase e lo stato in una pillola.
+  // Per l'orario si scrivono le ore (il giorno è lo stesso), per OFF i giorni.
+  const pezzo = (tipo, turno) => (tipo === TIPO_CAMBIO.OFF ? formatDay(turno?.data) : shiftLabel(turno));
+  const frase = (prendo, lascio) => `prendi <b>${esc(prendo)}</b> · lasci <b>${esc(lascio)}</b>`;
+  const riga = ({ tipo, nome, testa = '', frase: f, stato, id, extra = '' }) => html`
+    <div class="cambio-home" role="button" tabindex="0" data-act="apri-richiesta" data-id="${id}">
+      ${raw(cerchioTipo(tipo))}
+      <div class="cambio-home-testo">
+        <strong>${raw(testa)}${nome}</strong>
+        <span class="cambio-home-frase">${raw(f)}</span>
+        ${raw(stato)}
+        ${raw(extra)}
+      </div>
+    </div>`;
+  const righeProposte = proposte.map((p) => {
+    const r = store.request(p.requestId);
+    const altro = store.user(p.daUserId === me.id ? p.aUserId : p.daUserId);
+    const accordo = p.status === 'ACCORDO';
+    const inAttesaDiMe = !accordo && !p.accettataDa.includes(me.id);
+    // Uno scambio già concordato non aspetta più nessuno: dire "in attesa
+    // di Giulia" quando Giulia ha già accettato manda a cercare un
+    // problema che non c'è.
+    const stato = accordo
+      ? pillolaStato('verde', 'Concordato, manca UKG')
+      : inAttesaDiMe ? pillolaStato('rosso', 'Ti aspetta una risposta') : pillolaStato('ambra', `In attesa di ${nomeUtente(altro)}`);
+    // Il turno offerto è di chi propone; il turno ceduto è dell'autore della richiesta.
+    const autoreSono = r?.userId === me.id;
+    const offerto = store.shift(p.shiftOffertoId);
+    const ceduto = r && store.shift(r.cedo.shiftId);
+    const f = r ? frase(pezzo(r.tipo, autoreSono ? offerto : ceduto), pezzo(r.tipo, autoreSono ? ceduto : offerto)) : '';
+    return {
+      urgente: inAttesaDiMe,
+      html: riga({ tipo: r?.tipo, nome: nomeUtente(altro), frase: f, stato, id: r?.id, extra: testoPromemoria(store.promemoriaAccordo(p)) }),
+    };
+  });
+  const righeMiei = miei.map((r) => {
+    const off = r.tipo === TIPO_CAMBIO.OFF;
+    const cerco = off ? (r.cerco.giorni || []).map((g) => formatDay(g)).join(' o ') : wantLabel(r.cerco);
+    const tono = { APERTA: 'oro', PROPOSTA: 'blu', IN_ATTESA: 'ambra', ACCORDO: 'verde' }[r.status] || 'oro';
+    return {
+      urgente: false,
+      html: riga({
+        tipo: r.tipo, nome: 'La tua richiesta', testa: hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '',
+        frase: frase(cerco, pezzo(r.tipo, store.shift(r.cedo.shiftId))), stato: pillolaStato(tono, STATUS_META[r.status]?.label || r.status), id: r.id,
       }),
-      ...miei.map((r) => html`
-        <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
-          <span class="pallino"></span>
-          <div>
-            <strong>${raw(hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '')}Lasci ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
-            <div class="meta">${raw(pillolaTipo(r.tipo))} ${raw(badgeStato(r.status))}</div>
-          </div>
-          <span class="chevron">›</span>
-        </div>`),
-    ].join('')
+    };
+  });
+  // Prima quello che aspetta una tua risposta, poi il resto nell'ordine in cui è arrivato.
+  const bloccoMiei = proposte.length || miei.length
+    ? [...righeProposte, ...righeMiei].sort((a, b) => Number(b.urgente) - Number(a.urgente)).map((x) => x.html).join('')
     : '<p class="testo-tenue">Nessun cambio in corso.</p>';
 
   return html`
