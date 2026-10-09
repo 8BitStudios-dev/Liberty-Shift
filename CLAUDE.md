@@ -72,6 +72,11 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   ripulitura deve dare zero; una modifica voluta, solo le differenze attese.
   Una classe che sembra morta si cerca dentro `class="…"`, non con `grep -w`:
   parole come `giorno` o `link` compaiono comunque nel codice.
+- **Un mio turno con il segno `daServer` si rifà a ogni discesa.** Nasce da
+  una richiesta o da una proposta scesa su un telefono che quel giorno non
+  aveva turni, e porta l'orario della riga. Chi lo riscrive (import del
+  calendario, modifica a mano) deve passare da `store.adotta`, che toglie il
+  segno: altrimenti il turno corretto torna vecchio al primo ricaricamento.
 - **Un array interpolato dentro `html``` viene escapato**: per una lista già
   montata serve `raw(righe.join(''))`.
 - **Il build controlla la sintassi del bundle** prima di scrivere `dist/`: un

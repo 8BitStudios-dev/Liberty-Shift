@@ -21,7 +21,7 @@ import { parseICS } from './ics.js';
 import { daRiempire, rotazioneVuota } from './rotazione.js';
 import {
   sulServer, accoda, svuotaCoda, sincronizza as sincronizzaStato, condividiNotifiche, salvaTraguardi,
-  rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi,
+  rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi, DAL_SERVER,
 } from './sincronia.js';
 import {
   aiutiConclusi, aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
@@ -373,12 +373,27 @@ export const store = {
     this.commit();
   },
 
+  /**
+   * Un mio turno che scrivo io smette di essere "del server".
+   *
+   * Un turno nato da una richiesta o da una proposta scese dal server (su un
+   * telefono che quel giorno non aveva niente) porta il segno `daServer`, e
+   * a ogni discesa si butta e si rifà con l'orario della riga: quello di
+   * quando era stata scritta. Corretto dal calendario o a mano, tornava
+   * sbagliato appena si ricaricava la pagina. Tolto il segno, è un turno mio
+   * come gli altri, e la discesa lo riusa invece di riscriverlo.
+   */
+  adotta(turno) {
+    if (turno?.userId === this.state.currentUserId) delete turno[DAL_SERVER];
+    return turno;
+  },
+
   salvaTurno({ id, data, tipo, start, end, userId = this.state.currentUserId }) {
     const esistente = id
       ? this.shift(id)
       : this.state.shifts.find((s) => s.userId === userId && s.data === data);
     if (esistente) {
-      Object.assign(esistente, { data, tipo, start, end });
+      Object.assign(this.adotta(esistente), { data, tipo, start, end });
     } else {
       this.state.shifts.push({ id: newId('sh'), userId, data, tipo, start, end });
     }
@@ -412,7 +427,7 @@ export const store = {
         if (esistente.tipo !== t.tipo || esistente.start !== t.start || esistente.end !== t.end) {
           cambiati.add(t.data);
         }
-        Object.assign(esistente, { tipo: t.tipo, start: t.start, end: t.end });
+        Object.assign(this.adotta(esistente), { tipo: t.tipo, start: t.start, end: t.end });
       } else {
         this.state.shifts.push({
           id: newId('sh'), userId, data: t.data, tipo: t.tipo, start: t.start, end: t.end,
@@ -438,7 +453,7 @@ export const store = {
         if (s.data < primo || s.data > ultimo || nominati.has(s.data)) continue;
         // Diventa riposo e non sparisce: richieste e proposte che lo nominano
         // devono poterlo ritrovare per chiudersi.
-        Object.assign(s, { tipo: 'OFF', start: null, end: null });
+        Object.assign(this.adotta(s), { tipo: 'OFF', start: null, end: null });
         cambiati.add(s.data);
       }
     }

@@ -541,3 +541,47 @@ test('accettando, la proposta parte per prima e tutto l\'accordo è un gruppo so
   assert.ok(ops.every(([, , g]) => g === 'accordo:pr-anna'), JSON.stringify(ops));
   assert.ok(ops.some(([t, id]) => t === 'richiesta.aggiorna' && id === 'rq-mia'));
 });
+
+test('un turno importato dal calendario resta giusto anche dopo la discesa successiva', async () => {
+  // Il giorno di una mia proposta concordata, scesa dal server su un telefono
+  // che quel giorno non aveva ancora nessun turno: nasce il turno "del
+  // server", con l'orario di quando avevo proposto. Poi il calendario lo
+  // corregge, e la discesa seguente (aprire o ricaricare la pagina) non deve
+  // rimettere l'orario vecchio.
+  const state = statoIscritto();
+  const giorno = '2026-12-15';
+  state.shifts = state.shifts.filter((s) => s.data !== giorno);
+  const tabelle = {
+    profili: { righe: PROFILI },
+    richieste: {
+      righe: [{
+        id: 'rq-anna', autore_id: 'u-anna', tipo: 'ORARIO', stato: 'CHIUSA',
+        cedo_data: giorno, cedo_start: '12:00:00', cedo_end: '21:00:00',
+        cedo_flessibile: false, cerco_giorni: [giorno], cerco: {}, creata_il: '2026-12-01T08:00:00Z',
+      }],
+    },
+    proposte: {
+      righe: [{
+        id: 'pr-mia', richiesta_id: 'rq-anna', da_user_id: 'io-sul-server', a_user_id: 'u-anna',
+        turno_data: giorno, turno_start: '10:00:00', turno_end: '19:00:00',
+        messaggio: '', accettata_da: ['io-sul-server', 'u-anna'], stato: 'ACCORDO',
+        cambio_inserito: true, creata_il: '2026-12-02T08:00:00Z',
+      }],
+    },
+    ringraziamenti: {}, disponibilita: {},
+  };
+  serverFinto(tabelle);
+  await scarica(state);
+  const mio = () => store.state.shifts.filter((s) => s.userId === store.state.currentUserId && s.data === giorno);
+  assert.equal(mio()[0].start, '10:00');
+
+  store.importaTurni([{ data: giorno, tipo: 'WORK', start: '12:00', end: '21:00' }]);
+  assert.equal(mio()[0].start, '12:00');
+
+  // Quello che l'import ha messo in coda è già arrivato al server.
+  store.state.coda = [];
+  serverFinto(tabelle);
+  await scarica(store.state);
+  assert.equal(mio().length, 1, 'un giorno, un turno');
+  assert.deepEqual([mio()[0].start, mio()[0].end], ['12:00', '21:00'], 'la discesa ha rimesso l\'orario vecchio');
+});
