@@ -57,6 +57,20 @@ test('un turno solo vicino a quello chiesto resta una proposta da accettare', ()
   assert.deepEqual(proposta.accettataDa, ['u_giulia']);
 });
 
+test('una fascia è sempre una proposta, anche con un turno dentro la fascia', () => {
+  for (const cerco of [{ entroLe: '19:30' }, { dalleOre: '10:00' }]) {
+    const { richiesta, offerto } = prepara({
+      cerco: { mode: 'RANGE', ...cerco },
+      turnoGiulia: { start: '10:00', end: '19:00' },
+    });
+    assert.equal(combaciaEsatto(richiesta, offerto, store.shiftsById(), (id) => store.user(id)), false);
+    const { proposta, diretto } = store.proponiScambio({ requestId: richiesta.id, shiftOffertoId: offerto.id });
+    assert.equal(diretto, false);
+    assert.equal(proposta.status, 'IN_ATTESA');
+    assert.deepEqual(proposta.accettataDa, ['u_giulia']);
+  }
+});
+
 test('al server il cambio diretto sale come proposta già accettata, poi l\'accordo nel suo gruppo', () => {
   const { richiesta, offerto } = prepara({
     cerco: { mode: 'SPECIFIC', start: '10:00', end: '19:00' },

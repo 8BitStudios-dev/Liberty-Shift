@@ -56,7 +56,11 @@ giuste.
 sta più in Home. Si tocca un giorno nel calendario del Profilo, e il foglio
 del giorno offre la domanda giusta per quel giorno:
 
-- giorno di lavoro → **Cambia orario**: uno o più orari standard, scelti a
+- giorno di lavoro → **Cambia orario**, in due modi (due tasti in cima):
+  **Orario preciso** o **Una fascia**. La fascia ha *un solo* limite, a
+  scelta fra "Inizia dopo le…" e "Finisce entro le…", con un campo ora; si
+  pubblica come cambio orario `RANGE`, e chi risponde propone sempre (vedi
+  `combaciaEsatto`). Con l'orario preciso: uno o più orari standard, scelti a
   tocchi. Sono le partenze di `RULES.cambioOrario` con la durata del turno
   che si ha già (chi cambia non cambia il monte ore): per un Full Time
   8–17, 9–18, 9:30–18:30, 10–19, 11–20, 12–21. Si pubblica come cambio
@@ -163,12 +167,15 @@ offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo.
 
 **Il cambio che combacia non chiede un secondo sì.** Se il turno che offri è
-esattamente quello che la richiesta cerca (orario o fascia rispettati, nessun
+esattamente quello che la richiesta cerca (orario preciso rispettato, nessun
 adattamento al contratto: `combaciaEsatto` in `engine.js`), il tasto diventa
 "Accetta il cambio" e lo scambio è concordato subito. Chi ha pubblicato riceve
 "Cambio accettato: inseritelo su UKG, basta che lo faccia uno dei due"; chi ha
 accettato legge un foglio "Cambio fatto" che gli dice la stessa cosa. Un
-orario adattato o qualche minuto di scarto restano una proposta normale. Dopo l'accordo il riquadro dello scambio va per passi
+orario adattato o qualche minuto di scarto restano una proposta normale. **Una
+fascia non combacia mai**: con "inizia dopo le 11" o "finisce entro le 19" chi
+risponde propone sempre il suo turno, anche se sta dentro la fascia, e chi ha
+chiesto decide se accettarlo. Dopo l'accordo il riquadro dello scambio va per passi
 (`passoAccordo` in `flows.js`):
 
 1. **Scambio concordato**: inseriscilo in UKG, poi tocca "Ho inserito il

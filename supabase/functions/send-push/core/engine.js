@@ -571,10 +571,15 @@ export function ordinaProposte(request, proposte, shiftsById, trova = null) {
  * stessa cosa era solo un passaggio in più. Vale solo per la corrispondenza
  * piena: un orario adattato al contratto o qualche minuto di scarto restano
  * una proposta, perché lì il sì di chi ha chiesto non è scontato.
+ *
+ * Una fascia ("inizia dopo le 11", "finisce entro le 19") non è mai un orario
+ * preciso: chi la scrive accetta un intervallo, ma sul turno concreto che gli
+ * arriva vuole dire l'ultima parola. Anche dentro la fascia è una proposta.
  */
 export function combaciaEsatto(request, shift, shiftsById, trova = null) {
   const mioCedo = shiftsById[request.cedo.shiftId];
   if (!shift || !mioCedo || shift.tipo !== 'WORK') return false;
+  if (request.cerco?.mode === WANT_MODE.RANGE) return false;
   if (trasformaTurno(shift, mioCedo, trova).trasformato) return false;
   return satisfies(request.cerco, shift).score === 100;
 }

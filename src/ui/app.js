@@ -817,6 +817,18 @@ const AZIONI = {
       : [...orari, { start, end }].sort((a, b) => a.start.localeCompare(b.start));
     render({ fermo: true });
   },
+  'giorno-modo': (_, el) => {
+    F.dalGiorno.modo = el.dataset.modo;
+    render({ fermo: true });
+  },
+  'giorno-limite': (_, el) => {
+    F.dalGiorno.limite = el.dataset.limite;
+    render({ fermo: true });
+  },
+  'ora-giorno': (e) => {
+    F.dalGiorno.ora = e.target.value;
+    render({ fermo: true });
+  },
   'giorno-libero': (_, el) => {
     const g = el.dataset.data;
     const giorni = F.dalGiorno.giorni;
