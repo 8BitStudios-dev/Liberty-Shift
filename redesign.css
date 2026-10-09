@@ -347,7 +347,11 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .tipo-etichetta[data-tipo="OFF"], .tipo-pill[data-tipo="OFF"], .cerchio-tipo[data-tipo="OFF"] { --tipo: var(--cerca-off); }
 /* Nelle righe delle richieste il cerchio dice il tipo al posto delle iniziali:
    il nome sta già scritto sopra, e il colore si legge prima di qualsiasi testo. */
-.avatar.cerchio-tipo { display: grid; place-items: center; }
+.avatar.cerchio-tipo {
+  width: 48px; height: 48px; flex: none; gap: 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.cerchio-testo { font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
 .cerchio-tipo[data-tipo] { color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent); }
 .tipo-etichetta, .tipo-pill[data-tipo] {
   color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent);

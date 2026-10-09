@@ -255,11 +255,10 @@ export function cardRichiesta(request, giorno = null) {
   return html`
     <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${nonPerMe ? 'non-per-me' : ''} ${mia ? 'mia' : ''}"
             data-act="apri-richiesta" data-id="${request.id}">
-      <span class="avatar piccolo cerchio-tipo" data-tipo="${request.tipo}" aria-hidden="true">${raw(icona(ICONA_TIPO[request.tipo] || 'orario', { px: 18 }))}</span>
+      <span class="avatar cerchio-tipo" data-tipo="${request.tipo}">${raw(icona(ICONA_TIPO[request.tipo] || 'orario', { px: 17 }))}<span class="cerchio-testo">${meta.breve}</span></span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
-          <span class="tipo-pill" data-tipo="${request.tipo}">${raw(iconaTipo(request.tipo, 13))} ${ctx ? ctx.verbo : meta.breve}</span>
         </span>
         <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
         ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}
