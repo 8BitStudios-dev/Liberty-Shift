@@ -187,7 +187,7 @@ deve sempre sapere perché.
 Rimuovere una richiesta non è la stessa cosa di chiuderla: ha un suo stato
 (`RIMOSSA`), pensato per un contenuto sbagliato o fuori posto, mentre `CHIUSA`
 resta l'amministrazione ordinaria. La pulizia periodica tratta le righe
-`RIMOSSA` come le altre chiuse: sparite dopo 90 giorni, non prima.
+`RIMOSSA` come le altre chiuse: sparite dopo 100 giorni, non prima.
 
 ## I permessi del SuperAdmin
 
@@ -238,8 +238,10 @@ server: `pulizia_periodica()`, pianificata ogni notte alle 03:00 UTC con
 2. chiude da sola le richieste con accordo il cui ultimo giorno è passato da
    più di un giorno (il margine serve a ringraziare), e segna la proposta come
    "cambio inserito" così sparisce dalla posta;
-3. toglie le richieste chiuse o rimosse da più di 90 giorni e le disponibilità
-   di settimane passate da più di 60.
+3. toglie le richieste chiuse o rimosse da più di 100 giorni e le
+   disponibilità di settimane passate da più di 60;
+4. toglie dal registro `aiuti` le righe più vecchie di 100 giorni e quelle
+   degli accordi annullati.
 
 Le proposte se ne vanno da sole con la richiesta, perché la chiave esterna su
 `richieste` è `on delete cascade`.
@@ -474,7 +476,7 @@ accettata: l'app la cancella (policy "si ritira solo la propria proposta").
 Il trigger `notifica_proposta` ascolta anche le cancellazioni, e manda a
 `send-push` la riga cancellata solo se era ancora `PROPOSTA` o `IN_ATTESA` e a
 cancellarla è stato chi l'aveva fatta (`auth.uid() = da_user_id`). Così la
-pulizia dei 90 giorni e una richiesta tolta dal suo autore, che cancellano le
+pulizia dei 100 giorni e una richiesta tolta dal suo autore, che cancellano le
 proposte a cascata, non fanno partire "Proposta ritirata" a nessuno.
 
 Nel trigger la cancellazione si riconosce come `tg_op not in ('INSERT',
@@ -638,14 +640,21 @@ Una fascia preferita conta solo se è nuova: lasciare una mattina per un'altra
 mattina non avvisa.
 
 L'eccezione è il **favore da ricambiare**: se l'autore ti ha aiutato negli
-ultimi 90 giorni (un accordo sulla tua richiesta, letto da `proposte` e
-`richieste` con `chiHaiAiutato` in `karma.js`), l'avviso arriva anche quando
+ultimi 100 giorni (`RULES.favore.giorni`), l'avviso arriva anche quando
 il cambio non ti conviene, purché non ti pesi (`costoDelCambio`). Il titolo è
 "💗 Puoi ricambiare un favore": il colore di una notifica lo decide il
 telefono, e il cuore rosa è l'unico segno che la distingue anche su iPhone.
 Toccandola si apre la richiesta (`#/richiesta?id=…`), da cui si propone lo
-scambio, e non la lista di Aiuta un collega. Il favore si legge solo dal server, che vede
-già le proposte. Questi avvisi si spengono dal pannello Notifiche: la scelta
+scambio, e non la lista di Aiuta un collega.
+
+Il favore si legge dal **registro `aiuti`**: una riga per ogni accordo, scritta dal trigger `registra_aiuto` su `proposte` (mai
+dall'app), con chi ha aiutato, chi è stato aiutato e quando. Non ha chiave
+esterna verso le proposte, quindi resta anche quando la pulizia cancella la
+richiesta; la toglie la pulizia stessa dopo 100 giorni, o la notte dopo un
+annullamento. Prima il favore si ricostruiva dalle proposte e durava quanto la
+richiesta, che la pulizia toglieva 90 giorni dopo la chiusura: "almeno tre
+mesi" a volte non era vero. Nessuna chiave dell'app legge il registro (RLS
+accesa, nessuna policy): lo legge solo send-push. Questi avvisi si spengono dal pannello Notifiche: la scelta
 (`favori`) viaggia **dentro la parte cifrata**, accanto a turni e
 preferenze, e non in una colonna; una riga cifrata prima che la scelta
 esistesse vale come accesa.

@@ -88,6 +88,9 @@ export function noteLegali({ compatte = false } = {}) {
         <li>Anche senza cancellarle a mano, le richieste chiuse o scadute e le
           disponibilità di settimane passate vengono cancellate in automatico
           dopo un po' di tempo.</li>
+        <li>Quando uno scambio va in porto il server ricorda per tre mesi chi
+          ha aiutato chi, solo per avvisare chi è stato aiutato quando può
+          ricambiare. Non lo vede nessun altro.</li>
         <li>Si entra con una password personale, che non viene salvata: l'app
           conserva solo un'impronta per riconoscerla. Protegge l'app da chi
           mette le mani sul dispositivo, non i dati che ci stanno dentro.</li>
