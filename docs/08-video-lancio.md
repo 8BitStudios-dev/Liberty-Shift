@@ -4,11 +4,11 @@ Il gruppo WhatsApp dei cambi turno. Scomodo, dispersivo, e ogni richiesta si per
 
 Da oggi c'è un modo migliore. Questo è Liberty Shift.
 
-Prima di cominciare, due precisazioni importanti. Liberty Shift non è un'app ufficiale dell'azienda: i cambi turno si inseriscono sempre su UKG, e sono validi solo dopo la sua approvazione. Liberty Shift è lo strumento per trovare il collega giusto e mettersi d'accordo, in modo più semplice e ordinato di WhatsApp.
+Prima di cominciare, due precisazioni importanti. Liberty Shift non è uno strumento ufficiale dell'azienda: i cambi turno si inseriscono sempre su UKG, e sono validi solo dopo la sua approvazione. Liberty Shift è lo strumento per trovare il collega giusto e mettersi d'accordo, in modo più semplice e ordinato di WhatsApp.
 
 Quanto ai vostri dati: i turni restano sul vostro telefono. Al server arrivano solo le richieste che scegliete di pubblicare, perché i colleghi devono poterle leggere. Se attivate gli avvisi sui cambi che vi convengono, i turni dei giorni successivi vengono inviati cifrati, e nessuno può leggerli.
 
-L'app si apre da Safari, si aggiunge alla schermata Home e da quel momento funziona come qualsiasi altra app.
+Liberty Shift si apre da Safari, si aggiunge alla schermata Home e da quel momento è sempre a portata di mano, come qualsiasi applicazione del telefono.
 
 Partiamo dalla Home.
 
@@ -18,7 +18,7 @@ Subito sotto, I tuoi cambi: le vostre richieste aperte e gli scambi in corso, co
 
 Poi Cambio rapido, il modo più veloce per lasciare un turno. Vedete i vostri turni settimana per settimana e, su ciascuno, quanti colleghi possono prenderlo. Toccando un turno compaiono due elenchi: Cambio orario, con chi lavora lo stesso giorno e può scambiare l'orario; e Cambio OFF, con chi quel giorno è libero e può scambiare il giorno di riposo con uno di lavoro. Scegliete il collega e proponete lo scambio. Se non c'è nessuno disponibile, pubblicate la richiesta: rimane in bacheca finché qualcuno non risponde.
 
-Il riquadro rosa è Aiuta un collega, la funzione solidale dell'app. Mostra solo le richieste che potete coprire con i vostri turni, e per ognuna indica quanto vi costa: ti conviene, per te non cambia niente, oppure ti costa poco. Le più comode compaiono per prime. Essere gentili conviene: ogni cambio approvato su UKG vale una priorità in più, fino a tre al mese. E quando un collega che vi ha aiutato ha bisogno di un cambio, la sua richiesta compare in cima, con l'indicazione che potete ricambiare.
+Il riquadro rosa è Aiuta un collega, la funzione solidale della piattaforma. Mostra solo le richieste che potete coprire con i vostri turni, e per ognuna indica quanto vi costa: ti conviene, per te non cambia niente, oppure ti costa poco. Le più comode compaiono per prime. Essere gentili conviene: ogni cambio approvato su UKG vale una priorità in più, fino a tre al mese. E quando un collega che vi ha aiutato ha bisogno di un cambio, la sua richiesta compare in cima, con l'indicazione che potete ricambiare.
 
 In fondo alla Home ci sono le ultime richieste dei colleghi. Vedi tutto apre la bacheca completa.
 
@@ -30,7 +30,7 @@ La terza pagina è la Bacheca, la versione ordinata del gruppo WhatsApp: tutte l
 
 La quarta pagina è Proposte. Qui arrivano gli scambi che vi vengono proposti, insieme a quelli che avete proposto voi. In alto, nella sezione Aspettano te, potete accettare o rifiutare con un tocco. Se ricevete più proposte, la prima è quella più vicina a ciò che avete chiesto; quando ne accettate una, gli altri colleghi ricevono un avviso.
 
-Sotto, nella sezione In corso, trovate gli scambi concordati. A quel punto resta un solo passaggio: inserire il cambio su UKG. L'app ve lo ricorda nei giorni precedenti al turno e, quando UKG approva il cambio, lo riconosce da sola e chiude lo scambio. Da qui potete anche ringraziare il collega.
+Sotto, nella sezione In corso, trovate gli scambi concordati. A quel punto resta un solo passaggio: inserire il cambio su UKG. Liberty Shift ve lo ricorda nei giorni precedenti al turno e, quando UKG approva il cambio, lo riconosce da sola e chiude lo scambio. Da qui potete anche ringraziare il collega.
 
 L'ultima pagina è il Profilo.
 
@@ -40,11 +40,11 @@ Subito sotto c'è il vostro calendario, con l'orario di ogni turno. La clessidra
 
 Seguono tre sezioni.
 
-Sincronizza turni: qui inserite, una sola volta, l'indirizzo del calendario dell'app aziendale. Da quel momento i turni si aggiornano automaticamente ogni volta che aprite l'app.
+Sincronizza turni: qui inserite, una sola volta, l'indirizzo del calendario aziendale. Da quel momento i turni si aggiornano automaticamente ogni volta che aprite Liberty Shift.
 
 Preferenze: per ogni fascia oraria indicate se la evitate, se vi è indifferente o se la preferite, valide per tutta la settimana oppure giorno per giorno. Potete indicare anche se preferite avere il weekend libero. Le preferenze non escludono nessuno, ma influiscono sulle percentuali: un cambio che vi assegna un turno che evitate scende in classifica, uno che vi libera il sabato sale. E restano private: nessun collega può vederle.
 
-Notifiche: dopo averle attivate, scegliete cosa ricevere. Solo le richieste personali, cioè le proposte che vi riguardano, le risposte e il promemoria per UKG. Oppure anche i cambi che vi convengono: l'app vi avvisa solo quando un collega pubblica uno scambio davvero vantaggioso secondo le vostre preferenze. In entrambi i casi, se qualcuno pubblica esattamente il cambio che stavate cercando, lo saprete subito. E, se lo desiderate, riceverete un avviso anche quando un collega che vi ha aiutato cerca un cambio che potete coprire.
+Notifiche: dopo averle attivate, scegliete cosa ricevere. Solo le richieste personali, cioè le proposte che vi riguardano, le risposte e il promemoria per UKG. Oppure anche i cambi che vi convengono: la piattaforma vi avvisa solo quando un collega pubblica uno scambio davvero vantaggioso secondo le vostre preferenze. In entrambi i casi, se qualcuno pubblica esattamente il cambio che stavate cercando, lo saprete subito. E, se lo desiderate, riceverete un avviso anche quando un collega che vi ha aiutato cerca un cambio che potete coprire.
 
 In fondo al Profilo trovate i Grazie ricevuti: i ringraziamenti dei colleghi che avete aiutato, e i traguardi che ne derivano, dal primo grazie fino a Leggenda Liberty.
 
