@@ -1,6 +1,6 @@
 {
   "name": "Liberty Shift",
-  "short_name": "Liberty",
+  "short_name": "Liberty Shift",
   "description": "Change shifts. Keep your plans. Trova e concorda i cambi turno con i colleghi, senza perderli nella chat.",
   "start_url": "../index.html#/home",
   "scope": "../",

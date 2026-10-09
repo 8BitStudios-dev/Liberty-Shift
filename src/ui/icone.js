@@ -13,6 +13,11 @@
  *   import { icona } from './icone.js';
  *   raw(icona('scambio', { px: 22 }))
  *
+ * Misure: 12 per i segni minuscoli (spunta e clessidra nei badge), 14 per la
+ * stella nei chip compatti, 16 dentro il testo, 18 nei pulsanti, 24 per gli
+ * avvisi grandi e la tabbar. Altre misure fanno icone che sembrano di mani
+ * diverse accanto allo stesso testo.
+ *
  * `colore` non serve quasi mai: il tratto è `currentColor`, quindi l'icona
  * prende il colore del testo che le sta intorno — è per questo che nella
  * tabbar basta colorare il bottone.
@@ -30,7 +35,6 @@ const TRACCIATI = {
   profilo: '<circle cx="12" cy="8.4" r="3.6"/><path d="M4.9 20c.9-3.5 3.6-5.3 7.1-5.3s6.2 1.8 7.1 5.3"/>',
   rapido: '<path d="M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z"/>',
   aiuta: '<circle cx="9.3" cy="8.6" r="3.2"/><path d="M3.6 19.6c.8-3 2.9-4.7 5.7-4.7s4.9 1.7 5.7 4.7"/><path d="M16.3 5.8a3.2 3.2 0 0 1 0 5.7M18 14.9c1.9.8 3.1 2.4 3.5 4.7"/>',
-  nuovo: '<circle cx="12" cy="12" r="8.6"/><path d="M12 8.2v7.6M8.2 12h7.6"/>',
   aggiorna: '<path d="M20.2 12a8.2 8.2 0 1 1-2.7-6.1"/><path d="M20.2 4.2v5.6h-5.4"/>',
   scrivi: '<path d="M4.6 19.4l4.2-1 9.4-9.4-3.2-3.2L5.6 15.2z"/><path d="M14.9 5.9l3.2 3.2"/>',
   impostazioni: '<path d="M4 7.5h8.5M17.5 7.5H20M4 16.5h2.5M11.5 16.5H20"/><circle cx="15" cy="7.5" r="2.4"/><circle cx="9" cy="16.5" r="2.4"/>',

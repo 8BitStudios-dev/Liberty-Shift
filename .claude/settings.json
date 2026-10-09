@@ -29,7 +29,11 @@
     "deny": [
       "Bash(git push --force *)",
       "Bash(git reset --hard *)",
-      "Bash(rm -rf *)"
+      "Bash(rm -rf *)",
+      "Read(./src/ui/jsqr.js)",
+      "Read(./supabase/functions/send-push/core/**)",
+      "Read(./dist/**)",
+      "Read(./node_modules/**)"
     ]
   }
 }

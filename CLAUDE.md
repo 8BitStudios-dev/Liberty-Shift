@@ -23,6 +23,10 @@ negoziabile: **`npm test` verde prima di ogni push**. Il workflow lo rifà
 comunque e rifiuta di pubblicare una versione rotta, ma scoprirlo in locale
 costa un minuto invece di cinque.
 
+Con più sessioni aperte insieme: prima di pushare, `git pull --rebase origin main`,
+poi `npm test`, poi il push. Un conflitto lo risolve la sessione che sta pushando.
+Ogni sessione resta nei suoi file (vedi `docs/09-sessioni.md`).
+
 Una pull request resta la scelta giusta quando la modifica è grossa o
 discutibile, e serve un posto dove leggerla prima che vada online.
 
@@ -82,77 +86,33 @@ discutibile, e serve un posto dove leggerla prima che vada online.
 - **Il build controlla la sintassi del bundle** prima di scrivere `dist/`: un
   errore lì produce una pagina bianca senza niente in console, e l'unico modo
   di accorgersene sarebbe aprirla.
-- **`create table if not exists` non tocca una tabella che esiste già.** Una
-  colonna o un vincolo nuovi dentro quel blocco, in `supabase/schema.sql`,
-  spariscono in silenzio su un progetto avviato prima: nessun errore, solo la
-  colonna che non c'è. Vanno scritti anche come `alter table ... add column
-  if not exists` (e un `drop constraint if exists` + `add constraint` per i
-  vincoli), fuori dal blocco `create table`.
-- **Da SQL Editor `auth.role()` è `null`, non `'service_role'`.** Un trigger
-  scritto come `if auth.role() is distinct from 'service_role'` blocca anche
-  SQL Editor stesso, non solo il client dell'app: `null is distinct from
-  'service_role'` è vero. Un `update` da SQL Editor torna "0 rows updated"
-  senza nessun errore. La forma giusta elenca i ruoli da bloccare davvero
-  (`auth.role() in ('anon', 'authenticated')`), e lascia passare tutto il
-  resto.
 
-- **Una colonna nuova su `richieste` o `proposte` la può scrivere anche
-  l'altra parte**, finché non la si aggiunge all'elenco di quelle che restano
-  ferme in `limita_scritture_richiesta`/`limita_scritture_proposta` (in fondo
-  a `schema.sql`). Quei trigger non danno errore, riportano il valore di
-  prima: una scrittura che sembra riuscita e alla discesa torna indietro
-  viene probabilmente da lì.
+## Server e notifiche
 
-- **Il database non legge `schema.sql` da solo.** Una correzione che sta nel
-  file arriva sul server solo quando qualcuno lo rilancia da SQL Editor: al
-  lancio il trigger dei privilegi era ancora quello vecchio, settimane dopo la sua
-  correzione nel repository. Dopo ogni modifica allo schema, va rilanciato. Lo
-  stesso vale per le Edge Functions, e lì conta lo slug: vedi
-  `docs/07-supabase.md`.
+Prima di toccare `supabase/`, `src/core/sincronia.js`, `src/core/supabase.js`,
+`cifratura.js` o `send-push`, leggi la sezione **Trappole del server** in
+`docs/07-supabase.md`. Le tre regole da non scordare nemmeno senza leggerla:
 
-- **Ogni chiamata al server ha un tetto di 20 secondi** (`chiama` in
-  `src/core/supabase.js`). Su iPhone una richiesta partita mentre l'app va in
-  background può restare appesa per ore, senza risposta né errore: la coda la
-  aspettava e con lei ogni sincronizzazione, e un telefono ha smesso di
-  scaricare per un pomeriggio intero senza nessun avviso. Un `fetch` nuovo
-  passa da `chiama`, non si scrive a parte.
+- Un `fetch` nuovo passa da `chiama` (tetto di 20 secondi), mai a parte.
+- Le colonne `turni` e `preferenze` di `notifiche_preferenze` restano vuote; la
+  chiave privata sta solo nel Vault e non si legge né si stampa mai.
+- `supabase/functions/send-push/core/` è generata (`npm run funzioni`): non si modifica.
 
-- **Il rinnovo della sessione è uno solo alla volta** (`rinnova` in
-  `src/core/supabase.js`). Il server ruota il codice di rinnovo: due rinnovi
-  in parallelo facevano rifiutare il secondo, che cancellava la sessione
-  appena rinnovata dal primo ("Non sei collegato allo store" premendo
-  Aggiorna). E un rinnovo senza risposta (rete, tetto dei 20 secondi) non
-  toglie la sessione: la toglie solo un rifiuto vero del server.
+## Come leggere senza sprecare token
 
-- **Profili, richieste e disponibilità scendono a pezzi** (`scarica` in
-  `src/core/sincronia.js`): dopo il primo scaricamento arrivano solo le righe
-  con `aggiornato_il` più recente del segno salvato (`state.cursori`), più
-  l'elenco degli id che esistono, per togliere quello che è sparito. Una
-  tabella aggiunta a `INCREMENTALI` deve avere la colonna `aggiornato_il` e
-  il trigger `segna_aggiornamento`, altrimenti una modifica non scende mai.
-  Una tabella che cresce con gli iscritti e non è lì si riscarica intera a
-  ogni apertura: con 95 persone è il traffico che sfora il piano gratuito.
+- **I file grandi si leggono a pezzi.** `src/ui/app.js`, `src/ui/flows.js`,
+  `src/ui/views.js`, `src/core/store.js` e `src/core/sincronia.js` hanno
+  intestazioni di sezione (`// ---- NOME`): `grep -n '^// ---' file` dà la
+  mappa, poi `Read` con `offset` e `limit`. Mai il file intero per cercare una funzione.
+- **Lo stesso per `docs/`**: `grep -n '^#' docs/04-flussi-ux.md` (52 KB) o
+  `docs/07-supabase.md` (39 KB) e si legge solo la sezione che serve.
+- Dove sta cosa: schermate in `src/ui/views.js`, flussi di cambio e proposta in
+  `src/ui/flows.js`, pezzi riusabili in `src/ui/components.js`, azioni dei bottoni
+  in `src/ui/app.js`, regole in `src/core/rules.js`, stato in `src/core/store.js`.
+- `jsqr.js`, `dist/` e la copia di `send-push/core/` sono esclusi dalle letture.
 
 ## Documentazione
 
 `docs/` tiene regolamento, motore di matching, data model, flussi UX,
 decisioni aperte e pubblicazione. Quando una regola cambia, cambia anche lì:
 la documentazione che mente è peggio di quella che manca.
-
-- **Il connettore Supabase va in timeout su `delete` e su `drop`.** Una
-  migrazione che li contiene non parte e non dà errore: si spezza in pezzi
-  senza quelle parole, o si incolla in SQL Editor. Dopo, si controlla sempre
-  con una query di lettura che sia passata davvero.
-- **I turni delle notifiche compatibili escono cifrati** (`cifratura.js`, in
-  `dati_cifrati`). Le colonne `turni` e `preferenze` di `notifiche_preferenze`
-  devono restare vuote: un campo nuovo con dati di turno va dentro la parte
-  cifrata, non accanto. La chiave privata sta solo nel Vault: non va mai
-  letta, stampata o copiata in una conversazione o nel repository.
-- **`supabase/functions/send-push/core/` è una copia di `src/core/`.** Si
-  rigenera con `npm run funzioni` e va ripubblicata la funzione, altrimenti il
-  server ragiona con regole vecchie. Non si ricopiano i file: dopo il push si
-  pubblica una riga sola che importa `send-push/index.ts` da jsDelivr fissato
-  all'hash del commit (vedi `docs/07-supabase.md`), poi si controlla che la
-  funzione risponda 401 senza segreto. `notifiche_preferenze` non va mai aperta
-  in lettura ad admin o colleghi: contiene turni di persone che hanno
-  acconsentito solo a questo uso.
