@@ -134,6 +134,15 @@ export function badgeStato(status) {
  * I colori restano veri e non seguono la posizione: il blu è sempre il turno
  * che lascia chi guarda, il verde quello che prende.
  */
+/**
+ * Gli orari piccoli: "19:00" diventa "19", "18:30" resta com'è. Dove lo spazio è
+ * poco (la box dello scambio, le righe di Home) "10:00–19:00" si legge "10–19".
+ * Lavora sul testo già composto, quindi vale anche per le fasce ("dopo le 11").
+ */
+export function abbreviaOre(testo) {
+  return String(testo ?? '').replace(/(?<!\d)(\d{1,2}):00(?!\d)/g, '$1');
+}
+
 /** Il cerchio del tipo di cambio, con icona e scritta ("OFF", "orario"): lo stesso nella box e nelle liste. */
 export function cerchioTipo(tipo) {
   const meta = TIPO_META[tipo] || TIPO_META.ORARIO;
@@ -160,8 +169,8 @@ export function boxScambio(tipo, prendi, lasci, { compatto = false } = {}) {
     <div class="lato ${classe}">
       <span class="etichetta">${freccia(simbolo)} ${parola}</span>
       <strong>${m.giorno}</strong>
-      <span class="orario">${m.orario}</span>
-      ${raw(m.nota ? `<div class="nota">${m.nota}</div>` : '')}
+      <span class="orario">${m.orario?.__raw ? raw(abbreviaOre(m.orario.value)) : abbreviaOre(m.orario)}</span>
+      ${raw(m.nota ? `<div class="nota">${abbreviaOre(m.nota)}</div>` : '')}
     </div>`;
   return html`
     <div class="coppia ${compatto ? 'compatta' : ''}" data-tipo="${esc(tipo)}">
@@ -252,7 +261,7 @@ export function sintesiRichiesta(request) {
   // cerca. Chi legge prende il primo e lascia il secondo; l'autore il contrario.
   const lascia = off ? formatDay(cedo?.data) : `${formatDay(cedo?.data)} ${shiftLabel(cedo)}`;
   const cerca = off ? giorni.map((g) => formatDay(g)).join(' o ') : wantLabel(request.cerco);
-  return mia ? `prendi ${cerca} · lasci ${lascia}` : `prendi ${lascia} · lasci ${cerca}`;
+  return abbreviaOre(mia ? `prendi ${cerca} · lasci ${lascia}` : `prendi ${lascia} · lasci ${cerca}`);
 }
 
 /**

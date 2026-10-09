@@ -968,6 +968,15 @@ il giorno è lo stesso; per OFF dice i giorni. Gli stati: rosso "Ti aspetta una
 risposta", grigio "In attesa di…", verde "Concordato, manca UKG", giallo vivo "Aperta".
 Prima vengono i cambi che aspettano una tua risposta, poi gli altri.
 
+## Gli orari abbreviati
+
+Dove lo spazio è poco gli orari si scrivono corti: le ore tonde senza i minuti
+("10:00–19:00" diventa "10–19", "dopo le 11:00" diventa "dopo le 11"), le mezze
+restano com'erano ("09:30–18:30"). Vale nella box dello scambio, nelle righe di
+"I tuoi cambi" e nella frase di sintesi delle richieste (`abbreviaOre` in
+`components.js`). Il resto dell'app, per ora, scrive ancora gli orari per
+esteso: calendario, tendine, spiegazioni dei match.
+
 ## Le tre forme
 
 Ogni scatola dell'app è di una di tre famiglie, e ogni famiglia ha un solo
