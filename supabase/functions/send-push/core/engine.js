@@ -259,18 +259,32 @@ function punteggioDi(chiGuarda, autore, u, base, peso) {
 
 /**
  * Da dove parte la percentuale, per ciascuno dei due e per chi non è nessuno
- * dei due (`neutro`). Con una richiesta del collega ognuno parte da quanto il
- * turno che riceve soddisfa quello che cerca; dal solo calendario si parte dal
- * tetto (`availabilityScoreCap`): il collega non ha chiesto niente, quindi
- * per lui va bene qualsiasi turno, ma non ha nemmeno detto di volerlo.
+ * dei due (`neutro`). Ognuno parte da quanto il turno che riceve soddisfa
+ * quello che cerca. Il collega trovato dal solo calendario non ha chiesto
+ * niente, quindi per lui va bene qualsiasi turno: parte da 100, e a dire
+ * quanto gli conviene restano le sue preferenze.
+ *
+ * Che l'altro abbia pubblicato una richiesta o si sia detto disponibile non
+ * entra nel numero: è una cosa sua, non quanto lo scambio conviene a te. Si
+ * legge nell'etichetta del match e decide l'ordine a parità di percentuale.
  */
-function baseDelPunteggio(perAutore, perCollega, disponibile) {
+function baseDelPunteggio(perAutore, perCollega) {
   if (perCollega !== null) {
     return { autore: perAutore, collega: perCollega, neutro: Math.round((perAutore + perCollega) / 2) };
   }
-  const extra = disponibile ? RULES.disponibilitaBonus : 0;
-  const autore = Math.min(perAutore, RULES.availabilityScoreCap) + extra;
-  return { autore, collega: RULES.availabilityScoreCap + extra, neutro: autore };
+  return { autore: perAutore, collega: 100, neutro: perAutore };
+}
+
+/**
+ * L'ordine dei match: prima la percentuale; a parità, chi ha già chiesto
+ * anche lui, poi chi si è detto disponibile quel giorno, poi la priorità.
+ * È lì che finisce quello che prima era un tetto e un bonus nel numero.
+ */
+function ordineMatch(a, b) {
+  return b.score - a.score
+    || (b.origine === 'RICHIESTA') - (a.origine === 'RICHIESTA')
+    || b.disponibile - a.disponibile
+    || b.prioritaria - a.prioritaria;
 }
 
 /**
@@ -355,16 +369,14 @@ function matchOrario(request, ctx) {
       // preferenze). Le preferenze da evitare pesano parecchio ma non
       // escludono più il turno: sta a chi guarda i match decidere.
       origine = 'CALENDARIO';
-      // Il bonus della disponibilità dichiarata si vede nel punteggio: dirlo
-      // anche a parole ("si è anche dichiarata disponibile a cambiare") era
-      // ovvio, dato che il turno lo si vede già subito sopra.
-      base = baseDelPunteggio(perMe.score, null, disponibileIl(u, giorno));
+      // La disponibilità dichiarata non dà punti: si legge nell'etichetta del
+      // match (`disponibile`) e conta nell'ordine a parità di percentuale.
+      base = baseDelPunteggio(perMe.score, null);
       reasons.push(ioSonoU ? `Hai ${shiftLabel(suo)} quel giorno` : `${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
-    const score = clamp(Math.round(punteggioDi(ctx.currentUserId, autore, u, base, v.peso)), 0,
-      origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
+    const score = clamp(Math.round(punteggioDi(ctx.currentUserId, autore, u, base, v.peso)));
     if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
 
     risultati.push({
@@ -374,6 +386,7 @@ function matchOrario(request, ctx) {
       score,
       userId: u.id,
       requestId: suaRichiesta?.id || null,
+      disponibile: disponibileIl(u, giorno),
       shiftOffertoId: suo.id,
       data: giorno,
       adattato: trasformaTurno(suo, mioCedo, trova),
@@ -386,7 +399,7 @@ function matchOrario(request, ctx) {
       avvisi: v.avvisi,
     });
   }
-  return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+  return risultati.sort(ordineMatch);
 }
 
 /**
@@ -454,10 +467,10 @@ function matchOff(request, ctx) {
       } else {
         // Come nel cambio orario: essere liberi quel giorno è già stato
         // controllato sopra, e basta per proporre lo scambio. La
-        // disponibilità dichiarata a lavorarci non è più condizione, ma
-        // resta un bonus quando c'è.
+        // disponibilità dichiarata a lavorarci non è condizione e non dà
+        // punti: si dice fra le ragioni e conta nell'ordine.
         origine = 'CALENDARIO';
-        base = baseDelPunteggio(perMe.score, null, disponibileIl(u, mioCedo.data));
+        base = baseDelPunteggio(perMe.score, null);
         if (disponibileIl(u, mioCedo.data)) {
           reasons.push(ioSonoU
             ? concorda(u, {
@@ -481,8 +494,7 @@ function matchOff(request, ctx) {
         : `${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto ${ioSonoU ? 'tuo' : 'suo'}: ${perMe.reasons[0]}`);
 
       const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
-      const score = clamp(Math.round(punteggioDi(ctx.currentUserId, autore, u, base, v.peso)), 0,
-        origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
+      const score = clamp(Math.round(punteggioDi(ctx.currentUserId, autore, u, base, v.peso)));
       if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
 
       const chiave = `${u.id}|${suo.id}`;
@@ -496,6 +508,8 @@ function matchOff(request, ctx) {
         score,
         userId: u.id,
         requestId: suaRichiesta?.id || null,
+        // Il giorno che si chiede di lavorargli è quello che l'autore lascia.
+        disponibile: disponibileIl(u, mioCedo.data),
         shiftOffertoId: suo.id,
         data: giorno,
         adattato: trasformaTurno(suo, mioCedo, trova),
@@ -506,7 +520,7 @@ function matchOff(request, ctx) {
       });
     }
   }
-  return risultati.sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+  return risultati.sort(ordineMatch);
 }
 
 /**
@@ -674,7 +688,7 @@ export function cambioRapido(shiftId, ctx) {
     cerco: { giorni: liberi, mode: WANT_MODE.ANY, evitaChiusura },
   }, ctx) : [];
 
-  return [...orario, ...off].sort((a, b) => b.score - a.score || (b.prioritaria - a.prioritaria));
+  return [...orario, ...off].sort(ordineMatch);
 }
 
 /**

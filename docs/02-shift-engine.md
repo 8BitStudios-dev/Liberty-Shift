@@ -54,8 +54,8 @@ per ogni collega che ha un turno quel giorno:
         se non soddisfa quello che cerca lui -> scarta
         score = quanto va bene a chi guarda   -> MATCH
     altrimenti:
-        score = suo punteggio, tagliato a 75  -> POTENZIALE
-        se ha anche dichiarato disponibilità quel giorno: +10
+        score = quanto va bene a chi guarda   (nessun tetto)
+        la disponibilità dichiarata non dà punti: è un'etichetta
 ```
 
 Nessuno dei due deve essere libero: al contrario, serve che entrambi siano in
@@ -75,8 +75,8 @@ per ogni giorno che offro:
       se ha una richiesta OFF speculare (vuole liberare
          quel giorno e ha libero il mio)             -> MATCH
       altrimenti:
-         score = suo punteggio, tagliato a 75         -> POTENZIALE
-         se ha anche dichiarato disponibilità: +10
+         score = quanto va bene a chi guarda   (nessun tetto)
+         la disponibilità dichiarata non dà punti: è un'etichetta
 ```
 
 La richiesta speculare è il caso pulito: «vuole liberare lunedì e lavorare
@@ -97,12 +97,16 @@ In entrambi gli algoritmi un match può nascere da due cose diverse:
 2. semplicemente il turno che il collega ha già in calendario — origine
    `CALENDARIO`.
 
-Il punteggio della seconda è **tagliato a 75**, quindi non può mai presentarsi
-come match pieno: è un'occasione trovata dal motore, non un accordo che
-qualcuno ha già proposto. Una disponibilità dichiarata per quel giorno vale un
-bonus (`RULES.disponibilitaBonus`) ma non è più condizione per comparire — lo
-scopo del Cambio Rapido è trovare scambi comodi a cui nessuno aveva pensato,
-non solo confermare chi si era già offerto. Le preferenze da evitare abbassano
+L'origine non cambia la percentuale: un turno trovato dal calendario che per
+te è perfetto vale 100 quanto uno arrivato da una richiesta. La differenza si
+legge nell'etichetta del match ("ha una richiesta compatibile" o "dal
+calendario", più "disponibile quel giorno" se il collega l'ha segnato) e
+decide l'ordine a parità di percentuale (`ordineMatch`): prima chi ha già
+chiesto, poi chi è disponibile. Fino alla versione 1.0.097 il calendario era
+tagliato a 75 e la disponibilità valeva 10 punti: erano cose dell'altro dentro
+il tuo numero. La disponibilità non è condizione per comparire: lo scopo del
+Cambio Rapido è trovare scambi comodi a cui nessuno aveva pensato, non solo
+confermare chi si era già offerto. Le preferenze da evitare abbassano
 molto il punteggio (`RULES.evitaPenalty`) invece di escludere il turno: un
 match altrimenti forte resta visibile, solo più in basso.
 
@@ -118,15 +122,17 @@ chiusure, e a Lorenzo non interessa che Marco preferisca le mattine.
 - Chi ha pubblicato la richiesta parte da quanto il turno del collega
   soddisfa quello che cerca.
 - Il collega parte da quanto il turno ricevuto soddisfa la **sua** richiesta,
-  se ne ha una; dal calendario, senza richiesta, parte dal tetto di 75 (non
-  ha chiesto niente, quindi va bene tutto, ma non ha nemmeno detto di volerlo).
+  se ne ha una; dal calendario, senza richiesta, parte da 100 (non ha chiesto
+  niente, quindi va bene tutto) e a dire quanto gli conviene restano le sue
+  preferenze.
 - Chi non è nessuno dei due (le notifiche sul server, un admin che guarda la
   richiesta di altri) vede il conto della coppia: la media dei due lati e il
   peso di entrambi.
 
 Quello che è dell'altro resta nella lista solo come informazione: se ha una
 richiesta pubblicata (origine `RICHIESTA` contro `CALENDARIO`) e se si è
-dichiarato disponibile, che vale il bonus.
+dichiarato disponibile (`disponibile`). Si leggono nell'etichetta e decidono
+l'ordine a parità di percentuale, ma non entrano nel numero.
 
 ## Adattamento del turno
 Prima di calcolare il punteggio, ogni turno viene trasformato in quello che la

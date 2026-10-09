@@ -333,15 +333,15 @@ Chi lavora (o è libero, nel cambio OFF) nel giorno giusto e il cui turno
 soddisfa quello che si cerca compare sempre, con un'origine diversa a seconda
 di cosa ha detto:
 
-1. **richiesta pubblicata** compatibile → origine `RICHIESTA`, può arrivare a
-   MATCH pieno;
-2. **solo il calendario** → origine `CALENDARIO`, tagliato a 75 (mai un MATCH
-   pieno): è un'occasione trovata dal motore, non un accordo che qualcuno ha
-   già proposto.
+1. **richiesta pubblicata** compatibile → origine `RICHIESTA`;
+2. **solo il calendario** → origine `CALENDARIO`: è un'occasione trovata dal
+   motore, non un accordo che qualcuno ha già proposto.
 
-Una disponibilità dichiarata per quel giorno non è più condizione per
-comparire: è un bonus (`RULES.disponibilitaBonus`) sopra il punteggio del
-calendario. Prima era l'unica alternativa a una richiesta pubblicata, e senza
+L'origine non cambia la percentuale, che dice solo quanto lo scambio conviene
+a chi guarda: si legge nell'etichetta del match e decide l'ordine a parità di
+percentuale. Lo stesso vale per una disponibilità dichiarata per quel giorno:
+non è condizione per comparire e non dà punti, si mostra ("disponibile quel
+giorno") e fa salire nell'ordine. Prima era l'unica alternativa a una richiesta pubblicata, e senza
 nessuna delle due un collega non compariva mai; il cambio è voluto, perché il
 Cambio Rapido deve trovare scambi comodi a cui nessuno aveva pensato, non solo
 confermare chi si era già offerto — aiutare un collega sui suoi turni

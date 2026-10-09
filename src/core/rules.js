@@ -118,15 +118,11 @@ export const RULES = {
   matchThreshold: 85,     // >= verde
   potentialThreshold: 50, // >= giallo, sotto non viene mostrato
 
-  // Un match nato dal solo calendario, senza una richiesta reciproca a
-  // conferma, non può mai presentarsi come match pieno: è un'occasione da
-  // valutare, non un accordo già a metà.
-  availabilityScoreCap: 75,
-
-  // Bonus per chi, quel giorno, si è anche dichiarato disponibile a
-  // cambiare: non serve più per comparire, ma un sì esplicito vale di più
-  // di un turno trovato e basta.
-  disponibilitaBonus: 10,
+  // Non c'è più un tetto per i match trovati dal solo calendario, né un bonus
+  // per chi si è detto disponibile: la percentuale dice quanto lo scambio
+  // conviene a chi guarda, e quello che ha fatto l'altro (una richiesta
+  // pubblicata, la disponibilità) si legge in un'etichetta a parte e conta
+  // solo a parità di percentuale, nell'ordine (`ordineMatch` in engine.js).
 
   // Cambio rapido mostra solo i colleghi più compatibili: una lista lunga
   // non aiuta a scegliere, e chi apre questa schermata vuole decidere in fretta.

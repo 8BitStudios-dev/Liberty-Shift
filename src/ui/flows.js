@@ -668,7 +668,7 @@ export function match(params) {
     'Nessun collega ha un turno compatibile su quel giorno. La richiesta resta in bacheca.',
     '<button class="btn secondario" data-act="vai" data-to="#/bacheca">Vai alla bacheca</button>',
   ))}
-    <p class="testo-tenue">La percentuale di match deriva dalle preferenze e dai turni di tutti. Chi ha pubblicato una richiesta o si è detto disponibile sale più in alto.</p>`;
+    <p class="testo-tenue">La percentuale dice quanto lo scambio conviene a te: il turno che ricevi, le tue preferenze, le tue ore. A parità, viene prima chi ha già chiesto anche lui o si è detto disponibile.</p>`;
 }
 
 // ---------------------------------------------------- DETTAGLIO RICHIESTA

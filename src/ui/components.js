@@ -350,7 +350,7 @@ export function cardMatch(match, opzioni = {}) {
     : '')}
       <div class="match-tipo">
         ${raw(segnoMatch(verde))}${verde ? 'Match' : 'Potenziale'}
-        · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}
+        · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}${match.origine !== 'RICHIESTA' && match.disponibile ? ' · disponibile quel giorno' : ''}
       </div>
       ${raw(riassuntoMatch(match, u, turno, opzioni))}
       ${raw(adattamento(match) ? notaStima() : '')}

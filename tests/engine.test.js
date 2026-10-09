@@ -145,14 +145,25 @@ test('Lorenzo e Martina sono il match perfetto del capitolo 11', () => {
   assert.equal(daMartina.score, 100 - RULES.adattamentoPenalty + RULES.preferenzaBonus);
 });
 
-test('un match nato dal solo calendario resta POTENZIALE e non supera il tetto', () => {
+test('un match dal solo calendario non ha tetto: conta quanto conviene a chi guarda', () => {
+  // Lorenzo cerca un turno che finisca entro le 19, e Davide quel giorno fa
+  // 10:00–19:00: per Lorenzo è perfetto. Che Davide non abbia chiesto niente
+  // si legge nell'etichetta ("dal calendario"), non abbassa il numero.
   const s = seed();
-  const richiesta = s.requests.find((r) => r.id === 'rq_luca_1');
-  const match = findMatches(richiesta, s);
-  assert.ok(match.length > 0, 'deve trovare almeno un match dal calendario');
-  for (const m of match.filter((x) => x.origine === 'CALENDARIO')) {
-    assert.equal(m.tipo, 'POTENZIALE');
-    assert.ok(m.score <= RULES.availabilityScoreCap);
+  const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+  const davide = findMatches(richiesta, s).find((m) => m.userId === 'u_davide');
+  assert.equal(davide.origine, 'CALENDARIO');
+  assert.ok(davide.score > 75, `prima era tagliato a 75, ora è ${davide.score}`);
+});
+
+test('a parità di percentuale viene prima chi ha già chiesto, poi chi è disponibile', () => {
+  const s = seed();
+  const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+  const lista = findMatches(richiesta, s);
+  for (let i = 1; i < lista.length; i += 1) {
+    const [a, b] = [lista[i - 1], lista[i]];
+    assert.ok(a.score >= b.score, 'prima la percentuale');
+    if (a.score === b.score && a.origine !== b.origine) assert.equal(a.origine, 'RICHIESTA');
   }
 });
 
@@ -687,7 +698,7 @@ test('chi non ha dato nessun segnale compare comunque, dal solo calendario', () 
   assert.equal(m.origine, 'CALENDARIO');
 });
 
-test('una disponibilità dichiarata non è più condizione, ma resta un bonus', () => {
+test('una disponibilità dichiarata non dà punti: si legge nel match e decide l\'ordine', () => {
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_marco_1');
   const martina = s.users.find((u) => u.id === 'u_martina');
@@ -705,10 +716,11 @@ test('una disponibilità dichiarata non è più condizione, ma resta un bonus', 
   const con = findMatches(richiesta2, s2).find((x) => x.userId === 'u_martina');
 
   assert.ok(senza && con);
-  // Il bonus si somma, ma resta comunque sotto il tetto dei match "dal
-  // calendario": non basta a farlo passare per un match pieno.
-  assert.equal(con.score, Math.min(RULES.availabilityScoreCap, senza.score + RULES.disponibilitaBonus));
-  assert.ok(con.score > senza.score);
+  // Che Martina sia disponibile è una cosa sua: a Marco, che guarda, non
+  // cambia quanto lo scambio gli conviene. Lo dice l'etichetta.
+  assert.equal(con.score, senza.score);
+  assert.equal(con.disponibile, true);
+  assert.equal(senza.disponibile, false);
 });
 
 test('una preferenza da evitare abbassa il punteggio ma non fa sparire il match', () => {
