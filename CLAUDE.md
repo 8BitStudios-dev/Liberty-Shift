@@ -23,6 +23,10 @@ negoziabile: **`npm test` verde prima di ogni push**. Il workflow lo rifà
 comunque e rifiuta di pubblicare una versione rotta, ma scoprirlo in locale
 costa un minuto invece di cinque.
 
+Con più sessioni aperte insieme: prima di pushare, `git pull --rebase origin main`,
+poi `npm test`, poi il push. Un conflitto lo risolve la sessione che sta pushando.
+Ogni sessione resta nei suoi file (vedi `docs/09-sessioni.md`).
+
 Una pull request resta la scelta giusta quando la modifica è grossa o
 discutibile, e serve un posto dove leggerla prima che vada online.
 
