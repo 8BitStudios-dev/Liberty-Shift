@@ -471,16 +471,11 @@ export function meseDelFavore(quando) {
   return `a ${MESI[Number(quando.slice(5, 7)) - 1].toLowerCase()}`;
 }
 
-const TESTO_COSTO = {
-  conviene: ['ok', 'Ti conviene'],
-  nulla: ['ok', 'Per te non cambia niente'],
-  poco: ['', 'Ti costa poco'],
-};
-
 /**
- * Quello che una card di "Aiuta un collega" dice prima di tutto: quanto ti
- * pesa, e se è il tuo turno di ricambiare. Il costo "pesa" non si scrive:
- * la card resta in fondo e il motivo si legge già nei perché.
+ * Quello che una card di "Aiuta un collega" dice prima di tutto: se è
+ * l'ultima chiamata e se è il tuo turno di ricambiare. Il costo non si scrive
+ * più ("ti costa poco", "ti conviene"): bastano le percentuali, e il motivo si
+ * legge già nei perché.
  */
 function etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, soloUltima = false) {
   const u = store.user(richiesta.userId);
@@ -490,7 +485,6 @@ function etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, soloUltima
   // cose da leggere per decidere una cosa sola.
   if (soloUltima) return etichette.length ? `<p class="etichette-aiuto"><span class="tag ultima">Ultima chiamata</span></p>` : '';
   if (favore && costo !== 'costa') etichette.push(['favore', `${u?.nome} ti ha aiutato ${meseDelFavore(favore)}: puoi ricambiare`]);
-  if (TESTO_COSTO[costo]) etichette.push(TESTO_COSTO[costo]);
   if (!etichette.length) return '';
   return `<p class="etichette-aiuto">${etichette.map(([classe, testo]) => `<span class="tag ${classe}">${esc(testo)}</span>`).join('')}</p>`;
 }

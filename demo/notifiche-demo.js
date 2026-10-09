@@ -1,23 +1,16 @@
-// Le notifiche della demo: banner in stile iPhone che arrivano da sole.
+// L'unica notifica della demo: un banner in stile iPhone con un grazie.
 //
 // Quelle vere partono dal server e il browser le mostra fuori dall'app, dove
 // una ripresa dello schermo spesso non arriva. Qui il banner sta dentro la
-// pagina, e ogni notifica cambia davvero lo stato: toccarla porta a una
-// proposta da accettare, a un grazie da leggere, a una richiesta da coprire.
-//
-// Si regolano dall'indirizzo:
-//   ?notifiche=0     nessuna notifica da sola
-//   ?notifiche=15    una ogni 15 secondi (di base 25, la prima dopo 12)
-// E il tasto N ne fa arrivare una subito.
+// pagina. Arriva una volta sola, due secondi dopo che si apre Proposte, e
+// porta al Profilo dove il grazie è già contato.
 
 import { store } from '../src/core/store.js';
-import { notificheDemo } from './dati-demo.js';
+import { notificaDemo } from './dati-demo.js';
 
-const parametri = new URLSearchParams(globalThis.location?.search || '');
-const intervallo = parametri.has('notifiche') ? Number(parametri.get('notifiche')) : 25;
-const elenco = notificheDemo();
-let prossima = 0;
-let chiudi = null;
+const ATTESA_MS = 2000;
+const notifica = notificaDemo();
+let programmata = false;
 
 const stile = document.createElement('style');
 stile.textContent = `
@@ -43,50 +36,45 @@ stile.textContent = `
 document.head.appendChild(stile);
 
 function mostra(n) {
-  let el = document.getElementById('banner-demo');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'banner-demo';
-    document.body.appendChild(el);
-  }
+  const el = document.createElement('div');
+  el.id = 'banner-demo';
   el.innerHTML = `<div class="icona">LS</div><div class="testo">
     <div class="riga"><span>LIBERTY SHIFT</span><span>ora</span></div>
     <strong></strong><p></p></div>`;
   el.querySelector('strong').textContent = n.titolo;
   el.querySelector('p').textContent = n.testo;
-  clearTimeout(chiudi);
-  const nascondi = () => el.classList.remove('visibile');
+  document.body.appendChild(el);
+  const nascondi = () => {
+    el.classList.remove('visibile');
+    setTimeout(() => el.remove(), 600);
+  };
   el.onclick = () => {
     nascondi();
     if (n.vai) location.hash = n.vai;
   };
   // Il primo frame serve a far partire la transizione dal fuori schermo.
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visibile')));
-  chiudi = setTimeout(nascondi, 6500);
+  setTimeout(nascondi, 6500);
 }
 
-function prossimaNotifica() {
-  const n = elenco[prossima % elenco.length];
-  prossima += 1;
-  // Il giro successivo ripete solo il banner: lo stato è già cambiato.
-  if (prossima <= elenco.length) {
-    n.applica?.(store.state);
-    store.commit();
-    // `render` ascolta hashchange; con `fermo` resta dov'è invece di tornare
-    // in cima a chi sta leggendo la bacheca.
-    const ev = new Event('hashchange');
-    ev.fermo = true;
-    window.dispatchEvent(ev);
-  }
-  mostra(n);
+function arriva() {
+  notifica.applica(store.state);
+  store.commit();
+  // `render` ascolta hashchange; con `fermo` resta dov'è invece di tornare in
+  // cima a chi sta guardando le proposte.
+  const ev = new Event('hashchange');
+  ev.fermo = true;
+  window.dispatchEvent(ev);
+  mostra(notifica);
 }
 
-if (intervallo > 0) {
-  setTimeout(function giro() {
-    prossimaNotifica();
-    if (prossima < elenco.length) setTimeout(giro, intervallo * 1000);
-  }, Math.min(12, intervallo) * 1000);
+/** Parte solo la prima volta che si apre Proposte: poi la demo resta in silenzio. */
+function controlla() {
+  if (programmata || !location.hash.startsWith('#/inbox')) return;
+  programmata = true;
+  window.removeEventListener('hashchange', controlla);
+  setTimeout(arriva, ATTESA_MS);
 }
-document.addEventListener('keydown', (e) => {
-  if (e.key.toLowerCase() === 'n' && !/input|textarea/i.test(e.target.tagName)) prossimaNotifica();
-});
+
+window.addEventListener('hashchange', controlla);
+controlla();

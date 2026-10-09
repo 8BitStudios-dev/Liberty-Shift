@@ -31,8 +31,9 @@ futuri e i giorni in cui sei libero, prova per ognuno sia il cambio orario
 sia quello di giornata, e tiene le richieste più affini. È il principio UX
 numero 4 preso alla lettera.
 
-Il risultato è una griglia di cinque caselle (`RULES.rapidoMassimo`), una per
-richiesta, dalla più affine: ogni casella dice solo il giorno del tuo turno, o
+Il risultato è una griglia di cinque caselle (`RULES.rapidoMassimo`) a coppie di
+due per riga, una per richiesta, dalla più affine. Non c'è più la frase "le 5
+più affini su 7": il tetto si capisce da quante caselle ci sono: ogni casella dice solo il giorno del tuo turno, o
 del giorno libero che copriresti, e la percentuale. Toccandone una si apre
 sotto la scheda intera, con chi è, cosa lasci e cosa prendi e il tasto
 **Proponi lo scambio**; ritoccandola si richiude. Prima c'era un mini
@@ -932,12 +933,18 @@ differenze:
   quelli della vecchia demo; si cambiano in `SETTIMANA_LORENZO`.
 - **Nessun server e chiavi sue** (`liberty-demo:*`): aprirla non tocca i
   turni veri salvati sullo stesso indirizzo. Ogni apertura riparte da capo.
-- **Notifiche dentro la pagina** (`demo/notifiche-demo.js`): sei banner, la
-  prima dopo 12 secondi e poi una ogni 25. Ognuna cambia lo stato (arriva una
-  proposta, un cambio viene accettato, un grazie supera un traguardo) e
-  toccarla porta alla schermata giusta. `?notifiche=0` le spegne, `?notifiche=15`
-  cambia il ritmo, il tasto N ne fa arrivare una subito, `?guida=1` lascia
-  comparire le schede della guida.
+- **Una sola notifica, dentro la pagina** (`demo/notifiche-demo.js`): un
+  banner in stile iPhone con "Rita ti ha ringraziato", che arriva due secondi
+  dopo la prima apertura di Proposte e poi mai più. Cambia anche lo stato: è
+  il quinto grazie, e toccandola il Profilo annuncia il traguardo. `?guida=1`
+  lascia comparire le schede della guida, che di base sono già lette.
+
+Le percentuali del Cambio rapido sono di chi guarda (vedi `punteggioDi` in
+`engine.js`): contano le preferenze di Lorenzo e le ore adattate, non quanto
+l'altro è flessibile. Per averle miste i colleghi da copione hanno turni
+normali (100%), da Part Time che si adattano a un Full Time (95%) e notturni
+che Lorenzo evita (70%). Le richieste di sfondo cadono su giorni in cui lui non
+può rispondere, così non coprono le cinque da mostrare.
 
 Un test (`tests/demo.test.js`) controlla che i dati diano ancora le schermate
 piene se il motore cambia.

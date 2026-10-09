@@ -18,7 +18,7 @@ Subito sotto, I tuoi cambi: le vostre richieste aperte e gli scambi in corso, co
 
 Poi Cambio rapido, il modo più veloce per lasciare un turno. Vedete i vostri turni settimana per settimana e, su ciascuno, quanti colleghi possono prenderlo. Toccando un turno compaiono due elenchi: Cambio orario, con chi lavora lo stesso giorno e può scambiare l'orario; e Cambio OFF, con chi quel giorno è libero e può scambiare il giorno di riposo con uno di lavoro. Scegliete il collega e proponete lo scambio. Se non c'è nessuno disponibile, pubblicate la richiesta: rimane in bacheca finché qualcuno non risponde.
 
-Il riquadro rosa è Aiuta un collega, la funzione solidale della piattaforma. Mostra solo le richieste che potete coprire con i vostri turni, e per ognuna indica quanto vi costa: ti conviene, per te non cambia niente, oppure ti costa poco. Le più comode compaiono per prime. Essere gentili conviene: ogni cambio approvato su UKG vale una priorità in più, fino a tre al mese. E quando un collega che vi ha aiutato ha bisogno di un cambio, la sua richiesta compare in cima, con l'indicazione che potete ricambiare.
+Il riquadro rosa è Aiuta un collega, la funzione solidale della piattaforma. Mostra solo le richieste che potete coprire con i vostri turni, con le ultime chiamate e quelle che aspettano da più tempo per prime. Essere gentili conviene: ogni cambio approvato su UKG vale una priorità in più, fino a tre al mese. E quando un collega che vi ha aiutato ha bisogno di un cambio, la sua richiesta compare in cima, con l'indicazione che potete ricambiare.
 
 In fondo alla Home ci sono le ultime richieste dei colleghi. Vedi tutto apre la bacheca completa.
 
