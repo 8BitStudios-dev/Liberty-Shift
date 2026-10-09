@@ -4,6 +4,17 @@ Da incollare come primo messaggio. Dicono a ogni sessione quali file aprire e
 quali lasciare stare, così non esplora a vuoto. Il resto delle regole sta in
 `CLAUDE.md`, che si carica da solo.
 
+## Blocco comune (in testa a ogni prompt)
+
+```
+Consegna sempre su main, mai su un branch e mai con una pull request.
+Se la sessione ti ha assegnato un branch, ignoralo: l'ho deciso io.
+Prima di ogni push: git pull --rebase origin main, poi npm test (deve essere verde),
+poi git push origin HEAD:main. Se il rebase dà un conflitto, risolvilo tu.
+Se hai toccato sw.js o VERSIONE_APP, controlla che i due numeri coincidano
+dopo il rebase. Non aprire PR e non iscriverti a notifiche.
+```
+
 ## Sessione UX
 
 ```
