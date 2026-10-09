@@ -2,94 +2,114 @@
 
 *Change shifts. Keep your plans.*
 
-Durata: circa 2 minuti e 40 secondi letto con calma (circa 420 parole).
-In ogni scena la colonna **Schermo** dice cosa riprendere, la colonna **Voce** cosa dire.
-Il tono è quello di un collega che racconta una cosa bella che ha costruito, non di una pubblicità.
+Durata: circa 3 minuti letto con calma.
+Il video ha due parti. La prima presenta l'app intera in un minuto. La seconda la attraversa pagina per pagina, nell'ordine della barra in basso.
+In ogni scena **Schermo** dice cosa riprendere, **Voce** cosa dire. Il tono è quello di un collega che presenta una cosa che ha costruito: semplice, ma con il ritmo di un lancio.
 
 ---
 
-## 1. Apertura (0:00 – 0:15)
+# Parte 1: l'app in un minuto
 
-**Schermo:** chat di gruppo piena di messaggi tipo "qualcuno mi cambia sabato?", poi schermo nero e logo Liberty Shift.
+## 1. Apertura (0:00 – 0:12)
+
+**Schermo:** chat di gruppo piena di "qualcuno mi cambia sabato?", poi schermo nero e logo.
 
 **Voce:**
 > Quante volte avete scritto nel gruppo "qualcuno mi cambia sabato?" e il messaggio è sparito sotto altri cinquanta?
-> Ecco, da oggi c'è un modo più semplice. Si chiama Liberty Shift.
+> Da oggi c'è un modo più semplice. Si chiama Liberty Shift.
+
+## 2. Che cos'è (0:12 – 0:30)
+
+**Schermo:** Safari, "Aggiungi alla schermata Home", l'icona che compare, l'app che si apre.
+
+**Voce:**
+> Liberty Shift è l'app per cambiare turno tra colleghi del nostro store.
+> Si apre da Safari, si aggiunge alla schermata Home e da lì funziona come un'app vera.
+> Vi iscrivete con il codice dello store, scegliete il vostro contratto, e siete dentro.
+
+## 3. Come funziona, in tre passi (0:30 – 0:55)
+
+**Schermo:** tre schede che scorrono: il mese con i turni, la lista dei colleghi con le percentuali, la scheda "Cambio fatto".
+
+**Voce:**
+> Funziona in tre passi.
+> Uno: i vostri turni arrivano da soli dal calendario aziendale.
+> Due: chiedete un cambio, o ne aiutate uno, e l'app vi mostra solo i colleghi con cui funziona davvero.
+> Tre: vi mettete d'accordo con un tocco e lo inserite su UKG. Fatto.
+
+## 4. La barra in basso (0:55 – 1:05)
+
+**Schermo:** dito che tocca le cinque voci una dopo l'altra.
+
+**Voce:**
+> Tutto sta in cinque pagine: Home, Calendario, Bacheca, Proposte e Profilo. Vediamole una per una.
 
 ---
 
-## 2. Cos'è (0:15 – 0:30)
+# Parte 2: pagina per pagina
 
-**Schermo:** Home dell'app, scorrendo piano.
+## 5. Home (1:05 – 1:20)
 
-**Voce:**
-> È un'app fatta per noi, per il nostro store. Serve a una cosa sola: cambiare turno con un collega senza impazzire.
-> La aprite da Safari, la aggiungete alla schermata Home e funziona come un'app vera.
-
----
-
-## 3. I tuoi turni, da soli (0:30 – 0:50)
-
-**Schermo:** Profilo, "Sincronizza turni", incolla l'indirizzo del calendario, poi il mese che si riempie.
+**Schermo:** Home, con "I tuoi cambi", i due riquadri e "Ultime richieste"; tocco sulla stella in alto.
 
 **Voce:**
-> La prima cosa da fare è collegare il calendario dell'app aziendale. Una volta sola.
-> Da lì i vostri turni arrivano da soli e si aggiornano ogni volta che aprite l'app. Niente da ricopiare a mano.
+> La Home vi dice subito cosa vi riguarda: i vostri cambi in corso e le ultime richieste dei colleghi.
+> La stella in alto è la priorità: mette la vostra richiesta in cima alla bacheca per due giorni.
 
----
+## 6. Cambio rapido (1:20 – 1:35)
 
-## 4. Cambio rapido (0:50 – 1:15)
-
-**Schermo:** Cambio rapido, tocco su un turno, compare la lista dei colleghi con la percentuale.
+**Schermo:** Cambio rapido, tocco su un turno, compare la lista con le percentuali.
 
 **Voce:**
-> Avete un turno che non potete fare? Lo toccate, e l'app vi dice subito chi può prenderlo.
-> Sia chi lavora quel giorno con un orario diverso, sia chi è a casa e può scambiare il giorno libero.
-> La percentuale vi dice quanto il cambio va bene a tutti e due, e sotto c'è scritto il perché.
+> Cambio rapido è il modo più veloce: toccate il turno che non potete fare e vedete chi può prenderlo.
+> Chi lavora quel giorno con un orario diverso, o chi è a casa e può scambiare il giorno libero. La percentuale dice quanto va bene a tutti e due.
 
----
+## 7. Aiuta un collega (1:35 – 1:55)
 
-## 5. Proporre e accettare (1:15 – 1:40)
-
-**Schermo:** "Proponi lo scambio", poi la notifica sull'altro telefono, poi la scheda "Cambio fatto".
+**Schermo:** il riquadro rosa, poi la pagina con le etichette "Ti conviene" e "Per te non cambia niente".
 
 **Voce:**
-> Scegliete il collega e proponete lo scambio. Lui riceve una notifica e risponde con un tocco.
-> Se ricevete più proposte, in cima trovate quella più vicina a quello che avete chiesto. Ne accettate una e agli altri arriva un avviso gentile.
-> Una regola sola, importante: il cambio vale quando lo inserite su UKG. L'app ve lo ricorda, e quando UKG lo approva se ne accorge da sola.
+> Aiuta un collega fa il contrario: vi mostra le richieste che potete coprire con i vostri turni, prima quelle più comode per voi.
+> Ogni cambio approvato vi dà una priorità in più. E se qualcuno vi ha aiutato, l'app ve lo ricorda quando potete ricambiare.
 
----
+## 8. Calendario (1:55 – 2:05)
 
-## 6. Aiuta un collega (1:40 – 2:05)
-
-**Schermo:** Home con il riquadro rosa, poi la schermata "Aiuta un collega" con le etichette "Ti conviene" e "Per te non cambia niente".
+**Schermo:** Calendario pubblico, con le barre colorate sui giorni; tocco su un giorno.
 
 **Voce:**
-> Poi c'è la parte che preferisco: Aiuta un collega.
-> Qui vedete solo le richieste che potete coprire con i vostri turni, prima quelle più comode per voi.
-> E aiutare conviene: ogni cambio approvato vi dà una priorità in più, per mettere in cima la vostra prossima richiesta.
-> E se qualcuno vi ha dato una mano, l'app ve lo ricorda quando potete ricambiare.
+> Il Calendario mostra il mese del negozio: chi cerca un cambio, chi offre, giorno per giorno. Toccate un giorno e vedete subito chi potete aiutare.
 
----
+## 9. Bacheca (2:05 – 2:15)
 
-## 7. Preferenze e notifiche (2:05 – 2:25)
-
-**Schermo:** Preferenze con Evito, Indifferente, Preferisco; poi una notifica "Un cambio che ti conviene".
+**Schermo:** Bacheca, filtri Tutti, Orario e OFF, le proprie richieste in cima.
 
 **Voce:**
-> Nelle preferenze dite quali turni evitate e quali preferite, anche giorno per giorno, e se volete il weekend libero.
-> Se volete, l'app vi avvisa solo quando esce un cambio che vi conviene davvero. Niente bombardamento.
-> E le vostre preferenze non le vede nessun altro.
+> In Bacheca ci sono tutte le richieste aperte, divise per cambio di orario o di giorno libero. Le vostre le trovate in cima.
 
----
+## 10. Proposte (2:15 – 2:35)
 
-## 8. Chiusura (2:25 – 2:40)
-
-**Schermo:** logo, motto, indirizzo del sito o QR code.
+**Schermo:** Proposte, la più vicina segnata in cima, tocco su "Accetta", poi la scheda "Cambio fatto".
 
 **Voce:**
-> Liberty Shift. Change shifts, keep your plans.
-> Lo trovate a questo indirizzo: provatelo, e se qualcosa non va, ditemelo. L'abbiamo fatto per noi, e lo miglioriamo insieme.
+> In Proposte arriva chi vi propone uno scambio. La più vicina a quello che avete chiesto sta in cima; ne accettate una e gli altri ricevono un avviso gentile.
+> Una regola sola: il cambio vale quando è su UKG. L'app ve lo ricorda, e quando UKG lo approva se ne accorge da sola.
+
+## 11. Profilo (2:35 – 2:55)
+
+**Schermo:** il proprio mese, tocco su un giorno con le scelte "Cambia orario", "Richiedi OFF", "Cedi OFF"; poi Sincronizza turni, Preferenze, Notifiche, i grazie ricevuti.
+
+**Voce:**
+> Il Profilo è casa vostra. Qui c'è il vostro mese: toccate un giorno per cambiare orario, chiedere un OFF o cederlo.
+> Da qui collegate il calendario aziendale, dite quali turni preferite o evitate, anche giorno per giorno, e scegliete le notifiche: anche solo per i cambi che vi convengono davvero.
+> E qui trovate i grazie dei colleghi che avete aiutato. Le vostre preferenze, invece, non le vede nessuno.
+
+## 12. Chiusura (2:55 – 3:05)
+
+**Schermo:** il punto di domanda in una pagina, poi logo, motto, indirizzo o QR code.
+
+**Voce:**
+> Se vi perdete, il punto di domanda in alto vi spiega ogni pagina.
+> Liberty Shift. Change shifts, keep your plans. Provatela, e ditemi cosa migliorare: l'abbiamo fatta per noi.
 
 ---
 
@@ -102,5 +122,6 @@ Il tono è quello di un collega che racconta una cosa bella che ha costruito, no
 ## Consigli per le riprese
 
 - Usate un profilo demo o nascondete nomi e turni veri dei colleghi prima di registrare.
-- Registrate lo schermo del telefono in verticale e montate le scene con tagli netti: una funzione, una scena.
-- Una musica leggera sotto la voce aiuta il tono "lancio" senza diventare pubblicità.
+- Registrate lo schermo del telefono in verticale e montate con tagli netti: una pagina, una scena.
+- Nella seconda parte tenete visibile la barra in basso, con la voce attiva evidenziata: aiuta a capire dove si è.
+- Se il video supera i tre minuti, le scene 8 e 9 si possono unire in una sola.
