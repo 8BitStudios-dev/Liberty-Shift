@@ -229,9 +229,9 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   display: inline-block; width: 9px; height: 9px; border-radius: 50%;
   margin-right: 2px; vertical-align: 0; background: var(--testo-tenue);
 }
-.stato-APERTA .pallino-stato { background: var(--oro); }
+.stato-APERTA .pallino-stato { background: var(--rapido-segno); }
 .stato-PROPOSTA .pallino-stato { background: var(--accento); }
-.stato-IN_ATTESA .pallino-stato { background: var(--ambra); }
+.stato-IN_ATTESA .pallino-stato { background: var(--testo-tenue); }
 .stato-ACCORDO .pallino-stato { background: var(--prendo); }
 .stato-RIMOSSA .pallino-stato { background: var(--rosso); }
 .perche { font-size: 14px; line-height: 1.55; }
@@ -329,9 +329,10 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .stato-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 650; padding: 3px 10px; border-radius: var(--raggio-pill); white-space: nowrap; margin-top: 2px; }
 .stato-pill .pallino-stato { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: currentColor; margin-right: 0; }
 .stato-pill.rosso { color: var(--rosso); background: color-mix(in srgb, var(--rosso) 14%, transparent); }
-.stato-pill.ambra { color: var(--ambra); background: color-mix(in srgb, var(--ambra) 16%, transparent); }
+.stato-pill.grigio { color: var(--testo-tenue); background: color-mix(in srgb, var(--testo-tenue) 16%, transparent); }
 .stato-pill.verde { color: var(--concordato-segno); background: var(--concordato); }
-.stato-pill.oro { color: var(--oro); background: color-mix(in srgb, var(--oro) 15%, transparent); }
+.stato-pill.oro { color: var(--da-cambiare-segno); background: color-mix(in srgb, var(--rapido-segno) 38%, transparent); }
+.stato-pill.oro .pallino-stato { background: var(--rapido-segno); }
 .stato-pill.blu { color: var(--accento); background: var(--accento-tenue); }
 .lista-cambi, .lista-turni { border: 0; box-shadow: var(--ombra); }
 .riga-cambio, .riga-turno {

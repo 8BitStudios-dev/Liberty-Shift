@@ -965,7 +965,7 @@ tipo (icona e scritta, viola l'orario e arancio OFF), poi il nome di chi è
 dall'altra parte (o "La tua richiesta"), cosa prendi e cosa lasci in una frase e
 lo stato in una pillola tono su tono. Per l'orario la frase dice le ore, perché
 il giorno è lo stesso; per OFF dice i giorni. Gli stati: rosso "Ti aspetta una
-risposta", ambra "In attesa di…", verde "Concordato, manca UKG", oro "Aperta".
+risposta", grigio "In attesa di…", verde "Concordato, manca UKG", giallo vivo "Aperta".
 Prima vengono i cambi che aspettano una tua risposta, poi gli altri.
 
 ## Le tre forme

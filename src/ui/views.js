@@ -82,7 +82,7 @@ export function home() {
     // problema che non c'è.
     const stato = accordo
       ? pillolaStato('verde', 'Concordato, manca UKG')
-      : inAttesaDiMe ? pillolaStato('rosso', 'Ti aspetta una risposta') : pillolaStato('ambra', `In attesa di ${nomeUtente(altro)}`);
+      : inAttesaDiMe ? pillolaStato('rosso', 'Ti aspetta una risposta') : pillolaStato('grigio', `In attesa di ${nomeUtente(altro)}`);
     // Il turno offerto è di chi propone; il turno ceduto è dell'autore della richiesta.
     const autoreSono = r?.userId === me.id;
     const offerto = store.shift(p.shiftOffertoId);
@@ -96,7 +96,7 @@ export function home() {
   const righeMiei = miei.map((r) => {
     const off = r.tipo === TIPO_CAMBIO.OFF;
     const cerco = off ? (r.cerco.giorni || []).map((g) => formatDay(g)).join(' o ') : wantLabel(r.cerco);
-    const tono = { APERTA: 'oro', PROPOSTA: 'blu', IN_ATTESA: 'ambra', ACCORDO: 'verde' }[r.status] || 'oro';
+    const tono = { APERTA: 'oro', PROPOSTA: 'blu', IN_ATTESA: 'grigio', ACCORDO: 'verde' }[r.status] || 'oro';
     return {
       urgente: false,
       html: riga({
