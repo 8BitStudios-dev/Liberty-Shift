@@ -1044,3 +1044,6 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   width: 16px; height: 16px; right: 30px; bottom: 10px; transform: rotate(14deg); opacity: .9;
 }
 .tag.ultima { background: color-mix(in srgb, var(--rosso) 16%, transparent); color: var(--rosso); font-weight: 700; }
+
+/* Problemi comuni: il messaggio è il titolo, il rimedio si apre sotto. */
+.riquadro.problema p { margin: 8px 0 2px; }

@@ -563,6 +563,14 @@ export function impostazioni() {
         </span>
         <span class="chevron">›</span>
       </button>
+      <button class="tile" data-act="vai" data-to="#/problemi">
+        <span class="tile-icona">${raw(icona('avviso'))}</span>
+        <span>
+          <strong>Problemi comuni</strong>
+          <em>I messaggi di errore e come risolverli</em>
+        </span>
+        <span class="chevron">›</span>
+      </button>
       ${raw(store.state.profilo?.idServer ? `
         <button class="tile" data-act="invita">
           <span class="tile-icona">${icona('invita')}</span>
@@ -574,6 +582,68 @@ export function impostazioni() {
         </button>` : '')}
     </section>
     <p class="versione-app">Ver: ${VERSIONE_APP}</p>`;
+}
+
+/**
+ * I messaggi di errore che si possono incontrare, e cosa fare.
+ *
+ * Gli stessi rimedi sono già dentro i messaggi: qui stanno tutti insieme, per
+ * chi ha visto un avviso sparire prima di finire di leggerlo, o vuole sapere
+ * prima cosa fare. Quando un messaggio cambia, cambia anche qui.
+ */
+const PROBLEMI = [
+  ['Rete e collegamento', [
+    ['Server irraggiungibile', 'Controlla Wi-Fi o dati mobili e riprova quando hai campo. I tuoi turni restano sul telefono, e quello che hai fatto parte appena torna la rete.'],
+    ['Sessione scaduta, oppure Non sei collegato allo store', 'Vai in Profilo, tocca Esci e rientra con la tua password. I turni e le richieste non si perdono.'],
+    ['Non hai accesso a questo dato', 'Se il dato è tuo, vai in Profilo, tocca Esci e rientra con la tua password.'],
+    ['Esiste già', 'Probabilmente hai toccato due volte. Aggiorna la pagina e dovresti vederlo.'],
+    ['Il server ha un problema, oppure Errore con un numero', 'Riprova fra qualche minuto. Se continua, avvisa un admin.'],
+    ['Errore nel telefono', 'Ricarica la pagina. Se resta, avvisa un admin.'],
+  ]],
+  ['Calendario dei turni', [
+    ['Il collegamento al calendario non funziona più', 'Il link dell\'app aziendale scade dopo qualche settimana. Creane uno nuovo nell\'app aziendale e incollalo in Profilo, Sincronizza turni.'],
+    ['Nessun calendario collegato', 'Collegalo da Profilo, Sincronizza turni: si fa una volta sola.'],
+    ['Nessun turno nel calendario, oppure Niente da importare', 'Controlla nell\'app aziendale di avere turni nelle prossime settimane, poi riprova.'],
+    ['Non sembra un calendario', 'Copia di nuovo il link del calendario dall\'app aziendale: forse ne è stato copiato solo un pezzo.'],
+    ['Questo è l\'indirizzo del calendario, non il suo contenuto', 'Incollalo nel campo dell\'indirizzo e tocca Scarica.'],
+    ['I turni non sono aggiornati', 'Tocca il tasto per aggiornare in Profilo. Se un cambio approvato su UKG non compare, UKG può metterci un po\'.'],
+  ]],
+  ['Accesso e iscrizione', [
+    ['Password sbagliata', 'Riprova, controllando maiuscole e minuscole. Se non la ricordi, tocca Ho dimenticato la password: un admin te ne darà una temporanea.'],
+    ['Codice dello store sbagliato', 'Sono le cifre dopo la R. Se non lo sai, chiedilo a un collega o a un admin.'],
+    ['Non trovo nessun account con questo nome e cognome', 'Scrivili esattamente come all\'iscrizione, con gli stessi accenti.'],
+    ['Esiste già un account con questo nome e cognome', 'Se sei tu, torna al primo passo e scegli Rientra con la mia password.'],
+    ['Serve la rete', 'La password la custodisce il server: riprova quando hai campo.'],
+  ]],
+  ['Richieste e proposte', [
+    ['Hai già usato tutte le priorità di questo mese', 'Pubblica senza priorità, oppure aiuta un collega: ogni cambio approvato su UKG te ne dà una in più.'],
+    ['Hai già una proposta aperta su questa richiesta', 'La trovi in Proposte. Ritirala se vuoi farne un\'altra.'],
+    ['Hai già una richiesta aperta di questo tipo su questo turno', 'La trovi toccando quel giorno nel tuo calendario, nel Profilo.'],
+    ['Non hai un turno da offrire su quel giorno', 'Aggiorna i turni da Profilo, Sincronizza turni, oppure scegli un altro giorno.'],
+    ['Richiesta, proposta o persona non trovata', 'Forse è stata chiusa, cancellata o ritirata nel frattempo. Aggiorna la pagina.'],
+  ]],
+  ['Notifiche', [
+    ['Le hai bloccate', 'Riattivale da Impostazioni del telefono, Notifiche, Liberty Shift.'],
+    ['Il telefono non ha accettato l\'iscrizione', 'Riprova fra poco, aprendo Liberty Shift dall\'icona sulla schermata Home e non da Safari.'],
+    ['Non arrivano notifiche', 'Su iPhone arrivano solo se Liberty Shift è aggiunto alla schermata Home e lo apri da lì. Controlla poi il pannello Notifiche nel Profilo.'],
+    ['Prima scegli almeno una preferenza', 'Gli avvisi sui cambi che ti convengono partono dalle tue preferenze: sceglile in Profilo, Preferenze.'],
+  ]],
+];
+
+export function problemi() {
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/impostazioni">‹</button>
+      <h1>Problemi comuni</h1>
+    </header>
+    <p class="occhiello">Hai visto un messaggio di errore? Cercalo qui sotto: per ognuno c'è cosa fare. Se non risolvi, avvisa un admin.</p>
+    ${raw(PROBLEMI.map(([gruppo, voci]) => html`
+      <h2 class="titolo-gruppo">${gruppo}</h2>
+      ${raw(voci.map(([messaggio, rimedio]) => html`
+        <details class="riquadro problema">
+          <summary><span>${messaggio}</span></summary>
+          <p>${rimedio}</p>
+        </details>`).join(''))}`).join(''))}`;
 }
 
 /**
