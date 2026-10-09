@@ -241,7 +241,7 @@ const GRUPPI_GIORNO = [
 const FILTRI = {
   TUTTI: { label: 'Tutti', icona: null, test: () => true },
   ORARIO: { label: 'Orario', icona: 'orario', test: (r) => r.tipo === TIPO_CAMBIO.ORARIO },
-  OFF: { label: 'OFF', icona: 'calendario', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
+  OFF: { label: 'OFF', icona: 'ombrellone', test: (r) => r.tipo === TIPO_CAMBIO.OFF },
 };
 
 export function bacheca(params) {
@@ -262,7 +262,7 @@ export function bacheca(params) {
     </header>
     <div class="chips">
       ${Object.entries(FILTRI).map(([k, v]) => raw(
-    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 16 }) : ''}${v.label}</button>`,
+    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-filtro="${k}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 16 }) : ''}${v.label}</button>`,
   ))}
       <button class="tasto-ordine" data-act="ordine-bacheca" aria-pressed="${ordineColleghi.dalMenoRecente ? 'true' : 'false'}"
               title="${ordineColleghi.dalMenoRecente ? 'Dalla meno recente: tocca per partire dalla più recente' : 'Dalla più recente: tocca per partire dalla meno recente'}"

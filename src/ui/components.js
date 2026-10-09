@@ -16,7 +16,7 @@ import { icona } from './icone.js';
  * `TIPO_META` in rules.js porta ancora un'emoji: è il dato del regolamento,
  * condiviso col server, e qui si sceglie solo come mostrarlo.
  */
-const ICONA_TIPO = { ORARIO: 'orario', OFF: 'calendario' };
+const ICONA_TIPO = { ORARIO: 'orario', OFF: 'ombrellone' };
 export function iconaTipo(tipo, px = 14) {
   return `<span class="icona-in-riga">${icona(ICONA_TIPO[tipo] || 'orario', { px })}</span>`;
 }

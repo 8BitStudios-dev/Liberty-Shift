@@ -345,6 +345,10 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   padding: 4px 11px; border-radius: var(--raggio-pill);
 }
 .tipo-pill[data-tipo] { font-weight: 600; }
+/* I filtri della Bacheca portano il colore del tipo che filtrano, da spenti:
+   da accesi il fondo pieno dice già che sono scelti. */
+.chip[data-filtro="ORARIO"]:not(.attivo) { color: var(--orario); }
+.chip[data-filtro="OFF"]:not(.attivo) { color: var(--cerca-off); }
 
 .scambio-secco > div { font-size: 15px; padding: 8px 0; border-bottom: 1px solid var(--filetto); }
 .scambio-secco > div:last-child { border-bottom: 0; }
