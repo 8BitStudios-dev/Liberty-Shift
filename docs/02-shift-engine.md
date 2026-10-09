@@ -52,7 +52,7 @@ per ogni collega che ha un turno quel giorno:
     se ha una richiesta di cambio orario aperta su quel giorno:
         mioPerLui = adatta(mioTurno, lui)
         se non soddisfa quello che cerca lui -> scarta
-        score = media dei due            -> MATCH
+        score = quanto va bene a chi guarda   -> MATCH
     altrimenti:
         score = suo punteggio, tagliato a 75  -> POTENZIALE
         se ha anche dichiarato disponibilità quel giorno: +10
@@ -106,6 +106,28 @@ non solo confermare chi si era già offerto. Le preferenze da evitare abbassano
 molto il punteggio (`RULES.evitaPenalty`) invece di escludere il turno: un
 match altrimenti forte resta visibile, solo più in basso.
 
+## La percentuale è di chi guarda
+Ognuno vede quanto lo scambio conviene **a lui**, e basta (`punteggioDi` in
+`engine.js`): quanto il turno che riceverebbe soddisfa quello che cerca, le
+sue preferenze, il costo del suo adattamento di ore. Le preferenze dell'altro
+non entrano nel suo numero, e sul telefono non ci sono nemmeno: dei colleghi
+scendono vuote. La stessa coppia può quindi mostrare due percentuali diverse
+sui due telefoni, ed è voluto: a Marco non interessa che Lorenzo eviti le
+chiusure, e a Lorenzo non interessa che Marco preferisca le mattine.
+
+- Chi ha pubblicato la richiesta parte da quanto il turno del collega
+  soddisfa quello che cerca.
+- Il collega parte da quanto il turno ricevuto soddisfa la **sua** richiesta,
+  se ne ha una; dal calendario, senza richiesta, parte dal tetto di 75 (non
+  ha chiesto niente, quindi va bene tutto, ma non ha nemmeno detto di volerlo).
+- Chi non è nessuno dei due (le notifiche sul server, un admin che guarda la
+  richiesta di altri) vede il conto della coppia: la media dei due lati e il
+  peso di entrambi.
+
+Quello che è dell'altro resta nella lista solo come informazione: se ha una
+richiesta pubblicata (origine `RICHIESTA` contro `CALENDARIO`) e se si è
+dichiarato disponibile, che vale il bonus.
+
 ## Adattamento del turno
 Prima di calcolare il punteggio, ogni turno viene trasformato in quello che la
 persona lavorerebbe davvero (R9): con le **ore del turno che sta lasciando**,
@@ -118,7 +140,8 @@ qualcosa che finisca entro le 15:00 trova un 09:00–18:00, perché per lui
 diventa 09:00–14:00: il confronto ingenuo sull'orario originale l'avrebbe
 scartato.
 
-L'adattamento costa 5 punti e viene spiegato fra le ragioni del match. Restano
+L'adattamento costa 5 punti a chi lo subisce e viene spiegato fra le ragioni
+del match. Restano
 segnalati senza essere risolti: le notti e gli adattamenti che uscirebbero dalla
 fascia oraria dello store.
 
