@@ -623,7 +623,10 @@ L'eccezione è il **favore da ricambiare**: se l'autore ti ha aiutato negli
 ultimi 90 giorni (un accordo sulla tua richiesta, letto da `proposte` e
 `richieste` con `chiHaiAiutato` in `karma.js`), l'avviso arriva anche quando
 il cambio non ti conviene, purché non ti pesi (`costoDelCambio`). Il titolo è
-"Puoi ricambiare un favore". Il favore si legge solo dal server, che vede
+"💗 Puoi ricambiare un favore": il colore di una notifica lo decide il
+telefono, e il cuore rosa è l'unico segno che la distingue anche su iPhone.
+Toccandola si apre la richiesta (`#/richiesta?id=…`), da cui si propone lo
+scambio, e non la lista di Aiuta un collega. Il favore si legge solo dal server, che vede
 già le proposte. Questi avvisi si spengono dal pannello Notifiche: la scelta
 (`favori`) viaggia **dentro la parte cifrata**, accanto a turni e
 preferenze, e non in una colonna; una riga cifrata prima che la scelta

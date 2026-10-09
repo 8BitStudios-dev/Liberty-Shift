@@ -443,8 +443,12 @@ async function avvisaCompatibili(riga: RigaRichiesta, esclusi: Set<string> = new
     const body = riga.tipo === 'OFF'
       ? `${apertura} vuole libero ${formatData(riga.cedo_data)} e in cambio lavorerebbe ${formatData(t.giorno)}. Quel giorno tu non lavori: potete scambiarvi le due giornate.`
       : `${apertura} cerca un cambio orario per ${formatData(riga.cedo_data)}: il tuo turno dalle ${t.turno?.start} alle ${t.turno?.end} potrebbe andare bene.`;
-    const title = favore ? 'Puoi ricambiare un favore' : 'Un cambio che ti conviene';
-    const esito = await invia(t.userId, { title, body, url: '#/aiuta' });
+    // Il colore di una notifica lo decide il telefono, e su iPhone non si
+    // tocca: il cuore rosa nel titolo è l'unico segno che si vede ovunque, ed
+    // è lo stesso dei ringraziamenti. Il favore apre la richiesta, non la
+    // lista: chi la riceve sa già per chi è, e da lì propone in un tocco.
+    const title = favore ? '💗 Puoi ricambiare un favore' : 'Un cambio che ti conviene';
+    const esito = await invia(t.userId, { title, body, url: favore ? `#/richiesta?id=${riga.id}` : '#/aiuta' });
     if (esito.inviate || esito.rimosse) notificati.push(t.userId);
     inviate += esito.inviate;
   }

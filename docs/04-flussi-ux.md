@@ -378,7 +378,7 @@ schermata risponde a tutte e due le domande.
   sale in cima. Dall'altro lato, fra i colleghi che possono prendere il tuo
   turno, chi hai aiutato tu sta per primo, con "Hai aiutato Giulia a
   settembre". Chi riceve gli avvisi dei cambi che convengono riceve anche
-  "Puoi ricambiare un favore", e lo può spegnere da solo con un interruttore
+  "💗 Puoi ricambiare un favore", che apre direttamente la richiesta, e lo può spegnere da solo con un interruttore
   nel pannello Notifiche. Il favore lo vedono solo le due persone che l'hanno fatto:
   niente classifiche, che in un negozio mettono in imbarazzo chi ha vincoli
   veri.
