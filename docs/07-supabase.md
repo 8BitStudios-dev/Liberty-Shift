@@ -698,7 +698,31 @@ per tutti:
   la propria proposta"): una già concordata si annulla, non si cancella;
 - **un accordo per richiesta** (`proposte_un_accordo_per_richiesta`);
 - **una richiesta aperta per tipo e giorno** per persona
-  (`richieste_una_aperta_per_giorno`).
+  (`richieste_una_aperta_per_giorno`);
+- **cosa si scrive, non solo chi** (`limita_scritture_richiesta`,
+  `limita_scritture_proposta`, e il controllo della policy "si propone solo a
+  proprio nome"). Bastava una proposta su una richiesta per poterla riscrivere
+  tutta, e una proposta nasceva con il destinatario, lo stato e i sì scelti dal
+  telefono. Ora:
+  - chi ha solo una proposta su una richiesta ne cambia lo stato e la data di
+    chiusura, e basta; l'accordo e la chiusura solo se l'accordo con lui c'è,
+    mai "rimossa" o "scaduta". Autore, creazione e la firma di un admin non li
+    cambia nessuno;
+  - una proposta nuova va all'autore della richiesta, mai a sé stessi, nasce
+    in attesa con il proprio sì e senza annullamento, conferma, promemoria o
+    cambio inserito;
+  - su una proposta fra chi e su cosa non cambia più; il turno e il messaggio
+    li cambia solo chi l'ha fatta, chi la riceve tocca solo il proprio sì,
+    l'accordo vale con tutti e due i sì e riaprirla spetta a chi l'aveva fatta.
+
+  I trigger guardano solo le scritture dirette del client (`current_user` è
+  `authenticated`): le funzioni `security definer` come `turno_impegnato` e
+  la pulizia, SQL Editor e gli admin passano come prima. Quello che non è
+  ammesso torna al valore di prima invece di dare errore: un errore resterebbe
+  in testa alla coda del telefono e bloccherebbe tutto quello che c'è dietro.
+  **Resta un punto di fiducia**: nel cambio diretto chi propone mette anche il
+  sì dell'altro, perché il turno è proprio quello chiesto. Controllarlo qui
+  vorrebbe dire una seconda copia del motore in SQL.
 
 Nella coda del telefono (`svuota` in `src/core/sincronia.js`) un
 aggiornamento che non tocca nessuna riga, o che va in conflitto (409), non

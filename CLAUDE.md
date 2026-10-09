@@ -96,6 +96,13 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   (`auth.role() in ('anon', 'authenticated')`), e lascia passare tutto il
   resto.
 
+- **Una colonna nuova su `richieste` o `proposte` la può scrivere anche
+  l'altra parte**, finché non la si aggiunge all'elenco di quelle che restano
+  ferme in `limita_scritture_richiesta`/`limita_scritture_proposta` (in fondo
+  a `schema.sql`). Quei trigger non danno errore, riportano il valore di
+  prima: una scrittura che sembra riuscita e alla discesa torna indietro
+  viene probabilmente da lì.
+
 - **Il database non legge `schema.sql` da solo.** Una correzione che sta nel
   file arriva sul server solo quando qualcuno lo rilancia da SQL Editor: al
   lancio il trigger dei privilegi era ancora quello vecchio, settimane dopo la sua
