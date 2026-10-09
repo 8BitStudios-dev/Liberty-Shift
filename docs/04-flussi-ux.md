@@ -205,7 +205,7 @@ riceve la notifica "Proposta ritirata" e la vede sparire alla prossima
 sincronizzazione. La notifica parte dal trigger `notifica_proposta`, che
 ascolta anche le cancellazioni ma avvisa solo quando a cancellare una
 proposta ancora in attesa è chi l'aveva fatta: le cancellazioni a cascata
-(pulizia dei 90 giorni, richiesta tolta dal suo autore) non sono un ritiro. Sul server
+(pulizia dei 100 giorni, richiesta tolta dal suo autore) non sono un ritiro. Sul server
 la cancellazione è permessa solo a chi l'ha fatta; prima si riporta la
 richiesta del collega allo stato giusto, perché quella si può aggiornare solo
 finché la proposta che vi lega esiste.
@@ -359,43 +359,23 @@ schermata: non "chi può prendere il mio turno" ma "di chi posso risolvere il
 problema io". Compaiono solo le richieste che i tuoi turni risolvono davvero:
 in una schermata che esiste per aiutare, le altre sarebbero rumore.
 
-Mostrare quanto eri adatto non bastava a far dire di sì: il conto di quanto ti
-pesava lo dovevi fare da solo, e nessuno ti diceva cosa ci guadagnavi. Oggi la
-schermata risponde a tutte e due le domande.
+L'ordine è semplice di proposito (`occasioniDiAiuto` in `karma.js`): prima le
+**ultime chiamate** (turno entro 3 giorni, richiesta in bacheca da almeno 3
+senza accordo, `RULES.ultimaChiamata`), poi tutte le altre; in tutte e due da
+quella che aspetta da più tempo, a parità dal turno più vicino. Le ultime
+chiamate hanno un bollino rosso, che non dà priorità a nessuno.
 
-- **Quanto ti costa** (`costoDelCambio` in `compatibili.js`, dalle tue
-  preferenze), scritto sopra ogni card: *Ti conviene*, *Per te non cambia
-  niente* (stessa fascia, o una che ti è indifferente), *Ti costa poco* (lasci
-  una fascia che preferisci per una che non eviti). Un cambio che pesa
-  (prendi una fascia che eviti, un giorno che vorresti OFF, un turno oltre il
-  tuo limite) non ha etichetta e va in fondo. Senza preferenze l'app dice
-  solo "non cambia niente" a parità di fascia, e invita a impostarle.
-- **Cosa ci guadagni**: ogni cambio sulla richiesta di un collega, una volta
-  approvato su UKG, vale una priorità in più in quel mese, fino al tetto
-  (R14). Il riquadro in cima dice a che punto sei e quanti cambi aspettano
-  ancora UKG; "Cambio fatto" lo ricorda.
-- **Chi ricambiare**: se un collega ti ha aiutato negli ultimi 90 giorni, la
-  sua richiesta porta "Giulia ti ha aiutato a settembre: puoi ricambiare" e
-  sale in cima. Dall'altro lato, fra i colleghi che possono prendere il tuo
-  turno, chi hai aiutato tu sta per primo, con "Hai aiutato Giulia a
-  settembre". Chi riceve gli avvisi dei cambi che convengono riceve anche
-  "Puoi ricambiare un favore", e lo può spegnere da solo con un interruttore
-  nel pannello Notifiche. Il favore lo vedono solo le due persone che l'hanno fatto:
-  niente classifiche, che in un negozio mettono in imbarazzo chi ha vincoli
-  veri.
+Niente altro: niente percentuale, niente stella della priorità, niente
+etichette di costo o di favore. Un ordine che cambiava da persona a persona,
+con quattro etichette da leggere, era più difficile da capire che da usare.
+In cima resta il riquadro che dice cosa ci guadagni: ogni cambio approvato su
+UKG vale una priorità in più nel mese, fino al tetto (R14).
 
-L'ordine (`occasioniDiAiuto` in `karma.js`): prima le **ultime chiamate**
-(turno entro 3 giorni, richiesta in bacheca da almeno 3 senza accordo,
-`RULES.ultimaChiamata`), da quella che aspetta da più tempo e poi dal turno
-più vicino, anche quando ti pesano: aiutare chi nessuno ha aiutato è il senso
-della schermata. Poi i favori da ricambiare (salvo che ricambiare ti pesi),
-poi dal costo più basso, a parità il punteggio. L'ultima chiamata è solo un
-bollino rosso e un posto in cima: non dà priorità a nessuno.
-
-Qui la priorità non esiste: niente stella e nessun posto in più per chi l'ha
-usata, perché è visibilità in bacheca, non un motivo per aiutare uno prima di
-un altro. E niente percentuale: a dire quanto ti pesa un cambio ci sono le
-etichette.
+Il favore da ricambiare non cambia più l'ordine qui, ma resta come avviso:
+chi riceve gli avvisi dei cambi che convengono riceve anche "💗 Puoi
+ricambiare un favore", che apre direttamente la richiesta, e lo può spegnere
+con un interruttore nel pannello Notifiche. Il favore lo vedono solo le due
+persone che l'hanno fatto: niente classifiche.
 
 ## Da dove arrivano i turni
 La voce "Inserisci i tuoi turni" non sta più in fondo al calendario, dove era un
@@ -608,7 +588,7 @@ arriva al primo grazie.
 
 È il "karma" dell'app, e non è un sistema di punti: conta i grazie ricevuti,
 che esistono solo dopo uno scambio chiuso, uno per persona e per scambio, e
-sopravvivono alla pulizia dei 90 giorni. Sotto, i traguardi: undici gradini
+sopravvivono alla pulizia dei 100 giorni. Sotto, i traguardi: undici gradini
 con un nome (1, 3, 5, 10, 15, 25, 50, 75, 100, 125, 150 grazie, nomi e soglie
 in `RULES.karma`), dal "Primo grazie" alla "Leggenda Liberty". Si vedono quelli
 raggiunti e il prossimo, con l'avanzamento; gli altri si scoprono strada

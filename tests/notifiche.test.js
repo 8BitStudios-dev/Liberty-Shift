@@ -121,3 +121,19 @@ test('il Profilo apre con il calendario: nome e ruolo stanno dietro il bollino',
   assert.match(pannello, /Marco C\./);
   assert.match(pannello, /SuperAdmin/);
 });
+
+test('il favore dura quanto il registro degli aiuti e la pulizia delle richieste', async () => {
+  // Il numero sta in RULES.favore.giorni, ma la pulizia notturna è SQL e non
+  // lo può leggere: se i due divergono, un favore sparisce prima del tempo
+  // promesso o resta oltre. E il registro deve leggerlo send-push, non le
+  // proposte, che se ne vanno con la richiesta.
+  const { RULES } = await import('../src/core/rules.js');
+  const schema = await readFile(new URL('../supabase/schema.sql', import.meta.url), 'utf8');
+  const pulizia = schema.slice(schema.indexOf('function public.pulizia_periodica'), schema.indexOf('revoke all on function public.pulizia_periodica'));
+  const giorni = `interval '${RULES.favore.giorni} days'`;
+  assert.match(pulizia, new RegExp(`from public\\.aiuti\\s+where quando < now\\(\\) - ${giorni}`));
+  assert.match(pulizia, new RegExp(`coalesce\\(chiusa_il, creata_il\\) < now\\(\\) - ${giorni}`));
+  const funzione = await readFile(new URL('../supabase/functions/send-push/index.ts', import.meta.url), 'utf8');
+  assert.match(funzione, /leggi\(\s*`aiuti\?aiutante_id=eq\./);
+  assert.match(funzione, /RULES\.favore\.giorni/);
+});

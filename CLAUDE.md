@@ -110,6 +110,13 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   scaricare per un pomeriggio intero senza nessun avviso. Un `fetch` nuovo
   passa da `chiama`, non si scrive a parte.
 
+- **Il rinnovo della sessione è uno solo alla volta** (`rinnova` in
+  `src/core/supabase.js`). Il server ruota il codice di rinnovo: due rinnovi
+  in parallelo facevano rifiutare il secondo, che cancellava la sessione
+  appena rinnovata dal primo ("Non sei collegato allo store" premendo
+  Aggiorna). E un rinnovo senza risposta (rete, tetto dei 20 secondi) non
+  toglie la sessione: la toglie solo un rifiuto vero del server.
+
 - **Profili, richieste e disponibilità scendono a pezzi** (`scarica` in
   `src/core/sincronia.js`): dopo il primo scaricamento arrivano solo le righe
   con `aggiornato_il` più recente del segno salvato (`state.cursori`), più
@@ -136,9 +143,9 @@ la documentazione che mente è peggio di quella che manca.
   letta, stampata o copiata in una conversazione o nel repository.
 - **`supabase/functions/send-push/core/` è una copia di `src/core/`.** Si
   rigenera con `npm run funzioni` e va ripubblicata la funzione, altrimenti il
-  server ragiona con regole vecchie. Con tutti i commenti i file superano gli 80 KB e il
-  caricamento dal connettore si pianta: si pubblica una copia passata da
-  `typescript.transpileModule` con `removeComments` (stesso codice, circa
-  55 KB), poi si controlla che la funzione risponda 401 senza segreto. `notifiche_preferenze` non va mai aperta
+  server ragiona con regole vecchie. Non si ricopiano i file: dopo il push si
+  pubblica una riga sola che importa `send-push/index.ts` da jsDelivr fissato
+  all'hash del commit (vedi `docs/07-supabase.md`), poi si controlla che la
+  funzione risponda 401 senza segreto. `notifiche_preferenze` non va mai aperta
   in lettura ad admin o colleghi: contiene turni di persone che hanno
   acconsentito solo a questo uso.

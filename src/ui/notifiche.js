@@ -119,7 +119,7 @@ async function attiva(state) {
         applicationServerKey: chiaveInByte(SERVER.chiaveVapidPubblica),
       });
   } catch {
-    return { stato: STATO.DA_ATTIVARE, errore: 'Il telefono non ha accettato l\'iscrizione. Riprova fra poco.' };
+    return { stato: STATO.DA_ATTIVARE, errore: 'Il telefono non ha accettato l\'iscrizione: riprova fra poco, aprendo Liberty Shift dall\'icona sulla schermata Home.' };
   }
 
   const { errore } = await salvaDispositivoPush(state, iscrizione.toJSON());

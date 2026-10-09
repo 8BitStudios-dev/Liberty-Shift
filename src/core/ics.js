@@ -89,12 +89,12 @@ export function parseICS(testo) {
       indirizzo: testo.trim(),
       // Il messaggio si ferma qui: cosa si può fare con quell'indirizzo lo sa
       // la schermata, che sa se c'è un server capace di scaricarlo.
-      errore: "Questo è l'indirizzo del calendario, non il suo contenuto.",
+      errore: "Questo è l'indirizzo del calendario, non il suo contenuto: incollalo nel campo dell'indirizzo e tocca Scarica.",
     };
   }
 
   if (!testo || !/BEGIN:VEVENT/i.test(testo)) {
-    return { turni: [], ignorati: [], errore: 'Non sembra un calendario: manca almeno un evento.' };
+    return { turni: [], ignorati: [], errore: 'Non sembra un calendario: manca almeno un evento. Copia di nuovo il link del calendario dall\'app aziendale.' };
   }
 
   const turni = [];

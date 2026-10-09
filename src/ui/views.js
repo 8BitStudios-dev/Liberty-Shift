@@ -656,7 +656,7 @@ export function corpoNotifiche(stato = statoNoto()) {
           <input type="checkbox" data-act="avvisi-favori" ${raw(store.avvisiFavori() ? 'checked' : '')}>
           <span>
             Anche quando puoi ricambiare un favore
-            <em class="aiuto">Se un collega ti ha aiutato negli ultimi 90 giorni e ora cerca un cambio che puoi coprire, ti avviso anche se non ti conviene, purché non ti pesi.</em>
+            <em class="aiuto">Se un collega ti ha aiutato negli ultimi tre mesi e ora cerca un cambio che puoi coprire, ti avviso anche se non ti conviene, purché non ti pesi.</em>
           </span>
         </label>` : '')}
       ${raw(modo === 'compatibili' && !haPreferenze(store.me.preferenze)

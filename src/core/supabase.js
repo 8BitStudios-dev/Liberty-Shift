@@ -96,11 +96,11 @@ const LIMITE_CHIAMATA_MS = 20000;
  * una row level security.
  */
 async function chiama(percorso, opzioni = {}, { autenticata = true, riprovato = false } = {}) {
-  if (!serverConfigurato()) return { dati: null, errore: 'Il server non è collegato.' };
+  if (!serverConfigurato()) return { dati: null, errore: 'Il server non è collegato: avvisa un admin.' };
 
   const sessione = leggiSessione();
   if (autenticata && !sessione?.access_token) {
-    return { dati: null, errore: 'Sessione scaduta: rientra con la tua password.' };
+    return { dati: null, errore: 'Sessione scaduta: vai in Profilo, tocca Esci e rientra con la tua password.' };
   }
 
   // Un tetto a ogni chiamata, corpo compreso. Su iPhone una richiesta partita
@@ -125,7 +125,7 @@ async function chiama(percorso, opzioni = {}, { autenticata = true, riprovato = 
   } catch {
     // Nessuna risposta affatto, o arrivata a metà: rete assente, server
     // irraggiungibile, o una chiamata rimasta appesa oltre il tetto.
-    return { dati: null, errore: 'Server irraggiungibile. Riprova quando hai campo.' };
+    return { dati: null, errore: 'Server irraggiungibile: controlla Wi-Fi o dati mobili e riprova quando hai campo.' };
   } finally {
     clearTimeout(timer);
   }
@@ -139,7 +139,10 @@ async function chiama(percorso, opzioni = {}, { autenticata = true, riprovato = 
   if (risposta.status === 401 && autenticata && !riprovato && leggiSessione()?.refresh_token) {
     const r = await rinnova();
     if (!r.errore) return chiama(percorso, opzioni, { autenticata, riprovato: true });
-    return { dati: null, errore: 'Sessione scaduta: rientra con la tua password.' };
+    // Senza rete il rinnovo non è fallito, non è partito: la sessione resta,
+    // e lo si dice per quello che è.
+    if (!r.stato) return { dati: null, errore: r.errore };
+    return { dati: null, errore: 'Sessione scaduta: vai in Profilo, tocca Esci e rientra con la tua password.' };
   }
 
   // Lo stato esce insieme all'errore: un 409 su una riga con l'id già nostro
@@ -160,7 +163,7 @@ function traduci(stato, corpo) {
   // senza, un rifiuto motivato diventava un anonimo "Errore 400".
   const grezzo = corpo?.errore || corpo?.message || corpo?.error_description
     || corpo?.msg || corpo?.hint || '';
-  if (stato === 400 && /invalid login/i.test(grezzo)) return 'Password sbagliata.';
+  if (stato === 400 && /invalid login/i.test(grezzo)) return 'Password sbagliata: riprova, oppure tocca «Ho dimenticato la password».';
   // Un rifiuto scritto dalle nostre funzioni (`errore`) dice già il motivo
   // vero, anche con 401 o 403: coprirlo con "non hai accesso" faceva leggere
   // a un admin un permesso mancante invece di "non l'ha chiesta".
@@ -173,16 +176,16 @@ function traduci(stato, corpo) {
   // La chiave della generazione sbagliata: senza questa traduzione l'errore
   // diventa "non hai accesso", e si va a cercare un permesso che non c'entra.
   if (corpo?.code === 'INVALID_API_KEY') {
-    return 'Il server non riconosce la chiave dell\'app: manca la chiave pubblicabile.';
+    return 'Il server non riconosce la chiave dell\'app: avvisa un admin, va aggiornata la chiave pubblicabile.';
   }
   if (stato === 401 || stato === 403) {
     // 401 e 403 qui vogliono dire quasi sempre la stessa cosa: la riga esiste
     // ma non è tua. Dirlo così evita la caccia a un guasto che non c'è.
-    return 'Non hai accesso a questo dato. Se è tuo, prova a rientrare.';
+    return 'Non hai accesso a questo dato. Se è tuo, vai in Profilo, tocca Esci e rientra con la tua password.';
   }
-  if (stato === 409) return 'Esiste già: probabilmente l\'hai fatto due volte.';
-  if (stato >= 500) return 'Il server ha un problema. Riprova fra poco.';
-  return grezzo || `Errore ${stato}.`;
+  if (stato === 409) return 'Esiste già: probabilmente l\'hai fatto due volte. Aggiorna la pagina e dovresti vederlo.';
+  if (stato >= 500) return 'Il server ha un problema: riprova fra qualche minuto. Se continua, avvisa un admin.';
+  return grezzo || `Errore ${stato}: riprova. Se continua, avvisa un admin.`;
 }
 
 // --------------------------------------------------------------- auth
@@ -211,16 +214,41 @@ export async function registra(identificativo, password) {
   return { dati: r.dati, errore: null };
 }
 
-/** Rinnova la sessione scaduta. Il token dura un'ora, l'app molto di più. */
-export async function rinnova() {
+let rinnovoInCorso = null;
+
+/**
+ * Rinnova la sessione scaduta. Il token dura un'ora, l'app molto di più.
+ *
+ * Prima ogni errore cancellava la sessione, e la persona si ritrovava "non
+ * collegata allo store" senza aver fatto niente. Succedeva in due modi:
+ * - la rete che esita (o una chiamata ferma al tetto dei 20 secondi): il
+ *   rinnovo non era fallito, non era nemmeno arrivato al server;
+ * - due rinnovi insieme (il tasto Aggiorna scarica calendario e bacheca in
+ *   parallelo, e scadono tutti e due): il server ruota il codice di rinnovo,
+ *   il secondo arrivava con quello già usato, veniva rifiutato e cancellava
+ *   la sessione nuova appena scritta dal primo.
+ * Ora chi arriva mentre un rinnovo è in corso aspetta quello, e la sessione si
+ * toglie solo se il server rifiuta davvero il codice che è ancora salvato.
+ */
+export function rinnova() {
+  if (!rinnovoInCorso) {
+    rinnovoInCorso = rinnovaDavvero().finally(() => { rinnovoInCorso = null; });
+  }
+  return rinnovoInCorso;
+}
+
+async function rinnovaDavvero() {
   const sessione = leggiSessione();
-  if (!sessione?.refresh_token) return { dati: null, errore: 'Nessuna sessione da rinnovare.' };
+  if (!sessione?.refresh_token) return { dati: null, errore: 'Nessuna sessione da rinnovare: vai in Profilo, tocca Esci e rientra con la tua password.' };
   const r = await chiama('/auth/v1/token?grant_type=refresh_token', {
     method: 'POST',
     body: JSON.stringify({ refresh_token: sessione.refresh_token }),
   }, { autenticata: false });
   if (r.errore) {
-    scriviSessione(null);
+    // Senza `stato` il server non ha risposto: niente da buttare. Con una
+    // risposta, si butta solo se nel frattempo nessuno l'ha già rinnovata.
+    const rifiutata = Boolean(r.stato) && r.stato < 500;
+    if (rifiutata && leggiSessione()?.refresh_token === sessione.refresh_token) scriviSessione(null);
     return r;
   }
   scriviSessione(r.dati);
@@ -354,7 +382,7 @@ export async function iscrivi({ codice, nome, cognomeIniziale, contratto, oreSet
   // L'errore del database arriva come frase inglese con dentro il messaggio
   // che abbiamo scritto noi: quello che conta è che la persona legga il
   // motivo vero, non "PGRST202".
-  if (r.errore && /codice/i.test(r.errore)) return { dati: null, errore: 'Codice dello store sbagliato.' };
+  if (r.errore && /codice/i.test(r.errore)) return { dati: null, errore: 'Codice dello store sbagliato: sono le cifre dopo la R. Se non lo sai, chiedilo a un collega o a un admin.' };
   return r;
 }
 
@@ -377,7 +405,7 @@ export async function scaricaCalendario(url) {
   // Supabase mette dentro, e che va sostituito. Dirlo per nome evita di
   // cercare il guasto nell'app.
   if (/^Hello/i.test(String(r.dati?.message || ''))) {
-    return { dati: null, errore: 'La funzione sul server contiene ancora il codice di esempio.' };
+    return { dati: null, errore: 'La funzione sul server contiene ancora il codice di esempio: avvisa un admin, va ripubblicata.' };
   }
   if (!r.dati?.ics) return { dati: null, errore: r.dati?.errore || 'Risposta vuota dal server.' };
   return { dati: r.dati.ics, errore: null };
