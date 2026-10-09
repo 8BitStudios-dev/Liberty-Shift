@@ -138,19 +138,17 @@ test('Richiedi OFF: si offrono al massimo tre giorni, i primi tre già scelti', 
   assert.match(String(F.cambioDalGiorno()), /fino a 3/);
 });
 
-test('chi risponde a un OFF vede in rosso i giorni offerti in cui è già OFF', () => {
+test('chi risponde a un OFF non vede i giorni offerti in cui è già OFF', () => {
   const io = settimana();
-  // Anna cede giorno(2), che io ho libero, e offre giorno(3) (lavoro) e giorno(4) (sono già a casa).
+  // Anna cede giorno(2), che io ho libero, e offre giorno(3) (lavoro) e giorno(4) (sono già OFF):
+  // quel secondo giorno non serve a niente, e dirlo in rosso sembrava un errore.
   store.state.requests.push({
     id: 'rq-anna-off', userId: 'anna', createdAt: new Date().toISOString(), status: 'APERTA', prioritaFinoA: null,
     tipo: TIPO_CAMBIO.OFF, cedo: { shiftId: 'anna-2', flessibile: false },
     cerco: { giorni: [giorno(3), giorno(4)], mode: WANT_MODE.ANY, evitaChiusura: false, note: '' },
   });
   const sheet = String(F.formProposta(store.request('rq-anna-off')));
-  assert.match(sheet, /sei già OFF/);
-  // Il giorno in cui lavoro si sceglie dal menu e non porta la scritta rossa.
-  const righe = sheet.match(/<li>[^<]*<strong>sei già OFF<\/strong><\/li>/g) || [];
-  assert.equal(righe.length, 1, righe.join(''));
+  assert.doesNotMatch(sheet, /sei già OFF/);
   assert.ok(io);
 });
 

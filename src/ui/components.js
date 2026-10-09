@@ -286,7 +286,6 @@ function riassuntoMatch(match, u, turno, opzioni) {
       <div class="turno-offerto">
         Faresti <strong>${formatDay(turno?.data)}</strong> ·
         <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
-        ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
       </div>`;
   }
 
@@ -299,13 +298,12 @@ function riassuntoMatch(match, u, turno, opzioni) {
 
   return html`
     <div class="turno-offerto">
-      <strong>${formatDay(opzioni.mioCedo.data)} sei OFF</strong>: ${u?.nome} prende il tuo turno ·
+      <strong>${formatDay(opzioni.mioCedo.data)} diventi OFF</strong>: ${u?.nome} prende il tuo turno ·
       <strong>${shiftLabel(opzioni.mioCedo)}</strong>
     </div>
     <div class="turno-ceduto">
       In cambio lavoreresti <strong>${formatDay(turno?.data)}</strong> ·
       <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
-      ${raw(match.adattato?.trasformato ? `<span class="tag">${shiftLabel(turno)} adattato al tuo contratto</span>` : '')}
       <span class="testo-tenue">(${eri})</span>
     </div>`;
 }

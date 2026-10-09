@@ -171,10 +171,12 @@ Il pulsante "Proponi uno scambio" compare **solo se hai davvero qualcosa da
 offrire** su quel giorno. Proporre vale come tua accettazione; serve la seconda
 per l'accordo.
 
-Su un Richiedi OFF la proposta si fa scegliendo *uno* dei giorni offerti, e nel
-foglio compaiono sotto il menu, in rosso, quelli in cui chi risponde è già OFF
-("Mar 13/10 · sei già OFF"): non si possono scegliere, e sparire dal menu senza
-una parola lasciava il dubbio di una richiesta incompleta.
+Su un Richiedi OFF la proposta si fa scegliendo *uno* dei giorni offerti. I
+giorni in cui chi risponde è già OFF non compaiono, né nel menu né in una riga a
+parte: non c'è niente da scambiare, e la riga rossa "sei già OFF" che c'era
+prima sembrava un errore. Nel foglio non si scrive nemmeno che orario farebbe
+l'altra persona (il suo adattamento al contratto): riguarda solo lei. Resta la
+nota "orario stimato" quando è il tuo turno a essere adattato.
 
 **Il cambio che combacia non chiede un secondo sì.** Se il turno che offri è
 esattamente quello che la richiesta cerca (orario preciso rispettato, nessun

@@ -804,25 +804,6 @@ export function formMotivoAdmin(requestId, azione) {
 /** I turni che posso davvero offrire su una richiesta. Il calcolo sta nello store. */
 export const turniOfferibili = (request) => store.turniOfferibili(request);
 
-/**
- * I giorni offerti in cui chi risponde è già OFF, in rosso.
- *
- * Un Richiedi OFF offre fino a tre giorni e chi risponde ne sceglie uno: quelli
- * in cui lui non lavora non si possono scegliere, e sparire dal menu senza
- * dire perché lasciava solo il dubbio di una richiesta incompleta.
- */
-function giorniGiaOff(request) {
-  if (request.tipo !== TIPO_CAMBIO.OFF) return '';
-  const me = store.state.currentUserId;
-  const off = (request.cerco.giorni || []).filter((g) => {
-    const t = store.state.shifts.find((s) => s.userId === me && s.data === g);
-    return !t || t.tipo === 'OFF';
-  });
-  return off.length
-    ? html`<ul class="giorni-gia-off">${raw(off.map((g) => html`<li>${formatDay(g)} · <strong>sei già OFF</strong></li>`).join(''))}</ul>`
-    : '';
-}
-
 /** Contenuto della sheet "proponi scambio". */
 export function formProposta(request, shiftSuggerito) {
   // Si può offrire solo qualcosa che soddisfa davvero il CERCO: se cercano
@@ -834,7 +815,6 @@ export function formProposta(request, shiftSuggerito) {
     return html`
       <div class="card">${raw(coppiaCedoCerco(request, { compatto: true }))}</div>
       <p class="avviso"><span class="icona-in-riga">${raw(icona('avviso', { px: 16 }))}</span> Non hai niente da offrire su questo cambio.</p>
-      ${raw(giorniGiaOff(request))}
       <p class="motivo-non-puoi">${motivoNonOfferibile(request)}</p>`;
   }
 
@@ -845,18 +825,11 @@ export function formProposta(request, shiftSuggerito) {
       <span>Il turno che offri</span>
       <select class="select" data-campo="shift">
         ${opzioni.map((s) => {
-    const t = trasformaTurno(s, suoCedo, personaDi);
-    const etichetta = t.trasformato
-      ? `${formatDay(s.data)} · ${shiftLabel(s)} → farebbe ${t.start}–${t.end}`
-      : `${formatDay(s.data)} · ${shiftLabel(s)}`;
-    return raw(`<option value="${s.id}" ${s.id === shiftSuggerito ? 'selected' : ''}>${etichetta}</option>`);
+    return raw(`<option value="${s.id}" ${s.id === shiftSuggerito ? 'selected' : ''}>${formatDay(s.data)} · ${shiftLabel(s)}</option>`);
   })}
       </select>
     </label>
-    ${raw(giorniGiaOff(request))}
-    ${raw(opzioni.some((s) => trasformaTurno(s, suoCedo, personaDi).trasformato)
-    ? `<p class="testo-tenue">Il contratto di ${nomeUtente(store.user(request.userId))} è diverso dal tuo: il turno si adatta, e l'orario dopo la freccia è quello che farebbe.</p>${notaStima()}`
-    : '')}
+    ${raw(opzioni.some((s) => trasformaTurno(suoCedo, s, personaDi).trasformato) ? notaStima() : '')}
     ${raw(notaPausa([suoCedo, ...opzioni]))}
     <label class="campo">
       <span>Messaggio (facoltativo)</span>
