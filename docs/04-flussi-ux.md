@@ -304,6 +304,13 @@ cancellata ogni notte, con le proposte che ha dentro. Prima sul server restava
 perdono dalle statistiche le richieste mai concluse: è voluto.
 
 ## Dettagli che portano peso
+- **Il tasto ‹ riporta dove eri.** Ogni schermata lasciata ricorda a che punto
+  era (`posizioni` in `app.js`), e il ‹ in cima o l'azione `indietro` la
+  riaprono lì: aprire la richiesta numero otto della bacheca e tornare indietro
+  non rimanda in cima. Le altre strade (un riquadro, la barra in basso) aprono
+  una schermata nuova dall'inizio, anche quando è già stata vista: dopo un
+  tocco che dice "vai alla bacheca" ci si aspetta di vedere le richieste più
+  recenti. Le posizioni vivono finché l'app resta aperta, non si salvano.
 - In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
   ("cerca OFF Sab 12 · offre Lun 14 o Mer 16"). Orari, note, stato e
   proposte stanno nel dettaglio, che si apre toccandola. Prima ogni richiesta
