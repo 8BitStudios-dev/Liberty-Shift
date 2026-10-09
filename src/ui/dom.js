@@ -67,7 +67,11 @@ export function toast(testo) {
   el.textContent = testo;
   el.classList.add('visibile');
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('visibile'), 2600);
+  // Un errore dice anche come risolverlo, e quella frase va letta: il tempo
+  // cresce con la lunghezza, e un tocco lo chiude prima.
+  const durata = Math.min(9000, Math.max(2600, String(testo).length * 70));
+  el.onclick = () => el.classList.remove('visibile');
+  el._t = setTimeout(() => el.classList.remove('visibile'), durata);
 }
 
 export function sheet(titolo, contenuto, { azioni = '' } = {}) {

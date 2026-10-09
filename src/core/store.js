@@ -97,7 +97,7 @@ function azioneAdmin(store, id, motivo, status) {
   if (!testo) return { errori: ['Serve un motivo: chi ha pubblicato la richiesta deve saperlo.'] };
 
   const r = store.request(id);
-  if (!r) return { errori: ['Richiesta non trovata.'] };
+  if (!r) return { errori: ['Richiesta non trovata: forse è stata chiusa o cancellata. Aggiorna la pagina.'] };
 
   const me = store.state.currentUserId;
   r.status = status;
@@ -610,7 +610,7 @@ export const store = {
       && r.tipo === tipo && r.cedo.shiftId === cedo.shiftId);
     if (doppia) return { errori: ['Hai già una richiesta aperta di questo tipo su questo turno: la trovi nel giorno del calendario.'] };
     if (usaPriorita && this.creditoPriorita() < 1) {
-      return { errori: ['Hai già usato tutte le priorità di questo mese.'] };
+      return { errori: ['Hai già usato tutte le priorità di questo mese: pubblica senza, oppure aiuta un collega per guadagnarne un\'altra.'] };
     }
 
     const me = this.me;
@@ -730,16 +730,16 @@ export const store = {
 
   proponiScambio({ requestId, shiftOffertoId, messaggio }) {
     const r = this.request(requestId);
-    if (!r) return { errori: ['Richiesta non trovata.'] };
+    if (!r) return { errori: ['Richiesta non trovata: forse è stata chiusa o cancellata. Aggiorna la pagina.'] };
     const me = this.state.currentUserId;
     if (r.userId === me) return { errori: ['Non puoi proporre uno scambio a te stesso.'] };
     if (this.state.proposals.some((p) => p.requestId === requestId && p.daUserId === me && p.status !== 'RIFIUTATA')) {
-      return { errori: ['Hai già una proposta aperta su questa richiesta.'] };
+      return { errori: ['Hai già una proposta aperta su questa richiesta: la trovi in Proposte. Ritirala se vuoi farne un\'altra.'] };
     }
     // Il turno offerto deve reggere davvero: la regola vale qui, non solo nel
     // modulo, così nessuna scorciatoia della UI la aggira.
     const offerto = this.shift(shiftOffertoId);
-    if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido.'] };
+    if (!offerto || offerto.userId !== me) return { errori: ['Turno offerto non valido: scegli un altro turno.'] };
     const trova = (id) => this.user(id);
     const verifica = turnoOfferibile(r, offerto, this.state.shifts, this.shiftsById(), trova);
     if (!verifica.ok) return { errori: [verifica.motivo] };
@@ -933,7 +933,7 @@ export const store = {
    */
   ritiraProposta(proposalId) {
     const p = this.state.proposals.find((x) => x.id === proposalId);
-    if (!p) return 'Proposta non trovata.';
+    if (!p) return 'Proposta non trovata: forse è stata ritirata. Aggiorna la pagina.';
     if (p.daUserId !== this.state.currentUserId) return 'Puoi ritirare solo le tue proposte.';
     if (p.status === 'ACCORDO') return 'Lo scambio è già concordato: non si può più ritirare.';
     if (p.status === 'RIFIUTATA') return 'La proposta non è più attiva.';
@@ -953,7 +953,7 @@ export const store = {
    */
   ringrazia(proposalId, testo) {
     const p = this.state.proposals.find((x) => x.id === proposalId);
-    if (!p) return { errori: ['Proposta non trovata.'] };
+    if (!p) return { errori: ['Proposta non trovata: forse è stata ritirata. Aggiorna la pagina.'] };
     const me = this.state.currentUserId;
     const a = p.daUserId === me ? p.aUserId : p.daUserId;
     if (this.state.ringraziamenti.some((r) => r.proposalId === proposalId && r.daUserId === me)) {
@@ -1172,7 +1172,7 @@ export const store = {
         apriSessione(this.credenziali);
         return { ok: true, offline: true };
       }
-      return { errore: rete ? r.errore : 'Password sbagliata.' };
+      return { errore: rete ? r.errore : 'Password sbagliata: riprova, oppure tocca «Ho dimenticato la password».' };
     }
     apriSessione(this.credenziali);
     return { ok: true };
@@ -1184,7 +1184,7 @@ export const store = {
 
   /** "Ho dimenticato la password": vedi `chiediNuovaPassword` in supabase.js. */
   async chiediNuovaPassword(nome, cognome) {
-    if (!serverConfigurato()) return { errore: 'Senza il server non c\'è nessuno a cui chiederla.' };
+    if (!serverConfigurato()) return { errore: 'Senza il server non c\'è nessuno a cui chiederla: chiedi a un admin di persona.' };
     if (!(nome || '').trim() || !(cognome || '').trim()) {
       return { errore: 'Scrivi nome e cognome come li hai usati per iscriverti.' };
     }
@@ -1201,7 +1201,7 @@ export const store = {
    */
   async reimpostaPassword(userId) {
     const u = this.user(userId);
-    if (!u) return { errore: 'Persona non trovata.' };
+    if (!u) return { errore: 'Persona non trovata: aggiorna la pagina e riprova.' };
     const { errore, dati } = await amministra('reimposta-password', serverDi(this.state, u.id));
     if (errore) return { errore };
     const prima = this.richiestaPassword(u.id);
@@ -1239,7 +1239,7 @@ export const store = {
    * è la promessa delle note d'uso. Si reimportano dal calendario.
    */
   async accediConNome({ nome, cognome, password, versioneNote }) {
-    if (!serverConfigurato()) return { errore: 'Per rientrare da un altro dispositivo serve il server.' };
+    if (!serverConfigurato()) return { errore: 'Per rientrare da un altro dispositivo serve il server: avvisa un admin.' };
     if (!(nome || '').trim() || !(cognome || '').trim()) {
       return { errore: 'Scrivi nome e cognome come li hai usati per iscriverti.' };
     }
@@ -1318,7 +1318,7 @@ export const store = {
     // continuerebbe a funzionare.
     if (serverConfigurato() && this.state.profilo?.identificativo) {
       if (!collegato()) {
-        return { errore: 'Serve la rete: la password la custodisce il server, non questo telefono.' };
+        return { errore: 'Serve la rete: la password la custodisce il server, non questo telefono. Riprova quando hai campo.' };
       }
       const r = await cambiaPasswordServer(nuova);
       if (r.errore) return { errore: r.errore };
@@ -1408,7 +1408,7 @@ export const store = {
    * mandato.
    */
   impostaModoNotifiche(modo) {
-    if (!sulServer(this.state)) return { errori: ['Per le notifiche serve essere iscritti allo store.'] };
+    if (!sulServer(this.state)) return { errori: ['Per le notifiche serve essere iscritti allo store: completa l\'iscrizione con il codice dello store.'] };
     if (modo !== 'dirette' && modo !== 'compatibili') return { errori: ['Scelta non valida.'] };
     // L'avviso arriva solo per i cambi che convengono secondo le preferenze
     // (`cambioFavorevole`): senza nessuna, non arriverebbe mai niente.
@@ -1538,12 +1538,12 @@ export const store = {
     if (errore && /risposto (401|403|404|410)\b/.test(errore)) {
       this.state.profilo.calendarioScaduto = true;
       this.commit();
-      return { errore: 'Il collegamento al calendario non funziona più: rifallo dall\'app aziendale.', scaduto: true };
+      return { errore: 'Il collegamento al calendario non funziona più: nell\'app aziendale crea di nuovo il link del calendario e incollalo in Profilo, Sincronizza turni.', scaduto: true };
     }
     if (errore) return { errore };
 
     const { turni, ignorati, errore: erroreLettura } = parseICS(dati);
-    if (erroreLettura || !turni.length) return { errore: erroreLettura || 'Nessun turno nel calendario.' };
+    if (erroreLettura || !turni.length) return { errore: erroreLettura || 'Nessun turno nel calendario: controlla nell\'app aziendale di avere turni nelle prossime settimane, poi riprova.' };
 
     const esito = this.importaTurni(turni, { ignorati });
     this.state.profilo.calendarioScaduto = false;
@@ -1595,7 +1595,7 @@ export const store = {
    */
   avvisa(userId, requestId) {
     const r = this.request(requestId);
-    if (!r) return { errori: ['Richiesta non trovata.'] };
+    if (!r) return { errori: ['Richiesta non trovata: forse è stata chiusa o cancellata. Aggiorna la pagina.'] };
     if (r.avvisati?.includes(userId)) return { errori: ['Hai già avvisato questa persona.'] };
     r.avvisati = [...(r.avvisati || []), userId];
 

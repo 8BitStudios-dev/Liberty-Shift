@@ -101,7 +101,7 @@ function schermataAccesso(errore = '', avviso = '') {
           <input type="password" class="testo" data-campo="password"
                  placeholder="Password" autocomplete="current-password" autofocus>
         </label>
-        ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata.' : esc(errore)}</p>` : '')}
+        ${raw(errore ? `<p class="non-puoi">${errore === true ? 'Password sbagliata: riprova, controllando maiuscole e minuscole.' : esc(errore)}</p>` : '')}
         ${raw(avviso ? `<p class="avviso-box">${esc(avviso)}</p>` : '')}
         <button type="submit" class="btn primario largo" data-act="entra">Entra</button>
       </form>
@@ -264,12 +264,12 @@ function riassuntoImport({ aggiunti = 0, cambiati = [], richiesteChiuse = [], pr
 async function controllaScambio(proposalId, { appenaSegnato = false } = {}) {
   if (!store.state.profilo?.calendarioUrl) {
     render();
-    return toast(appenaSegnato ? 'Segnato come inserito' : 'Nessun calendario collegato');
+    return toast(appenaSegnato ? 'Segnato come inserito' : 'Nessun calendario collegato: collegalo da Profilo, Sincronizza turni');
   }
   const esito = await store.aggiornaCalendario({ forzato: true });
   render();
   if (esito.errore) return toast(esito.errore);
-  if (esito.saltato) return toast(appenaSegnato ? 'Segnato come inserito' : 'Non sei collegato allo store');
+  if (esito.saltato) return toast(appenaSegnato ? 'Segnato come inserito' : 'Non sei collegato allo store: vai in Profilo, tocca Esci e rientra con la tua password');
   if (store.state.scambiConfermati?.includes(proposalId)) {
     if (!annunciaScambiChiusi(esito)) toast('Confermato: il tuo calendario mostra lo scambio');
     return;
@@ -614,7 +614,7 @@ const AZIONI = {
     const { stato, errore } = accendi ? await attivaNotifiche(store.state) : await disattivaNotifiche();
     if (errore) toast(errore);
     else if (stato === STATO.ATTIVE) toast('Notifiche attive');
-    else if (stato === STATO.BLOCCATE) toast('Le hai bloccate: si riattivano dalle impostazioni del telefono');
+    else if (stato === STATO.BLOCCATE) toast('Le hai bloccate: riattivale da Impostazioni del telefono, Notifiche, Liberty Shift');
     else if (!accendi) toast('Notifiche spente su questo dispositivo');
     render();
   },
@@ -624,7 +624,7 @@ const AZIONI = {
     const { stato, errore } = await attivaNotifiche(store.state);
     if (errore) toast(errore);
     else if (stato === STATO.ATTIVE) toast('Notifiche attive');
-    else if (stato === STATO.BLOCCATE) toast('Le hai bloccate: si riattivano dalle impostazioni del telefono');
+    else if (stato === STATO.BLOCCATE) toast('Le hai bloccate: riattivale da Impostazioni del telefono, Notifiche, Liberty Shift');
     render();
   },
 
@@ -920,7 +920,7 @@ const AZIONI = {
   'conferma-proposta': (_, el) => {
     const wrap = el.closest('.sheet-backdrop');
     const scelta = wrap.querySelector('[data-campo="shift"]');
-    if (!scelta) return toast('Non hai un turno da offrire su quel giorno');
+    if (!scelta) return toast('Non hai un turno da offrire su quel giorno: aggiorna i turni da Profilo, Sincronizza turni, o scegli un altro giorno');
     const shiftId = scelta.value;
     const messaggio = wrap.querySelector('[data-campo="messaggio"]').value;
     const { errori, diretto } = store.proponiScambio({ requestId: wrap.dataset.richiesta, shiftOffertoId: shiftId, messaggio });
@@ -1269,7 +1269,7 @@ const AZIONI = {
     if (errore) return toast(errore);
     if (annunciaScambiChiusi(cal)) return;
     if (cal.saltato && sync.saltato) {
-      return toast(store.state.profilo?.calendarioUrl ? 'Non sei collegato allo store' : 'Nessun calendario collegato');
+      return toast(store.state.profilo?.calendarioUrl ? 'Non sei collegato allo store: vai in Profilo, tocca Esci e rientra con la tua password' : 'Nessun calendario collegato: collegalo da Profilo, Sincronizza turni');
     }
     toast(cal.saltato ? 'Bacheca aggiornata' : riassuntoImport(cal));
   },
@@ -1366,7 +1366,7 @@ const AZIONI = {
     const esito = await store.aggiornaCalendario({ forzato: true });
     if (em) em.textContent = testo;
     if (esito.errore) return toast(esito.errore);
-    if (esito.saltato) return toast('Nessun calendario collegato');
+    if (esito.saltato) return toast('Nessun calendario collegato: collegalo da Profilo, Sincronizza turni');
     render();
     if (!annunciaScambiChiusi(esito)) toast(riassuntoImport(esito));
   },
@@ -1374,7 +1374,7 @@ const AZIONI = {
   'conferma-import': (_, el) => {
     const wrap = el.closest('.sheet-backdrop');
     const turni = wrap._turni || [];
-    if (!turni.length) return toast('Niente da importare');
+    if (!turni.length) return toast('Niente da importare: il calendario non ha turni nelle date che coprite. Controllalo nell\'app aziendale');
     const esito = store.importaTurni(turni, { ignorati: wrap._ignorati || [] });
     wrap.querySelector('[data-chiudi]').click();
     render();

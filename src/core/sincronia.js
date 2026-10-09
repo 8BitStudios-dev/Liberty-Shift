@@ -402,7 +402,7 @@ async function svuota(state) {
     try {
       risposta = await esegui(op.dati);
     } catch (err) {
-      risposta = { errore: `Errore nel telefono (${op.tipo}): ${err?.message || err}` };
+      risposta = { errore: `Errore nel telefono (${op.tipo}): ${err?.message || err}. Ricarica la pagina; se resta, avvisa un admin.` };
     }
     const { errore, stato, dati } = risposta;
     const creazione = /\.(crea|salva)$/.test(op.tipo);
@@ -696,7 +696,7 @@ export async function sincronizza(state, { completo = false } = {}) {
  * Meglio dire subito che non è andata.
  */
 export async function salvaDispositivoPush(state, iscrizione) {
-  if (!sulServer(state)) return { errore: 'Per le notifiche serve essere iscritti allo store.' };
+  if (!sulServer(state)) return { errore: 'Per le notifiche serve essere iscritti allo store: completa l\'iscrizione con il codice dello store.' };
   const { errore } = await salvaSuChiave('push_subscriptions', {
     user_id: state.profilo.idServer,
     endpoint: iscrizione.endpoint,
