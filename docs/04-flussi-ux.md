@@ -987,9 +987,10 @@ differenze:
 Le percentuali del Cambio rapido sono di chi guarda (vedi `punteggioDi` in
 `engine.js`): contano le preferenze di Lorenzo e le ore adattate, non quanto
 l'altro è flessibile. Per averle miste i colleghi da copione hanno turni
-normali (100%), da Part Time che si adattano a un Full Time (95%) e notturni
-che Lorenzo evita (70%). Le richieste di sfondo cadono su giorni in cui lui non
-può rispondere, così non coprono le cinque da mostrare.
+infrasettimanali (100%), da Part Time che si adattano a un Full Time (95%) e nel
+weekend, che Lorenzo ha scelto di tenere libero (65 o 70%). Le richieste di
+sfondo cadono su giorni in cui lui non può rispondere, così non coprono le
+cinque da mostrare.
 
 Un test (`tests/demo.test.js`) controlla che i dati diano ancora le schermate
 piene se il motore cambia.
