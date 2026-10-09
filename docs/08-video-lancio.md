@@ -8,7 +8,7 @@ Prima di cominciare, due precisazioni importanti. Liberty Shift non è uno strum
 
 Quanto ai vostri dati: i turni restano sul vostro telefono. Al server arrivano solo le richieste che scegliete di pubblicare, perché i colleghi devono poterle leggere. Se attivate gli avvisi sui cambi che vi convengono, i turni dei giorni successivi vengono inviati cifrati, e nessuno può leggerli.
 
-Liberty Shift si apre da Safari, si aggiunge alla schermata Home e da quel momento è sempre a portata di mano, come qualsiasi applicazione del telefono.
+Liberty Shift si apre da Safari, si aggiunge alla schermata Home e da quel momento è sempre a portata di mano, come se fosse installato sul telefono.
 
 Partiamo dalla Home.
 
