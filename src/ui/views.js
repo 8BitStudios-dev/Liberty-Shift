@@ -85,7 +85,7 @@ export function home() {
         <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
           <span class="pallino"></span>
           <div>
-            <strong>${raw(hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '')}Cedi ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
+            <strong>${raw(hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '')}Lasci ${formatDay(store.shift(r.cedo.shiftId)?.data)}</strong>
             <div class="meta">${raw(pillolaTipo(r.tipo))} ${raw(badgeStato(r.status))}</div>
           </div>
           <span class="chevron">›</span>
@@ -167,8 +167,8 @@ function legendaPubblica() {
   return `
     <ul class="legenda-mese">
       <li><span class="barre in-legenda"><i class="orario"></i></span>cambio orario</li>
-      <li><span class="barre in-legenda"><i class="cerca"></i></span>OFF: qualcuno cerca</li>
-      <li><span class="barre in-legenda"><i class="offre"></i></span>OFF: qualcuno offre</li>
+      <li><span class="barre in-legenda"><i class="cerca"></i></span>OFF: qualcuno lascia</li>
+      <li><span class="barre in-legenda"><i class="offre"></i></span>OFF: qualcuno prende</li>
       <li><span class="campione prioritaria"></span>priorità</li>
       <li><span class="conta-giorno in-legenda">2</span>richieste del giorno</li>
       <li><span class="quota campione-quota">%</span>puoi aiutare</li>
@@ -231,8 +231,8 @@ export function calendario(params) {
  * da fuori sono la stessa cosa, un turno che si può prendere.
  */
 const GRUPPI_GIORNO = [
-  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno OFF. Se tu non lavori, puoi prendere il loro turno.' },
-  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Giornate che i colleghi offrono in cambio: puoi prenderle tu.' },
+  { ruolo: 'CERCA', titolo: 'Lasciano', nota: 'Lasciano questo giorno. Se tu non lavori, puoi prendere il loro turno.' },
+  { ruolo: 'OFFRE', titolo: 'Prendono', nota: 'Lavorerebbero questo giorno in cambio: se lavori, puoi dargli il tuo turno.' },
   { ruolo: 'ORARIO', titolo: 'Cambi orario', nota: 'Vogliono un orario diverso in questo giorno. Se lavori, puoi scambiare il tuo.' },
 ];
 

@@ -516,7 +516,7 @@ export function isOpen(request) {
  * Che parte ha una richiesta nel giorno che si sta guardando.
  *
  * Una richiesta di cambio OFF tocca più date con ruoli opposti: nel giorno che
- * l'autore vuole liberare **cerca**, nei giorni che mette sul piatto **offre**.
+ * l'autore vuole liberare **lascia**, nei giorni in cui lavorerebbe **prende**.
  * Mostrarla identica su ogni casella del calendario era il modo più rapido per
  * non capirci niente: chi guardava il 16 leggeva una richiesta scritta per il 14.
  *
@@ -525,35 +525,35 @@ export function isOpen(request) {
 export function ruoloNelGiorno(request, giorno, cedo) {
   const giorni = request.cerco.giorni || [];
 
-  // Un cambio orario ha un giorno solo e non lascia né offre: scambia l'orario
+  // Un cambio orario ha un giorno solo e non lascia né prende un giorno: scambia l'orario
   // di quella giornata. Ha un ruolo suo, e nel calendario un colore suo: blu e
   // verde restano ai cambi OFF, che hanno due lati su giorni diversi.
   if (request.tipo === TIPO_CAMBIO.ORARIO) {
     return {
       ruolo: 'ORARIO',
       icona: '🕐',
-      verbo: 'offre orario',
-      sintesi: `offre ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
+      verbo: 'cambio orario',
+      sintesi: `lascia ${shiftLabel(cedo)} · prende ${wantLabel(request.cerco)}`,
     };
   }
   if (cedo?.data === giorno) {
     return {
       ruolo: 'CERCA',
       icona: '📅',
-      verbo: 'cerca OFF',
+      verbo: 'lascia',
       sintesi: giorni.length
-        ? `vuole OFF questo giorno · in cambio offre ${giorni.map((g) => formatDay(g)).join(' o ')}`
-        : 'vuole OFF questo giorno',
+        ? `lascia questo giorno · in cambio prende ${giorni.map((g) => formatDay(g)).join(' o ')}`
+        : 'lascia questo giorno',
     };
   }
   if (giorni.includes(giorno)) {
     return {
       ruolo: 'OFFRE',
       icona: '📅',
-      verbo: 'offre OFF',
+      verbo: 'prende',
       // Solo il giorno che si sta guardando: gli altri che la richiesta offre
       // hanno una casella loro, ed è lì che vanno letti.
-      sintesi: `lavorerebbe questo giorno · in cambio vuole libero ${formatDay(cedo?.data)}`,
+      sintesi: `prende questo giorno · in cambio lascia ${formatDay(cedo?.data)}`,
     };
   }
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };

@@ -217,9 +217,16 @@ secondo chi lo legge, e il blu resta sempre il turno che cede chi guarda:
 
 | Chi guarda | Sinistra (blu) | Destra (verde) |
 | --- | --- | --- |
-| chi ha scritto la richiesta | **lascio** il mio turno | **cerco** quello che voglio (**offro**, nel cambio OFF) |
+| chi ha scritto la richiesta | **lasci** il tuo turno | **prendi** quello che vuoi (nel cambio OFF, uno dei giorni che offri) |
 | un collega, con il turno che offre (tendina "Proponi lo scambio", Aiuta un collega, Cambio rapido, una proposta già fatta) | **lasci** il tuo turno | **prendi** quello dell'autore, con le ore che faresti davvero |
-| un collega che non ha ancora scelto (dettaglio della richiesta) | **Lorenzo lascia** | **Lorenzo cerca** |
+| un collega che non ha ancora scelto (dettaglio della richiesta) | **Lorenzo lascia** | **Lorenzo prende** |
+
+Le parole sono due sole in tutta l'app: **lascia** e **prende** (a chi guarda,
+**lasci** e **prendi**). Prima erano quattro paia (lascio/cerco, lasci/prendi,
+cerca/offre, cede/cerca) e "cerca" voleva dire cose opposte: nel cambio OFF il
+giorno che si lascia, nel cambio orario quello che si vuole ricevere. Anche le
+righe di Bacheca e Calendario, la Home ("Lasci Gio 15/10") e la legenda del
+mese usano le stesse due.
 
 Scritto sempre con le parole dell'autore, il blocco faceva leggere a chi
 proponeva "LASCIO 11:00–20:00" come se fosse il suo turno, con il turno che
@@ -328,7 +335,7 @@ perdono dalle statistiche le richieste mai concluse: è voluto.
   tocco che dice "vai alla bacheca" ci si aspetta di vedere le richieste più
   recenti. Le posizioni vivono finché l'app resta aperta, non si salvano.
 - In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
-  ("cerca OFF Sab 12 · offre Lun 14 o Mer 16"). Orari, note, stato e
+  ("lascia Sab 12 · prende Lun 14 o Mer 16"). Orari, note, stato e
   proposte stanno nel dettaglio, che si apre toccandola. Prima ogni richiesta
   occupava mezzo schermo e scorrerne dieci era faticoso.
 - Nel dettaglio il blocco della richiesta è sempre identico ovunque compaia. È
@@ -340,13 +347,13 @@ perdono dalle statistiche le richieste mai concluse: è voluto.
   legge a colpo d'occhio, senza spiegazioni. Dentro ogni casella c'è il tuo
   turno di quel giorno.
 
-## Il calendario dice chi cerca e chi offre
+## Il calendario dice chi lascia e chi prende
 Le settimane già finite non si vedono: il mese parte dalla settimana di oggi,
 perché in una settimana passata non c'è più niente da cambiare. Un mese tutto
 passato, sfogliato all'indietro, resta invece intero.
 
 Una richiesta di cambio OFF tocca più giornate con ruoli opposti: nel giorno che
-l'autore vuole liberare **cerca**, nei giorni che mette sul piatto **offre**.
+l'autore vuole liberare **lascia**, nei giorni in cui lavorerebbe **prende**.
 Prima la stessa riga compariva identica su tutte le caselle, e chi apriva il 16
 leggeva una richiesta scritta per il 14.
 
@@ -356,24 +363,24 @@ si fa aprendo un giorno:
 
 | Blocco | Colore | Chi c'è dentro |
 |---|---|---|
-| **Cercano** | arancio | chi vuole libero questo giorno (cambio OFF): se tu sei a casa, puoi prendere il suo turno |
-| **Offrono** | verde | le giornate che si offrono in cambio in un cambio OFF |
+| **Lasciano** | arancio | chi lascia questo giorno (cambio OFF): se tu sei a casa, puoi prendere il suo turno |
+| **Prendono** | verde | chi lavorerebbe questo giorno in un cambio OFF: se lavori, puoi dargli il tuo turno |
 | **Cambi orario** | viola | chi vuole un orario diverso in questo giorno: se lavori, puoi scambiare il tuo |
 
 Il cambio orario ha un colore suo perché ha una faccia sola: un giorno, un
 orario da scambiare. Il cambio OFF ne ha due su giorni diversi, e per quello
-servono "cerca" e "offre". Prima il cambio orario stava fra chi offre, e lo
+servono "lascia" e "prende". Prima il cambio orario stava fra chi offre, e lo
 stesso verde diceva due cose diverse (un turno da prendere, una giornata in cui
 qualcuno lavorerebbe). La legenda ora lo dice: "cambio orario", "OFF: qualcuno
-cerca", "OFF: qualcuno offre".
+lascia", "OFF: qualcuno prende".
 
-La sintesi è riscritta dal punto di vista della data: sul 14 si legge "offre di
-lavorare questo giorno · in cambio vuole libero Sab 12", e gli altri giorni che
-la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
+La sintesi è riscritta dal punto di vista della data: sul 14 si legge "prende
+questo giorno · in cambio lascia Sab 12", e gli altri giorni che la stessa
+richiesta prende non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
 Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un
-segmento per ruolo presente: viola un cambio orario, arancio chi cerca un OFF, verde chi offre un OFF, bordo oro per la
+segmento per ruolo presente: viola un cambio orario, arancio chi lascia in un OFF, verde chi prende in un OFF, bordo oro per la
 priorità. Un segmento per ruolo e non uno per richiesta: dal mese serve sapere
 se su quel giorno qualcuno se ne vuole andare, qualcuno vuole venire, o tutte e
 due le cose.
@@ -657,10 +664,10 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
 (settimane Apple, dal sabato al venerdì) e contenuti divisi senza eccezioni:
 
 - **Calendario pubblico** (il tab): il negozio. Le richieste aperte dei
-  colleghi, mai le tue; le barre di chi cerca (arancio) e di chi offre (verde),
+  colleghi, mai le tue; le barre di chi lascia (arancio) e di chi prende (verde),
   in un cerchio grigio quante richieste toccano il giorno, il bordo oro della
   priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
-  giorno: chi puoi aiutare, poi Cercano e Offrono.
+  giorno: chi puoi aiutare, poi Lasciano, Prendono e Cambi orario.
 - **Profilo**: tu. I tuoi turni, la rotazione, il
   segni dei giorni, uno per significato: il **fondo giallo** per un giorno che
   sta cambiando (l'unico fondo colorato), un'**icona** nell'angolo per dire a
@@ -718,7 +725,7 @@ La disponibilità è il **fondo verde chiaro** della cella, non una linea. La
 linea arancione che c'era prima, una volta che i calendari sono diventati uno,
 stava accanto al bordo oro della priorità e alle barre: tre segni sottili sul
 bordo della stessa cella. Un fondo è un'altra forma, e non si confonde con la
-barra verde di chi offre.
+barra verde di chi prende.
 
 Toccando un giorno del Profilo si apre quello che riguarda te:
 
@@ -729,7 +736,7 @@ Toccando un giorno del Profilo si apre quello che riguarda te:
 
 **Chi puoi aiutare** (con la percentuale e le due righe che contano: che
 turno faresti tu, che turno farebbe l'altra persona) e le altre richieste,
-divise fra **Cercano** e **Offrono**, stanno nel giorno del Calendario.
+divise fra **Lasciano**, **Prendono** e **Cambi orario**, stanno nel giorno del Calendario.
 
 Nelle liste (Bacheca, Home, il giorno) una richiesta a cui non puoi rispondere
 non dice più "al momento non puoi cambiare" in rosso: dice il perché con i

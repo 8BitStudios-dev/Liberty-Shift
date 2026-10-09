@@ -55,7 +55,7 @@ export const GUIDE = {
 
       <p class="esempio">
         Giovedì fai 12:00–21:00. La prima casella è giovedì al 98%: la tocchi e
-        trovi Martina, che quel giorno fa 09:00–15:00 e cerca un turno più tardi.
+        trovi Martina, che quel giorno fa 09:00–15:00 e vorrebbe un turno più tardi.
       </p>
 
       <p>
@@ -84,7 +84,7 @@ export const GUIDE = {
       </p>
 
       <p class="esempio">
-        Luca vuole OFF venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
+        Luca lascia venerdì e prende lunedì. Tu venerdì sei a casa e lunedì
         lavori: siete la risposta l'uno dell'altro.
       </p>
 
@@ -149,9 +149,9 @@ export const GUIDE = {
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
           arancio: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
-          verde: qualcuno offre quel giorno in un cambio OFF;</li>
+          verde: qualcuno prende quel giorno in un cambio OFF;</li>
         <li>bordo oro: c'è una priorità;</li>
-        <li>il numero nel cerchio grigio: quante richieste toccano quel giorno, fra cambi orario, chi cerca e chi offre;</li>
+        <li>il numero nel cerchio grigio: quante richieste toccano quel giorno, fra cambi orario e cambi OFF;</li>
         <li>la percentuale: c'è una richiesta che puoi coprire, e quanto va bene a tutti e due.</li>
       </ul>
 
@@ -172,7 +172,7 @@ export const GUIDE = {
     corpo: () => html`
       <p>Tutte le richieste aperte. In alto le tue, così vedi che sono partite; poi quelle dei colleghi, con le prioritarie in cima.</p>
 
-      <p>Ogni riga dice chi è e cosa cerca. Toccala per orari, note e proposte.</p>
+      <p>Ogni riga dice chi è, cosa lascia e cosa prende. Toccala per orari, note e proposte.</p>
 
       <ul class="elenco piccolo">
         <li><strong>${raw(iconaTipo('ORARIO'))} orario</strong>: stesso giorno, orario diverso;</li>

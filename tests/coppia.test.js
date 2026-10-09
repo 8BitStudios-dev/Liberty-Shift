@@ -60,14 +60,14 @@ test('il turno preso si legge con le ore che farebbe davvero chi guarda', () => 
 test('prima di scegliere un turno, un collega legge la richiesta con il nome di chi l\'ha scritta', () => {
   const { richiesta } = scena();
   const t = testo(coppiaCedoCerco(richiesta));
-  assert.match(t, /Lorenzo lascia .*11:00–20:00 .*Lorenzo cerca/);
-  assert.doesNotMatch(t, /lascio|cerco /);
+  assert.match(t, /Lorenzo lascia .*11:00–20:00 .*Lorenzo prende/);
+  assert.doesNotMatch(t, /lascio|cerco |lasci |prendi/);
 });
 
 test("all'autore il blocco parla con le sue parole", () => {
   const { richiesta } = scena();
   store.state.currentUserId = 'lorenzo';
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: store.shift('sh-mio') }));
-  assert.match(t, /lascio .*11:00–20:00 .*cerco/);
-  assert.doesNotMatch(t, /lasci |prendi|Lorenzo/);
+  assert.match(t, /lasci .*11:00–20:00 .*prendi/);
+  assert.doesNotMatch(t, /lascio|cerco|Lorenzo/);
 });

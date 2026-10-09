@@ -405,7 +405,7 @@ export function scelta() {
       <span class="tile-icona">${raw(icona('orario'))}</span>
       <span>
         <strong>Cambio orario</strong>
-        <em>Stesso giorno, orario diverso. "Lascio mercoledì 12:00–21:00, cerco mercoledì un turno che finisca prima."</em>
+        <em>Stesso giorno, orario diverso. "Lasci mercoledì 12:00–21:00, prendi un turno che finisca prima."</em>
       </span>
     </button>
 
@@ -413,7 +413,7 @@ export function scelta() {
       <span class="tile-icona">${raw(icona('ombrellone'))}</span>
       <span>
         <strong>Cambio OFF</strong>
-        <em>Vuoi un giorno OFF e in cambio lavori in uno dei tuoi OFF. Prenderai il turno di chi ti cede il giorno.</em>
+        <em>Lasci un giorno e in cambio lavori in uno dei tuoi OFF: prendi il turno di chi ti dà il giorno.</em>
       </span>
     </button>
 

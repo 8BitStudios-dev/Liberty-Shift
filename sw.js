@@ -6,7 +6,7 @@
 // una cache-first pura, pubblicare una correzione non sarebbe servito a niente
 // finché qualcuno non svuotava il browser — e nessuno lo fa.
 
-const CACHE = 'liberty-shift-v104';
+const CACHE = 'liberty-shift-v105';
 
 const ASSET = [
   './',

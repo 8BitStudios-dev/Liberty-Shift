@@ -114,17 +114,17 @@ export function badgeStato(status) {
  * dell'autore, un collega leggeva "LASCIO 11:00–20:00" e lo prendeva per il
  * proprio turno, con il turno che offriva davvero subito sotto.
  *
- * - Chi ha scritto la richiesta: "lascio" e "cerco" (o "offro").
- * - Un collega di cui si sa il turno in gioco (`mioTurno`): il suo scambio,
- *   "lasci" il suo turno e "prendi" quello dell'autore, con l'orario che
- *   farebbe davvero. I colori restano veri: il blu è sempre il turno che
- *   cede chi guarda.
- * - Un collega prima di scegliere: la richiesta, ma con il nome di chi
- *   l'ha scritta ("Lorenzo lascia").
+ * Le parole sono due sole, ovunque: **lascia** e **prende**. Chi guarda legge
+ * "lasci" e "prendi"; di un altro si legge "Lorenzo lascia" e "Lorenzo prende".
+ * Prima c'erano quattro paia (lascio/cerco, lasci/prendi, cerca/offre,
+ * cede/cerca) e "cerca" voleva dire cose opposte: nel cambio OFF il giorno che
+ * si lascia, nel cambio orario quello che si vuole ricevere.
  *
- * L'etichetta di sinistra dice cosa cerchi, non solo cosa lasci: nel cambio
- * OFF "lascio" e "offro" leggevano come la stessa cosa (dare via qualcosa),
- * e il punto della richiesta (liberare quel giorno) si perdeva.
+ * - Chi ha scritto la richiesta, o chi ha già scelto il turno da offrire:
+ *   "lasci" e "prendi", con l'orario che farebbe davvero. I colori restano
+ *   veri: il blu è sempre il turno che cede chi guarda.
+ * - Un collega prima di scegliere: la richiesta con il nome di chi l'ha
+ *   scritta ("Lorenzo lascia", "Lorenzo prende").
  */
 export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
@@ -160,20 +160,20 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } =
   }
 
   const chi = mia ? '' : `${store.user(request.userId)?.nome || 'chi chiede'} `;
-  const verbo = (io, lei) => (mia ? io : `${chi}${lei}`);
+  const verbo = (tu, lei) => (mia ? tu : `${chi}${lei}`);
   return lati(
     html`
-      <span class="etichetta">${freccia('cedo')} ${off ? verbo('cerco', 'cerca') : verbo('lascio', 'lascia')}</span>
+      <span class="etichetta">${freccia('cedo')} ${verbo('lasci', 'lascia')}</span>
       <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
       <span class="orario">${shiftLabel(cedo)}</span>
       ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}`,
     off
       ? html`
-        <span class="etichetta">${freccia('prendo')} ${verbo('offro', 'offre')}</span>
+        <span class="etichetta">${freccia('prendo')} ${verbo('prendi', 'prende')}</span>
         <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>`
       : html`
-        <span class="etichetta">${freccia('prendo')} ${verbo('cerco', 'cerca')}</span>
+        <span class="etichetta">${freccia('prendo')} ${verbo('prendi', 'prende')}</span>
         <strong>stesso giorno</strong>
         <span class="orario">${wantLabel(request.cerco)}</span>`,
   );
@@ -192,9 +192,9 @@ export function sintesiRichiesta(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   if (request.tipo === TIPO_CAMBIO.OFF) {
-    return `cerca OFF ${formatDay(cedo?.data)} · offre ${giorni.map((g) => formatDay(g)).join(' o ')}`;
+    return `lascia ${formatDay(cedo?.data)} · prende ${giorni.map((g) => formatDay(g)).join(' o ')}`;
   }
-  return `${formatDay(cedo?.data)} · cede ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`;
+  return `${formatDay(cedo?.data)} · lascia ${shiftLabel(cedo)} · prende ${wantLabel(request.cerco)}`;
 }
 
 /**
@@ -235,7 +235,7 @@ function perche(request) {
   }
   const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
   if (!lavorati.length) {
-    return `nei giorni che offre (${giorni.map(giorno).join(', ')}) sei OFF, quindi non hai un turno da dargli in cambio.`;
+    return `nei giorni in cui lavorerebbe (${giorni.map(giorno).join(', ')}) sei OFF, quindi non hai un turno da dargli in cambio.`;
   }
   return `i tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
 }
