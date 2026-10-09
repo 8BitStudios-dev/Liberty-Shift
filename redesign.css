@@ -92,6 +92,10 @@
   --da-cambiare: #fcefb4;
   --da-cambiare-bordo: #e6c65c;
   --da-cambiare-segno: #7a5300;
+  /* Il cambio concordato, che aspetta solo UKG: verde chiaro come il verde di chi prende. */
+  --concordato: #dff3e6;
+  --concordato-bordo: #8fd3a8;
+  --concordato-segno: #0b6b46;
   /* Il testo sopra un fondo pieno di accento. */
   --su-pieno: #ffffff;
   /* Cinque raggi: contenitori, controlli, celle, tendina, pillole. I 3–6px
@@ -149,6 +153,9 @@
     --da-cambiare: #3d3412;
     --da-cambiare-bordo: #8a7128;
     --da-cambiare-segno: #f3cf5e;
+    --concordato: #143a2c;
+    --concordato-bordo: #2f7a58;
+    --concordato-segno: #6fe0aa;
     /* In scuro i fondi pieni sono chiari: il bianco sopra stava a 2,5. */
     --su-pieno: #0d1421;
     --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 26px -10px rgba(0, 0, 0, .6);
@@ -188,6 +195,9 @@
   --da-cambiare: #3d3412;
   --da-cambiare-bordo: #8a7128;
   --da-cambiare-segno: #f3cf5e;
+  --concordato: #143a2c;
+  --concordato-bordo: #2f7a58;
+  --concordato-segno: #6fe0aa;
   --su-pieno: #0d1421;
   --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 26px -10px rgba(0, 0, 0, .6);
   --ombra-alta: 0 2px 6px rgba(0, 0, 0, .55), 0 22px 44px -16px rgba(0, 0, 0, .7);
@@ -558,6 +568,10 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .mese-personale .mese-giorno.da-cambiare.riposo {
   background: var(--da-cambiare); border-color: var(--da-cambiare-bordo);
 }
+.mese-personale .mese-giorno.concordato,
+.mese-personale .mese-giorno.concordato.riposo {
+  background: var(--concordato); border-color: var(--concordato-bordo);
+}
 .mese-personale .mese-giorno.oggi { border-color: var(--accento); box-shadow: inset 0 0 0 1px var(--accento); }
 
 /* Il segno del cambio: un'icona sola per giorno, sempre dello stesso colore. */
@@ -566,6 +580,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   width: auto; height: auto; background: none; box-shadow: none; border-radius: 0;
   color: var(--da-cambiare-segno);
 }
+.in-corso.concordato { color: var(--concordato-segno); }
 .in-corso svg { width: 13px; height: 13px; }
 .in-corso.in-legenda { position: static; }
 .mese-personale .mese-giorno .in-corso {
@@ -577,6 +592,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   flex: 0 0 auto; width: 28px; height: 28px; border-radius: var(--raggio-cella); box-shadow: none;
   background: var(--da-cambiare); border: 1px solid var(--da-cambiare-bordo);
 }
+.giorno-profilo .riga-cambio .in-corso.concordato { background: var(--concordato); border-color: var(--concordato-bordo); }
 .giorno-profilo .riga-cambio .in-corso svg { width: 15px; height: 15px; }
 
 /* Fino a 374px (iPhone SE e mini) il turno scende a 12px: a 13 "11:00"
@@ -615,6 +631,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   background: var(--superficie); border: 1px solid var(--linea); color: var(--da-cambiare-segno);
 }
 .campione-giorno.da-cambiare { background: var(--da-cambiare); border-color: var(--da-cambiare-bordo); }
+.campione-giorno.concordato { background: var(--concordato); border-color: var(--concordato-bordo); color: var(--concordato-segno); }
 
 .giorno-profilo .tile { margin-top: 16px; }
 .giorno-profilo .lista-cambi { margin-top: 4px; }

@@ -178,19 +178,19 @@ function legendaPubblica() {
 /**
  * A che punto è il cambio di un giorno, detto dalla forma e non dal colore:
  * clessidra finché si cerca o si aspetta una risposta, spunta quando è
- * concordato e manca solo UKG. Il colore è lo stesso, l'ambra del giorno da
- * cambiare: due clessidre di due colori si distinguevano solo guardando bene.
+ * concordato e manca solo UKG. Il colore dice la stessa cosa: ambra finché è
+ * in corso, verde chiaro quando è concordato.
  */
 function segnoCambio(fase, px) {
   const accordo = fase === 'accordo';
-  return `<span class="in-corso" aria-label="${accordo ? 'cambio concordato, manca la conferma in UKG' : 'cambio in corso'}">${icona(accordo ? 'spunta' : 'clessidra', { px, forte: true })}</span>`;
+  return `<span class="in-corso ${accordo ? 'concordato' : ''}" aria-label="${accordo ? 'cambio concordato, manca la conferma in UKG' : 'cambio in corso'}">${icona(accordo ? 'spunta' : 'clessidra', { px, forte: true })}</span>`;
 }
 
 function legendaPersonale() {
   return `
     <ul class="legenda-mese legenda-personale">
       <li><span class="campione-giorno da-cambiare">${icona('clessidra', { px: 12, forte: true })}</span>cambio in corso</li>
-      <li><span class="campione-giorno da-cambiare">${icona('spunta', { px: 12, forte: true })}</span>concordato, manca UKG</li>
+      <li><span class="campione-giorno concordato">${icona('spunta', { px: 12, forte: true })}</span>concordato, manca UKG</li>
     </ul>`;
 }
 
@@ -1179,7 +1179,7 @@ export function ilTuoMese(mese = todayISO().slice(0, 7)) {
       const stato = !turno ? 'senza-turno' : turno.tipo === 'OFF' ? 'riposo' : 'lavoro';
       return html`
         <button class="mese-giorno ${stato} ${classiGiorno(data, mese, oggi)}
-                       ${inCorso.has(data) ? 'da-cambiare' : ''}"
+                       ${inCorso.has(data) ? (inCorso.get(data) === 'accordo' ? 'concordato' : 'da-cambiare') : ''}"
                 data-act="giorno-profilo" data-data="${data}">
           ${raw(inCorso.has(data) ? segnoCambio(inCorso.get(data), 12) : '')}
           <span class="numero">${toDate(data).getUTCDate()}</span>
