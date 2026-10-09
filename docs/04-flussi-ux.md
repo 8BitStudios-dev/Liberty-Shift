@@ -335,7 +335,7 @@ si fa aprendo un giorno:
 |---|---|---|
 | **Cercano** | blu | chi vuole libero questo giorno (cambio OFF): se tu sei a casa, puoi prendere il suo turno |
 | **Offrono** | verde | le giornate che si offrono in cambio in un cambio OFF |
-| **Cambi orario** | viola | chi vuole un orario diverso in questo giorno: se lavori, puoi scambiare il tuo |
+| **Cambi orario** | teal | chi vuole un orario diverso in questo giorno: se lavori, puoi scambiare il tuo |
 
 Il cambio orario ha un colore suo perché ha una faccia sola: un giorno, un
 orario da scambiare. Il cambio OFF ne ha due su giorni diversi, e per quello
@@ -350,7 +350,7 @@ la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
 Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un
-segmento per ruolo presente: viola un cambio orario, blu chi cerca un OFF, verde chi offre un OFF, bordo oro per la
+segmento per ruolo presente: teal un cambio orario, blu chi cerca un OFF, verde chi offre un OFF, bordo oro per la
 priorità. Un segmento per ruolo e non uno per richiesta: dal mese serve sapere
 se su quel giorno qualcuno se ne vuole andare, qualcuno vuole venire, o tutte e
 due le cose.

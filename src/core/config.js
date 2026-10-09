@@ -53,4 +53,4 @@ export function serverConfigurato() {
  * pubblicazione: un test controlla che i due vadano insieme, così non si
  * può alzare l'uno e dimenticare l'altro.
  */
-export const VERSIONE_APP = '1.0.089';
+export const VERSIONE_APP = '1.0.090';

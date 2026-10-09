@@ -55,10 +55,9 @@
   --prendo: #0b7a52;
   --prendo-tenue: #e4f6ee;
   /* Il cambio orario ha un colore suo: ha un giorno solo, non lascia né offre. */
-  --orario: #7a45d6;
-  /* Il tipo di cambio: teal per l'orario, fucsia per OFF. Indipendenti da
-     --orario, che colora il calendario pubblico. */
-  --tipo-orario: #0b7285;
+  --orario: #0b7285;
+  /* Il colore di OFF nelle pillole del tipo (nel calendario OFF resta blu e
+     verde: cerca e offre sono due giorni). */
   --tipo-off: #b02a78;
   /* Nome storico di --prendo, ancora usato da styles.css. */
   --verde: var(--prendo);
@@ -128,8 +127,7 @@
     --accento-tenue: #16263f;
     --prendo: #45d19a;
     --prendo-tenue: #12302a;
-    --orario: #b496ff;
-    --tipo-orario: #5ccbe0;
+    --orario: #5ccbe0;
     --tipo-off: #ff8fcf;
     --rosso: #ff7b80;
     --ambra: #ffb066;
@@ -170,8 +168,7 @@
   --accento-tenue: #16263f;
   --prendo: #45d19a;
   --prendo-tenue: #12302a;
-  --orario: #b496ff;
-  --tipo-orario: #5ccbe0;
+  --orario: #5ccbe0;
   --tipo-off: #ff8fcf;
   --rosso: #ff7b80;
   --ambra: #ffb066;
@@ -336,7 +333,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .titolo-gruppo { display: flex; align-items: center; gap: 8px; }
 /* La pillola del tipo di cambio: tono su tono, come i tag. Il colore passa da
    --tipo, così pillola piccola e grande non possono divergere. */
-.tipo-etichetta[data-tipo="ORARIO"], .tipo-pill[data-tipo="ORARIO"] { --tipo: var(--tipo-orario); }
+.tipo-etichetta[data-tipo="ORARIO"], .tipo-pill[data-tipo="ORARIO"] { --tipo: var(--orario); }
 .tipo-etichetta[data-tipo="OFF"], .tipo-pill[data-tipo="OFF"] { --tipo: var(--tipo-off); }
 .tipo-etichetta, .tipo-pill[data-tipo] {
   color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent);
