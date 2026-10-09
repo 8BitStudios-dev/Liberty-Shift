@@ -84,9 +84,14 @@ export function chipsOrariTipici(inizioAttuale = '') {
     </div>`;
 }
 
+/**
+ * Lo stato di una richiesta, con un pallino disegnato in CSS al posto
+ * dell'emoji di `STATUS_META.dot`: le emoji cambiano forma su ogni telefono
+ * e non stanno con il resto dei segni. Il colore sta in `.stato-*`.
+ */
 export function badgeStato(status) {
-  const m = STATUS_META[status] || { dot: '', label: status };
-  return html`<span class="badge stato-${status}">${m.dot} ${m.label}</span>`;
+  const m = STATUS_META[status] || { label: status };
+  return html`<span class="badge stato-${status}"><i class="pallino-stato"></i> ${m.label}</span>`;
 }
 
 /**
@@ -250,7 +255,7 @@ export function cardRichiesta(request, giorno = null) {
   return html`
     <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${nonPerMe ? 'non-per-me' : ''} ${mia ? 'mia' : ''}"
             data-act="apri-richiesta" data-id="${request.id}">
-      <span class="avatar piccolo">${iniziali(autore)}</span>
+      <span class="avatar piccolo cerchio-tipo" data-tipo="${request.tipo}" aria-hidden="true">${raw(icona(ICONA_TIPO[request.tipo] || 'orario', { px: 18 }))}</span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}

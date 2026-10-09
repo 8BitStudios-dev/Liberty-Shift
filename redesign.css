@@ -213,6 +213,15 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .gruppo-giorno > .testo-tenue { font-size: 14px; }
 .occhiello { font-size: 16px; margin: 6px 0 18px; }
 .badge, .tag { font-size: 12px; }
+.badge .pallino-stato {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  margin-right: 2px; vertical-align: 0; background: var(--testo-tenue);
+}
+.stato-APERTA .pallino-stato { background: var(--oro); }
+.stato-PROPOSTA .pallino-stato { background: var(--accento); }
+.stato-IN_ATTESA .pallino-stato { background: var(--ambra); }
+.stato-ACCORDO .pallino-stato { background: var(--prendo); }
+.stato-RIMOSSA .pallino-stato { background: var(--rosso); }
 .perche { font-size: 14px; line-height: 1.55; }
 .perche li { margin: 5px 0; }
 
@@ -334,8 +343,12 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .titolo-gruppo { display: flex; align-items: center; gap: 8px; }
 /* La pillola del tipo di cambio: tono su tono, come i tag. Il colore passa da
    --tipo, così pillola piccola e grande non possono divergere. */
-.tipo-etichetta[data-tipo="ORARIO"], .tipo-pill[data-tipo="ORARIO"] { --tipo: var(--orario); }
-.tipo-etichetta[data-tipo="OFF"], .tipo-pill[data-tipo="OFF"] { --tipo: var(--cerca-off); }
+.tipo-etichetta[data-tipo="ORARIO"], .tipo-pill[data-tipo="ORARIO"], .cerchio-tipo[data-tipo="ORARIO"] { --tipo: var(--orario); }
+.tipo-etichetta[data-tipo="OFF"], .tipo-pill[data-tipo="OFF"], .cerchio-tipo[data-tipo="OFF"] { --tipo: var(--cerca-off); }
+/* Nelle righe delle richieste il cerchio dice il tipo al posto delle iniziali:
+   il nome sta già scritto sopra, e il colore si legge prima di qualsiasi testo. */
+.avatar.cerchio-tipo { display: grid; place-items: center; }
+.cerchio-tipo[data-tipo] { color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent); }
 .tipo-etichetta, .tipo-pill[data-tipo] {
   color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent);
 }
