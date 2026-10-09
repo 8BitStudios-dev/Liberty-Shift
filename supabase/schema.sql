@@ -267,7 +267,7 @@ begin
   return nuovo;
 end $$;
 
-revoke all on function public.iscrivi(text, text, text, text, smallint, text) from public;
+revoke all on function public.iscrivi(text, text, text, text, smallint, text) from public, anon;
 grant execute on function public.iscrivi(text, text, text, text, smallint, text) to authenticated;
 
 /**
@@ -286,7 +286,7 @@ language sql security definer stable set search_path = public as $$
   select exists (select 1 from public.profili where id = auth.uid() and attivo);
 $$;
 
-revoke all on function public.e_membro() from public;
+revoke all on function public.e_membro() from public, anon;
 grant execute on function public.e_membro() to authenticated;
 
 /**
@@ -304,7 +304,7 @@ language sql security definer stable set search_path = public as $$
   select coalesce((select admin and attivo from public.profili where id = auth.uid()), false);
 $$;
 
-revoke all on function public.e_admin() from public;
+revoke all on function public.e_admin() from public, anon;
 grant execute on function public.e_admin() to authenticated;
 
 -- ============================================================== sicurezza
@@ -341,7 +341,7 @@ drop policy if exists "ognuno crea il proprio profilo" on public.profili;
 drop policy if exists "ognuno modifica il proprio profilo" on public.profili;
 create policy "ognuno modifica il proprio profilo"
   on public.profili for update to authenticated
-  using (id = auth.uid()) with check (id = auth.uid());
+  using (id = (select auth.uid())) with check (id = (select auth.uid()));
 
 -- La policy sopra lascia scrivere qualsiasi colonna della propria riga,
 -- `admin`, `super_admin` e `attivo` comprese: da sola non impedirebbe un
@@ -360,7 +360,7 @@ create policy "ognuno modifica il proprio profilo"
 drop function if exists public.blocca_auto_admin() cascade;
 
 create or replace function public.blocca_scritture_privilegiate() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   if auth.role() in ('anon', 'authenticated') then
     new.admin := old.admin;
@@ -413,7 +413,7 @@ create policy "la bacheca la leggono gli iscritti, tranne gli accordi"
 
 drop policy if exists "si pubblica solo a proprio nome" on public.richieste;
 create policy "si pubblica solo a proprio nome"
-  on public.richieste for insert to authenticated with check (autore_id = auth.uid());
+  on public.richieste for insert to authenticated with check (autore_id = (select auth.uid()));
 
 -- L'autore modifica la propria richiesta; l'altra parte deve poterne cambiare
 -- lo stato quando accetta, e quel passaggio si fa dalla proposta: qui basta
@@ -422,17 +422,17 @@ drop policy if exists "la richiesta la muove chi e' coinvolto" on public.richies
 create policy "la richiesta la muove chi e' coinvolto"
   on public.richieste for update to authenticated
   using (
-    autore_id = auth.uid()
+    autore_id = (select auth.uid())
     or exists (
       select 1 from public.proposte p
       where p.richiesta_id = richieste.id
-        and auth.uid() in (p.da_user_id, p.a_user_id)
+        and (select auth.uid()) in (p.da_user_id, p.a_user_id)
     )
   );
 
 drop policy if exists "si cancella solo la propria richiesta" on public.richieste;
 create policy "si cancella solo la propria richiesta"
-  on public.richieste for delete to authenticated using (autore_id = auth.uid());
+  on public.richieste for delete to authenticated using (autore_id = (select auth.uid()));
 
 -- Un admin chiude o rimuove la richiesta di chiunque (`RULES` e la UI la
 -- limitano al cambio di stato, mai a toccare cedo/cerco): la policy resta
@@ -447,21 +447,21 @@ create policy "un admin chiude o rimuove qualsiasi richiesta"
 drop policy if exists "una proposta la vedono le due parti" on public.proposte;
 create policy "una proposta la vedono le due parti"
   on public.proposte for select to authenticated
-  using (auth.uid() in (da_user_id, a_user_id));
+  using ((select auth.uid()) in (da_user_id, a_user_id));
 
 drop policy if exists "si propone solo a proprio nome" on public.proposte;
 create policy "si propone solo a proprio nome"
-  on public.proposte for insert to authenticated with check (da_user_id = auth.uid());
+  on public.proposte for insert to authenticated with check (da_user_id = (select auth.uid()));
 
 drop policy if exists "una proposta la aggiornano le due parti" on public.proposte;
 create policy "una proposta la aggiornano le due parti"
   on public.proposte for update to authenticated
-  using (auth.uid() in (da_user_id, a_user_id))
-  with check (auth.uid() in (da_user_id, a_user_id));
+  using ((select auth.uid()) in (da_user_id, a_user_id))
+  with check ((select auth.uid()) in (da_user_id, a_user_id));
 
 drop policy if exists "si ritira solo la propria proposta" on public.proposte;
 create policy "si ritira solo la propria proposta"
-  on public.proposte for delete to authenticated using (da_user_id = auth.uid());
+  on public.proposte for delete to authenticated using (da_user_id = (select auth.uid()));
 
 -- Quando un admin chiude o rimuove una richiesta, le proposte ancora aperte
 -- su di essa vanno rifiutate: nessuna delle due parti è detta a farlo, quindi
@@ -479,17 +479,17 @@ create policy "le disponibilita' le leggono gli iscritti"
 drop policy if exists "ognuno dichiara la propria disponibilita'" on public.disponibilita;
 create policy "ognuno dichiara la propria disponibilita'"
   on public.disponibilita for all to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+  using (user_id = (select auth.uid())) with check (user_id = (select auth.uid()));
 
 -- ringraziamenti ----------------------------------------------------------
 drop policy if exists "i ringraziamenti li vedono le due parti" on public.ringraziamenti;
 create policy "i ringraziamenti li vedono le due parti"
   on public.ringraziamenti for select to authenticated
-  using (auth.uid() in (da_user_id, a_user_id));
+  using ((select auth.uid()) in (da_user_id, a_user_id));
 
 drop policy if exists "si ringrazia a proprio nome" on public.ringraziamenti;
 create policy "si ringrazia a proprio nome"
-  on public.ringraziamenti for insert to authenticated with check (da_user_id = auth.uid());
+  on public.ringraziamenti for insert to authenticated with check (da_user_id = (select auth.uid()));
 
 -- ======================================================= pulizia periodica
 --
@@ -1162,7 +1162,7 @@ create or replace trigger segna_aggiornamento before update on public.disponibil
 -- (stato RIFIUTATA con annullata_il), non si cancella: cancellarla lasciava
 -- la richiesta in ACCORDO senza la proposta che la teneva in piedi.
 alter policy "si ritira solo la propria proposta" on public.proposte
-  using (da_user_id = auth.uid() and stato in ('PROPOSTA', 'IN_ATTESA'));
+  using (da_user_id = (select auth.uid()) and stato in ('PROPOSTA', 'IN_ATTESA'));
 
 -- Un accordo per richiesta: due sì sulla stessa richiesta, da due telefoni
 -- nello stesso momento, non diventano due scambi.
@@ -1231,7 +1231,9 @@ begin
   end if;
   return new;
 end $$;
-revoke all on function public.registra_aiuto() from public;
+-- `from public` non basta: anon e authenticated hanno un permesso proprio, dato
+-- da Supabase di default, che resta se non lo si toglie per nome.
+revoke all on function public.registra_aiuto() from public, anon, authenticated;
 
 create or replace trigger registra_aiuto
   after insert or update of stato, annullata_il on public.proposte
@@ -1249,3 +1251,23 @@ join public.richieste q on q.id = p.richiesta_id
 where p.stato = 'ACCORDO' and p.annullata_il is null
   and (case when p.da_user_id = q.autore_id then p.a_user_id else p.da_user_id end) <> q.autore_id
 on conflict (proposta_id) do nothing;
+
+
+-- Helper di Supabase che abilita RLS sulle tabelle nuove: non è nostro, ma lì
+-- non serve a nessun client. C'è solo sui progetti che l'hanno ricevuto.
+do $$
+begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    revoke all on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end $$;
+
+
+-- Indici sulle colonne che puntano a un profilo: senza, cancellare un profilo
+-- o cercare "le proposte di questa persona" scorre la tabella intera. Non
+-- serve `richieste.chiusa_da_admin`: si compila di rado e non si cerca per lui.
+create index if not exists proposte_da_user_idx on public.proposte (da_user_id);
+create index if not exists proposte_a_user_idx on public.proposte (a_user_id);
+create index if not exists ringraziamenti_da_user_idx on public.ringraziamenti (da_user_id);
+create index if not exists ringraziamenti_a_user_idx on public.ringraziamenti (a_user_id);
+create index if not exists aiuti_aiutato_idx on public.aiuti (aiutato_id);

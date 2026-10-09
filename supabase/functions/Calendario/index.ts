@@ -68,7 +68,10 @@ Deno.serve(async (req) => {
   try {
     // Un calendario di un anno sta in poche centinaia di kilobyte: il timeout
     // è per non restare appesi a un server che non risponde.
-    const r = await fetch(url.toString(), { signal: AbortSignal.timeout(15000) });
+    // `manual`: un redirect da un dominio ammesso verso un indirizzo interno
+    // aggirerebbe l'elenco qui sopra, che guarda solo l'indirizzo di partenza.
+    const r = await fetch(url.toString(), { signal: AbortSignal.timeout(15000), redirect: 'manual' });
+    if (r.status >= 300 && r.status < 400) return risposta({ errore: 'Il calendario ha cambiato indirizzo: copia quello nuovo.' }, 502);
     if (!r.ok) return risposta({ errore: `Il calendario ha risposto ${r.status}.` }, 502);
     testo = await r.text();
   } catch {

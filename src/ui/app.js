@@ -168,6 +168,7 @@ function render({ fermo = false } = {}) {
     setup: P.schermataProfilo,
     'primi-turni': P.schermataPrimiTurni,
     impostazioni: V.impostazioni,
+    problemi: V.problemi,
     legale: () => html`
       <header class="testata">
         <button class="icon-btn" data-act="vai" data-to="#/impostazioni">‹</button>

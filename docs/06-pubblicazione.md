@@ -9,7 +9,8 @@ L'app sta su **GitHub Pages**, all'indirizzo
 
 1. esegue `npm test` — una versione con i test rossi non viene pubblicata;
 2. costruisce la cartella `site/` con `index.html`, `styles.css`, `sw.js`,
-   `src/` e `public/`, più il file unico `liberty-shift.html`;
+   `src/` e `public/`, più il file unico `liberty-shift.html` e la demo per i
+   video come `demo.html`;
 3. la consegna a Pages.
 
 Sul sito finisce solo l'app. Documentazione, test, screenshot e script restano
