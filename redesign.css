@@ -351,6 +351,8 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   width: 48px; height: 48px; flex: none; gap: 2px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
+.turno-offerto strong, .turno-ceduto strong { white-space: nowrap; }
+.stima-contratto { font-size: 12px; font-weight: 500; color: var(--testo-tenue); margin-left: 4px; white-space: nowrap; }
 .cerchio-testo { font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
 .cerchio-tipo[data-tipo] { color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent); }
 .tipo-etichetta, .tipo-pill[data-tipo] {

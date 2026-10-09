@@ -28,6 +28,17 @@ export function iconaTipo(tipo, px = 14) {
  * per OFF (chi pubblica un OFF è chi lo cerca). Il blu e il verde restano ai
  * due lati di uno scambio, LASCI e PRENDI.
  */
+/**
+ * "(stimato per FT)" accanto a un orario che l'app ha adattato al contratto di
+ * chi guarda: dice a quale contratto si riferisce il numero, senza spiegare
+ * l'adattamento. Vuoto se l'orario è quello vero del turno.
+ */
+export function stimatoPer(adattato) {
+  if (!adattato) return '';
+  const contratto = store.me?.contratto;
+  return `<span class="stima-contratto">(stimato per ${esc(contratto || 'FT')})</span>`;
+}
+
 export function etichettaTipo(tipo, testo, px = 16) {
   return `<span class="tipo-etichetta" data-tipo="${esc(tipo)}">${iconaTipo(tipo, px)} ${esc(testo)}</span>`;
 }
@@ -143,7 +154,7 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } =
       html`
         <span class="etichetta">${freccia('prendo')} prendi</span>
         <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
-        <span class="orario">${perMe.trasformato ? `${perMe.start}–${perMe.end}` : shiftLabel(cedo)}</span>
+        <span class="orario">${perMe.trasformato ? `${perMe.start}–${perMe.end}` : shiftLabel(cedo)}${raw(stimatoPer(perMe.trasformato))}</span>
         ${raw(perMe.trasformato ? html`<div class="nota">${shiftLabel(cedo)} adattato al tuo contratto: ${TESTO_STIMA.charAt(0).toLowerCase() + TESTO_STIMA.slice(1)}</div>` : '')}`,
     );
   }
@@ -285,7 +296,7 @@ function riassuntoMatch(match, u, turno, opzioni) {
     return html`
       <div class="turno-offerto">
         Faresti <strong>${formatDay(turno?.data)}</strong> ·
-        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>${raw(stimatoPer(match.adattato?.trasformato))}
       </div>`;
   }
 
@@ -303,7 +314,7 @@ function riassuntoMatch(match, u, turno, opzioni) {
     </div>
     <div class="turno-ceduto">
       In cambio lavoreresti <strong>${formatDay(turno?.data)}</strong> ·
-      <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>
+      <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>${raw(stimatoPer(match.adattato?.trasformato))}
       <span class="testo-tenue">(${eri})</span>
     </div>`;
 }
