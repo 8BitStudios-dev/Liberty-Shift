@@ -889,6 +889,11 @@ aggiungere l'app alla schermata Home. "Non ora" lo nasconde per una
 settimana; sparisce da solo quando le notifiche sono attive, bloccate o non
 supportate.
 
+Nelle Impostazioni c'è anche **Feedback e consigli**: un collegamento `mailto:`
+che apre la posta del telefono già indirizzata a chi ha fatto l'app, con
+oggetto "Liberty Shift". Serve per un bug, un'idea o un grazie; l'app non
+manda niente da sola e non allega dati.
+
 ## La guida
 Sette schede, una per schermata: Home, Cambio rapido, Aiuta un collega, Nuovo
 cambio, Calendario, Bacheca, Profilo. Si aprono **da sole la prima volta** che

@@ -232,6 +232,7 @@ p { margin: 8px 0; }
   background: var(--superficie); color: inherit; font: inherit; text-align: left;
   cursor: pointer; box-shadow: var(--ombra); margin-bottom: 10px;
 }
+a.tile { text-decoration: none; }
 .tile > span:nth-child(2) { flex: 1; display: flex; flex-direction: column; }
 .tile em { font-style: normal; color: var(--testo-tenue); font-size: 14px; }
 .tile-icona { font-size: 24px; }

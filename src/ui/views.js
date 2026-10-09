@@ -585,6 +585,14 @@ export function impostazioni() {
         </span>
         <span class="chevron">›</span>
       </button>
+      <a class="tile" href="mailto:lbandini92@gmail.com?subject=Liberty%20Shift">
+        <span class="tile-icona">${raw(icona('invita'))}</span>
+        <span>
+          <strong>Feedback e consigli</strong>
+          <em>Un bug, un'idea o solo un grazie: si apre la tua mail</em>
+        </span>
+        <span class="chevron">›</span>
+      </a>
       ${raw(store.state.profilo?.idServer ? `
         <button class="tile" data-act="invita">
           <span class="tile-icona">${icona('invita')}</span>
