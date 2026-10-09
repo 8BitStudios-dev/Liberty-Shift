@@ -212,6 +212,51 @@ test('un rifiuto vero di permessi non diventa un rinnovo infinito', async () => 
   assert.equal(viste.length, 3, 'un solo rinnovo, poi ci si arrende');
 });
 
+test('senza rete il rinnovo non butta la sessione: si resta collegati', async () => {
+  const { seleziona, collegato } = await import('../src/core/supabase.js');
+  localStorage.setItem(CHIAVE_SESSIONE, JSON.stringify({
+    access_token: 'vecchio', refresh_token: 'buono', user: { id: 'u1' },
+  }));
+  let chiamate = 0;
+  globalThis.fetch = async () => {
+    chiamate += 1;
+    // Prima il token scaduto, poi la rete che sparisce proprio sul rinnovo.
+    if (chiamate === 1) return { ok: false, status: 401, text: async () => '{"message":"JWT expired"}' };
+    throw new TypeError('Load failed');
+  };
+  const r = await seleziona('richieste');
+  assert.match(r.errore, /irraggiungibile/, 'si dice che manca la rete, non che la sessione è scaduta');
+  assert.equal(collegato(), true, 'la sessione resta: al prossimo giro il rinnovo riparte');
+});
+
+test('due chiamate scadute insieme fanno un rinnovo solo, e restano collegate', async () => {
+  const { seleziona, collegato } = await import('../src/core/supabase.js');
+  localStorage.setItem(CHIAVE_SESSIONE, JSON.stringify({
+    access_token: 'vecchio', refresh_token: 'r1', user: { id: 'u1' },
+  }));
+  let rinnovi = 0;
+  globalThis.fetch = async (url, opzioni = {}) => {
+    const u = String(url);
+    if (u.includes('grant_type=refresh_token')) {
+      rinnovi += 1;
+      const usato = JSON.parse(opzioni.body).refresh_token;
+      // Il server ruota il codice: lo stesso codice due volte viene rifiutato.
+      if (usato !== 'r1' || rinnovi > 1) return { ok: false, status: 400, text: async () => '{"error":"invalid_grant"}' };
+      await new Promise((ok) => setTimeout(ok, 10));
+      return { ok: true, status: 200, text: async () => JSON.stringify({ access_token: 'nuovo', refresh_token: 'r2', user: { id: 'u1' } }) };
+    }
+    if (opzioni.headers?.Authorization === 'Bearer vecchio') {
+      return { ok: false, status: 401, text: async () => '{"message":"JWT expired"}' };
+    }
+    return { ok: true, status: 200, text: async () => '[]' };
+  };
+  const [a, b] = await Promise.all([seleziona('richieste'), seleziona('proposte')]);
+  assert.equal(a.errore, null);
+  assert.equal(b.errore, null);
+  assert.equal(rinnovi, 1, 'il secondo aspetta il rinnovo del primo');
+  assert.equal(collegato(), true);
+});
+
 // --- gli orari tipici dello store -------------------------------------
 
 test('la scorciatoia sposta il turno senza cambiargli la durata', async () => {

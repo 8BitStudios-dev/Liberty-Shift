@@ -139,6 +139,9 @@ async function chiama(percorso, opzioni = {}, { autenticata = true, riprovato = 
   if (risposta.status === 401 && autenticata && !riprovato && leggiSessione()?.refresh_token) {
     const r = await rinnova();
     if (!r.errore) return chiama(percorso, opzioni, { autenticata, riprovato: true });
+    // Senza rete il rinnovo non è fallito, non è partito: la sessione resta,
+    // e lo si dice per quello che è.
+    if (!r.stato) return { dati: null, errore: r.errore };
     return { dati: null, errore: 'Sessione scaduta: rientra con la tua password.' };
   }
 
@@ -211,8 +214,30 @@ export async function registra(identificativo, password) {
   return { dati: r.dati, errore: null };
 }
 
-/** Rinnova la sessione scaduta. Il token dura un'ora, l'app molto di più. */
-export async function rinnova() {
+let rinnovoInCorso = null;
+
+/**
+ * Rinnova la sessione scaduta. Il token dura un'ora, l'app molto di più.
+ *
+ * Prima ogni errore cancellava la sessione, e la persona si ritrovava "non
+ * collegata allo store" senza aver fatto niente. Succedeva in due modi:
+ * - la rete che esita (o una chiamata ferma al tetto dei 20 secondi): il
+ *   rinnovo non era fallito, non era nemmeno arrivato al server;
+ * - due rinnovi insieme (il tasto Aggiorna scarica calendario e bacheca in
+ *   parallelo, e scadono tutti e due): il server ruota il codice di rinnovo,
+ *   il secondo arrivava con quello già usato, veniva rifiutato e cancellava
+ *   la sessione nuova appena scritta dal primo.
+ * Ora chi arriva mentre un rinnovo è in corso aspetta quello, e la sessione si
+ * toglie solo se il server rifiuta davvero il codice che è ancora salvato.
+ */
+export function rinnova() {
+  if (!rinnovoInCorso) {
+    rinnovoInCorso = rinnovaDavvero().finally(() => { rinnovoInCorso = null; });
+  }
+  return rinnovoInCorso;
+}
+
+async function rinnovaDavvero() {
   const sessione = leggiSessione();
   if (!sessione?.refresh_token) return { dati: null, errore: 'Nessuna sessione da rinnovare.' };
   const r = await chiama('/auth/v1/token?grant_type=refresh_token', {
@@ -220,7 +245,10 @@ export async function rinnova() {
     body: JSON.stringify({ refresh_token: sessione.refresh_token }),
   }, { autenticata: false });
   if (r.errore) {
-    scriviSessione(null);
+    // Senza `stato` il server non ha risposto: niente da buttare. Con una
+    // risposta, si butta solo se nel frattempo nessuno l'ha già rinnovata.
+    const rifiutata = Boolean(r.stato) && r.stato < 500;
+    if (rifiutata && leggiSessione()?.refresh_token === sessione.refresh_token) scriviSessione(null);
     return r;
   }
   scriviSessione(r.dati);

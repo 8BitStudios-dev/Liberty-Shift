@@ -110,6 +110,13 @@ discutibile, e serve un posto dove leggerla prima che vada online.
   scaricare per un pomeriggio intero senza nessun avviso. Un `fetch` nuovo
   passa da `chiama`, non si scrive a parte.
 
+- **Il rinnovo della sessione è uno solo alla volta** (`rinnova` in
+  `src/core/supabase.js`). Il server ruota il codice di rinnovo: due rinnovi
+  in parallelo facevano rifiutare il secondo, che cancellava la sessione
+  appena rinnovata dal primo ("Non sei collegato allo store" premendo
+  Aggiorna). E un rinnovo senza risposta (rete, tetto dei 20 secondi) non
+  toglie la sessione: la toglie solo un rifiuto vero del server.
+
 - **Profili, richieste e disponibilità scendono a pezzi** (`scarica` in
   `src/core/sincronia.js`): dopo il primo scaricamento arrivano solo le righe
   con `aggiornato_il` più recente del segno salvato (`state.cursori`), più
