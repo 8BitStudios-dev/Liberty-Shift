@@ -980,7 +980,8 @@ perché lasciavano troppo bianco. Sotto i 375 px il cerchio si rimpicciolisce.
 
 Una scatola nuova sceglie una delle tre, non ne inventa una quarta. I tile
 colorati della Home (Cambio rapido, Aiuta un collega) sono superfici come le
-altre: il colore sta nel filo a sinistra, nel titolo e nell'icona. Le celle del
+altre nella forma; il colore sta nel fondo chiaro (giallo e rosa, al 65% sulla
+superficie), nel filo a sinistra, nel titolo e nell'icona. Le celle del
 calendario e i piccoli campioni della legenda restano a misura loro, perché
 devono entrare a pixel.
 

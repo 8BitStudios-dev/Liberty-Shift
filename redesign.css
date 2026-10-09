@@ -1081,7 +1081,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    token, così in scuro cambiano tinta da soli. */
 .tile.aiuta {
   position: relative; overflow: hidden;
-  background: var(--superficie); border: 0;
+  background: color-mix(in srgb, var(--aiuta-fondo) 65%, var(--superficie)); border: 0;
   box-shadow: inset 4px 0 0 var(--aiuta-segno), var(--ombra);
 }
 .tile.aiuta strong, .tile.aiuta .tile-icona { color: var(--aiuta-testo); }
@@ -1110,7 +1110,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    dei cuori, una piena e una solo contornata. È la saetta della sua icona. */
 .tile.cambio-rapido {
   position: relative; overflow: hidden;
-  background: var(--superficie); border: 0;
+  background: color-mix(in srgb, var(--rapido-fondo) 65%, var(--superficie)); border: 0;
   box-shadow: inset 4px 0 0 var(--rapido-segno), var(--ombra);
 }
 .tile.cambio-rapido strong, .tile.cambio-rapido .tile-icona { color: var(--rapido-testo); opacity: 1; }
