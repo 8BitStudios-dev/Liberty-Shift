@@ -44,6 +44,7 @@ src/core/     il prodotto vero e proprio, senza UI
 src/ui/       viste e flussi, senza framework
   notifiche.js  permesso, service worker e iscrizione alle push
 supabase/     schema del database e Edge Functions (send-push, Amministrazione, Calendario)
+demo/         la versione per registrare i video (`npm run demo`), non pubblicata col sito
 tests/        node --test sul motore; in fixtures/ la vecchia demo, usata solo dai test
 docs/         regolamento, motore, data model, flussi, decisioni aperte
 scripts/      server statico per lo sviluppo, build in file unico

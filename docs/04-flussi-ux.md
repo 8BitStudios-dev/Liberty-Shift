@@ -907,3 +907,25 @@ cui erano agganciati è stato cancellato con l'azzeramento del server.
 
 Admin e SuperAdmin non nascono più sul telefono: si impostano sul server e
 scendono con la sincronizzazione, insieme alla propria riga di `profili`.
+
+### La demo per i video
+Per registrare un video serve invece un'app piena, e per questo esiste una
+versione a parte: `npm run demo` produce `dist/liberty-shift-demo.html`, che
+non viene pubblicata col sito. È la stessa app, con tre differenze:
+
+- **Lorenzo e 25 colleghi inventati** (`demo/dati-demo.js`): venti con una
+  richiesta aperta, sette che Lorenzo può coprire (due gli convengono, una gli
+  costa, una è in ultima chiamata), tre proposte che lo aspettano, due scambi
+  da ringraziare, due favori già approvati su UKG. I turni di Lorenzo sono
+  quelli della vecchia demo; si cambiano in `SETTIMANA_LORENZO`.
+- **Nessun server e chiavi sue** (`liberty-demo:*`): aprirla non tocca i
+  turni veri salvati sullo stesso indirizzo. Ogni apertura riparte da capo.
+- **Notifiche dentro la pagina** (`demo/notifiche-demo.js`): sei banner, la
+  prima dopo 12 secondi e poi una ogni 25. Ognuna cambia lo stato (arriva una
+  proposta, un cambio viene accettato, un grazie supera un traguardo) e
+  toccarla porta alla schermata giusta. `?notifiche=0` le spegne, `?notifiche=15`
+  cambia il ritmo, il tasto N ne fa arrivare una subito, `?guida=1` lascia
+  comparire le schede della guida.
+
+Un test (`tests/demo.test.js`) controlla che i dati diano ancora le schermate
+piene se il motore cambia.
