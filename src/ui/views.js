@@ -166,8 +166,9 @@ export function home() {
 function legendaPubblica() {
   return `
     <ul class="legenda-mese">
-      <li><span class="barre in-legenda"><i class="cerca"></i></span>qualcuno cerca</li>
-      <li><span class="barre in-legenda"><i class="offre"></i></span>qualcuno offre</li>
+      <li><span class="barre in-legenda"><i class="orario"></i></span>cambio orario</li>
+      <li><span class="barre in-legenda"><i class="cerca"></i></span>OFF: qualcuno cerca</li>
+      <li><span class="barre in-legenda"><i class="offre"></i></span>OFF: qualcuno offre</li>
       <li><span class="campione prioritaria"></span>priorità</li>
       <li><span class="conta-giorno in-legenda">2</span>richieste del giorno</li>
       <li><span class="quota campione-quota">%</span>puoi aiutare</li>
@@ -231,7 +232,8 @@ export function calendario(params) {
  */
 const GRUPPI_GIORNO = [
   { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno libero. Se tu non lavori, puoi prendere il loro turno.' },
-  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Turni e giornate che i colleghi lasciano: puoi prenderli tu.' },
+  { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Giornate che i colleghi offrono in cambio: puoi prenderle tu.' },
+  { ruolo: 'ORARIO', titolo: 'Cambi orario', nota: 'Vogliono un orario diverso in questo giorno. Se lavori, puoi scambiare il tuo.' },
 ];
 
 // -------------------------------------------------------------- BACHECA
@@ -1134,7 +1136,7 @@ export function mesePubblico(mese) {
     cella: (data) => {
       const delGiorno = richieste.get(data) || [];
       const ruoli = new Set(delGiorno.map((r) => ruoloNelGiorno(r, data).ruolo));
-      const barre = ['CERCA', 'OFFRE'].filter((k) => ruoli.has(k)).map((k) => `<i class="${k.toLowerCase()}"></i>`).join('');
+      const barre = ['CERCA', 'OFFRE', 'ORARIO'].filter((k) => ruoli.has(k)).map((k) => `<i class="${k.toLowerCase()}"></i>`).join('');
       const migliore = (opportunita.get(data) || [])[0];
       return html`
         <button class="mese-giorno ${classiGiorno(data, mese, oggi)} ${delGiorno.some(hasPriority) ? 'prioritaria' : ''}"

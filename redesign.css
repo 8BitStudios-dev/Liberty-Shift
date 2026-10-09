@@ -54,6 +54,8 @@
   --cedo-tenue: var(--accento-tenue);
   --prendo: #0b7a52;
   --prendo-tenue: #e4f6ee;
+  /* Il cambio orario ha un colore suo: ha un giorno solo, non lascia né offre. */
+  --orario: #7a45d6;
   /* Nome storico di --prendo, ancora usato da styles.css. */
   --verde: var(--prendo);
   --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
@@ -122,6 +124,7 @@
     --accento-tenue: #16263f;
     --prendo: #45d19a;
     --prendo-tenue: #12302a;
+    --orario: #b496ff;
     --rosso: #ff7b80;
     --ambra: #ffb066;
     --oro: #e8c04c;
@@ -161,6 +164,7 @@
   --accento-tenue: #16263f;
   --prendo: #45d19a;
   --prendo-tenue: #12302a;
+  --orario: #b496ff;
   --rosso: #ff7b80;
   --ambra: #ffb066;
   --oro: #e8c04c;
@@ -263,6 +267,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 }
 .riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cedo), inset 0 -1px 0 var(--filetto); }
 .riga-richiesta.ruolo-OFFRE { border-left: 0; box-shadow: inset 3px 0 0 var(--prendo), inset 0 -1px 0 var(--filetto); }
+.riga-richiesta.ruolo-ORARIO { border-left: 0; box-shadow: inset 3px 0 0 var(--orario), inset 0 -1px 0 var(--filetto); }
 .riga-titolo { font-size: 16px; gap: 8px; }
 /* La stella della priorità prende l'oro, come il filo a sinistra: in
    currentColor era nera in chiaro e bianca in scuro. */
@@ -333,9 +338,11 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
 .gruppo-giorno.CERCA h3::before { background: var(--cedo); }
 .gruppo-giorno.OFFRE h3::before { background: var(--prendo); }
+.gruppo-giorno.ORARIO h3::before { background: var(--orario); }
 .gruppo-giorno h3 { font-size: 14px; }
 .barre .cerca { background: var(--cedo); }
 .barre .offre { background: var(--prendo); }
+.barre .orario { background: var(--orario); }
 .tabella-dati th:first-child { color: var(--prendo); }
 .tabella-dati th:last-child { color: var(--cedo); }
 

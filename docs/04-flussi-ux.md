@@ -331,14 +331,18 @@ Ora il ruolo si calcola sul giorno che si sta guardando (`ruoloNelGiorno`), e il
 dettaglio della giornata ha due soli blocchi, perché due sono le domande che uno
 si fa aprendo un giorno:
 
-| Blocco | Chi c'è dentro |
-|---|---|
-| **Cercano** | chi vuole libero questo giorno: se tu sei a casa, puoi prendere il suo turno |
-| **Offrono** | tutto quello che è a disposizione: le giornate offerte in un cambio OFF e i turni di un cambio orario |
+| Blocco | Colore | Chi c'è dentro |
+|---|---|---|
+| **Cercano** | blu | chi vuole libero questo giorno (cambio OFF): se tu sei a casa, puoi prendere il suo turno |
+| **Offrono** | verde | le giornate che si offrono in cambio in un cambio OFF |
+| **Cambi orario** | viola | chi vuole un orario diverso in questo giorno: se lavori, puoi scambiare il tuo |
 
-Il cambio orario sta fra chi offre e non in un gruppo suo: da fuori è un turno
-che si può prendere, esattamente come una giornata messa a disposizione. Chi
-guarda non ha bisogno di sapere come l'app classifica la richiesta.
+Il cambio orario ha un colore suo perché ha una faccia sola: un giorno, un
+orario da scambiare. Il cambio OFF ne ha due su giorni diversi, e per quello
+servono "cerca" e "offre". Prima il cambio orario stava fra chi offre, e lo
+stesso verde diceva due cose diverse (un turno da prendere, una giornata in cui
+qualcuno lavorerebbe). La legenda ora lo dice: "cambio orario", "OFF: qualcuno
+cerca", "OFF: qualcuno offre".
 
 La sintesi è riscritta dal punto di vista della data: sul 14 si legge "offre di
 lavorare questo giorno · in cambio vuole libero Sab 12", e gli altri giorni che
@@ -346,7 +350,7 @@ la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
 Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un
-segmento per ruolo presente: blu chi cerca, verde chi offre, bordo oro per la
+segmento per ruolo presente: viola un cambio orario, blu chi cerca un OFF, verde chi offre un OFF, bordo oro per la
 priorità. Un segmento per ruolo e non uno per richiesta: dal mese serve sapere
 se su quel giorno qualcuno se ne vuole andare, qualcuno vuole venire, o tutte e
 due le cose.

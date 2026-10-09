@@ -144,12 +144,14 @@ export const GUIDE = {
 
       <h3>In ogni giorno</h3>
       <ul class="elenco piccolo">
+        <li><span class="barre in-legenda"><i class="orario"></i></span>
+          viola: qualcuno vuole cambiare orario quel giorno;</li>
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
           blu: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
-          verde: qualcuno offre un turno o una giornata;</li>
+          verde: qualcuno offre quel giorno in un cambio OFF;</li>
         <li>bordo oro: c'è una priorità;</li>
-        <li>il numero nel cerchio grigio: quante richieste toccano quel giorno, fra chi cerca e chi offre;</li>
+        <li>il numero nel cerchio grigio: quante richieste toccano quel giorno, fra cambi orario, chi cerca e chi offre;</li>
         <li>la percentuale: c'è una richiesta che puoi coprire, e quanto va bene a tutti e due.</li>
       </ul>
 
