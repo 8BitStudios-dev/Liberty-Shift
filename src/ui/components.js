@@ -114,17 +114,25 @@ export function badgeStato(status) {
  * dell'autore, un collega leggeva "LASCIO 11:00–20:00" e lo prendeva per il
  * proprio turno, con il turno che offriva davvero subito sotto.
  *
- * Le parole sono due sole, ovunque: **lascia** e **prende**. Chi guarda legge
- * "lasci" e "prendi"; di un altro si legge "Lorenzo lascia" e "Lorenzo prende".
- * Prima c'erano quattro paia (lascio/cerco, lasci/prendi, cerca/offre,
- * cede/cerca) e "cerca" voleva dire cose opposte: nel cambio OFF il giorno che
- * si lascia, nel cambio orario quello che si vuole ricevere.
+ * Si legge sempre dal punto di vista di chi guarda, e sempre nello stesso
+ * ordine: **prima cosa prendi, poi cosa lasci**. Chi apre la richiesta di
+ * Elisa vuole sapere cosa farà lui, non cosa fa lei: "Elisa lascia / Elisa
+ * prende" costringeva a ribaltare tutto a mente.
  *
- * - Chi ha scritto la richiesta, o chi ha già scelto il turno da offrire:
- *   "lasci" e "prendi", con l'orario che farebbe davvero. I colori restano
- *   veri: il blu è sempre il turno che cede chi guarda.
- * - Un collega prima di scegliere: la richiesta con il nome di chi l'ha
- *   scritta ("Lorenzo lascia", "Lorenzo prende").
+ * Le parole sono due sole, ovunque: **prendi** e **lasci** (lascia e prende,
+ * nelle righe che parlano di altri). Prima erano quattro paia (lascio/cerco,
+ * lasci/prendi, cerca/offre, cede/cerca) e "cerca" voleva dire cose opposte:
+ * nel cambio OFF il giorno che si lascia, nel cambio orario quello che si
+ * vuole ricevere.
+ *
+ * - Un collega, prima di scegliere il suo turno: prendi quello che l'autore
+ *   lascia, lasci quello che l'autore cerca ("uno dei tuoi turni"…).
+ * - Un collega che ha già scelto: prendi il turno dell'autore, con le ore
+ *   che faresti davvero, lasci il tuo.
+ * - L'autore: prendi quello che cerca, lasci il suo turno.
+ *
+ * I colori restano veri e non seguono la posizione: il blu è sempre il turno
+ * che lascia chi guarda, il verde quello che prende.
  */
 export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
@@ -134,67 +142,78 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } =
   const mia = request.userId === store.state.currentUserId;
   const freccia = (nome) => raw(icona(nome, { px: 14, forte: true }));
 
-  const lati = (sinistra, destra) => html`
+  const lati = (prendi, lasci) => html`
     <div class="coppia ${compatto ? 'compatta' : ''}">
       <div class="tipo-cambio">${raw(etichettaTipo(request.tipo, meta.label))}</div>
       <div class="lati">
-        <div class="lato cedo">${raw(sinistra)}</div>
+        <div class="lato cerco">${raw(prendi)}</div>
         <div class="freccia">⇄</div>
-        <div class="lato cerco">${raw(destra)}</div>
+        <div class="lato cedo">${raw(lasci)}</div>
       </div>
     </div>`;
+  const etPrendi = html`<span class="etichetta">${freccia('prendo')} prendi</span>`;
+  const etLasci = html`<span class="etichetta">${freccia('cedo')} lasci</span>`;
+
+  // Il turno che l'autore lascia, e quello che cerca: gli stessi due pezzi per
+  // chiunque guardi, cambia solo da che parte stanno.
+  const turnoDellAutore = html`
+    <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
+    <span class="orario">${shiftLabel(cedo)}</span>
+    ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}`;
+  const cosaCerca = off
+    ? html`
+      <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
+      <span class="orario">${wantLabel(request.cerco)}</span>`
+    : html`
+      <strong>stesso giorno</strong>
+      <span class="orario">${wantLabel(request.cerco)}</span>`;
 
   if (!mia && mioTurno) {
     const perMe = trasformaTurno(cedo, mioTurno, personaDi);
     return lati(
       html`
-        <span class="etichetta">${freccia('cedo')} lasci</span>
-        <strong>${formatDay(mioTurno.data)}</strong>
-        <span class="orario">${shiftLabel(mioTurno)}</span>`,
-      html`
-        <span class="etichetta">${freccia('prendo')} prendi</span>
+        ${raw(etPrendi)}
         <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
         <span class="orario">${perMe.trasformato ? `${perMe.start}–${perMe.end}` : shiftLabel(cedo)}${raw(stimatoPer(perMe.trasformato))}</span>
         ${raw(perMe.trasformato ? html`<div class="nota">${shiftLabel(cedo)} adattato al tuo contratto: ${TESTO_STIMA.charAt(0).toLowerCase() + TESTO_STIMA.slice(1)}</div>` : '')}`,
+      html`
+        ${raw(etLasci)}
+        <strong>${formatDay(mioTurno.data)}</strong>
+        <span class="orario">${shiftLabel(mioTurno)}</span>`,
     );
   }
 
-  const chi = mia ? '' : `${store.user(request.userId)?.nome || 'chi chiede'} `;
-  const verbo = (tu, lei) => (mia ? tu : `${chi}${lei}`);
-  return lati(
-    html`
-      <span class="etichetta">${freccia('cedo')} ${verbo('lasci', 'lascia')}</span>
-      <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
-      <span class="orario">${shiftLabel(cedo)}</span>
-      ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}`,
-    off
-      ? html`
-        <span class="etichetta">${freccia('prendo')} ${verbo('prendi', 'prende')}</span>
-        <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
-        <span class="orario">${wantLabel(request.cerco)}</span>`
-      : html`
-        <span class="etichetta">${freccia('prendo')} ${verbo('prendi', 'prende')}</span>
-        <strong>stesso giorno</strong>
-        <span class="orario">${wantLabel(request.cerco)}</span>`,
-  );
+  if (mia) return lati(html`${raw(etPrendi)}${raw(cosaCerca)}`, html`${raw(etLasci)}${raw(turnoDellAutore)}`);
+
+  // Prima il tuo punto di vista, poi quello dell'altra persona: sotto la box,
+  // in piccolo, cosa fa l'autore. Chi apre una richiesta pensa a sé, e il resto
+  // è contesto.
+  const nome = store.user(request.userId)?.nome || 'chi chiede';
+  const suoLascia = off ? formatDay(cedo?.data) : `${formatDay(cedo?.data)} ${shiftLabel(cedo)}`;
+  const suoPrende = off ? giorni.map((g) => formatDay(g)).join(' o ') : wantLabel(request.cerco);
+  return html`
+    ${raw(lati(html`${raw(etPrendi)}${raw(turnoDellAutore)}`, html`${raw(etLasci)}${raw(cosaCerca)}`))}
+    <p class="altro-punto">${nome}: lascia ${suoLascia} · prende ${suoPrende}</p>`;
 }
 
 /**
  * Una riga sola: il minimo per capire se ti riguarda. Il resto è nel dettaglio.
  *
- * "cede"/"cerca" per l'orario, "cerca"/"offre" per l'OFF: stesso schema verbo
- * + informazione in entrambi i casi. Prima l'orario usava una freccia
- * ("08:00–17:00 → 11:00–20:00") senza dire chi cede e chi cerca, e nella
- * lista delle ultime richieste, mescolata a righe OFF che invece lo dicevano,
- * sembrava mancante.
+ * Le stesse due parole della box e lo stesso ordine: prima cosa prendi, poi
+ * cosa lasci. Prima l'orario usava una freccia ("08:00–17:00 → 11:00–20:00")
+ * senza dire chi cede e chi cerca, e nella lista delle ultime richieste,
+ * mescolata a righe OFF che invece lo dicevano, sembrava mancante.
  */
 export function sintesiRichiesta(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
-  if (request.tipo === TIPO_CAMBIO.OFF) {
-    return `lascia ${formatDay(cedo?.data)} · prende ${giorni.map((g) => formatDay(g)).join(' o ')}`;
-  }
-  return `${formatDay(cedo?.data)} · lascia ${shiftLabel(cedo)} · prende ${wantLabel(request.cerco)}`;
+  const off = request.tipo === TIPO_CAMBIO.OFF;
+  const mia = request.userId === store.state.currentUserId;
+  // Gli stessi due pezzi della box: il turno che l'autore lascia e quello che
+  // cerca. Chi legge prende il primo e lascia il secondo; l'autore il contrario.
+  const lascia = off ? formatDay(cedo?.data) : `${formatDay(cedo?.data)} ${shiftLabel(cedo)}`;
+  const cerca = off ? giorni.map((g) => formatDay(g)).join(' o ') : wantLabel(request.cerco);
+  return mia ? `prendi ${cerca} · lasci ${lascia}` : `prendi ${lascia} · lasci ${cerca}`;
 }
 
 /**

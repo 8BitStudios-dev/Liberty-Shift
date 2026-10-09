@@ -215,22 +215,32 @@ inserito" sotto la frase del primo, e sembrava che mancasse un tasto.
 Il riquadro con i due lati (blu a sinistra, verde a destra) cambia parole
 secondo chi lo legge, e il blu resta sempre il turno che cede chi guarda:
 
-| Chi guarda | Sinistra (blu) | Destra (verde) |
+| Chi guarda | A sinistra (verde) | A destra (blu) |
 | --- | --- | --- |
-| chi ha scritto la richiesta | **lasci** il tuo turno | **prendi** quello che vuoi (nel cambio OFF, uno dei giorni che offri) |
-| un collega, con il turno che offre (tendina "Proponi lo scambio", Aiuta un collega, Cambio rapido, una proposta già fatta) | **lasci** il tuo turno | **prendi** quello dell'autore, con le ore che faresti davvero |
-| un collega che non ha ancora scelto (dettaglio della richiesta) | **Lorenzo lascia** | **Lorenzo prende** |
+| un collega, prima di scegliere il suo turno | **prendi** il turno che l'autore lascia | **lasci** quello che l'autore cerca ("stesso giorno, finisca entro le 18", "Gio o Ven") |
+| un collega, con il turno che offre (tendina "Proponi lo scambio", Aiuta un collega, Cambio rapido, una proposta già fatta) | **prendi** il turno dell'autore, con le ore che faresti davvero | **lasci** il tuo turno |
+| chi ha scritto la richiesta | **prendi** quello che cerchi (nel cambio OFF, uno dei giorni che offri) | **lasci** il tuo turno |
 
-Le parole sono due sole in tutta l'app: **lascia** e **prende** (a chi guarda,
-**lasci** e **prendi**). Prima erano quattro paia (lascio/cerco, lasci/prendi,
-cerca/offre, cede/cerca) e "cerca" voleva dire cose opposte: nel cambio OFF il
-giorno che si lascia, nel cambio orario quello che si vuole ricevere. Anche le
-righe di Bacheca e Calendario, la Home ("Lasci Gio 15/10") e la legenda del
-mese usano le stesse due.
+**Sempre prima il tuo punto di vista, poi quello dell'altra persona.** Chi apre
+la richiesta di Elisa vuole sapere cosa farà lui, non cosa fa lei: "Elisa
+lascia, Elisa prende" costringeva a ribaltare tutto a mente. Ora la box parla a
+chi guarda, e **prima cosa prendi, poi cosa lasci**. L'altra persona viene
+dopo: sotto la box, in piccolo, "Elisa: lascia Mar 20/10 · prende Gio 22/10 o
+Ven 23/10"; in Aiuta un collega "Davide farebbe…". Lo stesso ordine vale per le
+righe di Bacheca e Calendario ("prendi Mar 20/10 · lasci Gio 22/10 o Ven
+23/10") e per il giorno del calendario ("prendi questo giorno · in cambio lasci
+Lun 12/10"). I colori non seguono la posizione: il blu è sempre il turno che
+lasci, il verde quello che prendi.
+
+Le parole sono due sole in tutta l'app: **prendi** e **lasci** (lascia e prende
+solo quando si parla di un altro). Prima erano quattro paia (lascio/cerco,
+lasci/prendi, cerca/offre, cede/cerca) e "cerca" voleva dire cose opposte: nel
+cambio OFF il giorno che si lascia, nel cambio orario quello che si vuole
+ricevere. Anche la Home ("Lasci Gio 15/10") e la legenda del mese le usano.
 
 Scritto sempre con le parole dell'autore, il blocco faceva leggere a chi
 proponeva "LASCIO 11:00–20:00" come se fosse il suo turno, con il turno che
-offriva davvero subito sotto. Nella tendina il lato sinistro segue il menu
+offriva davvero subito sotto. Nella tendina il lato «lasci» segue il menu
 "Il turno che offri". Anche sotto una proposta "Ti darebbe" lo legge solo
 l'autore: chi l'ha fatta legge "Offri", gli altri "Offre".
 
@@ -335,7 +345,7 @@ perdono dalle statistiche le richieste mai concluse: è voluto.
   tocco che dice "vai alla bacheca" ci si aspetta di vedere le richieste più
   recenti. Le posizioni vivono finché l'app resta aperta, non si salvano.
 - In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
-  ("lascia Sab 12 · prende Lun 14 o Mer 16"). Orari, note, stato e
+  ("prendi Sab 12 · lasci Lun 14 o Mer 16"). Orari, note, stato e
   proposte stanno nel dettaglio, che si apre toccandola. Prima ogni richiesta
   occupava mezzo schermo e scorrerne dieci era faticoso.
 - Nel dettaglio il blocco della richiesta è sempre identico ovunque compaia. È
@@ -374,9 +384,9 @@ stesso verde diceva due cose diverse (un turno da prendere, una giornata in cui
 qualcuno lavorerebbe). La legenda ora lo dice: "cambio orario", "OFF: qualcuno
 lascia", "OFF: qualcuno prende".
 
-La sintesi è riscritta dal punto di vista della data: sul 14 si legge "prende
-questo giorno · in cambio lascia Sab 12", e gli altri giorni che la stessa
-richiesta prende non compaiono. Hanno una casella loro, ed è lì che
+La sintesi è riscritta dal punto di vista della data: sul 14 si legge "lasci
+questo giorno · in cambio prendi Sab 12", e gli altri giorni che la stessa
+richiesta tocca non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
 Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un

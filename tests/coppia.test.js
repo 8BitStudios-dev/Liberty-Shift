@@ -42,10 +42,10 @@ function scena({ mioOrario = ['09:30', '18:30'] } = {}) {
 /** Il testo visibile, senza tag e spazi doppi. */
 const testo = (h) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-test("a chi propone, il blocco parla del suo scambio: lascia il suo turno, prende quello dell'autore", () => {
+test("a chi propone, il blocco parla del suo scambio: prende quello dell'autore, lascia il suo turno", () => {
   const { richiesta, mio } = scena();
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: mio }));
-  assert.match(t, /lasci .*09:30–18:30 .*prendi .*11:00–20:00/);
+  assert.match(t, /prendi .*11:00–20:00 .*lasci .*09:30–18:30/);
   assert.doesNotMatch(t, /lascio|cerco/, 'le parole dell\'autore non devono arrivare a chi guarda');
 });
 
@@ -57,17 +57,21 @@ test('il turno preso si legge con le ore che farebbe davvero chi guarda', () => 
   assert.match(t, /11:00–20:00 adattato al tuo contratto/);
 });
 
-test('prima di scegliere un turno, un collega legge la richiesta con il nome di chi l\'ha scritta', () => {
+test('prima di scegliere un turno, un collega legge cosa prende e cosa lascia, senza il nome dell\'autore', () => {
   const { richiesta } = scena();
   const t = testo(coppiaCedoCerco(richiesta));
-  assert.match(t, /Lorenzo lascia .*11:00–20:00 .*Lorenzo prende/);
-  assert.doesNotMatch(t, /lascio|cerco |lasci |prendi/);
+  // Prima cosa prende (il turno che l'autore lascia), poi cosa lascia (quello che l'autore cerca).
+  assert.match(t, /prendi .*11:00–20:00 .*lasci .*stesso giorno/);
+  assert.doesNotMatch(t, /lascio|cerco /);
+  // Il punto di vista dell'altra persona viene dopo, e solo lì compare il nome.
+  assert.ok(t.indexOf('prendi') < t.indexOf('Lorenzo: lascia'), 'prima io, poi lui');
+  assert.match(t, /Lorenzo: lascia .*11:00–20:00 · prende/);
 });
 
 test("all'autore il blocco parla con le sue parole", () => {
   const { richiesta } = scena();
   store.state.currentUserId = 'lorenzo';
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: store.shift('sh-mio') }));
-  assert.match(t, /lasci .*11:00–20:00 .*prendi/);
+  assert.match(t, /prendi .*stesso giorno .*lasci .*11:00–20:00/);
   assert.doesNotMatch(t, /lascio|cerco|Lorenzo/);
 });

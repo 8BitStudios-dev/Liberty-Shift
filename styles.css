@@ -200,6 +200,7 @@ p { margin: 8px 0; }
 .coppia.compatta strong { font-size: 14px; }
 .coppia.compatta .orario { font-size: 12px; }
 .coppia.compatta .nota { display: none; }
+.altro-punto { margin: 8px 0 0; font-size: 13px; color: var(--testo-tenue); }
 
 .nota-utente { font-size: 14px; color: var(--testo-tenue); font-style: italic; margin: 10px 0 0; }
 

@@ -556,7 +556,7 @@ test('la stessa richiesta OFF cambia ruolo a seconda del giorno che si guarda', 
 
   const sabato = ruoloNelGiorno(richiesta, '2026-09-12', cedo);
   assert.equal(sabato.ruolo, 'CERCA');
-  assert.match(sabato.sintesi, /lascia questo giorno/);
+  assert.match(sabato.sintesi, /prendi questo giorno/);
 
   const lunedi = ruoloNelGiorno(richiesta, '2026-09-14', cedo);
   const mercoledi = ruoloNelGiorno(richiesta, '2026-09-16', cedo);
@@ -564,7 +564,7 @@ test('la stessa richiesta OFF cambia ruolo a seconda del giorno che si guarda', 
   assert.equal(mercoledi.ruolo, 'OFFRE');
   // Guardando il 14 non si legge il 16, e viceversa: ogni giorno parla di sé.
   assert.equal(lunedi.sintesi, mercoledi.sintesi);
-  assert.match(lunedi.sintesi, /prende questo giorno/);
+  assert.match(lunedi.sintesi, /lasci questo giorno/);
   assert.doesNotMatch(lunedi.sintesi, /1[46]/);
 });
 
