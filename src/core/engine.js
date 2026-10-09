@@ -196,10 +196,13 @@ function personeDi(ctx) {
 function verificheIncrociate(coppie, shifts, chiGuarda, trova) {
   const reasons = [];
   const avvisi = [];
-  let penalita = 0;
-  let bonus = 0;
+  // Il peso si tiene persona per persona: la percentuale di chi guarda conta
+  // solo il suo (vedi `punteggioDi`).
+  const peso = new Map();
   for (const [chi, cede, riceve, altra] of coppie) {
     const io = chi.id === chiGuarda;
+    let penalita = 0;
+    let bonus = 0;
     // Le preferenze pesano sul turno che quella persona riceverebbe davvero,
     // cioè quello già adattato alle sue ore.
     const pref = applicaPreferenze(chi, turnoAdattato(riceve, cede, trova), { io });
@@ -227,8 +230,44 @@ function verificheIncrociate(coppie, shifts, chiGuarda, trova) {
       const ore = impattoMonteOre(chi, cede, riceve, shifts, trova);
       if (ore.avviso) avvisi.push(io ? `${ore.avviso}.` : `${nome(chi)}: ${ore.avviso}.`);
     }
+    peso.set(chi.id, bonus - penalita);
   }
-  return { reasons, avvisi, penalita, bonus };
+  return { reasons, avvisi, peso };
+}
+
+/**
+ * La percentuale di uno scambio è di chi la guarda.
+ *
+ * Ciascuno vede quanto lo scambio conviene a lui: quanto il turno che riceve
+ * va bene a quello che cerca, le sue preferenze, le sue ore adattate. Le
+ * preferenze dell'altro non c'entrano (e sul telefono non ci sono nemmeno:
+ * scendono vuote). Così la stessa coppia può avere due numeri diversi sui due
+ * telefoni, ed è giusto: è la stessa domanda fatta da due persone.
+ *
+ * `perAutore` e `perCollega` sono quanto il turno ricevuto soddisfa quello
+ * che ciascuno cerca. Chi non guarda nessuna delle due parti (il server, un
+ * admin) vede il conto di tutti e due, come prima.
+ */
+function punteggioDi(chiGuarda, autore, u, base, peso) {
+  if (chiGuarda === autore.id) return base.autore + peso.get(autore.id);
+  if (chiGuarda === u.id) return base.collega + peso.get(u.id);
+  return base.neutro + peso.get(autore.id) + peso.get(u.id);
+}
+
+/**
+ * Da dove parte la percentuale, per ciascuno dei due e per chi non è nessuno
+ * dei due (`neutro`). Con una richiesta del collega ognuno parte da quanto il
+ * turno che riceve soddisfa quello che cerca; dal solo calendario si parte dal
+ * tetto (`availabilityScoreCap`): il collega non ha chiesto niente, quindi
+ * per lui va bene qualsiasi turno, ma non ha nemmeno detto di volerlo.
+ */
+function baseDelPunteggio(perAutore, perCollega, disponibile) {
+  if (perCollega !== null) {
+    return { autore: perAutore, collega: perCollega, neutro: Math.round((perAutore + perCollega) / 2) };
+  }
+  const extra = disponibile ? RULES.disponibilitaBonus : 0;
+  const autore = Math.min(perAutore, RULES.availabilityScoreCap) + extra;
+  return { autore, collega: RULES.availabilityScoreCap + extra, neutro: autore };
 }
 
 /**
@@ -283,13 +322,13 @@ function matchOrario(request, ctx) {
     const ioSonoU = u.id === ctx.currentUserId;
     const ioSonoAutore = autore.id === ctx.currentUserId;
 
-    let score;
+    let base;
     let origine;
     const reasons = [];
     if (suaRichiesta) {
       const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo, trova));
       if (perLui.score === 0) continue;
-      score = Math.round((perMe.score + perLui.score) / 2);
+      base = baseDelPunteggio(perMe.score, perLui.score);
       origine = 'RICHIESTA';
       // perMe dice se quello che riceverebbe l'autore (il turno di u, adattato
       // alle sue ore) soddisfa quello che l'autore cerca.
@@ -312,17 +351,16 @@ function matchOrario(request, ctx) {
       // c'è, resta un segnale in più e vale un bonus (sotto, con le
       // preferenze). Le preferenze da evitare pesano parecchio ma non
       // escludono più il turno: sta a chi guarda i match decidere.
-      score = Math.min(perMe.score, RULES.availabilityScoreCap);
       origine = 'CALENDARIO';
       // Il bonus della disponibilità dichiarata si vede nel punteggio: dirlo
       // anche a parole ("si è anche dichiarata disponibile a cambiare") era
       // ovvio, dato che il turno lo si vede già subito sopra.
-      if (disponibileIl(u, giorno)) score += RULES.disponibilitaBonus;
+      base = baseDelPunteggio(perMe.score, null, disponibileIl(u, giorno));
       reasons.push(ioSonoU ? `Hai ${shiftLabel(suo)} quel giorno` : `${nome(u)} ha ${shiftLabel(suo)} quel giorno`);
     }
 
     const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
-    score = clamp(Math.round(score - v.penalita + v.bonus), 0,
+    const score = clamp(Math.round(punteggioDi(ctx.currentUserId, autore, u, base, v.peso)), 0,
       origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
     if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
 
@@ -399,13 +437,13 @@ function matchOff(request, ctx) {
       const ioSonoU = u.id === ctx.currentUserId;
       const ioSonoAutore = autore.id === ctx.currentUserId;
 
-      let score;
+      let base;
       let origine;
       const reasons = [];
       if (suaRichiesta) {
         const perLui = satisfies(suaRichiesta.cerco, turnoAdattato(mioCedo, suo, trova));
         if (perLui.score === 0) continue;
-        score = Math.round((perMe.score + perLui.score) / 2);
+        base = baseDelPunteggio(perMe.score, perLui.score);
         origine = 'RICHIESTA';
         reasons.push(ioSonoU
           ? `Vuoi OFF ${formatDay(giorno)} e lavorare ${formatDay(mioCedo.data)}: l'esatto contrario`
@@ -415,10 +453,9 @@ function matchOff(request, ctx) {
         // controllato sopra, e basta per proporre lo scambio. La
         // disponibilità dichiarata a lavorarci non è più condizione, ma
         // resta un bonus quando c'è.
-        score = Math.min(perMe.score, RULES.availabilityScoreCap);
         origine = 'CALENDARIO';
+        base = baseDelPunteggio(perMe.score, null, disponibileIl(u, mioCedo.data));
         if (disponibileIl(u, mioCedo.data)) {
-          score += RULES.disponibilitaBonus;
           reasons.push(ioSonoU
             ? concorda(u, {
               m: `Sei OFF ${formatDay(mioCedo.data)} e ti sei dichiarato disponibile a lavorarci`,
@@ -441,7 +478,7 @@ function matchOff(request, ctx) {
         : `${nome(autore)} lavorerebbe ${formatDay(giorno)} al posto ${ioSonoU ? 'tuo' : 'suo'}: ${perMe.reasons[0]}`);
 
       const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
-      score = clamp(Math.round(score - v.penalita + v.bonus), 0,
+      const score = clamp(Math.round(punteggioDi(ctx.currentUserId, autore, u, base, v.peso)), 0,
         origine === 'CALENDARIO' ? RULES.availabilityScoreCap : 100);
       if (score < (ctx.sogliaPotenziale ?? RULES.potentialThreshold)) continue;
 

@@ -140,7 +140,14 @@ più recente** (`ordineBacheca`). Fino a ottobre 2026 andavano dalla prima
 pubblicata, per dare la precedenza a chi aveva chiesto prima, ma la richiesta
 appena arrivata finiva in fondo, sotto lo schermo: i colleghi non la vedevano
 e chi l'aveva pubblicata la rifaceva. Nessun altro criterio: resta in lista
-anche quella a cui tu non puoi rispondere. Le stesse regole valgono nel giorno del Calendario; in "Aiuta un
+anche quella a cui tu non puoi rispondere.
+
+In alto a destra, sulla riga dei filtri, un tasto con due frecce (`ordineColleghi`)
+rigira l'ordine delle sole richieste dei colleghi: dalla meno recente alla più
+recente e viceversa. Si parte sempre dalla più recente, e il verso sta in
+memoria, non nel salvataggio. Le prioritarie restano sopra in entrambi i versi,
+le tue stanno nel loro riquadro e non si muovono. Il Calendario e la Home non
+seguono il tasto. Le stesse regole di ordine valgono nel giorno del Calendario; in "Aiuta un
 collega" le prioritarie stanno sopra e, a pari priorità, l'ordine è per
 percentuale. In Home, "Ultime richieste" mostra le tre più recenti, prioritarie
 prima.
@@ -696,10 +703,12 @@ tuoi turni ("Sab 10/10 lavori già"), in grigio, e sta in fondo alla lista.
 Non è un errore, è un fatto.
 
 ### Il matching al contrario
-La percentuale è la stessa che vedrebbe l'altra persona guardando i suoi match:
-`opportunitaPerMe` non riscrive le regole, chiede a `findMatches` chi va bene
-per ogni richiesta aperta e guarda se in quella lista ci sei tu. Le due
-direzioni non possono divergere, e un test lo verifica.
+`opportunitaPerMe` non riscrive le regole: chiede a `findMatches` chi va bene
+per ogni richiesta aperta e guarda se in quella lista ci sei tu. Chi va bene
+non può divergere fra le due direzioni, e un test lo verifica. La percentuale
+invece è tua: conta quanto lo scambio conviene a te (quello che ricevi, le tue
+preferenze, le tue ore), non a chi ha pubblicato. Lui, guardando i suoi match,
+vede la sua (vedi "La percentuale è di chi guarda" in `02-shift-engine.md`).
 
 Da qui viene anche una regola di scrittura: le spiegazioni sanno chi sta
 guardando. La stessa frase la può leggere sia chi ha pubblicato la richiesta

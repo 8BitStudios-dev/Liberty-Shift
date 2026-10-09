@@ -682,6 +682,13 @@ const AZIONI = {
     render();
   },
 
+  // Rigira l'ordine delle richieste dei colleghi in Bacheca. Le proprie non
+  // c'entrano: stanno nel loro riquadro.
+  'ordine-bacheca': () => {
+    V.ordineColleghi.dalMenoRecente = !V.ordineColleghi.dalMenoRecente;
+    render({ fermo: true });
+  },
+
   // I tre pulsanti del Profilo: uno aperto alla volta, e lo stesso tocco lo
   // richiude. La pagina resta dov'era, perché il pannello si apre sotto.
   'pannello-profilo': (_, el) => {

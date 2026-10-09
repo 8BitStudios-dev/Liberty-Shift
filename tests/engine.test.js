@@ -133,18 +133,16 @@ test('Lorenzo e Martina sono il match perfetto del capitolo 11', () => {
   assert.equal(martina.origine, 'RICHIESTA');
   assert.equal(martina.tipo, 'MATCH');
   assert.ok(martina.reasons.length >= 2);
-  // Entrambi i lati sono soddisfatti al 100%. Da lì si tolgono i due
-  // adattamenti di contratto, uno per parte, e si aggiungono le preferenze
-  // soddisfatte: Martina riceve 15:00–21:00, una chiusura, e le preferisce;
-  // Lorenzo riceve 09:30–18:30, che è una mattina, e preferisce le mattine.
-  //
-  // Il secondo bonus è arrivato quando i turni della demo sono passati agli
-  // orari veri dello store: con le 09:00 di prima quel turno cadeva
-  // nell'apertura, dove la preferenza di Lorenzo non scattava.
-  assert.equal(
-    martina.score,
-    100 - 2 * RULES.adattamentoPenalty + 2 * RULES.preferenzaBonus,
-  );
+  // La percentuale è di chi guarda, qui Lorenzo: il turno che riceve
+  // (09:30–18:30, adattato alle sue ore) soddisfa al 100% quello che cerca,
+  // meno il suo adattamento di contratto, più la sua preferenza per le
+  // mattine. Quello che pesa a Martina non entra nel suo numero.
+  assert.equal(martina.score, 100 - RULES.adattamentoPenalty + RULES.preferenzaBonus);
+
+  // Martina, dal suo telefono, vede il suo: riceve 15:00–21:00, una chiusura,
+  // e le preferisce.
+  const daMartina = findMatches(richiesta, { ...s, currentUserId: 'u_martina' }).find((m) => m.userId === 'u_martina');
+  assert.equal(daMartina.score, 100 - RULES.adattamentoPenalty + RULES.preferenzaBonus);
 });
 
 test('un match nato dal solo calendario resta POTENZIALE e non supera il tetto', () => {
@@ -162,9 +160,12 @@ test('chi quel giorno è OFF non compare fra i match di un cambio orario', () =>
   const s = seed();
   const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
   const match = findMatches(richiesta, s);
-  // Giulia la domenica è OFF: un cambio orario richiede che entrambi
-  // lavorino quel giorno, il calendario da solo non basta a farla comparire.
-  assert.ok(!match.some((m) => m.userId === 'u_giulia'));
+  // Luca, Sara ed Elena quel giorno sono OFF: un cambio orario richiede che
+  // entrambi lavorino quel giorno, il calendario da solo non basta a farli
+  // comparire.
+  for (const off of ['u_luca', 'u_sara', 'u_elena']) {
+    assert.ok(!match.some((m) => m.userId === off), off);
+  }
 });
 
 test('la disponibilità è settimana per settimana', () => {
@@ -711,19 +712,43 @@ test('una disponibilità dichiarata non è più condizione, ma resta un bonus', 
 });
 
 test('una preferenza da evitare abbassa il punteggio ma non fa sparire il match', () => {
-  const s = seed();
-  const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
-  const prima = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
+  // Martina riceverebbe una chiusura. Vista da lei, la percentuale scende se
+  // le evita; il match resta, è lei a decidere.
+  const daMartina = (preferenze) => {
+    const s = seed();
+    s.currentUserId = 'u_martina';
+    s.users.find((u) => u.id === 'u_martina').preferenze = preferenze;
+    const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+    return findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
+  };
+  const prima = daMartina({});
+  const dopo = daMartina({ evitaChiusure: true });
   assert.equal(prima.tipo, 'MATCH');
-
-  const s2 = seed();
-  const richiesta2 = s2.requests.find((r) => r.id === 'rq_lorenzo_1');
-  const martina2 = s2.users.find((u) => u.id === 'u_martina');
-  martina2.preferenze = { evitaChiusure: true };
-  const dopo = findMatches(richiesta2, s2).find((m) => m.userId === 'u_martina');
-
   assert.ok(dopo, 'con "evito le chiusure" il match non deve sparire');
-  assert.ok(dopo.score < prima.score);
+  assert.equal(dopo.score, prima.score - RULES.evitaPenalty);
+});
+
+test('la percentuale è di chi guarda: le preferenze dell\'altro non la toccano', () => {
+  // Martina evita le chiusure e riceverebbe una chiusura. A Lorenzo, che
+  // guarda la sua richiesta, il numero non cambia: a lui interessa quello che
+  // riceve lui.
+  const daLorenzo = (preferenze) => {
+    const s = seed();
+    s.users.find((u) => u.id === 'u_martina').preferenze = preferenze;
+    const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+    return findMatches(richiesta, s).find((m) => m.userId === 'u_martina').score;
+  };
+  assert.equal(daLorenzo({ evitaChiusure: true }), daLorenzo({}));
+});
+
+test('chi non è nessuna delle due parti vede il conto di tutti e due, come prima', () => {
+  // Il server (le notifiche) e un admin non hanno un "me": per loro conta la
+  // coppia, con la media dei due lati e il peso di entrambi.
+  const s = seed();
+  s.currentUserId = null;
+  const richiesta = s.requests.find((r) => r.id === 'rq_lorenzo_1');
+  const martina = findMatches(richiesta, s).find((m) => m.userId === 'u_martina');
+  assert.equal(martina.score, 100 - 2 * RULES.adattamentoPenalty + 2 * RULES.preferenzaBonus);
 });
 
 // --- ore retribuite e pausa pranzo ------------------------------------

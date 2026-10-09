@@ -30,9 +30,18 @@ import {
  * pubblicata la rifaceva pensando che non fosse partita. Nessun altro
  * criterio: resta in lista anche quella a cui tu non puoi rispondere.
  */
-export const ordineBacheca = (lista) => [...lista].sort(
-  (a, b) => (hasPriority(b) - hasPriority(a)) || b.createdAt.localeCompare(a.createdAt),
+export const ordineBacheca = (lista, dalMenoRecente = false) => [...lista].sort(
+  (a, b) => (hasPriority(b) - hasPriority(a))
+    || (dalMenoRecente ? a.createdAt.localeCompare(b.createdAt) : b.createdAt.localeCompare(a.createdAt)),
 );
+
+/**
+ * Il verso delle richieste dei colleghi in Bacheca. Parte dalla più recente
+ * (per il motivo sopra) e il tasto in alto a destra lo rigira. Le prioritarie
+ * restano sopra in entrambi i versi: l'ordine cambia solo fra pari. Sta in
+ * memoria e non nel salvataggio: a ogni apertura si ricomincia dalle nuove.
+ */
+export const ordineColleghi = { dalMenoRecente: false };
 
 export function home() {
   const me = store.me;
@@ -242,7 +251,7 @@ export function bacheca(params) {
   // in un riquadro chiuso con il conteggio: si vede che ci sono, ma non
   // spingono giù quelle dei colleghi, che sono il motivo per aprire la bacheca.
   const mie = tutte.filter((r) => r.userId === me);
-  const lista = ordineBacheca(tutte.filter((r) => r.userId !== me));
+  const lista = ordineBacheca(tutte.filter((r) => r.userId !== me), ordineColleghi.dalMenoRecente);
 
   return html`
     <header class="testata">
@@ -253,6 +262,9 @@ export function bacheca(params) {
       ${Object.entries(FILTRI).map(([k, v]) => raw(
     `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 16 }) : ''}${v.label}</button>`,
   ))}
+      <button class="tasto-ordine" data-act="ordine-bacheca" aria-pressed="${ordineColleghi.dalMenoRecente ? 'true' : 'false'}"
+              title="${ordineColleghi.dalMenoRecente ? 'Dalla meno recente: tocca per partire dalla più recente' : 'Dalla più recente: tocca per partire dalla meno recente'}"
+              aria-label="Inverti l'ordine delle richieste dei colleghi">${raw(icona('ordine', { px: 18 }))}</button>
     </div>
     ${raw(mie.length ? html`
       <details class="riquadro mie-richieste" data-riquadro="bacheca-mie" ${raw(riquadriAperti.has('bacheca-mie') ? 'open' : '')}>
