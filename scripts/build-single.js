@@ -7,7 +7,7 @@
 //
 // La demo (vedi demo/) è la stessa app con Lorenzo e venticinque colleghi
 // inventati, senza server e su chiavi di localStorage sue: aprirla non tocca
-// i dati veri di nessun telefono. Non viene pubblicata col sito.
+// i dati veri di nessun telefono. Il workflow la pubblica come demo.html.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join, dirname } from 'node:path';

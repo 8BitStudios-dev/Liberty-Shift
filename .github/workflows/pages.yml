@@ -45,6 +45,10 @@ jobs:
           cp -r src public site/
           node scripts/build-single.js
           cp dist/liberty-shift.html site/
+          # La demo per i video (vedi docs/04-flussi-ux.md): dati inventati,
+          # nessun server, chiavi di localStorage sue.
+          node scripts/build-single.js --demo
+          cp dist/liberty-shift-demo.html site/demo.html
 
       # enablement: accende Pages da sola la prima volta, invece di far
       # fallire il deploy con "Get Pages site failed" finché qualcuno non

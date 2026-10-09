@@ -910,8 +910,10 @@ scendono con la sincronizzazione, insieme alla propria riga di `profili`.
 
 ### La demo per i video
 Per registrare un video serve invece un'app piena, e per questo esiste una
-versione a parte: `npm run demo` produce `dist/liberty-shift-demo.html`, che
-non viene pubblicata col sito. È la stessa app, con tre differenze:
+versione a parte: `npm run demo` produce `dist/liberty-shift-demo.html`, e a
+ogni push su `main` il workflow la pubblica anche come `demo.html` accanto
+all'app (stesso indirizzo del sito, `/demo.html`). È la stessa app, con tre
+differenze:
 
 - **Lorenzo e 25 colleghi inventati** (`demo/dati-demo.js`): venti con una
   richiesta aperta, sette che Lorenzo può coprire (due gli convengono, una gli
