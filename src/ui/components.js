@@ -134,66 +134,91 @@ export function badgeStato(status) {
  * I colori restano veri e non seguono la posizione: il blu è sempre il turno
  * che lascia chi guarda, il verde quello che prende.
  */
-export function coppiaCedoCerco(request, { compatto = false, mioTurno = null } = {}) {
+/**
+ * L'unico punto dove si disegna la box: due metà, prima quello che prendi
+ * (verde) e poi quello che lasci (blu). Ogni metà è un giorno, un orario e,
+ * se serve, una nota; chi la chiama decide cosa metterci.
+ */
+export function boxScambio(tipo, prendi, lasci, { compatto = false } = {}) {
+  const meta = TIPO_META[tipo] || TIPO_META.ORARIO;
+  const freccia = (nome) => raw(icona(nome, { px: 14, forte: true }));
+  const lato = (classe, parola, simbolo, m) => html`
+    <div class="lato ${classe}">
+      <span class="etichetta">${freccia(simbolo)} ${parola}</span>
+      <strong>${m.giorno}</strong>
+      <span class="orario">${m.orario}</span>
+      ${raw(m.nota ? `<div class="nota">${m.nota}</div>` : '')}
+    </div>`;
+  return html`
+    <div class="coppia ${compatto ? 'compatta' : ''}">
+      <div class="tipo-cambio">${raw(etichettaTipo(tipo, meta.label))}</div>
+      <div class="lati">
+        ${raw(lato('cerco', 'prendi', 'prendo', prendi))}
+        <div class="freccia">⇄</div>
+        ${raw(lato('cedo', 'lasci', 'cedo', lasci))}
+      </div>
+    </div>`;
+}
+
+/**
+ * La riga piccola sotto la box: cosa fa l'altra persona, nella stessa sintassi
+ * (lascia, prende) e dopo di te. Chi apre una richiesta pensa a sé, il resto
+ * è contesto.
+ */
+export function altroPunto(nome, lascia, prende) {
+  return html`<p class="altro-punto">${nome}: lascia ${lascia} · prende ${prende}</p>`;
+}
+
+export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, offerto = null, riga = false } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
-  const meta = TIPO_META[request.tipo] || TIPO_META.ORARIO;
   const giorni = request.cerco.giorni || [];
   const off = request.tipo === TIPO_CAMBIO.OFF;
   const mia = request.userId === store.state.currentUserId;
-  const freccia = (nome) => raw(icona(nome, { px: 14, forte: true }));
-
-  const lati = (prendi, lasci) => html`
-    <div class="coppia ${compatto ? 'compatta' : ''}">
-      <div class="tipo-cambio">${raw(etichettaTipo(request.tipo, meta.label))}</div>
-      <div class="lati">
-        <div class="lato cerco">${raw(prendi)}</div>
-        <div class="freccia">⇄</div>
-        <div class="lato cedo">${raw(lasci)}</div>
-      </div>
-    </div>`;
-  const etPrendi = html`<span class="etichetta">${freccia('prendo')} prendi</span>`;
-  const etLasci = html`<span class="etichetta">${freccia('cedo')} lasci</span>`;
+  const opz = { compatto };
 
   // Il turno che l'autore lascia, e quello che cerca: gli stessi due pezzi per
   // chiunque guardi, cambia solo da che parte stanno.
-  const turnoDellAutore = html`
-    <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
-    <span class="orario">${shiftLabel(cedo)}</span>
-    ${raw(request.cedo.flessibile ? '<div class="nota">disponibile a lasciare anche altri turni</div>' : '')}`;
-  const cosaCerca = off
-    ? html`
-      <strong>${giorni.map((g) => formatDay(g)).join(' o ')}</strong>
-      <span class="orario">${wantLabel(request.cerco)}</span>`
-    : html`
-      <strong>stesso giorno</strong>
-      <span class="orario">${wantLabel(request.cerco)}</span>`;
+  const turnoDellAutore = {
+    giorno: cedo ? formatDay(cedo.data) : '—',
+    orario: shiftLabel(cedo),
+    nota: request.cedo.flessibile ? 'disponibile a lasciare anche altri turni' : '',
+  };
+  const cosaCerca = {
+    giorno: off ? giorni.map((g) => formatDay(g)).join(' o ') : 'stesso giorno',
+    orario: wantLabel(request.cerco),
+  };
+
+  // Una proposta già fatta, vista da chi ha scritto la richiesta: prendi il
+  // turno preciso che gli è stato offerto, non la richiesta in astratto.
+  if (mia && offerto) {
+    const perMe = trasformaTurno(offerto, cedo, personaDi);
+    return boxScambio(request.tipo, {
+      giorno: formatDay(offerto.data),
+      orario: raw(`${perMe.trasformato ? `${perMe.start}–${perMe.end}` : esc(shiftLabel(offerto))}${stimatoPer(perMe.trasformato)}`),
+      nota: perMe.trasformato ? `${esc(shiftLabel(offerto))} adattato al tuo contratto` : '',
+    }, turnoDellAutore, opz);
+  }
 
   if (!mia && mioTurno) {
     const perMe = trasformaTurno(cedo, mioTurno, personaDi);
-    return lati(
-      html`
-        ${raw(etPrendi)}
-        <strong>${cedo ? formatDay(cedo.data) : '—'}</strong>
-        <span class="orario">${perMe.trasformato ? `${perMe.start}–${perMe.end}` : shiftLabel(cedo)}${raw(stimatoPer(perMe.trasformato))}</span>
-        ${raw(perMe.trasformato ? html`<div class="nota">${shiftLabel(cedo)} adattato al tuo contratto: ${TESTO_STIMA.charAt(0).toLowerCase() + TESTO_STIMA.slice(1)}</div>` : '')}`,
-      html`
-        ${raw(etLasci)}
-        <strong>${formatDay(mioTurno.data)}</strong>
-        <span class="orario">${shiftLabel(mioTurno)}</span>`,
-    );
+    return boxScambio(request.tipo, {
+      giorno: cedo ? formatDay(cedo.data) : '—',
+      orario: raw(`${perMe.trasformato ? `${perMe.start}–${perMe.end}` : esc(shiftLabel(cedo))}${stimatoPer(perMe.trasformato)}`),
+      nota: perMe.trasformato ? `${esc(shiftLabel(cedo))} adattato al tuo contratto: ${TESTO_STIMA.charAt(0).toLowerCase() + TESTO_STIMA.slice(1)}` : '',
+    }, { giorno: formatDay(mioTurno.data), orario: shiftLabel(mioTurno) }, opz);
   }
 
-  if (mia) return lati(html`${raw(etPrendi)}${raw(cosaCerca)}`, html`${raw(etLasci)}${raw(turnoDellAutore)}`);
+  if (mia) return boxScambio(request.tipo, cosaCerca, turnoDellAutore, opz);
 
   // Prima il tuo punto di vista, poi quello dell'altra persona: sotto la box,
-  // in piccolo, cosa fa l'autore. Chi apre una richiesta pensa a sé, e il resto
-  // è contesto.
+  // in piccolo, cosa fa l'autore. In una riga di lista il nome sta già sopra.
+  if (riga) return boxScambio(request.tipo, turnoDellAutore, cosaCerca, opz);
   const nome = store.user(request.userId)?.nome || 'chi chiede';
   const suoLascia = off ? formatDay(cedo?.data) : `${formatDay(cedo?.data)} ${shiftLabel(cedo)}`;
   const suoPrende = off ? giorni.map((g) => formatDay(g)).join(' o ') : wantLabel(request.cerco);
   return html`
-    ${raw(lati(html`${raw(etPrendi)}${raw(turnoDellAutore)}`, html`${raw(etLasci)}${raw(cosaCerca)}`))}
-    <p class="altro-punto">${nome}: lascia ${suoLascia} · prende ${suoPrende}</p>`;
+    ${raw(boxScambio(request.tipo, turnoDellAutore, cosaCerca, opz))}
+    ${raw(altroPunto(nome, suoLascia, suoPrende))}`;
 }
 
 /**
@@ -283,19 +308,22 @@ export function cardRichiesta(request, giorno = null) {
   // rosso di "Al momento non puoi cambiare" lì era solo confusione.
   const mia = request.userId === store.state.currentUserId;
   const nonPerMe = !mia && !store.possoRispondere(request);
+  // La stessa box di tutta l'app, in piccolo: prendi, lasci. Dentro una riga
+  // non può essere un <button> (ci sono dei blocchi), quindi è un div che si
+  // comporta da pulsante.
   return html`
-    <button class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${nonPerMe ? 'non-per-me' : ''} ${mia ? 'mia' : ''}"
+    <div role="button" tabindex="0" class="riga-richiesta ${prio ? 'prioritaria' : ''} ${ctx ? `ruolo-${ctx.ruolo}` : ''} ${nonPerMe ? 'non-per-me' : ''} ${mia ? 'mia' : ''}"
             data-act="apri-richiesta" data-id="${request.id}">
       <span class="avatar cerchio-tipo" data-tipo="${request.tipo}">${raw(icona(ICONA_TIPO[request.tipo] || 'orario', { px: 17 }))}<span class="cerchio-testo">${meta.breve}</span></span>
       <span class="riga-testo">
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
         </span>
-        <span class="riga-sintesi">${ctx ? ctx.sintesi : sintesiRichiesta(request)}</span>
+        ${raw(coppiaCedoCerco(request, { compatto: true, riga: true }))}
         ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}
       </span>
       <span class="chevron">›</span>
-    </button>`;
+    </div>`;
 }
 
 /**
@@ -311,31 +339,23 @@ export function cardRichiesta(request, giorno = null) {
  * la riguarda, non te (vedi `verificheIncrociate`, stessa regola).
  */
 function riassuntoMatch(match, u, turno, opzioni) {
-  if (match.cambio !== TIPO_CAMBIO.OFF || !opzioni.mioCedo) {
-    return html`
-      <div class="turno-offerto">
-        Faresti <strong>${formatDay(turno?.data)}</strong> ·
-        <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>${raw(stimatoPer(match.adattato?.trasformato))}
-      </div>`;
-  }
-
-  const primaDelCambio = store.state.shifts.find(
-    (s) => s.userId === store.state.currentUserId && s.data === turno?.data,
-  );
-  const eri = !primaDelCambio || primaDelCambio.tipo === 'OFF'
-    ? 'eri OFF'
-    : `avevi ${shiftLabel(primaDelCambio)}`;
-
-  return html`
-    <div class="turno-offerto">
-      <strong>${formatDay(opzioni.mioCedo.data)} diventi OFF</strong>: ${u?.nome} prende il tuo turno ·
-      <strong>${shiftLabel(opzioni.mioCedo)}</strong>
-    </div>
-    <div class="turno-ceduto">
-      In cambio lavoreresti <strong>${formatDay(turno?.data)}</strong> ·
-      <strong>${match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno)}</strong>${raw(stimatoPer(match.adattato?.trasformato))}
-      <span class="testo-tenue">(${eri})</span>
-    </div>`;
+  // Dal tuo punto di vista: prendi il turno del collega (con le ore che
+  // faresti davvero), lasci il tuo. L'altra persona viene dopo.
+  const mioCedo = opzioni.mioCedo || store.shift(store.request(opzioni.miaRichiestaId)?.cedo.shiftId);
+  const preso = match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno);
+  const off = match.cambio === TIPO_CAMBIO.OFF;
+  const box = boxScambio(match.cambio, {
+    giorno: formatDay(turno?.data),
+    orario: raw(`${esc(preso)}${stimatoPer(match.adattato?.trasformato)}`),
+    nota: off && opzioni.mioCedo ? 'quel giorno lavori al posto suo' : '',
+  }, mioCedo
+    ? { giorno: formatDay(mioCedo.data), orario: shiftLabel(mioCedo), nota: off ? 'quel giorno diventi OFF' : '' }
+    : { giorno: '—', orario: '' }, { compatto: Boolean(opzioni.compatta) });
+  if (!mioCedo || !u) return box;
+  const perLei = match.adattatoControparte?.trasformato
+    ? `${match.adattatoControparte.start}–${match.adattatoControparte.end}`
+    : shiftLabel(mioCedo);
+  return html`${raw(box)}${raw(altroPunto(u.nome, `${formatDay(turno?.data)} ${shiftLabel(turno)}`, `${formatDay(mioCedo.data)} ${perLei}`))}`;
 }
 
 /**
@@ -583,9 +603,7 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
       ${raw(etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, aiuta))}
       ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
-      <div class="scambio-secco">
-        <div><span>${u?.nome} farebbe</span><strong>${formatDay(mioTurno?.data)} · ${perLei}</strong></div>
-      </div>
+      ${raw(altroPunto(u?.nome, `${formatDay(store.shift(richiesta.cedo.shiftId)?.data)} ${shiftLabel(store.shift(richiesta.cedo.shiftId))}`, `${formatDay(mioTurno?.data)} ${perLei}`))}
       ${raw(adattamento(match) ? notaStima() : '')}
       ${raw(notaPausa([mioTurno, store.shift(richiesta.cedo.shiftId)]))}
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>

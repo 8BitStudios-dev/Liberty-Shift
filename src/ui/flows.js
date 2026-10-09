@@ -17,7 +17,7 @@ import {
 } from '../core/time.js';
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
-  cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
+  cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, altroPunto, nomeUtente, badgeStato, vuoto, iniziali,
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
   notaStima, notaPausa, personaDi,
 } from './components.js';
@@ -690,8 +690,9 @@ export function dettaglio(params) {
     const da = store.user(p.daUserId);
     const offerto = store.shift(p.shiftOffertoId);
     const coinvolto = p.daUserId === me || p.aUserId === me;
-    // "Ti darebbe" vale solo per chi ha scritto la richiesta: chi ha proposto
-    // legge cosa offre lui, e un collega che passa legge cosa offre l'altro.
+    // Prima il punto di vista di chi legge: chi ha scritto la richiesta
+    // "prende" il turno proposto, chi ha proposto "lascia" il suo, un collega
+    // che passa legge cosa lascia l'altro.
     const hoAccettato = p.accettataDa.includes(me);
     const accordo = p.status === 'ACCORDO';
 
@@ -720,7 +721,7 @@ export function dettaglio(params) {
           <div><strong>${nomeUtente(da)}</strong><div class="meta">ha proposto uno scambio</div></div>
         </header>
         ${raw(p.id === primaScelta ? '<p class="tag">La più vicina a quello che hai chiesto</p>' : '')}
-        <p>${p.aUserId === me ? 'Ti darebbe' : p.daUserId === me ? 'Offri' : 'Offre'} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
+        <p>${p.aUserId === me ? 'Prendi' : p.daUserId === me ? 'Lasci' : `${da?.nome} lascia`} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
         ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
         <div class="accettazioni">${raw(p.accettataDa.map((u) => `<span class="tag ok">${nomeUtente(store.user(u))} ha accettato</span>`).join(''))}</div>
         ${raw(azioni)}
@@ -955,11 +956,12 @@ function vocebox(v) {
           <div class="meta">${ioHoProposto ? 'hai proposto uno scambio' : 'ti ha proposto uno scambio'}</div>
         </div>
       </header>
-      ${raw(coppiaCedoCerco(r, { compatto: true, mioTurno: ioHoProposto ? offerto : null }))}
-      ${raw(ioHoProposto ? '' : html`
-      <div class="scambio-secco">
-        <div><span>Ti darebbe</span><strong>${formatDay(offerto?.data)} · ${shiftLabel(offerto)}</strong></div>
-      </div>`)}
+      ${raw(coppiaCedoCerco(r, { compatto: true, mioTurno: ioHoProposto ? offerto : null, offerto: ioHoProposto ? null : offerto }))}
+      ${raw(altroPunto(
+    altro.nome,
+    `${formatDay((ioHoProposto ? store.shift(r.cedo.shiftId) : offerto)?.data)} ${shiftLabel(ioHoProposto ? store.shift(r.cedo.shiftId) : offerto)}`,
+    `${formatDay((ioHoProposto ? offerto : store.shift(r.cedo.shiftId))?.data)} ${shiftLabel(ioHoProposto ? offerto : store.shift(r.cedo.shiftId))}`,
+  ))}
       ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
       ${raw(p.annullataIl
     ? `<p class="nota-utente">Scambio annullato dopo l'accordo${p.motivoRifiuto ? `: “${esc(p.motivoRifiuto)}”` : ''}</p>`

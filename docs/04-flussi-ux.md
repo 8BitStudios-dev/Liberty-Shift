@@ -226,9 +226,12 @@ la richiesta di Elisa vuole sapere cosa farà lui, non cosa fa lei: "Elisa
 lascia, Elisa prende" costringeva a ribaltare tutto a mente. Ora la box parla a
 chi guarda, e **prima cosa prendi, poi cosa lasci**. L'altra persona viene
 dopo: sotto la box, in piccolo, "Elisa: lascia Mar 20/10 · prende Gio 22/10 o
-Ven 23/10"; in Aiuta un collega "Davide farebbe…". Lo stesso ordine vale per le
-righe di Bacheca e Calendario ("prendi Mar 20/10 · lasci Gio 22/10 o Ven
-23/10") e per il giorno del calendario ("prendi questo giorno · in cambio lasci
+Ven 23/10"; in Aiuta un collega, nel Cambio rapido e in Proposte la stessa
+riga ("Davide: lascia Sab 10 · prende Sab 10 11:00–20:00"), con la stessa
+sintassi e sempre dopo la tua. Lo stesso ordine vale per le spiegazioni del
+match ("Prendi il turno 08:00–17:00 di Davide F.", "Lasci Dom 11/10 e prendi
+Lun 12/10: l'esatto contrario") e per il giorno del calendario ("prendi questo
+giorno · in cambio lasci
 Lun 12/10"). I colori non seguono la posizione: il blu è sempre il turno che
 lasci, il verde quello che prendi.
 
@@ -241,8 +244,8 @@ ricevere. Anche la Home ("Lasci Gio 15/10") e la legenda del mese le usano.
 Scritto sempre con le parole dell'autore, il blocco faceva leggere a chi
 proponeva "LASCIO 11:00–20:00" come se fosse il suo turno, con il turno che
 offriva davvero subito sotto. Nella tendina il lato «lasci» segue il menu
-"Il turno che offri". Anche sotto una proposta "Ti darebbe" lo legge solo
-l'autore: chi l'ha fatta legge "Offri", gli altri "Offre".
+"Il turno che offri". In Proposte chi ha scritto la richiesta legge nella box
+"prendi" il turno che gli è stato offerto, e sotto cosa fa chi l'ha proposto.
 
 Una proposta fatta si può **ritirare** finché l'altra persona non l'ha
 accettata: "Ritira la proposta", in Proposte e nel dettaglio della richiesta,
@@ -344,10 +347,12 @@ perdono dalle statistiche le richieste mai concluse: è voluto.
   una schermata nuova dall'inizio, anche quando è già stata vista: dopo un
   tocco che dice "vai alla bacheca" ci si aspetta di vedere le richieste più
   recenti. Le posizioni vivono finché l'app resta aperta, non si salvano.
-- In bacheca una richiesta è **due righe**: chi è, di che tipo, e una sintesi
-  ("prendi Sab 12 · lasci Lun 14 o Mer 16"). Orari, note, stato e
-  proposte stanno nel dettaglio, che si apre toccandola. Prima ogni richiesta
-  occupava mezzo schermo e scorrerne dieci era faticoso.
+- In bacheca, nel calendario e nelle liste una richiesta è una **mini box**:
+  il cerchio del tipo, il nome e le due metà della box di tutta l'app, prendi
+  (verde) e lasci (blu). Note, stato e proposte stanno nel dettaglio, che si
+  apre toccandola. Prima era una riga di testo ("cerca OFF Sab 12 · offre
+  Lun 14"), e ogni schermata scriveva lo scambio a modo suo: ora c'è una sola
+  box, in tre dimensioni.
 - Nel dettaglio il blocco della richiesta è sempre identico ovunque compaia. È
   l'unità visiva che rende uno scambio leggibile in un secondo.
 - La priorità in Home è un segno piccolo in alto a destra, non un riquadro: è

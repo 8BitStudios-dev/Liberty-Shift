@@ -272,7 +272,7 @@ a.tile { text-decoration: none; }
    sottolineato, non come una macchia, e resta leggibile anche piccola. */
 .barre { display: flex; gap: 2px; width: 62%; height: 3px; margin-top: auto; }
 .barre i { flex: 1; border-radius: 2px; }
-.barre .cerca { background: var(--rosso); }
+.barre .cerca { background: var(--accento); }
 .barre .offre { background: var(--verde); }
 .barre .orario { background: var(--orario, #7a45d6); }
 
@@ -284,11 +284,11 @@ a.tile { text-decoration: none; }
   display: flex; align-items: center; gap: 7px;
 }
 .gruppo-giorno h3::before { content: ''; width: 14px; height: 3px; border-radius: 2px; }
-.gruppo-giorno.CERCA h3::before { background: var(--rosso); }
+.gruppo-giorno.CERCA h3::before { background: var(--accento); }
 .gruppo-giorno.OFFRE h3::before { background: var(--verde); }
 .gruppo-giorno.ORARIO h3::before { background: var(--orario, #7a45d6); }
 .gruppo-giorno > .testo-tenue { font-size: 12px; margin: 0 0 8px; }
-.riga-richiesta.ruolo-CERCA { border-left: 3px solid var(--rosso); }
+.riga-richiesta.ruolo-CERCA { border-left: 3px solid var(--accento); }
 .riga-richiesta.ruolo-OFFRE { border-left: 3px solid var(--verde); }
 .riga-richiesta.ruolo-ORARIO { border-left: 3px solid var(--orario, #7a45d6); }
 

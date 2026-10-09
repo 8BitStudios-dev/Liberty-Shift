@@ -511,7 +511,7 @@ test('la seconda persona compare solo nelle richieste che riguardano chi guarda'
   // compaia in una richiesta che chi guarda non c'entra per niente: lì
   // sarebbe la stessa frase di parte di prima, solo spostata.
   const s = seed();
-  const secondaPersona = /\b(sei|tuo|tua|tuoi|per te|hai|vuoi|cerchi|lavoreresti|lasci)\b/i;
+  const secondaPersona = /\b(sei|tuo|tua|tuoi|per te|hai|vuoi|cerchi|lavoreresti|lasci|prendi)\b/i;
   let trovataAlmenoUna = false;
   for (const r of s.requests) {
     const autoreCoinvolto = r.userId === s.currentUserId;

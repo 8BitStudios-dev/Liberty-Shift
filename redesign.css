@@ -293,7 +293,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .riga-richiesta.prioritaria {
   border: 0; box-shadow: inset 3px 0 0 var(--oro), inset 0 -1px 0 var(--filetto);
 }
-.riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cerca-off), inset 0 -1px 0 var(--filetto); }
+.riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cedo), inset 0 -1px 0 var(--filetto); }
 .riga-richiesta.ruolo-OFFRE { border-left: 0; box-shadow: inset 3px 0 0 var(--prendo), inset 0 -1px 0 var(--filetto); }
 .riga-richiesta.ruolo-ORARIO { border-left: 0; box-shadow: inset 3px 0 0 var(--orario), inset 0 -1px 0 var(--filetto); }
 .riga-titolo { font-size: 16px; gap: 8px; }
@@ -391,11 +391,11 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .card.da-fare { border-left: 4px solid var(--accento); }
 .tile.scelta.verde { border-left: 4px solid var(--prendo); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
-.gruppo-giorno.CERCA h3::before { background: var(--cerca-off); }
+.gruppo-giorno.CERCA h3::before { background: var(--cedo); }
 .gruppo-giorno.OFFRE h3::before { background: var(--prendo); }
 .gruppo-giorno.ORARIO h3::before { background: var(--orario); }
 .gruppo-giorno h3 { font-size: 14px; }
-.barre .cerca { background: var(--cerca-off); }
+.barre .cerca { background: var(--cedo); }
 .barre .offre { background: var(--prendo); }
 .barre .orario { background: var(--orario); }
 .tabella-dati th:first-child { color: var(--prendo); }
@@ -1123,3 +1123,14 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 
 /* Problemi comuni: il messaggio è il titolo, il rimedio si apre sotto. */
 .riquadro.problema p { margin: 8px 0 2px; }
+
+/* Le righe delle liste portano la stessa box di tutta l'app, in piccolo: il
+   tipo lo dice già il cerchio a sinistra, il nome sta sopra. */
+.riga-richiesta .riga-testo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.riga-richiesta .coppia .tipo-cambio { display: none; }
+.riga-richiesta .coppia .lati { padding: 9px 10px; gap: 6px; }
+.riga-richiesta .coppia strong { font-size: 14px; }
+.riga-richiesta .coppia .orario { font-size: 13px; }
+.riga-richiesta { cursor: pointer; }
+.riga-richiesta { align-items: flex-start; }
+.riga-richiesta .chevron { align-self: center; }
