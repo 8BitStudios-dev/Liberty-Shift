@@ -31,8 +31,9 @@ futuri e i giorni in cui sei libero, prova per ognuno sia il cambio orario
 sia quello di giornata, e tiene le richieste più affini. È il principio UX
 numero 4 preso alla lettera.
 
-Il risultato è una griglia di cinque caselle (`RULES.rapidoMassimo`), una per
-richiesta, dalla più affine: ogni casella dice solo il giorno del tuo turno, o
+Il risultato è una griglia di cinque caselle (`RULES.rapidoMassimo`) a coppie di
+due per riga, una per richiesta, dalla più affine. Non c'è più la frase "le 5
+più affini su 7": il tetto si capisce da quante caselle ci sono: ogni casella dice solo il giorno del tuo turno, o
 del giorno libero che copriresti, e la percentuale. Toccandone una si apre
 sotto la scheda intera, con chi è, cosa lasci e cosa prendi e il tasto
 **Proponi lo scambio**; ritoccandola si richiude. Prima c'era un mini

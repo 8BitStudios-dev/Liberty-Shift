@@ -81,7 +81,7 @@ export function vistaRapida() {
     '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}`;
   }
 
-  const { scelte, tutte } = richiestePiuConvenienti(miei, perGiorno);
+  const { scelte } = richiestePiuConvenienti(miei, perGiorno);
   if (!scelte.length) {
     return html`
       ${raw(testataRapido())}
@@ -107,8 +107,7 @@ export function vistaRapida() {
     <div class="rapide">${raw(caselle)}</div>
     ${raw(aperta
     ? `<div class="rapida-scheda">${aperta.scheda()}</div>`
-    : '<p class="testo-tenue rapida-aiuto">Tocca un giorno per vedere chi è e cosa vi scambiate.</p>')}
-    ${raw(tutte > scelte.length ? `<p class="testo-tenue">Le ${scelte.length} più affini su ${tutte}.</p>` : '')}`;
+    : '<p class="testo-tenue rapida-aiuto">Tocca un giorno per vedere chi è e cosa vi scambiate.</p>')}`;
 }
 
 /**
