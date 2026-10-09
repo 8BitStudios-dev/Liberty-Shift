@@ -361,6 +361,9 @@ function hhmm(min) {
  *     (entri quando entra chi ti passa il turno)
  *   - qualsiasi altro turno -> si tiene ferma la FINE
  *     (esci quando esce chi ti passa il turno)
+ *   - se così si entrerebbe prima dell'ingresso o si uscirebbe dopo l'ultima
+ *     uscita, si tiene fermo l'altro estremo: 11:00–16:00 passa a un Full
+ *     Time come 11:00–20:00, non 07:00–16:00 (alle 7 non si entra)
  *
  * Esempi, con chi riceve che lascia un turno da 5 ore:
  *   riceve 09:00–18:00 (apertura) -> 09:00–14:00
@@ -392,29 +395,36 @@ export function trasformaTurno(riceve, cede, trova = null) {
     return { ...base, avviso: 'Turno di notte: la durata va concordata a parte.' };
   }
 
-  const ancoraInizio = minutes(riceve.start) <= minutes(RULES.store.apre);
   const durataMin = durataTarget * 60;
-  let inizio;
-  let fine;
-  if (ancoraInizio) {
-    inizio = minutes(riceve.start);
-    fine = inizio + durataMin;
-  } else {
-    fine = minutes(riceve.end);
-    inizio = fine - durataMin;
-  }
+  const primo = minutes(RULES.store.primoIngresso);
+  const ultima = minutes(RULES.store.ultimaUscita);
+  const conAncora = (daInizio) => {
+    const inizio = daInizio ? minutes(riceve.start) : minutes(riceve.end) - durataMin;
+    const fine = daInizio ? inizio + durataMin : minutes(riceve.end);
+    return { inizio, fine, daInizio, dentro: inizio >= primo && fine <= ultima };
+  };
+  // Di norma: un turno che comincia entro l'apertura tiene fermo l'inizio, gli
+  // altri la fine. Ma un turno non può cominciare prima dell'ingresso né finire
+  // dopo l'ultima uscita: se l'ancora di norma sbordava (un Full Time che
+  // prende l'11:00–16:00 di un Part Time sarebbe entrato alle 7) si prova
+  // l'altra, e quel Full Time fa l'11:00–20:00. Se sbordano tutte e due resta
+  // la prima, con l'avviso di concordarlo.
+  const predefinita = conAncora(minutes(riceve.start) <= minutes(RULES.store.apre));
+  const alternativa = conAncora(!predefinita.daInizio);
+  const scelta = !predefinita.dentro && alternativa.dentro ? alternativa : predefinita;
+  const { inizio, fine } = scelta;
 
   const risultato = {
     start: hhmm(inizio),
     end: hhmm(fine),
     durata: durataTarget,
     trasformato: true,
-    ancora: ancoraInizio ? 'inizio' : 'fine',
+    ancora: scelta.daInizio ? 'inizio' : 'fine',
     originale: `${riceve.start}–${riceve.end}`,
   };
 
   // L'adattamento non deve sbordare dalla fascia in cui si può stare in store.
-  if (inizio < minutes(RULES.store.primoIngresso) || fine > minutes(RULES.store.ultimaUscita)) {
+  if (!scelta.dentro) {
     risultato.avviso = `Adattato a ${risultato.start}–${risultato.end}, fuori dalla fascia ${RULES.store.primoIngresso}–${RULES.store.ultimaUscita}: da concordare.`;
   }
   return risultato;

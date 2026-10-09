@@ -103,6 +103,20 @@ test('un cambio orario non può spostarsi su un altro giorno', () => {
   assert.ok(errori.some((e) => e.includes('resta nello stesso giorno')));
 });
 
+test('una fascia impossibile (dopo le 19 ed entro le 10) viene rifiutata', () => {
+  const s = shift('2026-09-18', '11:00', '20:00');
+  const richiesta = richiestaOrario('2026-09-18', { mode: WANT_MODE.RANGE, dalleOre: '19:00', entroLe: '10:00' });
+  assert.ok(validateRequest(richiesta, { x: s }).some((e) => e.includes('non esiste')));
+  const possibile = richiestaOrario('2026-09-18', { mode: WANT_MODE.RANGE, dalleOre: '10:00', entroLe: '19:00' });
+  assert.deepEqual(validateRequest(possibile, { x: s }), []);
+});
+
+test('chiedere l\'orario che si ha già viene rifiutato', () => {
+  const s = shift('2026-09-18', '11:00', '20:00');
+  const richiesta = richiestaOrario('2026-09-18', { mode: WANT_MODE.SPECIFIC, start: '11:00', end: '20:00' });
+  assert.ok(validateRequest(richiesta, { x: s }).some((e) => e.includes('Hai già il turno')));
+});
+
 test('in un cambio orario "qualsiasi turno" non vuol dire niente', () => {
   const s = shift('2026-09-18', '16:00', '21:00');
   const errori = validateRequest(richiestaOrario('2026-09-18', { mode: WANT_MODE.ANY }), { x: s });
@@ -238,8 +252,16 @@ test('una notte non viene accorciata d\'ufficio, viene segnalata', () => {
 
 test('un adattamento che sborda dalla fascia dello store viene segnalato', () => {
   assert.equal(trasformaTurno(shift('2026-09-18', '12:00', '18:00'), lascia9).avviso, undefined);
-  // 11:00-14:00 allungato a nove ore comincerebbe alle 05:00.
-  assert.match(trasformaTurno(shift('2026-09-18', '11:00', '14:00'), lascia9).avviso, /fuori dalla fascia/);
+  // 13:00-16:00 allungato a nove ore comincerebbe alle 07:00 o finirebbe alle 22:00.
+  assert.match(trasformaTurno(shift('2026-09-18', '13:00', '16:00'), lascia9).avviso, /fuori dalla fascia/);
+});
+
+test('un Full Time che prende un turno corto tiene fermo l\'estremo che resta in orario', () => {
+  // Fermando la fine entrerebbe alle 07:00, e alle 7 non si entra: 11:00-20:00.
+  const t = trasformaTurno(shift('2026-09-18', '11:00', '16:00'), lascia9);
+  assert.equal(t.start, '11:00');
+  assert.equal(t.end, '20:00');
+  assert.equal(t.avviso, undefined);
 });
 
 test('il match spiega l\'adattamento invece di limitarsi a segnalarlo, ma solo per chi guarda', () => {

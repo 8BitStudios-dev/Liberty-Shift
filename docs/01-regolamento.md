@@ -129,13 +129,17 @@ lasciando**, ancorate a un estremo di quello che riceve.
 
 - il turno ricevuto **comincia entro l'apertura** → si tiene fermo l'**inizio**:
   entri quando entra chi te lo passa;
-- **in tutti gli altri casi** → si tiene ferma la **fine**: esci quando esce lui.
+- **in tutti gli altri casi** → si tiene ferma la **fine**: esci quando esce lui;
+- **se così si entrerebbe prima delle 08:00 o si uscirebbe dopo le 21:00**, si
+  tiene fermo l'altro estremo: alle 7 non si entra. Un Full Time che prende
+  l'11:00–16:00 di un Part Time fa 11:00–20:00.
 
 | Turno ricevuto | Chi lo prende lascia | Diventa | Perché |
 |---|---|---|---|
 | 09:00–18:00 | 5 ore | 09:00–14:00 | apre, si tiene l'inizio |
 | 12:00–21:00 | 5 ore | 16:00–21:00 | chiude, si tiene la fine |
 | 12:00–21:00 | 7 ore | 14:00–21:00 | stessa regola, ore diverse |
+| 11:00–16:00 | 9 ore | 11:00–20:00 | fermando la fine entrerebbe alle 07:00: si tiene l'inizio |
 | 11:00–17:00 | 9 ore | 08:00–17:00 | allungato all'indietro |
 | 11:00–20:00 | 9 ore | invariato | stesse ore |
 

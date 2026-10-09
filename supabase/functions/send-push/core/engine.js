@@ -151,6 +151,18 @@ export function validateRequest(request, shiftsById, shifts = null) {
   if (cerco?.mode === WANT_MODE.RANGE && !cerco.entroLe && !cerco.dalleOre) {
     errori.push('Per una fascia serve almeno un limite orario.');
   }
+  // Richieste che nessun turno potrebbe soddisfare: meglio fermarle prima di
+  // pubblicarle che lasciarle aperte a vuoto.
+  if (cerco?.mode === WANT_MODE.RANGE && cerco.entroLe && cerco.dalleOre
+    && minutes(cerco.dalleOre) >= minutes(cerco.entroLe)) {
+    errori.push(`Un turno che comincia dopo le ${cerco.dalleOre} e finisce entro le ${cerco.entroLe} non esiste: cambia uno dei due orari.`);
+  }
+  if (mio && tipo === TIPO_CAMBIO.ORARIO && cerco?.mode === WANT_MODE.SPECIFIC) {
+    const cercati = cerco.orari?.length ? cerco.orari : [{ start: cerco.start, end: cerco.end }];
+    if (cercati.some((o) => o.start === mio.start && o.end === mio.end)) {
+      errori.push(`Hai già il turno ${mio.start}–${mio.end}: scegli un orario diverso da quello che hai.`);
+    }
+  }
   return [...new Set(errori)];
 }
 
@@ -548,6 +560,15 @@ export function turnoOfferibile(request, shift, shifts, shiftsById, trova = null
     const mioNelSuoGiorno = shifts.find((x) => x.userId === shift.userId && x.data === mioCedo.data);
     if (mioNelSuoGiorno && mioNelSuoGiorno.tipo !== 'OFF') {
       return { ok: false, motivo: `Il ${formatDay(mioCedo.data)} lavori già: non puoi prendere anche il suo turno.` };
+    }
+  }
+
+  // Uno scambio in cui nessuno cambia orario non serve a nessuno: lo stesso
+  // caso che la ricerca dei colleghi (matchOrario) già esclude.
+  if (request.tipo === TIPO_CAMBIO.ORARIO) {
+    const stesso = (a, b) => a.start === b.start && a.end === b.end;
+    if (stesso(turnoAdattato(shift, mioCedo, trova), mioCedo) || stesso(turnoAdattato(mioCedo, shift, trova), shift)) {
+      return { ok: false, motivo: 'Con questo scambio nessuno dei due cambierebbe orario.' };
     }
   }
 

@@ -138,7 +138,7 @@ l'ordine a parità di percentuale, ma non entrano nel numero.
 Prima di calcolare il punteggio, ogni turno viene trasformato in quello che la
 persona lavorerebbe davvero (R9): con le **ore del turno che sta lasciando**,
 tenendo fermo l'inizio se quello ricevuto apre e la fine in tutti gli altri
-casi. `trasformaTurno(riceve, cede)` prende i due turni, non le persone: la
+casi (o l'altro estremo, se quello scelto sbordasse da 08:00–21:00). `trasformaTurno(riceve, cede)` prende i due turni, non le persone: la
 durata di riferimento è un dato concreto, non una proprietà dichiarata.
 
 Questo cambia i risultati in meglio. Chi lascia un turno da 5 ore e cerca

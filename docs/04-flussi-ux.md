@@ -101,6 +101,13 @@ collegamento salvato, ma niente nell'app ci porta più.
 Il giorno non si sceglie: è quello del turno. Non c'è modo di sbagliare
 settimana perché non si cambia giornata.
 
+Il motore ferma le richieste che non possono andare a buon fine: una fascia
+impossibile («dopo le 19 ed entro le 10») e un orario preciso uguale a quello
+del turno che lasci («Hai già il turno 11:00–20:00»). Per lo stesso motivo non
+si può proporre uno scambio in cui nessuno dei due cambierebbe orario: né il
+tasto Proponi né Aiuta lo offrono. Il Full Time che prende un turno corto non
+entra mai prima delle 08:00: l'11:00–16:00 diventa 11:00–20:00.
+
 ### 📅 Cambio OFF — 3 passi
 1. **Quale giorno vuoi libero** — scegli il turno di quel giorno.
 2. **Cosa offri in cambio** — compaiono solo i tuoi giorni liberi della
