@@ -341,16 +341,16 @@ export function cambioDalGiorno() {
     domanda = html`
       <p class="occhiello">${formatDay(data, true)} · oggi hai ${shiftLabel(turno)}</p>
       <h2 class="titolo-gruppo">In quali giorni lavoreresti in cambio?</h2>
-      <p class="testo-tenue">Sono i tuoi giorni liberi della stessa settimana, da sabato a venerdì. Ne puoi offrire fino a ${RULES.giorniOffertiMax}: chi risponde ne sceglie uno${liberi.length ? ` (${dalGiorno.giorni.length} su ${RULES.giorniOffertiMax})` : ''}.</p>
+      <p class="testo-tenue">Sono i tuoi giorni OFF della stessa settimana, da sabato a venerdì. Ne puoi offrire fino a ${RULES.giorniOffertiMax}: chi risponde ne sceglie uno${liberi.length ? ` (${dalGiorno.giorni.length} su ${RULES.giorniOffertiMax})` : ''}.</p>
       ${raw(liberi.length ? `<div class="chips">${liberi.map((g) => html`
         <button class="pill ${dalGiorno.giorni.includes(g) ? 'attivo' : ''} ${alMassimo && !dalGiorno.giorni.includes(g) ? 'spento' : ''}" data-act="giorno-libero" data-data="${g}">${formatDay(g)}</button>`).join('')}</div>`
-    : '<p class="motivo-non-puoi">Al momento non puoi cambiare: in questa settimana non hai altri giorni liberi.</p>')}`;
+    : '<p class="motivo-non-puoi">Al momento non puoi cambiare: in questa settimana non hai altri giorni OFF.</p>')}`;
     scelto = dalGiorno.giorni.length > 0;
   } else {
     const lavoro = giorniDaLiberare(data);
     domanda = html`
       <p class="occhiello">${formatDay(data, true)} · non lavori</p>
-      <h2 class="titolo-gruppo">Quale giorno vuoi libero in cambio?</h2>
+      <h2 class="titolo-gruppo">Quale giorno vuoi OFF in cambio?</h2>
       <p class="testo-tenue">Lavori ${formatDay(data)} al posto di un collega, e lui prende il tuo turno del giorno che scegli.</p>
       ${raw(lavoro.length ? `<div class="chips">${lavoro.map((s) => html`
         <button class="pill ${dalGiorno.cedoShiftId === s.id ? 'attivo' : ''}" data-act="giorno-da-liberare" data-id="${s.id}">${formatDay(s.data)} · ${shiftLabel(s)}</button>`).join('')}</div>`
@@ -442,7 +442,7 @@ function passoCedo() {
   return html`
     ${raw(barra(off ? 'Quale giorno vuoi OFF?' : 'Quale turno vuoi cambiare?', 1))}
     <p class="testo-tenue">${off
-    ? 'Scegli il turno del giorno che ti serve OFF. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei a casa.'
+    ? 'Scegli il turno del giorno che ti serve OFF. Qualcuno lo prenderà, e tu lavorerai in un giorno in cui adesso sei OFF.'
     : 'Scegli il turno di cui vuoi cambiare l\'orario. Resti nello stesso giorno.'}</p>
     ${raw(miei.length ? `<div class="lista-turni">${righe}</div>`
     : vuoto('Nessun turno inserito', 'Aggiungi prima i tuoi turni.', '<button class="btn primario" data-act="vai" data-to="#/profilo">Inserisci i turni dal Profilo</button>'))}
@@ -510,7 +510,7 @@ function passoCercoOff() {
   const pillole = liberi.map((g) => html`
     <button class="pill ${draft.cerco.giorni.includes(g) ? 'attivo' : ''}" data-act="giorno-off" data-data="${g}">
       ${formatDay(g)}
-      <em>${draft.cerco.giorni.includes(g) ? 'scelto' : 'sei a casa'}</em>
+      <em>${draft.cerco.giorni.includes(g) ? 'scelto' : 'sei OFF'}</em>
     </button>`).join('');
 
   const modi = [
@@ -875,12 +875,14 @@ export function esitoProposta(request, turno) {
   if (combaciaEsatto(request, turno, store.shiftsById(), personaDi)) {
     return {
       diretto: true,
-      tasto: 'Accetta il cambio',
+      titolo: 'Accetta proposta',
+      tasto: 'Accetta proposta',
       testo: `È proprio il cambio che ${esc(chi)} ha chiesto: accettando è fatto, senza aspettare la sua risposta. Poi uno dei due lo inserisce su UKG.`,
     };
   }
   return {
     diretto: false,
+    titolo: 'Proponi lo scambio',
     tasto: 'Invia proposta',
     testo: 'Proponendo hai già detto sì: lo scambio è fatto quando accetta anche l\'altra persona.',
   };

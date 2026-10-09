@@ -11,9 +11,14 @@ globalThis.localStorage = {
   removeItem(k) { this._dati.delete(k); },
 };
 
+// dom.js registra un listener su `document` all'importazione, come in dom.test.js.
+globalThis.document = { addEventListener() {} };
+
 const { store } = await import('../src/core/store.js');
 const { seed } = await import('./fixtures/seed.js');
 const { combaciaEsatto } = await import('../src/core/engine.js');
+const { tastoProponi } = await import('../src/ui/components.js');
+const { esitoProposta } = await import('../src/ui/flows.js');
 
 /** Una richiesta di cambio orario di Martina e un turno di Giulia lo stesso giorno. */
 function prepara({ cerco, turnoGiulia }) {
@@ -108,4 +113,18 @@ test('le proposte si leggono dalla più vicina a quello chiesto, a parità dalla
     { id: 'p-esatto', shiftOffertoId: 'esatto', createdAt: '2030-10-01T09:00:00Z' },
   ];
   assert.deepEqual(ordinaProposte(richiesta, proposte, turni).map((p) => p.id), ['p-esatto', 'p-esatto-tardi', 'p-vicino']);
+});
+
+test('il tasto della scheda dice quello che farà: Accetta proposta solo se il turno combacia', () => {
+  const casi = [
+    { cerco: { mode: 'SPECIFIC', start: '10:00', end: '19:00' }, turnoGiulia: { start: '10:00', end: '19:00' }, atteso: 'Accetta proposta', tendina: 'Accetta proposta' },
+    { cerco: { mode: 'SPECIFIC', start: '10:00', end: '19:00' }, turnoGiulia: { start: '10:30', end: '19:30' }, atteso: 'Proponi lo scambio', tendina: 'Invia proposta' },
+    { cerco: { mode: 'RANGE', entroLe: '19:30' }, turnoGiulia: { start: '10:00', end: '19:00' }, atteso: 'Proponi lo scambio', tendina: 'Invia proposta' },
+    { cerco: { mode: 'RANGE', dalleOre: '10:00' }, turnoGiulia: { start: '10:00', end: '19:00' }, atteso: 'Proponi lo scambio', tendina: 'Invia proposta' },
+  ];
+  for (const { cerco, turnoGiulia, atteso, tendina } of casi) {
+    const { richiesta, offerto } = prepara({ cerco, turnoGiulia });
+    assert.equal(tastoProponi(richiesta, offerto.id), atteso);
+    assert.equal(esitoProposta(richiesta, offerto).tasto, tendina);
+  }
 });

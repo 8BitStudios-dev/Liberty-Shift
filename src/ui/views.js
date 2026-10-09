@@ -231,7 +231,7 @@ export function calendario(params) {
  * da fuori sono la stessa cosa, un turno che si può prendere.
  */
 const GRUPPI_GIORNO = [
-  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno libero. Se tu non lavori, puoi prendere il loro turno.' },
+  { ruolo: 'CERCA', titolo: 'Cercano', nota: 'Vogliono questo giorno OFF. Se tu non lavori, puoi prendere il loro turno.' },
   { ruolo: 'OFFRE', titolo: 'Offrono', nota: 'Giornate che i colleghi offrono in cambio: puoi prenderle tu.' },
   { ruolo: 'ORARIO', titolo: 'Cambi orario', nota: 'Vogliono un orario diverso in questo giorno. Se lavori, puoi scambiare il tuo.' },
 ];

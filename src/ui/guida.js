@@ -44,7 +44,7 @@ export const GUIDE = {
       <p>Il modo più veloce per liberarti un turno.</p>
 
       <p>
-        L'app guarda tutti i tuoi turni e i giorni in cui sei a casa, e ti
+        L'app guarda tutti i tuoi turni e i giorni in cui sei OFF, e ti
         mostra le ${RULES.rapidoMassimo} richieste dei colleghi che ti convengono di più. Ogni
         casella dice solo il giorno e quanto va bene a tutti e due.
       </p>
@@ -59,7 +59,7 @@ export const GUIDE = {
       </p>
 
       <p>
-        Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei. Se non
+        Tocca <strong>Proponi lo scambio</strong> e la palla passa a lei; se il tuo turno è proprio quello che ha chiesto, il tasto è <strong>Accetta proposta</strong> e il cambio è fatto subito. Se non
         compare niente, pubblica la tua dal calendario nel Profilo: resta in
         bacheca.
       </p>`,

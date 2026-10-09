@@ -8,6 +8,7 @@ import {
   STATUS_META, TIPO_META, TIPO_CAMBIO, RULES, FASCE_PREFERENZE,
 } from '../core/rules.js';
 import { formatDay, GIORNI_LUNGHI, MESI, todayISO } from '../core/time.js';
+import { combaciaEsatto } from '../core/engine.js';
 import { icona } from './icone.js';
 
 /**
@@ -223,7 +224,7 @@ function perche(request) {
   }
   const lavorati = giorni.filter((g) => mioIl(g)?.tipo === 'WORK');
   if (!lavorati.length) {
-    return `nei giorni che offre (${giorni.map(giorno).join(', ')}) sei a casa, quindi non hai un turno da dargli in cambio.`;
+    return `nei giorni che offre (${giorni.map(giorno).join(', ')}) sei OFF, quindi non hai un turno da dargli in cambio.`;
   }
   return `i tuoi turni in quei giorni non rientrano in quello che cerca (${wantLabel(request.cerco)}).`;
 }
@@ -298,7 +299,7 @@ function riassuntoMatch(match, u, turno, opzioni) {
 
   return html`
     <div class="turno-offerto">
-      <strong>${formatDay(opzioni.mioCedo.data)} sei libero</strong>: ${u?.nome} prende il tuo turno ·
+      <strong>${formatDay(opzioni.mioCedo.data)} sei OFF</strong>: ${u?.nome} prende il tuo turno ·
       <strong>${shiftLabel(opzioni.mioCedo)}</strong>
     </div>
     <div class="turno-ceduto">
@@ -375,13 +376,27 @@ export function cardMatch(match, opzioni = {}) {
  * dichiarato una disponibilità va avvisato, perché non c'è una richiesta
  * sua su cui proporre.
  */
+/**
+ * Cosa dice il tasto di una richiesta altrui, prima ancora di aprirlo: se il
+ * turno che offri è proprio quello chiesto il cambio si chiude con il tuo
+ * sì ("Accetta proposta"), se la richiesta ha una fascia (inizia dopo, finisce
+ * entro) o serve un adattamento parte una proposta ("Proponi lo scambio").
+ * La stessa regola decide il tasto dentro la tendina (`esitoProposta`): due
+ * nomi diversi per la stessa azione facevano credere che ci fossero due passi.
+ */
+export function tastoProponi(richiesta, shiftOffertoId) {
+  return richiesta && combaciaEsatto(richiesta, store.shift(shiftOffertoId), store.shiftsById(), personaDi)
+    ? 'Accetta proposta'
+    : 'Proponi lo scambio';
+}
+
 function azioneMatch(match, { miaRichiestaId, dalGiorno } = {}) {
   const u = store.user(match.userId);
   if (match.requestId) {
     return html`
       <button class="btn primario" data-act="proponi" data-user="${match.userId}"
               data-richiesta="${match.requestId}" data-shift="${match.shiftOffertoId}">
-        Proponi lo scambio
+        ${tastoProponi(store.request(match.requestId), match.shiftOffertoId)}
       </button>`;
   }
   // Con un collega vero il pulsante apre il telefono, non una notifica
@@ -431,7 +446,7 @@ export function messaggioAvviso(richiesta, destinatario) {
   const cedo = store.shift(richiesta.cedo.shiftId);
   const giorni = (richiesta.cerco.giorni || []).map((g) => formatDay(g)).join(', ');
   const cosa = richiesta.tipo === TIPO_CAMBIO.OFF
-    ? `vorrei libero ${formatDay(cedo.data)}, in cambio lavoro ${giorni}`
+    ? `vorrei OFF ${formatDay(cedo.data)}, in cambio lavoro ${giorni}`
     : `lascio il turno di ${formatDay(cedo.data)} (${shiftLabel(cedo)}) e cerco un altro orario lo stesso giorno`;
   return `Ciao ${destinatario?.nome || ''}, sono ${store.me.nome}. `
     + `${cosa[0].toUpperCase()}${cosa.slice(1)}. `
@@ -549,7 +564,7 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
       ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
               data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}">
-        Proponi lo scambio
+        ${tastoProponi(richiesta, match.shiftOffertoId)}
       </button>
     </article>`;
 }
@@ -644,7 +659,7 @@ export function formPreferenze(preferenze, ambito, contratto = '') {
       <input type="checkbox" data-act="pref-weekend" data-ambito="${ambito}" ${raw(n.weekendOff ? 'checked' : '')}>
       <span>
         Vorrei il weekend OFF
-        <em class="aiuto">Un cambio che ti libera un sabato o una domenica sale nel match, e con gli avvisi dei cambi che ti convengono ti arriva una notifica.</em>
+        <em class="aiuto">Un cambio che ti dà OFF un sabato o una domenica sale nel match, e con gli avvisi dei cambi che ti convengono ti arriva una notifica.</em>
       </span>
     </label>`;
 }

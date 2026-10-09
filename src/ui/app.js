@@ -968,7 +968,8 @@ const AZIONI = {
     const opzioni = F.turniOfferibili(richiesta);
     const possibile = opzioni.length > 0;
     const primo = opzioni.find((x) => x.id === el.dataset.shift) || opzioni[0];
-    const s = sheet('Proponi lo scambio', F.formProposta(richiesta, el.dataset.shift), {
+    const titolo = possibile ? F.esitoProposta(richiesta, primo).titolo : 'Proponi lo scambio';
+    const s = sheet(titolo, F.formProposta(richiesta, el.dataset.shift), {
       azioni: possibile
         ? `<button class="btn primario largo" data-act="conferma-proposta">${F.esitoProposta(richiesta, primo).tasto}</button>`
         : '<button class="btn secondario largo" data-chiudi>Chiudi</button>',

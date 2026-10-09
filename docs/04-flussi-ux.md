@@ -117,7 +117,8 @@ Dipende da come è nato il match, e i pulsanti lo dicono:
 
 | Il match viene da | Pulsante | Cosa succede |
 |---|---|---|
-| una richiesta pubblicata | Proponi lo scambio | proposta sulla sua richiesta, vale come tua accettazione |
+| una richiesta pubblicata, turno che combacia | Accetta proposta | il cambio è concordato subito |
+| una richiesta pubblicata, con fascia o adattamento | Proponi lo scambio | proposta sulla sua richiesta, vale come tua accettazione |
 | dal calendario, con la tua richiesta già pubblicata | Scrivi a *nome* | il messaggio esce dall'app, sarà lui a proporre |
 | dal calendario, dal Cambio rapido | Pubblica e scrivi a *nome* | pubblica la richiesta del tipo giusto e apre il messaggio |
 
@@ -178,7 +179,10 @@ una parola lasciava il dubbio di una richiesta incompleta.
 **Il cambio che combacia non chiede un secondo sì.** Se il turno che offri è
 esattamente quello che la richiesta cerca (orario preciso rispettato, nessun
 adattamento al contratto: `combaciaEsatto` in `engine.js`), il tasto diventa
-"Accetta il cambio" e lo scambio è concordato subito. Chi ha pubblicato riceve
+"Accetta proposta" e lo scambio è concordato subito. Lo stesso nome sta già
+sulla scheda, prima di aprire la tendina: se il turno combacia il tasto della
+scheda dice "Accetta proposta", se la richiesta ha una fascia o serve un
+adattamento dice "Proponi lo scambio" e dentro c'è "Invia proposta". Chi ha pubblicato riceve
 "Cambio accettato: inseritelo su UKG, basta che lo faccia uno dei due"; chi ha
 accettato legge un foglio "Cambio fatto" che gli dice la stessa cosa. Un
 orario adattato o qualche minuto di scarto restano una proposta normale. **Una
