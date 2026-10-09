@@ -153,9 +153,15 @@ async function costruisci() {
   // redesign.css. Il file unico di sempre resta com'è.
   const css = await readFile(join(RADICE, 'styles.css'), 'utf8')
     + (DEMO ? `\n${await readFile(join(RADICE, 'redesign.css'), 'utf8')}` : '');
-  const html = `<title>Liberty Shift${DEMO ? ' Demo' : ''}</title>
+  // Il titolo è anche il nome che il telefono propone con "Aggiungi alla
+  // Home": con ' Demo' in fondo l'icona nasceva con il nome sbagliato.
+  const html = `<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Liberty Shift</title>
+<meta name="application-name" content="Liberty Shift">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Liberty Shift">
+<meta name="apple-mobile-web-app-title" content="Liberty Shift">${DEMO ? `
+<link rel="apple-touch-icon" href="./public/icons/icon-192.png">` : ''}
 <style>
 ${css}
 </style>
