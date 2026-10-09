@@ -31,9 +31,9 @@ const COLLEGHI = [
   ['luca', 'Luca', 'Bianchi', 'M', 'FT', 40, { preferiscePomeriggi: true }],
   ['paolo', 'Paolo', 'Riva', 'M', 'FT', 40, { evitaAperture: true }],
   ['chiara', 'Chiara', 'Galli', 'F', 'FT', 40, { preferisceChiusure: true }],
-  ['matteo', 'Matteo', 'Serra', 'M', 'FT', 40, {}],
+  ['matteo', 'Matteo', 'Serra', 'M', 'PT', 25, {}],
   ['sofia', 'Sofia', 'Marchetti', 'F', 'FT', 40, { evitaChiusure: true }],
-  ['giorgio', 'Giorgio', 'Fontana', 'M', 'FT', 40, {}],
+  ['giorgio', 'Giorgio', 'Fontana', 'M', 'PT', 30, {}],
   ['elisa', 'Elisa', 'Conti', 'F', 'FT', 40, { preferisceMattine: true }],
   ['valentina', 'Valentina', 'Costa', 'F', 'FT', 40, { preferisceChiusure: true }],
   ['davide', 'Davide', 'Ferri', 'M', 'FT', 40, { evitaAperture: true }],
@@ -58,7 +58,7 @@ const COLLEGHI = [
 const CON_RUOLO = new Set([
   'chiara', 'matteo', 'sofia', 'giorgio', 'elisa', 'valentina', 'davide', // aiuti
   'rita', 'tommaso', 'ilaria', 'nicola', // scambi già conclusi
-  'federica', // arriva con una notifica
+  'federica',
 ]);
 
 const NOTE_SFONDO = [
@@ -181,31 +181,36 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   const off = (id, c, data, offerti, note, extra) => richiesta(id, idUtente(c), TIPO_CAMBIO.OFF, data,
     { giorni: offerti, mode: WANT_MODE.ANY, note }, extra);
 
+  // Le percentuali del Cambio rapido sono di chi guarda: contano le sue
+  // preferenze (eviti le notti: -30) e le ore adattate (un Part Time che
+  // cede il suo turno a un Full Time: -5). Per averle miste, fra i colleghi
+  // da copione ci sono turni normali (100), da Part Time (95) e notturni (70).
+  //
   // Aiuta un collega: sette richieste che Lorenzo può coprire, di cui due che
   // gli convengono (lascia una chiusura, prende una mattina), una che gli
   // costa (prende una chiusura che evita) e una in ultima chiamata (turno di
   // domani, in bacheca da cinque giorni).
   imponi('chiara', giorno(w2, 5), ['09:30', '18:30']);
-  orario('rq_chiara', 'chiara', giorno(w2, 5), { dalleOre: '11:00', note: 'Alle 9 ho il dentista, riesco a entrare più tardi.' }, { oreFa: 30 });
+  orario('rq_chiara', 'chiara', giorno(w2, 5), { dalleOre: '12:30', note: 'Alle 9 ho il dentista, riesco a entrare più tardi.' }, { oreFa: 30 });
 
-  imponi('matteo', giorno(w1, 4), ['08:00', '17:00']);
-  orario('rq_matteo', 'matteo', giorno(w1, 4), { dalleOre: '10:00' }, { oreFa: 14 });
+  imponi('matteo', giorno(w1, 4), ['08:00', '13:00']);
+  orario('rq_matteo', 'matteo', giorno(w1, 4), { dalleOre: '10:15' }, { oreFa: 14 });
 
   imponi('sofia', giorno(w1, 2), ['12:00', '21:00']);
-  orario('rq_sofia', 'sofia', giorno(w1, 2), { entroLe: '19:00', note: 'Saggio di danza di mia figlia, devo uscire prima.' }, { oreFa: 22 });
+  orario('rq_sofia', 'sofia', giorno(w1, 2), { entroLe: '17:45', note: 'Saggio di danza di mia figlia, devo uscire prima.' }, { oreFa: 22 });
 
-  imponi('giorgio', giorno(w1, 1), ['09:30', '18:30']);
+  imponi('giorgio', giorno(w1, 1), ['09:30', '15:30']);
   imponi('giorgio', giorno(w1, 2), OFF);
   imponi('giorgio', giorno(w1, 4), OFF);
   off('rq_giorgio', 'giorgio', giorno(w1, 1), [giorno(w1, 2), giorno(w1, 4)], 'Cena di famiglia, la domenica non si tocca.', { oreFa: 40 });
 
-  imponi('elisa', giorno(w2, 3), ['09:30', '18:30']);
+  imponi('elisa', giorno(w2, 3), ['22:00', '06:30']);
   imponi('elisa', giorno(w2, 4), ['12:00', '21:00']);
   imponi('elisa', giorno(w2, 5), OFF);
   imponi('elisa', giorno(w2, 6), OFF);
-  off('rq_elisa', 'elisa', giorno(w2, 3), [giorno(w2, 5), giorno(w2, 6)], 'Mi serve il martedì libero per un documento.', { oreFa: 9, priorita: 40 });
+  off('rq_elisa', 'elisa', giorno(w2, 3), [giorno(w2, 5), giorno(w2, 6)], 'Martedì notte non riesco, ho un impegno.', { oreFa: 9, priorita: 40 });
 
-  imponi('valentina', giorno(w2, 6), ['11:00', '20:00']);
+  imponi('valentina', giorno(w2, 6), ['22:00', '06:30']);
   orario('rq_valentina', 'valentina', giorno(w2, 6), { entroLe: '17:30' }, { oreFa: 52 });
 
   imponi('davide', giorno(w1, 0), ['08:00', '17:00']);
@@ -240,23 +245,30 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   imponi('nicola', giorno(w0, 4), ['10:00', '16:00']);
   orario('rq_nicola', 'nicola', giorno(w0, 4), { dalleOre: '10:00' }, { oreFa: 220, status: STATUS.CHIUSA, chiusaFa: 130 });
 
-  // Lo sfondo: una richiesta ciascuno per chi non ha un ruolo. Giorni scelti
-  // a caso fra quelli lavorati e non ancora usati dal copione.
+  // Lo sfondo: una richiesta ciascuno per chi non ha un ruolo. Cadono su
+  // giorni in cui Lorenzo non può rispondere (un cambio orario quando lui è a
+  // casa, un OFF quando lui lavora): riempiono bacheca e calendario senza
+  // affollare Aiuta un collega e il Cambio rapido, che restano quelle da copione.
+  const lorenzoLibero = (data) => SETTIMANA_LORENZO[SETTIMANE.indexOf(appleWeekKey(data)) >= 0
+    ? Math.round((new Date(`${data}T00:00:00Z`) - new Date(`${appleWeekKey(data)}T00:00:00Z`)) / 86400000) : 0] === OFF;
   for (const [c] of COLLEGHI) {
     if (CON_RUOLO.has(c)) continue;
     const userId = idUtente(c);
     const w = rnd() < 0.5 ? w1 : w2;
-    const lavorati = shifts.filter((s) => s.userId === userId && s.tipo === 'WORK'
-      && s.data >= w && s.data < addDays(w, 7) && !riservati.has(`${userId}|${s.data}`));
-    if (!lavorati.length) continue;
-    const t = lavorati[Math.floor(rnd() * lavorati.length)];
-    const liberi = shifts.filter((s) => s.userId === userId && s.tipo === 'OFF' && s.data >= w && s.data < addDays(w, 7));
+    const settimana = shifts.filter((s) => s.userId === userId && s.data >= w && s.data < addDays(w, 7));
+    const libero = (s) => !riservati.has(`${userId}|${s.data}`);
+    const perOrario = settimana.filter((s) => s.tipo === 'WORK' && libero(s) && lorenzoLibero(s.data));
+    const perOff = settimana.filter((s) => s.tipo === 'WORK' && libero(s) && !lorenzoLibero(s.data));
+    const liberi = settimana.filter((s) => s.tipo === 'OFF');
     const nota = NOTE_SFONDO[Math.floor(rnd() * NOTE_SFONDO.length)];
     const extra = { oreFa: 2 + Math.floor(rnd() * 70), priorita: rnd() < 0.15 ? 20 + Math.floor(rnd() * 24) : 0 };
-    if (liberi.length && rnd() < 0.45) {
+    const vuoleOff = rnd() < 0.45 && liberi.length && perOff.length;
+    if (vuoleOff) {
+      const t = perOff[Math.floor(rnd() * perOff.length)];
       const offerti = liberi.sort(() => rnd() - 0.5).slice(0, 2).map((s) => s.data).sort();
       off(`rq_${c}`, c, t.data, offerti, nota, extra);
-    } else {
+    } else if (perOrario.length) {
+      const t = perOrario[Math.floor(rnd() * perOrario.length)];
       const chiusura = t.end >= '20:15';
       const cerco = chiusura ? { entroLe: ['17:30', '18:00', '19:00'][Math.floor(rnd() * 3)] }
         : t.start <= '10:00' ? { dalleOre: ['11:00', '12:00', '13:00'][Math.floor(rnd() * 3)] }
@@ -322,75 +334,23 @@ export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   };
 }
 
-// ------------------------------------------------------------ notifiche
+// ------------------------------------------------------------ notifica
 
 /**
- * Le notifiche che arrivano durante la ripresa, ognuna con quello che
- * cambia davvero nello stato: toccarla porta a una schermata dove c'è
- * qualcosa da fare, non a una pagina identica a prima.
+ * L'unica notifica della demo: un grazie, che arriva poco dopo l'apertura di
+ * Proposte. Cambia anche lo stato (è il quinto grazie, e supera "Salvaserata"),
+ * così toccarla porta a un Profilo che ha qualcosa da mostrare.
  */
-export function notificheDemo(oggi = todayISO(), adesso = new Date()) {
-  const [, w1, w2] = settimaneDemo(oggi);
-  const U = idUtente;
-  const giorno = (w, i) => addDays(w, i);
-
-  return [
-    {
-      titolo: 'Elisa ti ha proposto uno scambio',
-      testo: 'Mercoledì 12:00 alle 21:00 per il tuo turno delle 10:00.',
-      vai: '#/inbox',
-      applica(stato) {
-        stato.proposals.push({
-          id: 'pr_elisa', requestId: 'rq_lorenzo_3', daUserId: U('elisa'), aUserId: L,
-          shiftOffertoId: idTurno(U('elisa'), giorno(w2, 4)), messaggio: 'Io il mercoledì entro a mezzogiorno, per me è perfetto.',
-          accettataDa: [U('elisa')], status: STATUS.IN_ATTESA, createdAt: adesso.toISOString(), cambioInserito: false,
-        });
-      },
+export function notificaDemo(adesso = new Date()) {
+  return {
+    titolo: 'Rita ti ha ringraziato 💛',
+    testo: '«Mi hai tolto un pensiero, grazie davvero.»',
+    vai: '#/profilo',
+    applica(stato) {
+      stato.ringraziamenti.unshift({
+        id: 'gr_rita', proposalId: 'pr_rita', daUserId: idUtente('rita'), aUserId: L,
+        testo: 'Mi hai tolto un pensiero, grazie davvero.', createdAt: adesso.toISOString(),
+      });
     },
-    {
-      titolo: 'Un cambio che ti conviene',
-      testo: 'Federica cerca di entrare più tardi giovedì: tu eviti già quella chiusura.',
-      vai: '#/aiuta',
-      applica(stato) {
-        const t = stato.shifts.find((s) => s.userId === U('federica') && s.data === giorno(w2, 5));
-        Object.assign(t, { tipo: 'WORK', start: '08:00', end: '13:00' });
-        stato.requests.push({
-          id: 'rq_federica_nuova', userId: U('federica'), createdAt: adesso.toISOString(), status: STATUS.APERTA,
-          prioritaFinoA: null, tipo: TIPO_CAMBIO.ORARIO, cedo: { shiftId: t.id, flessibile: false },
-          cerco: { giorni: [t.data], mode: WANT_MODE.RANGE, dalleOre: '10:00', evitaChiusura: false, note: '' },
-        });
-      },
-    },
-    {
-      titolo: 'Matteo ha accettato il cambio',
-      testo: 'Mercoledì è concordato. Ora inseriscilo in UKG.',
-      vai: '#/inbox',
-      applica(stato) {
-        const p = stato.proposals.find((x) => x.id === 'pr_lorenzo_matteo');
-        Object.assign(p, { accettataDa: [L, U('matteo')], status: STATUS.ACCORDO });
-        Object.assign(stato.requests.find((r) => r.id === 'rq_matteo'), { status: STATUS.ACCORDO, chiusaIl: adesso.toISOString() });
-      },
-    },
-    {
-      titolo: 'Rita ti ha ringraziato 💛',
-      testo: '«Mi hai tolto un pensiero, grazie davvero.»',
-      vai: '#/profilo',
-      applica(stato) {
-        stato.ringraziamenti.unshift({
-          id: 'gr_rita', proposalId: 'pr_rita', daUserId: U('rita'), aUserId: L,
-          testo: 'Mi hai tolto un pensiero, grazie davvero.', createdAt: adesso.toISOString(),
-        });
-      },
-    },
-    {
-      titolo: 'Ricordati di UKG',
-      testo: 'Inserisci il cambio con Tommaso prima di venerdì.',
-      vai: '#/inbox',
-    },
-    {
-      titolo: 'Ultima chiamata',
-      testo: 'Davide cerca ancora qualcuno per domani mattina. Puoi coprirlo.',
-      vai: '#/aiuta',
-    },
-  ];
+  };
 }

@@ -4,8 +4,8 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { statoDemo, notificheDemo } from '../demo/dati-demo.js';
-import { opportunitaPerMe, validateRequest } from '../src/core/engine.js';
+import { statoDemo, notificaDemo } from '../demo/dati-demo.js';
+import { opportunitaPerMe, validateRequest, richiesteRapide } from '../src/core/engine.js';
 import { occasioniDiAiuto, aiutiNelMese, karma } from '../src/core/karma.js';
 import { isOpen } from '../src/core/model.js';
 
@@ -51,17 +51,27 @@ test('demo: i favori approvati danno priorità e i grazie fanno un traguardo', (
   assert.equal(karma(s.ringraziamenti, s.currentUserId).grazie, 4);
 });
 
-test('demo: ogni notifica cambia lo stato o rimanda a una schermata', () => {
+test('demo: l\'unica notifica è un grazie che supera un traguardo', () => {
   const s = stato();
-  const notifiche = notificheDemo(OGGI, ADESSO);
-  assert.ok(notifiche.length >= 5);
-  for (const n of notifiche) {
-    assert.ok(n.titolo && n.testo && n.vai?.startsWith('#/'), n.titolo);
-    n.applica?.(s);
-  }
-  assert.ok(s.proposals.some((p) => p.id === 'pr_elisa'), 'la proposta di Elisa non è arrivata');
+  const n = notificaDemo(ADESSO);
+  assert.ok(n.titolo && n.testo && n.vai === '#/profilo');
+  assert.equal(karma(s.ringraziamenti, s.currentUserId).grazie, 4);
+  n.applica(s);
   assert.equal(karma(s.ringraziamenti, s.currentUserId).grazie, 5, 'il quinto grazie supera Salvaserata');
-  assert.equal(s.proposals.find((p) => p.id === 'pr_lorenzo_matteo').status, 'ACCORDO');
+});
+
+test('demo: il Cambio rapido ha percentuali miste, non solo 100%', () => {
+  const s = stato();
+  const oggi = OGGI;
+  const migliori = new Map();
+  for (const sh of s.shifts.filter((x) => x.userId === s.currentUserId && x.tipo === 'WORK' && x.data >= oggi)) {
+    for (const m of richiesteRapide(sh.id, s, Infinity).mostrate) {
+      migliori.set(m.requestId, Math.max(migliori.get(m.requestId) || 0, m.score));
+    }
+  }
+  const prime = [...migliori.values()].sort((a, b) => b - a).slice(0, 5);
+  assert.ok(prime.length >= 5, 'servono almeno cinque richieste');
+  assert.ok(new Set(prime).size >= 3, `percentuali troppo uguali: ${prime.join(', ')}`);
 });
 
 test('demo: è deterministica, così ogni ripresa parte uguale', () => {

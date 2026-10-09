@@ -932,12 +932,18 @@ differenze:
   quelli della vecchia demo; si cambiano in `SETTIMANA_LORENZO`.
 - **Nessun server e chiavi sue** (`liberty-demo:*`): aprirla non tocca i
   turni veri salvati sullo stesso indirizzo. Ogni apertura riparte da capo.
-- **Notifiche dentro la pagina** (`demo/notifiche-demo.js`): sei banner, la
-  prima dopo 12 secondi e poi una ogni 25. Ognuna cambia lo stato (arriva una
-  proposta, un cambio viene accettato, un grazie supera un traguardo) e
-  toccarla porta alla schermata giusta. `?notifiche=0` le spegne, `?notifiche=15`
-  cambia il ritmo, il tasto N ne fa arrivare una subito, `?guida=1` lascia
-  comparire le schede della guida.
+- **Una sola notifica, dentro la pagina** (`demo/notifiche-demo.js`): un
+  banner in stile iPhone con "Rita ti ha ringraziato", che arriva due secondi
+  dopo la prima apertura di Proposte e poi mai più. Cambia anche lo stato: è
+  il quinto grazie, e toccandola il Profilo annuncia il traguardo. `?guida=1`
+  lascia comparire le schede della guida, che di base sono già lette.
+
+Le percentuali del Cambio rapido sono di chi guarda (vedi `punteggioDi` in
+`engine.js`): contano le preferenze di Lorenzo e le ore adattate, non quanto
+l'altro è flessibile. Per averle miste i colleghi da copione hanno turni
+normali (100%), da Part Time che si adattano a un Full Time (95%) e notturni
+che Lorenzo evita (70%). Le richieste di sfondo cadono su giorni in cui lui non
+può rispondere, così non coprono le cinque da mostrare.
 
 Un test (`tests/demo.test.js`) controlla che i dati diano ancora le schermate
 piene se il motore cambia.
