@@ -13,6 +13,11 @@
  *   import { icona } from './icone.js';
  *   raw(icona('scambio', { px: 22 }))
  *
+ * Misure: 12 per i segni minuscoli (spunta e clessidra nei badge), 14 per la
+ * stella nei chip compatti, 16 dentro il testo, 18 nei pulsanti, 24 per gli
+ * avvisi grandi e la tabbar. Altre misure fanno icone che sembrano di mani
+ * diverse accanto allo stesso testo.
+ *
  * `colore` non serve quasi mai: il tratto è `currentColor`, quindi l'icona
  * prende il colore del testo che le sta intorno — è per questo che nella
  * tabbar basta colorare il bottone.

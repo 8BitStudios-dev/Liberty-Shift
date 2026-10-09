@@ -251,7 +251,7 @@ export function bacheca(params) {
     </header>
     <div class="chips">
       ${Object.entries(FILTRI).map(([k, v]) => raw(
-    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 15 }) : ''}${v.label}</button>`,
+    `<button class="chip ${k === filtro ? 'attivo' : ''}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 16 }) : ''}${v.label}</button>`,
   ))}
     </div>
     ${raw(mie.length ? html`
@@ -477,7 +477,7 @@ function invitoNotifiche() {
           <strong>Ricevi le notifiche su iPhone</strong>
           <p>Su iPhone arrivano solo all'app sulla schermata Home. Tre passi:</p>
           <ol class="invito-passi">
-            <li>Tocca <span class="icona-in-riga">${raw(icona('condividi', { px: 17 }))}</span> <b>Condividi</b> qui in Safari</li>
+            <li>Tocca <span class="icona-in-riga">${raw(icona('condividi', { px: 16 }))}</span> <b>Condividi</b> qui in Safari</li>
             <li>Scegli <b>Aggiungi alla schermata Home</b></li>
             <li>Apri Liberty Shift dall'icona e tocca <b>Attiva</b></li>
           </ol>
@@ -820,7 +820,7 @@ function bottoneSync() {
   const errore = store.state.ultimoErroreServer;
   return html`
     <button class="tasto-aggiorna" data-act="sincronizza">
-      ${raw(icona('aggiorna', { px: 17 }))}
+      ${raw(icona('aggiorna', { px: 16 }))}
       <span class="tasto-aggiorna-testo">Aggiorna calendario</span>
       ${raw(errore ? '<span class="pallino urgente"></span>' : '')}
     </button>`;
@@ -1032,7 +1032,7 @@ export function listaRingraziamenti() {
           <strong>${g.testo || 'Grazie!'}</strong>
           <div class="meta">${nomeUtente(da)} · ${formatDay(g.createdAt.slice(0, 10))}</div>
         </div>
-        <span class="cuore">${raw(icona('grazie', { px: 15 }))}</span>
+        <span class="cuore">${raw(icona('grazie', { px: 16 }))}</span>
       </div>`;
   }).join('');
 
