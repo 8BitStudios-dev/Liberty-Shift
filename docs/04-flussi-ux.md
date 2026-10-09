@@ -333,9 +333,9 @@ si fa aprendo un giorno:
 
 | Blocco | Colore | Chi c'è dentro |
 |---|---|---|
-| **Cercano** | blu | chi vuole libero questo giorno (cambio OFF): se tu sei a casa, puoi prendere il suo turno |
+| **Cercano** | arancio | chi vuole libero questo giorno (cambio OFF): se tu sei a casa, puoi prendere il suo turno |
 | **Offrono** | verde | le giornate che si offrono in cambio in un cambio OFF |
-| **Cambi orario** | teal | chi vuole un orario diverso in questo giorno: se lavori, puoi scambiare il tuo |
+| **Cambi orario** | viola | chi vuole un orario diverso in questo giorno: se lavori, puoi scambiare il tuo |
 
 Il cambio orario ha un colore suo perché ha una faccia sola: un giorno, un
 orario da scambiare. Il cambio OFF ne ha due su giorni diversi, e per quello
@@ -350,7 +350,7 @@ la stessa richiesta offre non compaiono. Hanno una casella loro, ed è lì che
 vanno letti.
 
 Nella griglia del mese lo stesso ruolo è una barra sottile sotto la cella, un
-segmento per ruolo presente: teal un cambio orario, blu chi cerca un OFF, verde chi offre un OFF, bordo oro per la
+segmento per ruolo presente: viola un cambio orario, arancio chi cerca un OFF, verde chi offre un OFF, bordo oro per la
 priorità. Un segmento per ruolo e non uno per richiesta: dal mese serve sapere
 se su quel giorno qualcuno se ne vuole andare, qualcuno vuole venire, o tutte e
 due le cose.
@@ -634,7 +634,7 @@ Il Calendario e il Profilo hanno un mese ciascuno, con la stessa griglia
 (settimane Apple, dal sabato al venerdì) e contenuti divisi senza eccezioni:
 
 - **Calendario pubblico** (il tab): il negozio. Le richieste aperte dei
-  colleghi, mai le tue; le barre di chi cerca (blu) e di chi offre (verde),
+  colleghi, mai le tue; le barre di chi cerca (arancio) e di chi offre (verde),
   in un cerchio grigio quante richieste toccano il giorno, il bordo oro della
   priorità, la percentuale dove puoi aiutare. Nessun tuo turno. Toccando un
   giorno: chi puoi aiutare, poi Cercano e Offrono.

@@ -145,9 +145,9 @@ export const GUIDE = {
       <h3>In ogni giorno</h3>
       <ul class="elenco piccolo">
         <li><span class="barre in-legenda"><i class="orario"></i></span>
-          teal: qualcuno vuole cambiare orario quel giorno;</li>
+          viola: qualcuno vuole cambiare orario quel giorno;</li>
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
-          blu: qualcuno vuole OFF quel giorno;</li>
+          arancio: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
           verde: qualcuno offre quel giorno in un cambio OFF;</li>
         <li>bordo oro: c'è una priorità;</li>

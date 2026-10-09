@@ -23,8 +23,9 @@ export function iconaTipo(tipo, px = 14) {
 
 /**
  * Il tipo di cambio come pillola colorata: la prima cosa che si deve leggere
- * in una scheda. Orario e OFF hanno un colore ciascuno, diverso da quelli già
- * presi (blu e verde dei due lati, viola dei turni tuoi, rosso degli errori).
+ * in una scheda. Gli stessi colori del Calendario: viola per l'orario, arancio
+ * per OFF (chi pubblica un OFF è chi lo cerca). Il blu e il verde restano ai
+ * due lati di uno scambio, LASCI e PRENDI.
  */
 export function etichettaTipo(tipo, testo, px = 16) {
   return `<span class="tipo-etichetta" data-tipo="${esc(tipo)}">${iconaTipo(tipo, px)} ${esc(testo)}</span>`;
