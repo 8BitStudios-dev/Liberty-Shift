@@ -297,7 +297,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .riga-richiesta.prioritaria {
   border: 0; box-shadow: inset 3px 0 0 var(--oro), inset 0 -1px 0 var(--filetto);
 }
-.riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cedo), inset 0 -1px 0 var(--filetto); }
+.riga-richiesta.ruolo-CERCA { border-left: 0; box-shadow: inset 3px 0 0 var(--cerca-off), inset 0 -1px 0 var(--filetto); }
 .riga-richiesta.ruolo-OFFRE { border-left: 0; box-shadow: inset 3px 0 0 var(--prendo), inset 0 -1px 0 var(--filetto); }
 .riga-richiesta.ruolo-ORARIO { border-left: 0; box-shadow: inset 3px 0 0 var(--orario), inset 0 -1px 0 var(--filetto); }
 .riga-titolo { font-size: 16px; gap: 8px; }
@@ -420,11 +420,11 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .card.da-fare { border-left: 4px solid var(--accento); }
 .tile.scelta.verde { border-left: 4px solid var(--prendo); }
 .tile.scelta.blu { border-left: 4px solid var(--accento); }
-.gruppo-giorno.CERCA h3::before { background: var(--cedo); }
+.gruppo-giorno.CERCA h3::before { background: var(--cerca-off); }
 .gruppo-giorno.OFFRE h3::before { background: var(--prendo); }
 .gruppo-giorno.ORARIO h3::before { background: var(--orario); }
 .gruppo-giorno h3 { font-size: 14px; }
-.barre .cerca { background: var(--cedo); }
+.barre .cerca { background: var(--cerca-off); }
 .barre .offre { background: var(--prendo); }
 .barre .orario { background: var(--orario); }
 .tabella-dati th:first-child { color: var(--prendo); }
