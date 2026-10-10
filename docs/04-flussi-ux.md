@@ -299,8 +299,9 @@ Il blocco parla come il gruppo WhatsApp del negozio, dove la gente scrive
    - orario: «Mer 21/10 · fai 12–20 invece del tuo 10–19» (con «stimato per FT»
      quando si adatta al contratto);
    - OFF: «Ven 16/10 · lavori 14–20 al posto di Jesse» e «Mer 14/10 · sei a casa,
-     il tuo 10–19 lo fa Jesse». Con più giorni offerti in cui lavori: «sei a casa
-     in uno di questi»; se non lavori nei giorni giusti lo dice («non lavori quel
+     il tuo 10–19 lo fa Jesse». Con più giorni offerti in cui lavori, uno per riga
+     col turno vero: «Gio 29/10 · sei a casa, il tuo 10–19 lo fa Elisa», «Ven 30/10 ·
+     oppure sei a casa, il tuo 8–17 lo fa Elisa» (l'OFF che ricevi è uno solo); se non lavori nei giorni giusti lo dice («non lavori quel
      giorno», «lavori già (11–20)») senza inventare un turno.
 
 **Chi guarda:**

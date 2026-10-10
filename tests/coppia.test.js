@@ -114,11 +114,14 @@ test('un cambio OFF: CERCO OFF e OFFRO OFF come nel gruppo, poi "lavori" e "sei 
   assert.doesNotMatch(t, /\blasci\b|qualsiasi turno/);
 });
 
-test('un cambio OFF con più giorni in cui lavori: sei a casa in uno di questi', () => {
+test('un cambio OFF con più giorni in cui lavori: un giorno per riga, col suo turno', () => {
   const [uno, due, tre] = [addDays(giorno, 2), addDays(giorno, 3), addDays(giorno, 4)];
   const richiesta = scenaOff([uno, due, tre], { [uno]: ['10:00', '19:00'], [tre]: ['08:00', '17:00'] });
   const t = testo(coppiaCedoCerco(richiesta));
-  assert.match(t, /sei a casa in uno di questi/);
+  assert.match(t, /sei a casa ?, il tuo 10:00–19:00 lo fa Lorenzo/);
+  assert.match(t, /oppure sei a casa ?, il tuo 08:00–17:00 lo fa Lorenzo/);
+  assert.doesNotMatch(t, /uno di questi/);
+  assert.equal(t.match(/sei a casa/g).length, 2, `${formatDay(due)} non lavori: non è un'opzione`);
 });
 
 test('un cambio OFF in cui non lavori nei giorni offerti lo dice, senza inventare un turno', () => {

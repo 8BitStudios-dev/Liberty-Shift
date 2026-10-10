@@ -257,10 +257,11 @@ function righeTuSenzaScelta(request, nome) {
       ? riga(cedo.data, `lavori già (${esc(shiftLabel(quelGiorno))})`)
       : riga(cedo.data, `lavori <b class="prendo">${orarioPerMe(cedo, miei[0])}</b> al posto di ${nome}`));
   }
-  if (miei.length === 1) {
-    righe.push(riga(miei[0].data, `<b class="cedo">sei a casa</b>, il tuo ${esc(shiftLabel(miei[0]))} lo fa ${nome}`));
-  } else if (miei.length > 1) {
-    righe.push({ giorno: esc(miei.map((s) => formatDay(s.data)).join(' o ')), testo: `<b class="cedo">sei a casa</b> in uno di questi, il tuo turno lo fa ${nome}` });
+  // Un giorno per riga, col turno vero: «in uno di questi» non diceva quale.
+  // Dalla seconda «oppure», perché l'OFF che si riceve è uno solo.
+  if (miei.length) {
+    miei.forEach((s, i) => righe.push(riga(s.data,
+      `${i ? 'oppure ' : ''}<b class="cedo">sei a casa</b>, il tuo ${esc(shiftLabel(s))} lo fa ${nome}`)));
   } else if (giorni.length) {
     righe.push({ giorno: esc(giorni.map((g) => formatDay(g)).join(' o ')), testo: giorni.length > 1 ? 'non lavori in quei giorni' : 'non lavori quel giorno' });
   }
