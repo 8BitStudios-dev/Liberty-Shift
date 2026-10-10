@@ -158,6 +158,10 @@ async function mostraDispositivi() {
 
 const ETICHETTA_ESITO = { OK: 'Tutto a posto', PROBLEMI: 'Ci sono problemi' };
 
+/** Una prova senza risposta è "in attesa" per un'ora, poi "nessuna risposta". */
+const senzaRisposta = (p) => (Date.now() - new Date(p.inviata_il).getTime() < RULES.provaNotificheAttesaOre * 3600_000
+  ? 'in attesa' : 'nessuna risposta');
+
 /** Le ultime prove e come sono andate, per chi le ha mandate. */
 async function mostraEsiti() {
   const { errore, dati } = await provaNotifiche({ azione: 'esiti' });
@@ -168,7 +172,7 @@ async function mostraEsiti() {
   box.innerHTML = dati.prove.map((p) => {
     const nome = nomeUtente(store.user(p.user_id)) || 'Sconosciuto';
     const quando = new Date(p.inviata_il).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    return `<p><strong>${esc(nome)}</strong> · ${quando}: ${p.esito ? ETICHETTA_ESITO[p.esito] : 'nessuna risposta'}</p>`;
+    return `<p><strong>${esc(nome)}</strong> · ${quando}: ${p.esito ? ETICHETTA_ESITO[p.esito] : senzaRisposta(p)}</p>`;
   }).join('');
 }
 

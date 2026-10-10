@@ -585,7 +585,8 @@ ricevuta correttamente premi “Tutto a posto” altrimenti “Ci sono problemi�
 Toccarla apre `#/prova?id=…`, con i due tasti. Il server tiene traccia di tutto
 in `prove_notifiche`: una riga per persona e per invio, con `esito` `OK` o
 `PROBLEMI` e l'ora della risposta; vuoto vuol dire che la notifica non è
-arrivata o non è stata toccata. La risposta vale una volta sola. Il SuperAdmin
+arrivata o non è stata toccata: l'app lo scrive *in attesa* per la prima ora e poi
+*nessuna risposta*. La risposta vale una volta sola. Il SuperAdmin
 rivede le ultime 30 prove nella stessa pagina. I pulsanti stanno nell'app e non
 nella notifica perché su iPhone le azioni nelle notifiche web non esistono.
 

@@ -138,6 +138,10 @@ export const RULES = {
   // leggere, non solo ricevere come notifica che poi si perde.
   chiusuraAdminOre: 6,
 
+  // Dopo quante ore una notifica di prova senza risposta diventa "nessuna
+  // risposta": prima è solo "in attesa", il telefono può non averla ancora vista.
+  provaNotificheAttesaOre: 1,
+
   // "Ultima chiamata" in Aiuta un collega: il turno è vicino e la richiesta
   // aspetta da giorni senza che nessuno l'abbia presa. È solo un bollino e un
   // posto in cima: non dà priorità né altro a nessuno.

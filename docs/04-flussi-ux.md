@@ -111,7 +111,7 @@ entra mai prima delle 08:00: l'11:00–16:00 diventa 11:00–20:00.
 ### Prova notifiche (SuperAdmin)
 In Amministrazione, solo per il SuperAdmin: si scelgono le persone e si manda una
 notifica di prova. Accanto a ognuno c'è quanti dispositivi ha registrati, dopo
-l'invio l'esito per persona, e in fondo le ultime prove con la risposta. Chi la
+l'invio l'esito per persona, e in fondo le ultime prove con la risposta. Una prova senza risposta è *in attesa* per un'ora (`RULES.provaNotificheAttesaOre`), poi diventa *nessuna risposta*. Chi la
 riceve tocca la notifica e trova due tasti, *Tutto a posto* e *Ci sono
 problemi*; il server registra entrambe le risposte (vedi `docs/07-supabase.md`).
 Serve a capire se una notifica non arriva per colpa del server o del telefono.
