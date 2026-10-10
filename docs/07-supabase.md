@@ -603,6 +603,17 @@ attivo. Un segreto sbagliato resta un 401. Al massimo 20 persone per invio. La
 tabella non ha policy: la toccano solo le funzioni con `service_role`. Dopo ogni
 modifica va rilanciato lo schema e ripubblicata la funzione.
 
+**La priorità la fa rispettare anche il server.** Il trigger `limita_priorita`
+su `richieste` toglie `priorita_fino_a` a una richiesta pubblicata da chi non
+ha priorità da usare (la funzione `priorita_disponibili` è la copia in SQL di
+`prioritaDisponibili` di `karma.js`: tetto 3, scadenza a un mese, mensile dal
+giorno dell'iscrizione, aiuto da `confermata_il` con `origine` vuota o `aiuta`),
+e non fa aggiungere la priorità a una richiesta già pubblicata. **Non rifiuta**
+la richiesta: un rifiuto fermerebbe la coda del telefono, e la richiesta per il
+resto è in regola. Il server è largo un giorno sulla scadenza, per i fusi.
+Resta fuori dal controllo, perché lo decide il telefono, la conferma di UKG
+(`confermata_il`), che un client modificato potrebbe scrivere.
+
 **Il mittente VAPID** è l'indirizzo del sito, non un'email: il protocollo
 accetta entrambi, e così nessun indirizzo personale arriva ai servizi push.
 

@@ -1445,3 +1445,128 @@ alter policy "si propone solo a proprio nome" on public.proposte
     and motivo_decadenza is null
     and not cambio_inserito
   );
+
+-- Le priorità, fatte rispettare dal server (vedi `prioritaDisponibili` in
+-- src/core/karma.js, di cui questa è la copia: se cambia una cambia l'altra,
+-- e un test controlla che i numeri coincidano).
+--
+-- Quante priorità può usare `utente` in `adesso`: una mensile ogni mese dal
+-- giorno dell'iscrizione, più una per ogni aiuto da "Aiuta un collega"
+-- approvato da UKG (`confermata_il`), ciascuna valida un mese; ogni richiesta
+-- già pubblicata con la priorità ne ha consumata una, la prima a scadere; al
+-- massimo 3 insieme. Il server è più largo di un giorno sulla scadenza: il
+-- telefono conta nel suo fuso, e una persona in regola non deve essere
+-- fermata per qualche ora di differenza.
+create or replace function public.priorita_disponibili(utente uuid, adesso timestamptz)
+returns integer
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  iscritto timestamptz;
+  primo timestamptz;
+  da_g timestamptz[] := '{}';
+  fino_g timestamptz[] := '{}';
+  usato boolean[] := '{}';
+  k integer := 0;
+  d timestamptz;
+  uso record;
+  scelto integer;
+  i integer;
+  liberi integer := 0;
+  margine constant interval := interval '1 day';
+begin
+  select creato_il into iscritto from public.profili where id = utente;
+  if iscritto is null then iscritto := date_trunc('month', adesso); end if;
+
+  select min(creata_il) into primo from public.richieste
+    where autore_id = utente and priorita_fino_a is not null and creata_il < adesso;
+  primo := least(coalesce(primo, adesso), adesso);
+
+  loop
+    d := iscritto + make_interval(months => k);
+    exit when d > adesso or k > 600;
+    if d + interval '1 month' + margine > primo then
+      da_g := da_g || d;
+      fino_g := fino_g || (d + interval '1 month' + margine);
+      usato := usato || false;
+    end if;
+    k := k + 1;
+  end loop;
+
+  for uso in
+    select p.confermata_il as da
+    from public.proposte p join public.richieste r on r.id = p.richiesta_id
+    where p.stato = 'ACCORDO' and p.annullata_il is null
+      and p.confermata_il is not null and p.confermata_il <= adesso
+      and (p.origine is null or p.origine = 'aiuta')
+      and r.autore_id <> utente
+      and (case when p.da_user_id = r.autore_id then p.a_user_id else p.da_user_id end) = utente
+  loop
+    da_g := da_g || uso.da;
+    fino_g := fino_g || (uso.da + interval '1 month' + margine);
+    usato := usato || false;
+  end loop;
+
+  for uso in
+    select creata_il as quando from public.richieste
+      where autore_id = utente and priorita_fino_a is not null and creata_il < adesso
+      order by creata_il
+  loop
+    scelto := null;
+    for i in 1 .. coalesce(array_length(da_g, 1), 0) loop
+      if not usato[i] and da_g[i] <= uso.quando and uso.quando < fino_g[i]
+         and (scelto is null or fino_g[i] < fino_g[scelto]) then
+        scelto := i;
+      end if;
+    end loop;
+    if scelto is not null then usato[scelto] := true; end if;
+  end loop;
+
+  for i in 1 .. coalesce(array_length(da_g, 1), 0) loop
+    if not usato[i] and da_g[i] <= adesso and adesso < fino_g[i] then
+      liberi := liberi + 1;
+    end if;
+  end loop;
+  return least(3, liberi);
+end;
+$$;
+
+-- Una richiesta pubblicata con la priorità senza averne una da usare la
+-- perde, non viene rifiutata: la coda del telefono si fermerebbe su un
+-- rifiuto, e la richiesta (che per il resto è in regola) non uscirebbe. La
+-- priorità si sceglie alla pubblicazione e non si aggiunge dopo. Non vale per
+-- `service_role` né per SQL Editor (dove `auth.role()` è nullo).
+create or replace function public.limita_priorita()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if coalesce(auth.role(), 'service_role') not in ('anon', 'authenticated') then
+    return new;
+  end if;
+  if new.priorita_fino_a is null then
+    return new;
+  end if;
+  if tg_op = 'UPDATE' then
+    if old.priorita_fino_a is null then new.priorita_fino_a := null; end if;
+    return new;
+  end if;
+  if public.priorita_disponibili(new.autore_id, least(coalesce(new.creata_il, now()), now())) < 1 then
+    new.priorita_fino_a := null;
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.priorita_disponibili(uuid, timestamptz) from public, anon, authenticated;
+revoke all on function public.limita_priorita() from public, anon, authenticated;
+
+drop trigger if exists limita_priorita on public.richieste;
+create trigger limita_priorita
+  before insert or update of priorita_fino_a on public.richieste
+  for each row execute function public.limita_priorita();

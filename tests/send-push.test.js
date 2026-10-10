@@ -259,3 +259,19 @@ test('la prova porta il testo scelto e registra entrambe le risposte, una volta 
   // Il tocco sulla notifica porta alla riga di quella prova.
   assert.match(sorgente, /url: `#\/prova\?id=\$\{riga\.id\}`/);
 });
+
+test('lo schema fa rispettare la priorità con gli stessi numeri dell\'app', async () => {
+  const { RULES } = await import('../src/core/rules.js');
+  const schema = await readFile(new URL('../supabase/schema.sql', import.meta.url), 'utf8');
+  const funzione = schema.slice(schema.indexOf('create or replace function public.priorita_disponibili'));
+  // Il tetto e la scadenza (un mese) sono scritti anche in SQL: se cambiano
+  // in RULES, qui devono cambiare con loro.
+  assert.match(funzione, new RegExp(`return least\\(${RULES.priority.tetto}, liberi\\)`));
+  assert.equal(RULES.priority.scadenzaMesi, 1);
+  assert.match(funzione, /interval '1 month'/);
+  // Solo un aiuto da "Aiuta un collega" (o di prima, senza origine) dà una priorità.
+  assert.match(funzione, /p\.origine is null or p\.origine = 'aiuta'/);
+  // Una priorità non concessa si toglie, non si rifiuta la richiesta: la coda del telefono si fermerebbe.
+  assert.match(funzione, /new\.priorita_fino_a := null/);
+  assert.doesNotMatch(funzione.slice(funzione.indexOf('create or replace function public.limita_priorita')), /raise exception/);
+});

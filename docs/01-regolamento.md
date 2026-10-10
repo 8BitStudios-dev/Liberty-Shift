@@ -241,6 +241,8 @@ nessuna.
   dalle proposte approvate. Nessun contatore sul telefono: si perdeva
   reinstallando l'app, e due telefoni davano due risposte diverse;
 - il credito si consuma all'uso e non torna se cancelli;
+- **il server la fa rispettare alla pubblicazione**: una richiesta con la priorità
+  senza averne una da usare la perde (`limita_priorita`, `docs/07-supabase.md`);
 - non è trasferibile e non si aggiunge dopo;
 - il conteggio è per mese di calendario, quindi si rinnova il primo del mese.
 
