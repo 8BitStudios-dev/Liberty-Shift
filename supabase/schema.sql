@@ -1570,3 +1570,49 @@ drop trigger if exists limita_priorita on public.richieste;
 create trigger limita_priorita
   before insert or update of priorita_fino_a on public.richieste
   for each row execute function public.limita_priorita();
+
+-- Chi usa più di quattro priorità in un mese lo sa il SuperAdmin: una notifica
+-- con il nome (vedi `send-push`, tipo PRIORITA_ECCESSIVA). Parte una volta
+-- sola, quando la quinta entra nell'ultimo mese. Conta le priorità rimaste
+-- dopo `limita_priorita`, cioè quelle concesse davvero. Come per le altre
+-- notifiche, un guasto qui non impedisce di pubblicare.
+create or replace function public.avvisa_priorita_eccessiva() returns trigger
+language plpgsql security definer set search_path = '' as $$
+declare
+  segreto text;
+  usate integer;
+begin
+  if new.priorita_fino_a is null then
+    return new;
+  end if;
+  select count(*) into usate from public.richieste
+    where autore_id = new.autore_id and priorita_fino_a is not null
+      and creata_il > new.creata_il - interval '1 month' and creata_il <= new.creata_il;
+  if usate <> 5 then
+    return new;
+  end if;
+
+  select decrypted_secret into segreto from vault.decrypted_secrets where name = 'push_webhook';
+  if segreto is null then
+    return new;
+  end if;
+
+  begin
+    perform net.http_post(
+      url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
+      body := jsonb_build_object('type', 'PRIORITA_ECCESSIVA', 'persona', new.autore_id, 'conteggio', usate),
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto),
+      timeout_milliseconds := 20000
+    );
+  exception when others then
+    raise warning 'avvisa_priorita_eccessiva: %', sqlerrm;
+  end;
+  return new;
+end $$;
+
+revoke all on function public.avvisa_priorita_eccessiva() from public, anon, authenticated;
+
+drop trigger if exists avvisa_priorita_eccessiva on public.richieste;
+create trigger avvisa_priorita_eccessiva
+  after insert on public.richieste
+  for each row execute function public.avvisa_priorita_eccessiva();

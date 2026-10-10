@@ -614,6 +614,15 @@ resto è in regola. Il server è largo un giorno sulla scadenza, per i fusi.
 Resta fuori dal controllo, perché lo decide il telefono, la conferma di UKG
 (`confermata_il`), che un client modificato potrebbe scrivere.
 
+**Avviso sull'uso eccessivo.** Quando una persona arriva a cinque richieste con la
+priorità nell'ultimo mese (più di quattro), il trigger `avvisa_priorita_eccessiva`
+chiama `send-push` con il tipo `PRIORITA_ECCESSIVA`, e ogni SuperAdmin attivo (ma
+non la persona stessa) riceve «Priorità usate più del solito»: «Nome C. ha usato 5
+priorità nell'ultimo mese.». Parte una sola volta, alla quinta, e conta le
+priorità concesse davvero, dopo `limita_priorita`. Non è per forza un abuso (chi
+aiuta molto può averne), ma è il segno da guardare. Tocca la notifica e si apre
+l'elenco iscritti.
+
 **Il mittente VAPID** è l'indirizzo del sito, non un'email: il protocollo
 accetta entrambi, e così nessun indirizzo personale arriva ai servizi push.
 

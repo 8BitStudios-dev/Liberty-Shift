@@ -275,3 +275,18 @@ test('lo schema fa rispettare la priorità con gli stessi numeri dell\'app', asy
   assert.match(funzione, /new\.priorita_fino_a := null/);
   assert.doesNotMatch(funzione.slice(funzione.indexOf('create or replace function public.limita_priorita')), /raise exception/);
 });
+
+test('più di quattro priorità in un mese: avviso al SuperAdmin con il nome, una volta sola', async () => {
+  const schema = await readFile(new URL('../supabase/schema.sql', import.meta.url), 'utf8');
+  const trigger = schema.slice(schema.indexOf('create or replace function public.avvisa_priorita_eccessiva'));
+  // Parte alla quinta, non a ogni richiesta dopo.
+  assert.match(trigger, /if usate <> 5 then/);
+  assert.match(trigger, /interval '1 month'/);
+  // Un guasto nell'avviso non impedisce di pubblicare.
+  assert.match(trigger, /exception when others then/);
+  const gestore = sorgente.slice(sorgente.indexOf("if (type === 'PRIORITA_ECCESSIVA')"), sorgente.indexOf("if (type === 'RICHIESTA')"));
+  // Lo riceve il SuperAdmin attivo, mai chi le ha usate, e dice nome e numero.
+  assert.match(gestore, /super_admin=eq\.true/);
+  assert.match(gestore, /x\.id !== persona/);
+  assert.match(gestore, /nomeBreve\(chi\)\} ha usato \$\{conteggio\} priorità/);
+});

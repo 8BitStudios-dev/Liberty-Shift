@@ -607,7 +607,7 @@ Deno.serve(async (req) => {
     return json({ errore: 'non autorizzato' }, 401);
   }
 
-  const { type, record, old_record, autore, destinatario, giorno, utenti } = await req.json();
+  const { type, record, old_record, autore, destinatario, giorno, utenti, persona, conteggio } = await req.json();
   if (type === 'PASSWORD') {
     if (!Array.isArray(utenti) || !utenti.length) return json({ inviate: 0, motivo: 'nessuno da nominare' });
     const richiedenti = await leggi(`profili?id=in.(${utenti.join(',')})&select=id,nome,cognome_iniziale`);
@@ -620,6 +620,26 @@ Deno.serve(async (req) => {
       inviate += (await invia(a.id, { title, body, url: '#/iscritti' })).inviate;
     }
     return json({ inviate, admin: admin.length });
+  }
+  // Chi ha usato più di quattro priorità in un mese lo sa il SuperAdmin (vedi
+  // `avvisa_priorita_eccessiva` in schema.sql): non è per forza un abuso, ma è
+  // il segno da guardare. Chi le ha usate non riceve niente.
+  if (type === 'PRIORITA_ECCESSIVA') {
+    if (typeof persona !== 'string' || !UUID.test(persona) || !Number.isInteger(conteggio)) {
+      return json({ inviate: 0, motivo: 'riga incompleta' });
+    }
+    const [chi] = await leggi(`profili?id=eq.${persona}&select=id,nome,cognome_iniziale`);
+    if (!chi) return json({ inviate: 0, motivo: 'profilo non trovato' });
+    const superAdmin = await leggi('profili?attivo=eq.true&super_admin=eq.true&select=id');
+    let inviate = 0;
+    for (const a of superAdmin.filter((x: { id: string }) => x.id !== persona)) {
+      inviate += (await invia(a.id, {
+        title: 'Priorità usate più del solito',
+        body: `${nomeBreve(chi)} ha usato ${conteggio} priorità nell'ultimo mese.`,
+        url: '#/iscritti',
+      })).inviate;
+    }
+    return json({ inviate, superAdmin: superAdmin.length });
   }
   if (type === 'RICHIESTA') {
     if (!record?.autore_id || !record?.cedo_data) return json({ notificati: [], motivo: 'riga incompleta' });
