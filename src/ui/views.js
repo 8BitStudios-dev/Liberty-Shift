@@ -258,8 +258,10 @@ export function calendario(params) {
   return html`
     <header class="testata">
       <h1>Calendario pubblico</h1>
+      ${raw(tastoAggiorna())}
       <button class="icon-btn" data-act="guida" data-sezione="calendario" title="Come funziona">?</button>
     </header>
+    ${raw(rigaAggiornamento())}
     <div class="mese-navigazione">
       <button class="icon-btn" data-act="vai" data-to="#/calendario?mese=${prev}" aria-label="Mese prima">‹</button>
       <h2>${MESI[m - 1]} ${anno}</h2>

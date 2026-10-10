@@ -1822,7 +1822,7 @@ function programmaOraAggiornamento() {
   if (!store.puoAggiornare()) return;
   oraAggiornamento = setTimeout(() => {
     const { percorso } = parseHash();
-    if (!['home', 'inbox', 'bacheca'].includes(percorso)) return;
+    if (!['home', 'inbox', 'bacheca', 'calendario'].includes(percorso)) return;
     if (document.querySelector('.sheet-backdrop') || document.activeElement?.matches?.('input, textarea, select')) return;
     render({ fermo: true });
   }, RULES.aggiornamentoVisibileDopoMin * 60000 + 500);

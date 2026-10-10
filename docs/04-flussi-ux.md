@@ -137,8 +137,8 @@ Serve a capire se una notifica non arriva per colpa del server o del telefono.
 Sull'iPhone, con l'app sulla Home, non c'è il pulsante di ricarica di Safari né il
 gesto di tirare giù: chi aspetta una risposta non aveva modo di chiedere se è
 arrivato qualcosa. Per questo, con il server collegato, un'**icona di
-aggiornamento** sta nella testata di Home (tra Priorità e «?»), Proposte e
-Bacheca. Il tocco scarica subito proposte, richieste e accordi (`aggiorna-dati`,
+aggiornamento** sta nella testata di Home (tra Priorità e «?»), Proposte,
+Bacheca e Calendario pubblico. Il tocco scarica subito proposte, richieste e accordi (`aggiorna-dati`,
 la stessa sincronizzazione dell'apertura, senza il tetto di un minuto): l'icona gira
 e, se manca la rete, compare l'errore e i dati restano quelli di prima. Non tocca i
 turni: il calendario ha il suo tetto di un'ora e il suo tasto nel Profilo.
