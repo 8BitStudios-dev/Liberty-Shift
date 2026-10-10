@@ -1531,7 +1531,7 @@ const AZIONI = {
   'spiega-priorita': () => {
     sheet('Come funziona la priorità', html`
       <ul class="elenco">
-        <li>Hai <strong>1 priorità al mese</strong>: arriva il primo del mese e scade il primo del mese dopo. Quando la usi, la richiesta resta in cima per <strong>48 ore</strong>.</li>
+        <li>Hai <strong>1 priorità al mese</strong>: arriva ogni mese nel giorno in cui ti sei iscritto e scade lo stesso giorno del mese dopo. Quando la usi, la richiesta resta in cima per <strong>48 ore</strong>.</li>
         <li>Ogni collega che aiuti da «Aiuta un collega» te ne dà <strong>una in più</strong>, quando UKG approva il cambio: vale <strong>un mese</strong> da quel giorno.</li>
         <li>Ne puoi avere al massimo ${RULES.priority.tetto} insieme.</li>
         <li>La richiesta va in cima alla bacheca ed è evidenziata nel calendario.</li>

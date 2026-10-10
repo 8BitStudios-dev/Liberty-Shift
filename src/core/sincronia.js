@@ -606,6 +606,8 @@ export async function scarica(state, { completo = false } = {}) {
         const { admin, superAdmin, attivo } = utenteDaRiga(riga);
         Object.assign(io, { admin, superAdmin, attivo });
       }
+      // Da qui nasce la priorità mensile: ogni mese, nel giorno dell'iscrizione.
+      if (riga.creato_il) state.profilo.iscrittoIl = riga.creato_il;
       continue;
     }
     const nuovo = utenteDaRiga(riga);

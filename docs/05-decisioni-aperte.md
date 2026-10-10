@@ -157,7 +157,7 @@ permette", non a "è lecito in generale".
 ## Da decidere presto
 
 ### 3. Priorità
-Le assunzioni implementate: una priorità nuova il primo del mese e una per
+Le assunzioni implementate: una priorità nuova ogni mese nel giorno dell'iscrizione e una per
 ogni aiuto da «Aiuta un collega», ognuna valida un mese da quando nasce (tetto
 3 insieme), credito consumato all'uso, niente rimborso se cancelli. Da confermare, in particolare cosa
 succede se la richiesta si chiude dopo due ore invece che dopo 48.

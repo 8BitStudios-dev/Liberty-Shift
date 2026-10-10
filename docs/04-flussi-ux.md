@@ -110,7 +110,7 @@ entra mai prima delle 08:00: l'11:00–16:00 diventa 11:00–20:00.
 
 ### Le priorità scadono dopo un mese
 Ogni priorità, mensile o da aiuto, vale un mese da quando è stata generata
-(`RULES.priority.scadenzaMesi`; calcolo in `prioritaDisponibili`, `karma.js`).
+(`RULES.priority.scadenzaMesi`; la mensile nasce nel giorno dell'iscrizione, `profilo.iscrittoIl`, che viene da `creato_il` sul server; calcolo in `prioritaDisponibili`, `karma.js`).
 Il riquadro di Aiuta un collega dice quante ne hai e quando scade la prima
 («la prima scade il 12 novembre»); lo stesso fa il foglio «Come funziona la
 priorità». Quando ne usi una si consuma quella che scade prima. Il tetto di 3

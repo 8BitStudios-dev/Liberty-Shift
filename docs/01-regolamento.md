@@ -215,8 +215,8 @@ cercato. Sparisce da bacheca, calendario e match; resta nei dati.
 ## R14 — Priorità
 1 al mese, più 1 per ogni collega aiutato da «Aiuta un collega» con un cambio
 approvato su UKG. **Ogni priorità scade dopo un mese da quando è stata
-generata**: quella mensile nasce il primo del mese e vale fino al primo del mese
-dopo; quella di un aiuto nasce il giorno in cui UKG approva e vale fino allo
+generata**: quella mensile nasce ogni mese nel giorno dell'iscrizione e vale fino
+allo stesso giorno del mese dopo; quella di un aiuto nasce il giorno in cui UKG approva e vale fino allo
 stesso giorno del mese dopo. Al massimo 3 da usare insieme. Quando la si usa,
 la richiesta resta in cima per 48 ore, e si sceglie alla pubblicazione.
 

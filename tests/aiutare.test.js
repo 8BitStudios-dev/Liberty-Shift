@@ -128,6 +128,24 @@ test('priorità: la mensile scade il primo del mese dopo, quella di un aiuto un 
   assert.equal(prioritaDisponibili('lorenzo', nessuno, quando('2026-11-03')).disponibili, 1);
 });
 
+test('priorità: la mensile nasce nel giorno dell\'iscrizione, ogni mese', () => {
+  // Iscritto il 12: la mensile va dal 12 al 12, non dal primo al primo.
+  const iscritto = { currentUserId: 'lorenzo', profilo: { iscrittoIl: '2026-08-12T10:00:00Z' }, requests: [], proposals: [] };
+  const nuova = prioritaDisponibili('lorenzo', iscritto, quando('2026-10-15'));
+  assert.equal(nuova.disponibili, 1);
+  assert.equal(nuova.prossimaScadenza.getMonth(), 10, 'quella del 12 ottobre scade il 12 novembre');
+  assert.equal(nuova.prossimaScadenza.getDate(), 12);
+  // Usata il 14 ottobre: fino al 12 novembre non ne ha altre.
+  const usataOra = { ...iscritto, requests: [usata('u1', '2026-10-14')] };
+  assert.equal(prioritaDisponibili('lorenzo', usataOra, quando('2026-10-30')).disponibili, 0);
+  assert.equal(prioritaDisponibili('lorenzo', usataOra, quando('2026-11-13')).disponibili, 1, 'il 12 novembre ne nasce una nuova');
+  // Il giorno dell'iscrizione stessa c'è già la prima.
+  assert.equal(prioritaDisponibili('lorenzo', { ...iscritto, profilo: { iscrittoIl: '2026-10-15T09:00:00Z' } }, quando('2026-10-15')).disponibili, 1);
+  // Iscritto il 31: a febbraio nasce il 28.
+  const trentuno = { ...iscritto, profilo: { iscrittoIl: '2026-01-31T10:00:00Z' } };
+  assert.equal(prioritaDisponibili('lorenzo', trentuno, quando('2026-02-28')).disponibili, 1);
+});
+
 test('priorità: una usata consuma la prima a scadere, e la scadenza si vede', () => {
   const aiuto = approvato('2026-09-25');
   const stato = { ...aiuto, requests: [...aiuto.requests, usata('u1', '2026-10-05')] };

@@ -106,7 +106,9 @@ function piuMesi(data, n) {
  *
  * Ogni priorità è un gettone con una data di nascita e una di scadenza, un
  * mese dopo (`RULES.priority.scadenzaMesi`):
- *  - quella mensile nasce il primo del mese e vale fino al primo del mese dopo;
+ *  - quella mensile nasce ogni mese nel giorno dell'iscrizione (`iscrittoIl`) e
+ *    vale fino allo stesso giorno del mese dopo; senza la data (chi non è
+ *    sul server) si ripiega sul primo del mese;
  *  - quella di un aiuto nasce quando UKG approva il cambio (solo "Aiuta un
  *    collega", vedi `daiAiuta`) e vale fino allo stesso giorno del mese dopo.
  *
@@ -125,11 +127,24 @@ export function prioritaDisponibili(userId, stato, adesso = new Date()) {
     .map((r) => new Date(r.createdAt))
     .sort((a, b) => a - b);
 
-  // Un gettone mensile per ogni mese in cui si è usata o si può usare una priorità.
+  // I gettoni mensili. Con la data di iscrizione sono i suoi anniversari mensili
+  // (il primo è il giorno stesso); senza, i primi del mese.
   const mesi = new Map();
-  for (const quando of [...usi, adesso]) {
-    const da = new Date(quando.getFullYear(), quando.getMonth(), 1);
-    mesi.set(da.getTime(), { da, fino: piuMesi(da, scadenzaMesi) });
+  const iscritto = stato.currentUserId === userId && stato.profilo?.iscrittoIl
+    ? new Date(stato.profilo.iscrittoIl) : null;
+  if (iscritto && !Number.isNaN(iscritto.getTime())) {
+    const primo = usi[0] || adesso;
+    for (let k = 0; k < 600; k += 1) {
+      const da = piuMesi(iscritto, k);
+      if (da > adesso) break;
+      const fino = piuMesi(iscritto, k + scadenzaMesi);
+      if (fino > primo) mesi.set(da.getTime(), { da, fino });
+    }
+  } else {
+    for (const quando of [...usi, adesso]) {
+      const da = new Date(quando.getFullYear(), quando.getMonth(), 1);
+      mesi.set(da.getTime(), { da, fino: piuMesi(da, scadenzaMesi) });
+    }
   }
   const gettoni = [...mesi.values()];
   for (const aiuto of aiutiConclusi(stato)) {

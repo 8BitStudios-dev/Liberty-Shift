@@ -179,6 +179,12 @@ export const store = {
     condividiNotifiche(this.state);
     const esito = await sincronizzaStato(this.state, { completo });
     this.state.ultimoErroreServer = esito.errore || null;
+    // Con lo scaricamento a pezzi il mio profilo non risale se non cambia:
+    // chi era già iscritto la data la chiede una volta sola.
+    if (!esito.errore && !this.state.profilo.iscrittoIl) {
+      const { dati } = await seleziona('profili', { eq: { id: this.state.profilo.idServer }, colonne: 'creato_il' });
+      if (dati?.[0]?.creato_il) this.state.profilo.iscrittoIl = dati[0].creato_il;
+    }
     if (!esito.saltato) this.commit();
     return esito;
   },
