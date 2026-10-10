@@ -47,3 +47,23 @@ test('ogni file in cache arriva davvero sul sito pubblicato', async () => {
   const mancanti = elencati.filter((f) => !copiati.some((c) => f === c || f.startsWith(`${c}/`)));
   assert.deepEqual(mancanti, [], `in cache ma non copiati da pages.yml: ${mancanti.join(', ')}`);
 });
+
+// Il tasto "Aggiorna l'app" scarica sw.js e ne legge la versione con una
+// regola sola: la prima `liberty-shift-vN`. Una seconda occorrenza (un
+// commento che nomina una cache vecchia) gli farebbe leggere il numero sbagliato.
+test('sw.js nomina una sola cache, e il suo numero è quello di VERSIONE_APP', async () => {
+  const sw = await readFile(join(RADICE, 'sw.js'), 'utf8');
+  const config = await readFile(join(RADICE, 'src/core/config.js'), 'utf8');
+  const nomi = [...sw.matchAll(/liberty-shift-v(\d+)/g)].map((m) => m[1]);
+  assert.equal(nomi.length, 1, 'il tasto Aggiorna legge la prima occorrenza');
+  assert.equal(config.match(/VERSIONE_APP = '1\.0\.(\d+)'/)[1], nomi[0]);
+});
+
+test('l\'aggiornamento a mano non tocca i dati: niente localStorage, niente cache cancellate', async () => {
+  const app = await readFile(join(RADICE, 'src/ui/app.js'), 'utf8');
+  const azione = app.slice(app.indexOf("'aggiorna-app': async"), app.indexOf("'spiega-priorita'"));
+  assert.ok(azione.length > 200);
+  assert.doesNotMatch(azione, /localStorage|caches\.delete|unregister/);
+  // Prima si confronta la versione, poi si chiede l'aggiornamento al browser.
+  assert.ok(azione.indexOf('Hai già l\'ultima versione') < azione.indexOf('reg?.update()'));
+});

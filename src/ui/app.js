@@ -19,7 +19,7 @@ import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
 import { karma, traguardiNuovi } from '../core/karma.js';
 import { scaricaCalendario, candidatiAccesso, provaNotifiche, collegato } from '../core/supabase.js';
-import { serverConfigurato } from '../core/config.js';
+import { serverConfigurato, VERSIONE_APP } from '../core/config.js';
 import {
   campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito, coppiaCedoCerco,
 } from './components.js';
@@ -1526,6 +1526,43 @@ const AZIONI = {
     wrap.querySelector('[data-chiudi]').click();
     render();
     if (!annunciaScambiChiusi(esito)) toast(riassuntoImport(esito));
+  },
+
+  /**
+   * "Aggiorna l'app": prende l'ultima versione senza togliere l'icona dalla
+   * Home né reinstallare. Si guarda prima quale versione c'è sul sito (la
+   * stessa cifra che sta in `sw.js` e in `VERSIONE_APP`): se è la stessa lo
+   * si dice e basta. Se è più nuova si chiede al browser di installarla, e il
+   * resto lo fa il gancio che già c'è: la versione nuova prende il controllo
+   * (`skipWaiting`) e la pagina si ricarica da sola. I dati stanno in
+   * `localStorage` e non si toccano.
+   */
+  'aggiorna-app': async (_, el) => {
+    el.disabled = true;
+    const libera = () => { el.disabled = false; };
+    toast('Controllo gli aggiornamenti…');
+    let remota;
+    try {
+      const r = await fetch(`./sw.js?controllo=${Date.now()}`, { cache: 'no-store' });
+      remota = Number(/liberty-shift-v(\d+)/.exec(r.ok ? await r.text() : '')?.[1]);
+    } catch { remota = NaN; }
+    if (!remota) {
+      toast('Non riesco a controllare: serve la connessione. Riprova quando hai campo.');
+      return libera();
+    }
+    if (remota <= Number(VERSIONE_APP.split('.').pop())) {
+      toast(`Hai già l'ultima versione (${VERSIONE_APP}).`);
+      return libera();
+    }
+    toast('C\'è una versione nuova: la scarico…');
+    const reg = await navigator.serviceWorker.getRegistration('./').catch(() => null);
+    await reg?.update().catch(() => {});
+    // Se la pagina si ricarica da sola, di qui non si passa più. Se non succede
+    // (un foglio aperto, un browser più lento) si dice cosa fare.
+    setTimeout(() => {
+      libera();
+      toast('Aggiornamento scaricato: chiudi l\'app e riaprila per usarlo.');
+    }, 20000);
   },
 
   'spiega-priorita': () => {

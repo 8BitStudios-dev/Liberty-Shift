@@ -133,6 +133,18 @@ riceve tocca la notifica e trova due tasti, *Tutto a posto* e *Ci sono
 problemi*; il server registra entrambe le risposte (vedi `docs/07-supabase.md`).
 Serve a capire se una notifica non arriva per colpa del server o del telefono.
 
+### Aggiorna l'app
+Nelle Impostazioni, sopra il numero di versione, il tasto *Aggiorna l'app*: prende
+l'ultima versione senza togliere l'icona dalla Home né reinstallare (nato da un
+consiglio di un collega). Prima scarica `sw.js` dal sito e confronta il suo numero
+con `VERSIONE_APP`: se è lo stesso dice «Hai già l'ultima versione (1.0.NNN)» e
+basta; se manca la rete dice che serve la connessione; se il sito ne ha una più
+nuova chiede al browser di installarla, e la pagina si ricarica da sola appena la
+versione nuova prende il controllo (`skipWaiting`, come all'apertura normale). Se
+entro venti secondi non succede, dice di chiudere e riaprire l'app. I dati stanno
+in `localStorage` e non si toccano: niente cache cancellate né service worker
+tolti. Non compare dove non c'è un service worker (il file unico, la demo).
+
 ### Richiesta chiusa dall'amministratore
 Quando un admin **chiude** una richiesta (non la rimuove), sulla Home di chi
 l'aveva pubblicata, e di chi c'aveva fatto una proposta, la riga resta per

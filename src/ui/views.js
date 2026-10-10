@@ -649,6 +649,9 @@ export function impostazioni() {
           <span class="chevron">›</span>
         </button>` : '')}
     </section>
+    ${raw(globalThis.navigator?.serviceWorker?.controller ? `
+    <button class="btn secondario largo" data-act="aggiorna-app">Aggiorna l'app</button>
+    <p class="testo-tenue nota-aggiorna">Prende l'ultima versione senza reinstallare niente: i tuoi turni e le tue richieste restano dove sono.</p>` : '')}
     <p class="versione-app">Ver: ${VERSIONE_APP}</p>`;
 }
 
