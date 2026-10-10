@@ -262,14 +262,19 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, of
 
   if (mia) return boxScambio(request.tipo, cosaCerca, turnoDellAutore, opz);
 
+  // In un cambio OFF chi legge lascia il turno che ha in quel giorno e resta a
+  // casa: "qualsiasi turno" è giusto per chi lo prenderebbe (l'autore), ma per
+  // chi lo lascia la cosa che conta è che il giorno diventa OFF.
+  const cosaCercaPerMe = off ? { ...cosaCerca, orario: 'OFF' } : cosaCerca;
+
   // Prima il tuo punto di vista, poi quello dell'altra persona: sotto la box,
   // in piccolo, cosa fa l'autore. In una riga di lista il nome sta già sopra.
-  if (riga) return boxScambio(request.tipo, turnoDellAutore, cosaCerca, opz);
+  if (riga) return boxScambio(request.tipo, turnoDellAutore, cosaCercaPerMe, opz);
   const nome = store.user(request.userId)?.nome || 'chi chiede';
   const suoLascia = off ? formatDay(cedo?.data) : `${formatDay(cedo?.data)} ${shiftLabel(cedo)}`;
   const suoPrende = off ? giorni.map((g) => formatDay(g)).join(' o ') : wantLabel(request.cerco);
   return html`
-    ${raw(boxScambio(request.tipo, turnoDellAutore, cosaCerca, opz))}
+    ${raw(boxScambio(request.tipo, turnoDellAutore, cosaCercaPerMe, opz))}
     ${raw(altroPunto(nome, suoLascia, suoPrende))}`;
 }
 

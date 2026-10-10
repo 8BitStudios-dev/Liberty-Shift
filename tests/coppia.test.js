@@ -75,3 +75,30 @@ test("all'autore il blocco parla con le sue parole", () => {
   assert.match(t, /prendi .*stesso giorno .*lasci .*11:00–20:00/);
   assert.doesNotMatch(t, /lascio|cerco|Lorenzo/);
 });
+
+// Un cambio OFF letto da un collega: il giorno che lascia diventa OFF, non
+// "qualsiasi turno" (che è giusto solo per chi lo prenderebbe, cioè l'autore).
+function scenaOff() {
+  const { richiesta } = scena();
+  richiesta.tipo = 'OFF';
+  richiesta.cerco = { giorni: [addDays(giorno, -2)], mode: 'ANY' };
+  return richiesta;
+}
+
+test('un cambio OFF: a chi legge il giorno che lascia dice OFF, non "qualsiasi turno"', () => {
+  const richiesta = scenaOff();
+  const t = testo(coppiaCedoCerco(richiesta));
+  assert.match(t, /lasci .*OFF/);
+  assert.doesNotMatch(t, /qualsiasi turno/);
+  // Anche nella riga di una lista.
+  const riga = testo(coppiaCedoCerco(richiesta, { riga: true }));
+  assert.match(riga, /lasci .*OFF/);
+  assert.doesNotMatch(riga, /qualsiasi turno/);
+});
+
+test('un cambio OFF: all\'autore "prendi" resta "qualsiasi turno", perché lavorerebbe quel giorno', () => {
+  const richiesta = scenaOff();
+  store.state.currentUserId = 'lorenzo';
+  const t = testo(coppiaCedoCerco(richiesta, { mioTurno: store.shift('sh-mio') }));
+  assert.match(t, /qualsiasi turno/);
+});
