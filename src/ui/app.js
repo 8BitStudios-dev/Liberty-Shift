@@ -1759,13 +1759,23 @@ function allaRipresa() {
  * collegamento della notifica può perdersi e si apre la Home. Vale solo per
  * la prima ora (`RULES.provaNotificheAttesaOre`), poi è "nessuna risposta".
  */
+// Attenzione: `#/prova-notifiche` (la pagina del SuperAdmin) comincia allo
+// stesso modo ma è un'altra schermata, e da lì il tocco sulla notifica deve
+// portare comunque alla prova.
+const suPaginaProva = () => /^#\/prova(\?|$)/.test(location.hash);
+let ultimaProva = 0;
 async function controllaProvaInSospeso() {
-  if (!collegato() || location.hash.startsWith('#/prova')) return;
+  if (!collegato() || suPaginaProva() || Date.now() - ultimaProva < 5000) return;
+  ultimaProva = Date.now();
   const { dati } = await provaNotifiche({ azione: 'mie' });
-  if (dati?.prova && !location.hash.startsWith('#/prova')) location.hash = `#/prova?id=${dati.prova}`;
+  if (dati?.prova && !suPaginaProva()) location.hash = `#/prova?id=${dati.prova}`;
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') allaRipresa();
+  if (document.visibilityState !== 'visible') return;
+  allaRipresa();
+  // Fuori dal tetto di un minuto della ripresa: chi tocca la notifica rientra
+  // nell'app quasi subito, e la prova deve comparire adesso.
+  controllaProvaInSospeso();
 });
 
 /**
