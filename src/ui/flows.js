@@ -358,7 +358,7 @@ export function cambioDalGiorno() {
     domanda = html`
       <p class="occhiello">${formatDay(data, true)} · non lavori</p>
       <h2 class="titolo-gruppo">Quale giorno vuoi OFF in cambio?</h2>
-      <p class="testo-tenue">Lavori ${formatDay(data)} al posto di un collega, e lui prende il tuo turno del giorno che scegli.</p>
+      <p class="testo-tenue">Lavori ${formatDay(data)} al posto di un collega, e lui fa il tuo turno del giorno che scegli.</p>
       ${raw(lavoro.length ? `<div class="chips">${lavoro.map((s) => html`
         <button class="pill ${dalGiorno.cedoShiftId === s.id ? 'attivo' : ''}" data-act="giorno-da-liberare" data-id="${s.id}">${formatDay(s.data)} · ${shiftLabel(s)}</button>`).join('')}</div>`
     : '<p class="motivo-non-puoi">Al momento non puoi cambiare: in questa settimana non hai altri turni da lasciare.</p>')}`;
@@ -412,7 +412,7 @@ export function scelta() {
       <span class="tile-icona">${raw(icona('orario'))}</span>
       <span>
         <strong>Cambio orario</strong>
-        <em>Stesso giorno, orario diverso. "Lasci mercoledì 12:00–21:00, prendi un turno che finisca prima."</em>
+        <em>Stesso giorno, orario diverso. "Cerco mercoledì un turno che finisca prima, offro il mio 12:00–21:00."</em>
       </span>
     </button>
 
@@ -420,7 +420,7 @@ export function scelta() {
       <span class="tile-icona">${raw(icona('ombrellone'))}</span>
       <span>
         <strong>Cambio OFF</strong>
-        <em>Lasci un giorno e in cambio lavori in uno dei tuoi OFF: prendi il turno di chi ti dà il giorno.</em>
+        <em>Cerchi OFF un giorno e offri uno dei tuoi OFF: quel giorno lavori al posto di chi ti dà il suo.</em>
       </span>
     </button>
 
@@ -491,7 +491,7 @@ function passoCercoOrario() {
   return html`
     ${raw(barra('Che orario cerchi?', 2))}
     <div class="card riepilogo">
-      <p><strong>${formatDay(cedo.data, true)}</strong> · lasci ${shiftLabel(cedo)}</p>
+      <p><strong>${formatDay(cedo.data, true)}</strong> · offri il tuo ${shiftLabel(cedo)}</p>
     </div>
     <div class="chips">${raw(modi)}</div>
     ${raw(campi)}
@@ -728,7 +728,7 @@ export function dettaglio(params) {
           <div><strong>${nomeUtente(da)}</strong><div class="meta">ha proposto uno scambio</div></div>
         </header>
         ${raw(p.id === primaScelta ? '<p class="tag">La più vicina a quello che hai chiesto</p>' : '')}
-        <p>${p.aUserId === me ? 'Prendi' : p.daUserId === me ? 'Lasci' : `${da?.nome} offre`} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
+        <p>${p.daUserId === me ? 'Offri' : `${da?.nome} offre`} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
         ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
         <div class="accettazioni">${raw(p.accettataDa.map((u) => `<span class="tag ok">${nomeUtente(store.user(u))} ha accettato</span>`).join(''))}</div>
         ${raw(azioni)}

@@ -184,7 +184,7 @@ export function boxScambio(tipo, { messaggio = null, righe = [], compatto = fals
       </div>` : '';
   const tu = righe.length ? `
       <div class="tu">
-        ${messaggio ? '<span class="tu-titolo">Cosa faresti tu</span>' : cerchioTipo(tipo)}
+        ${messaggio ? (compatto ? '' : '<span class="tu-titolo">Cosa faresti tu</span>') : cerchioTipo(tipo)}
         <div class="tu-righe">${righe.map((r) => `<p class="riga-tu"><span class="gg">${r.giorno}</span><span>${r.testo}</span></p>`).join('')}</div>
       </div>` : '';
   return `<div class="coppia messaggio ${compatto ? 'compatta' : ''} ${messaggio ? '' : 'solo-tu'}" data-tipo="${esc(tipo)}">${bolla}${tu}</div>`;
@@ -299,16 +299,50 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, of
  * mescolata a righe OFF che invece lo dicevano, sembrava mancante.
  */
 export function sintesiRichiesta(request) {
+  return fraseCercoOffro(request, { grassetto: false });
+}
+
+/**
+ * Il messaggio in una riga: "cerco … · offro …" per la propria richiesta,
+ * "cerca … · offre …" per quella di un altro. Le stesse parole della box.
+ */
+export function fraseCercoOffro(request, { grassetto = true } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   const off = request.tipo === TIPO_CAMBIO.OFF;
   const mia = request.userId === store.state.currentUserId;
-  // Gli stessi due pezzi della box: il turno che l'autore lascia e quello che
-  // cerca. Chi legge prende il primo e lascia il secondo; l'autore il contrario.
-  const lascia = off ? formatDay(cedo?.data) : `${formatDay(cedo?.data)} ${shiftLabel(cedo)}`;
-  const cerca = off ? giorni.map((g) => formatDay(g)).join(' o ') : wantLabel(request.cerco);
-  return mia ? `prendi ${cerca} · lasci ${lascia}` : `prendi ${lascia} · lasci ${cerca}`;
+  const cerca = off ? `OFF ${formatDay(cedo?.data)}` : wantLabel(request.cerco);
+  const offre = off ? `OFF ${giorni.map((g) => formatDay(g)).join(' o ')}` : shiftLabel(cedo);
+  const b = (t) => (grassetto ? `<b>${esc(t)}</b>` : t);
+  return mia ? `cerco ${b(cerca)} · offro ${b(offre)}` : `cerca ${b(cerca)} · offre ${b(offre)}`;
 }
+
+/**
+ * Cosa faresti tu, in una riga: "fai 10–19 invece del tuo 12–21" (orario) o
+ * "Ven 16/10 lavori · Mer 14/10 a casa" (OFF). `prendi` è il turno che faresti,
+ * `lasci` il tuo che fa l'altra persona.
+ */
+export function fraseTu(tipo, prendi, lasci) {
+  if (!prendi || !lasci) return '';
+  if (tipo === TIPO_CAMBIO.OFF) {
+    return `${esc(formatDay(prendi.data))} <b>lavori</b> · ${esc(formatDay(lasci.data))} <b>a casa</b>`;
+  }
+  const t = trasformaTurno(prendi, lasci, personaDi);
+  return `fai <b>${esc(t.trasformato ? `${t.start}–${t.end}` : shiftLabel(prendi))}</b> invece del tuo <b>${esc(shiftLabel(lasci))}</b>`;
+}
+
+/**
+ * Le ragioni di un match senza quelle che la box dice già (che turno fai, che
+ * orario ha l'altro quel giorno, come si adatta al tuo contratto): restano
+ * quelle che aggiungono qualcosa, come le preferenze o la disponibilità.
+ */
+const GIA_NELLA_BOX = [
+  /per te, diventa/,
+  /^Hai \S+ quel giorno$/, / ha \S+ quel giorno$/,
+  /^(Fai|.+ fa) il turno /,
+  /^(Lavori|.+ lavora) \S+ \S+ al posto/,
+];
+export const motiviUtili = (reasons = []) => reasons.filter((r) => !GIA_NELLA_BOX.some((re) => re.test(r)));
 
 /**
  * Perché non puoi rispondere a una richiesta, detto con i tuoi turni.
@@ -388,7 +422,6 @@ export function cardRichiesta(request, giorno = null) {
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
         </span>
         ${raw(coppiaCedoCerco(request, { compatto: true }))}
-        ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}
       </span>
     </div>`;
 }
@@ -427,7 +460,6 @@ export const personaDi = (id) => store.user(id);
 
 export const TESTO_STIMA = 'Orario stimato: quello definitivo lo decide UKG.';
 export const notaStima = () => `<p class="nota-stima">${TESTO_STIMA}</p>`;
-const adattamento = (match) => Boolean(match?.adattato?.trasformato || match?.adattatoControparte?.trasformato);
 
 /**
  * La pausa di mezz'ora resta al turno: chi lo riceve se la ritrova, a meno
@@ -459,16 +491,15 @@ export function cardMatch(match, opzioni = {}) {
         · ${match.origine === 'RICHIESTA' ? 'ha una richiesta compatibile' : 'dal calendario'}${match.origine !== 'RICHIESTA' && match.disponibile ? ' · disponibile quel giorno' : ''}
       </div>
       ${raw(riassuntoMatch(match, u, turno, opzioni))}
-      ${raw(adattamento(match) ? notaStima() : '')}
       ${raw(notaPausa([turno, opzioni.mioCedo || store.shift(store.request(opzioni.miaRichiestaId)?.cedo.shiftId)]))}
       ${raw(opzioni.compatta ? html`
         <details class="perche-aperto">
           <summary>Perché${match.avvisi.length ? ' · un avviso' : ''}</summary>
-          <ul class="perche">${raw(match.reasons.map((r) => `<li>${r}</li>`).join(''))}</ul>
+          <ul class="perche">${raw(motiviUtili(match.reasons).map((r) => `<li>${r}</li>`).join(''))}</ul>
           ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${match.avvisi.join(' ')}</div>` : '')}
         </details>` : html`
         <ul class="perche">
-          ${match.reasons.map((r) => raw(`<li>${r}</li>`))}
+          ${motiviUtili(match.reasons).map((r) => raw(`<li>${r}</li>`))}
         </ul>
         ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${match.avvisi.join(' ')}</div>` : '')}`)}
       ${raw(azioneMatch(match, opzioni))}
@@ -655,9 +686,8 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
       ${raw(etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, aiuta))}
       ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
-      ${raw(adattamento(match) ? notaStima() : '')}
       ${raw(notaPausa([mioTurno, store.shift(richiesta.cedo.shiftId)]))}
-      <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
+      <ul class="perche">${motiviUtili(match.reasons).map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
       ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
               data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}"${aiuta ? ' data-origine="aiuta"' : ''}>

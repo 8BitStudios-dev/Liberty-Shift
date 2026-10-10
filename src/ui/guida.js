@@ -84,9 +84,9 @@ export const GUIDE = {
       </p>
 
       <p class="esempio">
-        Luca offre venerdì e cerca lunedì. Tu venerdì sei a casa e lunedì
-        lavori: prendi il suo venerdì e lasci il tuo lunedì, siete la risposta
-        l'uno dell'altro.
+        Luca cerca OFF venerdì e offre lunedì. Tu venerdì sei a casa e lunedì
+        lavori: venerdì lavori al posto suo, lunedì il tuo turno lo fa lui.
+        Siete la risposta l'uno dell'altro.
       </p>
 
       <p>
@@ -124,7 +124,7 @@ export const GUIDE = {
       <p>
         Su un giorno in cui non lavori, OFF o ancora vuoto. Scegli quale giorno di lavoro della
         settimana vuoi libero in cambio: lavori tu al posto di un collega, e
-        lui prende il tuo turno.
+        lui fa il tuo turno.
       </p>
 
       <p>
@@ -151,7 +151,7 @@ export const GUIDE = {
         <li><span class="barre in-legenda"><i class="cerca"></i></span>
           arancio: qualcuno vuole OFF quel giorno;</li>
         <li><span class="barre in-legenda"><i class="offre"></i></span>
-          verde: qualcuno prende quel giorno in un cambio OFF;</li>
+          verde: qualcuno offre di lavorare quel giorno in un cambio OFF;</li>
         <li>bordo oro: c'è una priorità;</li>
         <li>il numero nel cerchio grigio: quante richieste toccano quel giorno, fra cambi orario e cambi OFF;</li>
         <li>la percentuale: c'è una richiesta che puoi coprire, e quanto va bene a tutti e due.</li>
@@ -174,7 +174,7 @@ export const GUIDE = {
     corpo: () => html`
       <p>Tutte le richieste aperte. In alto le tue, così vedi che sono partite; poi quelle dei colleghi, con le prioritarie in cima.</p>
 
-      <p>Ogni riga dice chi è, cosa lascia e cosa prende. Toccala per orari, note e proposte.</p>
+      <p>Ogni riga dice chi è, cosa cerca e cosa offre, e cosa faresti tu. Toccala per orari, note e proposte.</p>
 
       <ul class="elenco piccolo">
         <li><strong>${raw(iconaTipo('ORARIO'))} orario</strong>: stesso giorno, orario diverso;</li>
@@ -239,11 +239,11 @@ export const GUIDE = {
 
       <h3>Le ore</h3>
       <p>
-        <strong>Chi prende un turno fa le ore di quello che lascia.</strong> Puoi
+        <strong>Chi fa il turno di un altro fa le ore del suo.</strong> Puoi
         scambiare con chiunque, le tue ore non cambiano.
       </p>
       <p class="esempio">
-        Giulia quel giorno farebbe 5 ore e prende un 12:00–21:00. Il turno
+        Giulia quel giorno fa 5 ore e riceve un 12:00–21:00. Il turno
         chiude, quindi esce all'ora di chiusura: farà 16:00–21:00.
       </p>`,
   },

@@ -237,7 +237,7 @@ function verificheIncrociate(coppie, shifts, chiGuarda, trova) {
       if (io) {
         reasons.push(contractOf(chi).ore.length === 1
           ? `Sei ${chi.contratto} quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`
-          : `Lasci ${String(oreRetribuite(cede, chi)).replace('.', ',')}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
+          : `Il tuo turno è di ${String(oreRetribuite(cede, chi)).replace('.', ',')}h, quindi ${t.originale} di ${nome(altra)}, per te, diventa ${t.start}–${t.end}`);
       }
     }
     if (t.avviso) avvisi.push(io ? t.avviso : `${nome(chi)}: ${t.avviso}`);
@@ -363,14 +363,14 @@ function matchOrario(request, ctx) {
       // alle sue ore) soddisfa quello che l'autore cerca.
       const perAutoreAdattato = turnoAdattato(suo, mioCedo, trova);
       reasons.push(
-        `${ioSonoAutore ? 'Prendi' : `${nome(autore)} prende`} il turno ${shiftLabel(suo)} ${ioSonoU ? 'tuo' : `di ${nome(u)}`}, che per ${ioSonoAutore ? 'te' : nome(autore)} diventa ${perAutoreAdattato.start}–${perAutoreAdattato.end}: ${perMe.reasons[0]}`,
+        `${ioSonoAutore ? 'Fai' : `${nome(autore)} fa`} il turno ${shiftLabel(suo)} ${ioSonoU ? 'tuo' : `di ${nome(u)}`}, che per ${ioSonoAutore ? 'te' : nome(autore)} diventa ${perAutoreAdattato.start}–${perAutoreAdattato.end}: ${perMe.reasons[0]}`,
       );
       // Simmetrico: quello che riceverebbe u (il turno che cedo, adattato
       // alle sue ore) soddisfa quello che u stesso cerca nella sua richiesta.
       const perUAdattato = turnoAdattato(mioCedo, suo, trova);
       const ilTurnoDiAutore = ioSonoAutore ? `il tuo turno ${shiftLabel(mioCedo)}` : `${shiftLabel(mioCedo)} di ${nome(autore)}`;
       reasons.push(
-        `${ioSonoU ? 'Prendi' : `${nome(u)} prende`} ${wantLabel(suaRichiesta.cerco)}: ${ilTurnoDiAutore}, per ${ioSonoU ? 'te' : nome(u)}, diventa ${perUAdattato.start}–${perUAdattato.end}`,
+        `${ioSonoU ? 'Cerchi' : `${nome(u)} cerca`} ${wantLabel(suaRichiesta.cerco)}: ${ilTurnoDiAutore}, per ${ioSonoU ? 'te' : nome(u)}, diventa ${perUAdattato.start}–${perUAdattato.end}`,
       );
     } else {
       // Chi non ha pubblicato niente si giudica dal turno che ha già in
@@ -474,8 +474,8 @@ function matchOff(request, ctx) {
         base = baseDelPunteggio(perMe.score, perLui.score);
         origine = 'RICHIESTA';
         reasons.push(ioSonoU
-          ? `Lasci ${formatDay(giorno)} e prendi ${formatDay(mioCedo.data)}: l'esatto contrario`
-          : `${nome(u)} lascia ${formatDay(giorno)} e prende ${formatDay(mioCedo.data)}: l'esatto contrario`);
+          ? `Cerchi OFF ${formatDay(giorno)} e offri ${formatDay(mioCedo.data)}: l'esatto contrario`
+          : `${nome(u)} cerca OFF ${formatDay(giorno)} e offre ${formatDay(mioCedo.data)}: l'esatto contrario`);
       } else {
         // Come nel cambio orario: essere liberi quel giorno è già stato
         // controllato sopra, e basta per proporre lo scambio. La
@@ -502,8 +502,8 @@ function matchOff(request, ctx) {
         }
       }
       reasons.push(ioSonoAutore
-        ? `Prendi il ${formatDay(giorno)} di ${nome(u)}: ${perMe.reasons[0]}`
-        : `${nome(autore)} prende il ${formatDay(giorno)} ${ioSonoU ? 'tuo' : `di ${nome(u)}`}: ${perMe.reasons[0]}`);
+        ? `Lavori ${formatDay(giorno)} al posto di ${nome(u)}: ${perMe.reasons[0]}`
+        : `${nome(autore)} lavora ${formatDay(giorno)} al posto ${ioSonoU ? 'tuo' : `di ${nome(u)}`}: ${perMe.reasons[0]}`);
 
       const v = verificheIncrociate([[autore, mioCedo, suo, u], [u, suo, mioCedo, autore]], ctx.shifts, ctx.currentUserId, trova);
       const score = clamp(Math.round(punteggioDi(ctx.currentUserId, autore, u, base, v.peso)));

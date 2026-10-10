@@ -50,7 +50,10 @@ test('fra contratti diversi l\'orario adattato dice che è una stima', async () 
   store.state.requests.push(richiesta);
   const match = findMatches(richiesta, { ...store.state, currentUserId: io }).find((m) => m.userId === io);
   assert.ok(match, 'Alessandro compare');
-  assert.ok(cardOpportunita({ richiesta, match }).includes(TESTO_STIMA));
+  // La box lo dice accanto all'orario («stimato per PT»): la nota lunga sotto
+  // ripeteva la stessa cosa, e nelle card è stata tolta.
+  assert.ok(cardOpportunita({ richiesta, match }).includes('stimato per PT'));
+  assert.equal(cardOpportunita({ richiesta, match }).includes(TESTO_STIMA), false);
 
   // Stesse ore, niente da stimare: l'avviso non c'è.
   store.state.shifts.find((s) => s.id === 'sh-a').start = '11:00';
@@ -61,7 +64,7 @@ test('fra contratti diversi l\'orario adattato dice che è una stima', async () 
   store.state.shifts.find((s) => s.id === 'sh-a').end = '16:00';
   const pari = findMatches(richiesta, { ...store.state, currentUserId: io }).find((m) => m.userId === io);
   assert.ok(pari, 'stesse ore, compare lo stesso');
-  assert.equal(cardOpportunita({ richiesta, match: pari }).includes(TESTO_STIMA), false);
+  assert.equal(cardOpportunita({ richiesta, match: pari }).includes('stimato per'), false);
 });
 
 test('il calendario del Profilo mostra al massimo cinque settimane, senza il conteggio ore', async () => {

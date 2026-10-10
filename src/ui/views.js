@@ -2,7 +2,7 @@ import { html, raw, esc, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
-  tastoAggiorna, rigaAggiornamento, statoAggiornamento,
+  tastoAggiorna, rigaAggiornamento, statoAggiornamento, fraseTu, fraseCercoOffro,
   ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, cerchioTipo, pillolaStato, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
@@ -59,10 +59,10 @@ export function home() {
   const aiutabili = opportunitaPerMe(me.id, store.state).length;
 
   // Una riga per cambio, come le liste del resto dell'app: il cerchio del tipo,
-  // il nome, cosa prendi e cosa lasci in una frase e lo stato in una pillola.
-  // Per l'orario si scrivono le ore (il giorno è lo stesso), per OFF i giorni.
-  const pezzo = (tipo, turno) => (tipo === TIPO_CAMBIO.OFF ? formatDay(turno?.data) : shiftLabel(turno));
-  const frase = (prendo, lascio) => `prendi <b>${esc(prendo)}</b> · lasci <b>${esc(lascio)}</b>`;
+  // il nome, una frase e lo stato in una pillola. Con le parole della box: per
+  // uno scambio con qualcuno cosa faresti tu ("fai 10–19 invece del tuo 12–21",
+  // "Ven 16/10 lavori · Mer 14/10 a casa"), per una tua richiesta il messaggio
+  // ("cerco … · offro …").
   const riga = ({ tipo, nome, testa = '', frase: f, stato, id, extra = '' }) => html`
     <div class="cambio-home" role="button" tabindex="0" data-act="apri-richiesta" data-id="${id}">
       ${raw(cerchioTipo(tipo))}
@@ -88,21 +88,19 @@ export function home() {
     const autoreSono = r?.userId === me.id;
     const offerto = store.shift(p.shiftOffertoId);
     const ceduto = r && store.shift(r.cedo.shiftId);
-    const f = r ? frase(pezzo(r.tipo, autoreSono ? offerto : ceduto), pezzo(r.tipo, autoreSono ? ceduto : offerto)) : '';
+    const f = r ? fraseTu(r.tipo, autoreSono ? offerto : ceduto, autoreSono ? ceduto : offerto) : '';
     return {
       urgente: inAttesaDiMe,
       html: riga({ tipo: r?.tipo, nome: nomeUtente(altro), frase: f, stato, id: r?.id, extra: testoPromemoria(store.promemoriaAccordo(p)) }),
     };
   });
   const righeMiei = miei.map((r) => {
-    const off = r.tipo === TIPO_CAMBIO.OFF;
-    const cerco = off ? (r.cerco.giorni || []).map((g) => formatDay(g)).join(' o ') : wantLabel(r.cerco);
     const tono = { APERTA: 'oro', PROPOSTA: 'blu', IN_ATTESA: 'grigio', ACCORDO: 'verde' }[r.status] || 'oro';
     return {
       urgente: false,
       html: riga({
         tipo: r.tipo, nome: 'La tua richiesta', testa: hasPriority(r) ? `${icona('priorita', { px: 14 })} ` : '',
-        frase: frase(cerco, pezzo(r.tipo, store.shift(r.cedo.shiftId))), stato: pillolaStato(tono, STATUS_META[r.status]?.label || r.status), id: r.id,
+        frase: fraseCercoOffro(r), stato: pillolaStato(tono, STATUS_META[r.status]?.label || r.status), id: r.id,
       }),
     };
   });
@@ -110,12 +108,11 @@ export function home() {
   // ogni richiesta chiusa.
   const righeChiuse = store.chiuseDaAdminRecenti().map((r) => {
     const mia = r.userId === me.id;
-    const cerco = r.tipo === TIPO_CAMBIO.OFF ? (r.cerco.giorni || []).map((g) => formatDay(g)).join(' o ') : wantLabel(r.cerco);
     return {
       urgente: false,
       html: riga({
         tipo: r.tipo, nome: mia ? 'La tua richiesta' : nomeUtente(store.user(r.userId)),
-        frase: frase(cerco, pezzo(r.tipo, store.shift(r.cedo.shiftId))),
+        frase: fraseCercoOffro(r),
         stato: pillolaStato('rosso', 'Scambio chiuso dall\'amministratore'), id: r.id,
         extra: r.motivoAdmin ? `<span class="cambio-home-frase">“${esc(r.motivoAdmin)}”</span>` : '',
       }),
@@ -215,8 +212,8 @@ function legendaPubblica() {
     </summary>
     <ul class="legenda-mese">
       <li><span class="barre in-legenda"><i class="orario"></i></span>cambio orario</li>
-      <li><span class="barre in-legenda"><i class="cerca"></i></span>OFF: qualcuno lascia</li>
-      <li><span class="barre in-legenda"><i class="offre"></i></span>OFF: qualcuno prende</li>
+      <li><span class="barre in-legenda"><i class="cerca"></i></span>OFF: qualcuno cerca OFF</li>
+      <li><span class="barre in-legenda"><i class="offre"></i></span>OFF: qualcuno offre di lavorare</li>
       <li><span class="campione prioritaria"></span>priorità</li>
       <li><span class="conta-giorno in-legenda">2</span>richieste del giorno</li>
       <li><span class="quota campione-quota">%</span>puoi aiutare</li>
@@ -282,8 +279,8 @@ export function calendario(params) {
  * da fuori sono la stessa cosa, un turno che si può prendere.
  */
 const GRUPPI_GIORNO = [
-  { ruolo: 'CERCA', titolo: 'Lasciano', nota: 'Lasciano questo giorno. Se tu non lavori, puoi prendere il loro turno.' },
-  { ruolo: 'OFFRE', titolo: 'Prendono', nota: 'Lavorerebbero questo giorno in cambio: se lavori, puoi dargli il tuo turno.' },
+  { ruolo: 'CERCA', titolo: 'Cercano OFF', nota: 'Cercano OFF questo giorno. Se tu non lavori, puoi fare il loro turno.' },
+  { ruolo: 'OFFRE', titolo: 'Offrono di lavorare', nota: 'Lavorerebbero questo giorno in cambio: se lavori, puoi restare a casa e dargli il tuo turno.' },
   { ruolo: 'ORARIO', titolo: 'Cambi orario', nota: 'Vogliono un orario diverso in questo giorno. Se lavori, puoi scambiare il tuo.' },
 ];
 
@@ -1299,16 +1296,16 @@ export function dettaglioGiornoPubblico(data) {
 }
 
 /**
- * Una tua richiesta, detta in seconda persona: nel Profilo non è una riga
- * della bacheca (con le tue iniziali, "offre", il bordo di chi offre), è una
- * cosa che hai chiesto tu.
+ * Una tua richiesta, con le tue parole ("Cerco … · offro …"), come il
+ * messaggio della box: nel Profilo non è una riga della bacheca, è una cosa
+ * che hai chiesto tu.
  */
 function rigaMiaRichiesta(r) {
   const cedo = store.shift(r.cedo.shiftId);
   const giorni = r.cerco.giorni || [];
   const cosa = r.tipo === TIPO_CAMBIO.OFF
-    ? `Vuoi OFF ${formatDay(cedo?.data)} · offri ${giorni.map((g) => formatDay(g)).join(' o ')}`
-    : `Lasci ${shiftLabel(cedo)} · cerchi ${wantLabel(r.cerco)}`;
+    ? `Cerco OFF ${formatDay(cedo?.data)} · offro OFF ${giorni.map((g) => formatDay(g)).join(' o ')}`
+    : `Cerco ${wantLabel(r.cerco)} · offro ${shiftLabel(cedo)}`;
   return html`
     <div class="riga-cambio" data-act="apri-richiesta" data-id="${r.id}">
       ${raw(segnoCambio('richiesta', 15))}

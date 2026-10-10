@@ -316,8 +316,21 @@ Le persone si nominano per nome («al posto di Jesse»), non con lui o lei. La r
 piccola «Jesse offre … · cerca …» sotto la box non c'è più: il messaggio dice già
 la stessa cosa. **«Lasci» non compare più nel blocco**: in un cambio OFF chi
 leggeva «LASCI Mer 14/10» credeva di lasciare un OFF, mentre quel giorno lavora e
-resta a casa. La Home e la legenda del mese parlano ancora con prendi e lasci; i
-titoli del calendario («Lasciano», «Prendono») restano com'erano.
+resta a casa.
+
+**Tutta l'app parla allo stesso modo.** Le righe della Home dicono «fai 10–19
+invece del tuo 12–21» o «Mer 14/10 lavori · Ven 16/10 a casa» per una proposta,
+«cerco … · offro …» per una richiesta propria (e «cerca … · offre …» per quella
+di un altro). Il Profilo scrive «Cerco OFF … · offro OFF …». Nel calendario i
+gruppi del giorno si chiamano «Cercano OFF» e «Offrono di lavorare», e la legenda
+del mese dice «qualcuno cerca OFF» / «qualcuno offre di lavorare».
+
+**Le liste non ripetono la box.** Sotto una card restano solo i motivi che la box
+non dice già (`motiviUtili` in `components.js` toglie «Hai X quel giorno», «Fai il
+turno …», «Lavori … al posto di …», «per te, diventa …»). Spariscono anche la
+nota sulla stima dell'orario (basta «stimato per FT» accanto al turno) e la riga
+«non puoi» sulle card della bacheca. Le spiegazioni del motore usano le stesse
+parole: «Cerchi / Jesse cerca …», «Fai / Jesse fa il turno …».
 
 Una proposta fatta si può **ritirare** finché l'altra persona non l'ha
 accettata: "Ritira la proposta", in Proposte e nel dettaglio della richiesta,

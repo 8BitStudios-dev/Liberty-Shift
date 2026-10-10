@@ -543,27 +543,27 @@ export function ruoloNelGiorno(request, giorno, cedo) {
       ruolo: 'ORARIO',
       icona: '🕐',
       verbo: 'cambio orario',
-      sintesi: `prendi ${shiftLabel(cedo)} · lasci ${wantLabel(request.cerco)}`,
+      sintesi: `offre ${shiftLabel(cedo)} · cerca ${wantLabel(request.cerco)}`,
     };
   }
   if (cedo?.data === giorno) {
     return {
       ruolo: 'CERCA',
       icona: '📅',
-      verbo: 'lascia',
+      verbo: 'cerca OFF',
       sintesi: giorni.length
-        ? `prendi questo giorno · in cambio lasci ${giorni.map((g) => formatDay(g)).join(' o ')}`
-        : 'prendi questo giorno',
+        ? `lavori questo giorno · in cambio sei a casa ${giorni.map((g) => formatDay(g)).join(' o ')}`
+        : 'lavori questo giorno',
     };
   }
   if (giorni.includes(giorno)) {
     return {
       ruolo: 'OFFRE',
       icona: '📅',
-      verbo: 'prende',
+      verbo: 'offre OFF',
       // Solo il giorno che si sta guardando: gli altri che la richiesta offre
       // hanno una casella loro, ed è lì che vanno letti.
-      sintesi: `lasci questo giorno · in cambio prendi ${formatDay(cedo?.data)}`,
+      sintesi: `sei a casa questo giorno · in cambio lavori ${formatDay(cedo?.data)}`,
     };
   }
   return { ruolo: 'ALTRO', icona: '📅', verbo: 'cambio OFF', sintesi: '' };
