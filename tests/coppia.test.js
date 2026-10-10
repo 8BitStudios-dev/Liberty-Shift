@@ -16,7 +16,7 @@ globalThis.localStorage = {
 globalThis.document = { addEventListener() {} };
 
 const { store } = await import('../src/core/store.js');
-const { addDays, todayISO } = await import('../src/core/time.js');
+const { addDays, todayISO, formatDay } = await import('../src/core/time.js');
 const { coppiaCedoCerco } = await import('../src/ui/components.js');
 
 const giorno = addDays(todayISO(), 7);
@@ -76,24 +76,43 @@ test("all'autore il blocco parla con le sue parole", () => {
   assert.doesNotMatch(t, /lascio|cerco|Lorenzo/);
 });
 
-// Un cambio OFF letto da un collega: il giorno che lascia diventa OFF, non
-// "qualsiasi turno" (che è giusto solo per chi lo prenderebbe, cioè l'autore).
-function scenaOff() {
+// Un cambio OFF letto da un collega: lascia il suo turno in uno dei giorni che
+// l'autore offre. Non "qualsiasi turno" (giusto solo per l'autore) e non "OFF":
+// chi lo legge lavora quel giorno, e un OFF non lo lascia.
+function scenaOff(giorniOfferti, turniMiei = {}) {
   const { richiesta } = scena();
   richiesta.tipo = 'OFF';
-  richiesta.cerco = { giorni: [addDays(giorno, -2)], mode: 'ANY' };
+  richiesta.cerco = { giorni: giorniOfferti, mode: 'ANY' };
+  const io = store.state.currentUserId;
+  for (const [data, orario] of Object.entries(turniMiei)) {
+    store.state.shifts.push({ id: `sh-${data}`, userId: io, data, tipo: 'WORK', start: orario[0], end: orario[1] });
+  }
   return richiesta;
 }
 
-test('un cambio OFF: a chi legge il giorno che lascia dice OFF, non "qualsiasi turno"', () => {
-  const richiesta = scenaOff();
-  const t = testo(coppiaCedoCerco(richiesta));
-  assert.match(t, /lasci .*OFF/);
-  assert.doesNotMatch(t, /qualsiasi turno/);
-  // Anche nella riga di una lista.
-  const riga = testo(coppiaCedoCerco(richiesta, { riga: true }));
-  assert.match(riga, /lasci .*OFF/);
-  assert.doesNotMatch(riga, /qualsiasi turno/);
+test('un cambio OFF: a chi lavora in uno dei giorni offerti dice il suo turno, non OFF né "qualsiasi turno"', () => {
+  const offerto = addDays(giorno, 2);
+  const richiesta = scenaOff([offerto], { [offerto]: ['10:00', '19:00'] });
+  for (const opzioni of [{}, { riga: true }]) {
+    const t = testo(coppiaCedoCerco(richiesta, opzioni));
+    assert.match(t, /lasci .*10(:00)?–19(:00)?/, 'il suo turno di quel giorno');
+    assert.doesNotMatch(t, /lasci .*OFF|qualsiasi turno/);
+  }
+});
+
+test('un cambio OFF con più giorni offerti: "uno dei tuoi turni" nei soli giorni in cui lavora', () => {
+  const [uno, due, tre] = [addDays(giorno, 2), addDays(giorno, 3), addDays(giorno, 4)];
+  const richiesta = scenaOff([uno, due, tre], { [uno]: ['10:00', '19:00'], [tre]: ['08:00', '17:00'] });
+  const t = testo(coppiaCedoCerco(richiesta, { riga: true }));
+  assert.match(t, /uno dei tuoi turni/);
+  assert.match(t, new RegExp(formatDay(uno).replace(/[/]/g, '\\/')));
+  assert.doesNotMatch(t, new RegExp(formatDay(due).replace(/[/]/g, '\\/') + ' o'), 'il giorno libero non è tra quelli che lasci');
+});
+
+test('un cambio OFF in cui chi legge non lavora nei giorni offerti lo dice, senza inventare un turno', () => {
+  const richiesta = scenaOff([addDays(giorno, 2)]);
+  const t = testo(coppiaCedoCerco(richiesta, { riga: true }));
+  assert.match(t, /non lavori quel giorno/);
 });
 
 test('un cambio OFF: all\'autore "prendi" resta "qualsiasi turno", perché lavorerebbe quel giorno', () => {

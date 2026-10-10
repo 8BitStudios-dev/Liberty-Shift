@@ -228,6 +228,25 @@ export function altroPunto(nome, offre, cerca) {
   return html`<p class="altro-punto">${nome} offre ${offre} · cerca ${cerca}</p>`;
 }
 
+/**
+ * Cosa lascia chi legge un cambio OFF: il suo turno in uno dei giorni che
+ * l'autore offre. Con un giorno solo in cui lavora, quello preciso ("Mer 14/10 ·
+ * 10–19"); con più giorni, "uno dei tuoi turni" nei soli giorni in cui lavora;
+ * se non lavora in nessuno (la richiesta non è per lui) lo dice.
+ */
+function turnoCheLasciInUnOff(giorni) {
+  const io = store.state.currentUserId;
+  const miei = giorni
+    .map((g) => store.state.shifts.find((s) => s.userId === io && s.data === g && s.tipo === 'WORK'))
+    .filter(Boolean);
+  if (miei.length === 1) return { giorno: formatDay(miei[0].data), orario: shiftLabel(miei[0]) };
+  if (miei.length) return { giorno: miei.map((s) => formatDay(s.data)).join(' o '), orario: 'uno dei tuoi turni' };
+  return {
+    giorno: giorni.map((g) => formatDay(g)).join(' o '),
+    orario: giorni.length > 1 ? 'non lavori in quei giorni' : 'non lavori quel giorno',
+  };
+}
+
 export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, offerto = null, riga = false } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
@@ -269,10 +288,10 @@ export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, of
 
   if (mia) return boxScambio(request.tipo, cosaCerca, turnoDellAutore, opz);
 
-  // In un cambio OFF chi legge lascia il turno che ha in quel giorno e resta a
-  // casa: "qualsiasi turno" è giusto per chi lo prenderebbe (l'autore), ma per
-  // chi lo lascia la cosa che conta è che il giorno diventa OFF.
-  const cosaCercaPerMe = off ? { ...cosaCerca, orario: 'OFF' } : cosaCerca;
+  // In un cambio OFF chi legge lascia il turno che ha in uno dei giorni offerti:
+  // il suo, non "qualsiasi turno" (che è giusto solo per chi lo prenderebbe,
+  // cioè l'autore) e non "OFF" (lo lascia chi è a casa, e chi legge lavora).
+  const cosaCercaPerMe = off ? turnoCheLasciInUnOff(giorni) : cosaCerca;
 
   // Prima il tuo punto di vista, poi quello dell'altra persona: sotto la box,
   // in piccolo, cosa fa l'autore. In una riga di lista il nome sta già sopra.
