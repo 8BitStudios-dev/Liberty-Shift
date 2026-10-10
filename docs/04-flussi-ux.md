@@ -300,9 +300,9 @@ secondo chi lo legge, e il blu resta sempre il turno che cede chi guarda:
 la richiesta di Elisa vuole sapere cosa farà lui, non cosa fa lei: "Elisa
 lascia, Elisa prende" costringeva a ribaltare tutto a mente. Ora la box parla a
 chi guarda, e **prima cosa prendi, poi cosa lasci**. L'altra persona viene
-dopo: sotto la box, in piccolo, "Elisa: lascia Mar 20/10 · prende Gio 22/10 o
+dopo: sotto la box, in piccolo, "Elisa offre Mar 20/10 · cerca Gio 22/10 o
 Ven 23/10"; in Aiuta un collega, nel Cambio rapido e in Proposte la stessa
-riga ("Davide: lascia Sab 10 · prende Sab 10 11:00–20:00"), con la stessa
+riga ("Davide offre Sab 10 · cerca Sab 10 11:00–20:00"), con la stessa
 sintassi e sempre dopo la tua. Lo stesso ordine vale per le spiegazioni del
 match ("Prendi il turno 08:00–17:00 di Davide F.", "Lasci Dom 11/10 e prendi
 Lun 12/10: l'esatto contrario") e per il giorno del calendario ("prendi questo
@@ -310,11 +310,16 @@ giorno · in cambio lasci
 Lun 12/10"). I colori non seguono la posizione: il blu è sempre il turno che
 lasci, il verde quello che prendi.
 
-Le parole sono due sole in tutta l'app: **prendi** e **lasci** (lascia e prende
-solo quando si parla di un altro). Prima erano quattro paia (lascio/cerco,
-lasci/prendi, cerca/offre, cede/cerca) e "cerca" voleva dire cose opposte: nel
-cambio OFF il giorno che si lascia, nel cambio orario quello che si vuole
-ricevere. Anche la Home ("Lasci Gio 15/10") e la legenda del mese le usano.
+Le parole sono due paia, e ognuno ha il suo: **prendi** e **lasci** per te,
+**offre** e **cerca** per un'altra persona. Il legame è fisso, per ogni tipo di
+cambio: quello che lei **offre** è quello che tu **prendi**, quello che lei
+**cerca** è quello che tu **lasci**. «Lascia/prende» accanto a «lasci/prendi»
+si distinguevano per una lettera, e le righe si leggevano al contrario. Prima
+erano quattro paia mescolate (lascio/cerco, lasci/prendi, cerca/offre,
+cede/cerca) e "cerca" voleva dire cose opposte: nel cambio OFF il giorno che si
+lascia, nel cambio orario quello che si vuole ricevere; ora guarda sempre dal tuo
+lato e non può più. Anche la Home ("Lasci Gio 15/10") e la legenda del mese
+parlano a te. I titoli del calendario («Lasciano», «Prendono») restano com'erano.
 
 Scritto sempre con le parole dell'autore, il blocco faceva leggere a chi
 proponeva "LASCIO 11:00–20:00" come se fosse il suo turno, con il turno che

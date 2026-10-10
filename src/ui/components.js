@@ -157,11 +157,12 @@ export function badgeStato(status) {
  * Elisa vuole sapere cosa farà lui, non cosa fa lei: "Elisa lascia / Elisa
  * prende" costringeva a ribaltare tutto a mente.
  *
- * Le parole sono due sole, ovunque: **prendi** e **lasci** (lascia e prende,
- * nelle righe che parlano di altri). Prima erano quattro paia (lascio/cerco,
- * lasci/prendi, cerca/offre, cede/cerca) e "cerca" voleva dire cose opposte:
- * nel cambio OFF il giorno che si lascia, nel cambio orario quello che si
- * vuole ricevere.
+ * Le parole sono due paia, e ognuno ha il suo: **prendi** e **lasci** per te,
+ * **offre** e **cerca** per un'altra persona (vedi `altroPunto`; offre = quello
+ * che tu prendi, cerca = quello che tu lasci). Prima erano quattro paia
+ * mescolate (lascio/cerco, lasci/prendi, cerca/offre, cede/cerca) e "cerca"
+ * voleva dire cose opposte: nel cambio OFF il giorno che si lascia, nel cambio
+ * orario quello che si vuole ricevere. Ora "cerca" guarda sempre dal tuo lato.
  *
  * - Un collega, prima di scegliere il suo turno: prendi quello che l'autore
  *   lascia, lasci quello che l'autore cerca ("uno dei tuoi turni"…).
@@ -213,12 +214,18 @@ export function boxScambio(tipo, prendi, lasci, { compatto = false } = {}) {
 }
 
 /**
- * La riga piccola sotto la box: cosa fa l'altra persona, nella stessa sintassi
- * (lascia, prende) e dopo di te. Chi apre una richiesta pensa a sé, il resto
- * è contesto.
+ * La riga piccola sotto la box: cosa fa l'altra persona, dopo di te. Chi apre
+ * una richiesta pensa a sé, il resto è contesto.
+ *
+ * Di un'altra persona si dice **offre** e **cerca**, di te prendi e lasci. Con
+ * "lascia/prende" accanto a "lasci/prendi" bastava una lettera a separare te
+ * da lei, e le righe si leggevano al contrario. Il legame è fisso e vale per
+ * ogni tipo di cambio: quello che lei **offre** è quello che tu **prendi**,
+ * quello che lei **cerca** è quello che tu **lasci**. (Prima "cerca" cambiava
+ * senso fra OFF e orario: ora non può, perché guarda sempre dal tuo lato.)
  */
-export function altroPunto(nome, lascia, prende) {
-  return html`<p class="altro-punto">${nome}: lascia ${lascia} · prende ${prende}</p>`;
+export function altroPunto(nome, offre, cerca) {
+  return html`<p class="altro-punto">${nome} offre ${offre} · cerca ${cerca}</p>`;
 }
 
 export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, offerto = null, riga = false } = {}) {

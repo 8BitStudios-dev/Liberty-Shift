@@ -728,7 +728,7 @@ export function dettaglio(params) {
           <div><strong>${nomeUtente(da)}</strong><div class="meta">ha proposto uno scambio</div></div>
         </header>
         ${raw(p.id === primaScelta ? '<p class="tag">La più vicina a quello che hai chiesto</p>' : '')}
-        <p>${p.aUserId === me ? 'Prendi' : p.daUserId === me ? 'Lasci' : `${da?.nome} lascia`} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
+        <p>${p.aUserId === me ? 'Prendi' : p.daUserId === me ? 'Lasci' : `${da?.nome} offre`} <strong>${formatDay(offerto?.data)}</strong> · ${shiftLabel(offerto)}</p>
         ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
         <div class="accettazioni">${raw(p.accettataDa.map((u) => `<span class="tag ok">${nomeUtente(store.user(u))} ha accettato</span>`).join(''))}</div>
         ${raw(azioni)}

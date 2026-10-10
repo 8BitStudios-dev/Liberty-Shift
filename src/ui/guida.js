@@ -84,8 +84,9 @@ export const GUIDE = {
       </p>
 
       <p class="esempio">
-        Luca lascia venerdì e prende lunedì. Tu venerdì sei a casa e lunedì
-        lavori: siete la risposta l'uno dell'altro.
+        Luca offre venerdì e cerca lunedì. Tu venerdì sei a casa e lunedì
+        lavori: prendi il suo venerdì e lasci il tuo lunedì, siete la risposta
+        l'uno dell'altro.
       </p>
 
       <p>

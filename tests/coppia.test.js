@@ -64,8 +64,8 @@ test('prima di scegliere un turno, un collega legge cosa prende e cosa lascia, s
   assert.match(t, /prendi .*11:00–20:00 .*lasci .*stesso giorno/);
   assert.doesNotMatch(t, /lascio|cerco /);
   // Il punto di vista dell'altra persona viene dopo, e solo lì compare il nome.
-  assert.ok(t.indexOf('prendi') < t.indexOf('Lorenzo: lascia'), 'prima io, poi lui');
-  assert.match(t, /Lorenzo: lascia .*11:00–20:00 · prende/);
+  assert.ok(t.indexOf('prendi') < t.indexOf('Lorenzo offre'), 'prima io, poi lui');
+  assert.match(t, /Lorenzo offre .*11:00–20:00 · cerca/);
 });
 
 test("all'autore il blocco parla con le sue parole", () => {
