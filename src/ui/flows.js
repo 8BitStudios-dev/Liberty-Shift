@@ -1237,9 +1237,11 @@ export function statistiche() {
 export function provaNotifiche() {
   const io = store.me;
   if (!io.superAdmin) return vuoto('Sezione riservata', 'Solo il SuperAdmin può mandare notifiche di prova.');
-  const persone = store.state.users
-    .filter((u) => u.daServer && u.attivo)
-    .sort((a, b) => (b.id === io.id) - (a.id === io.id) || nomeUtente(a).localeCompare(nomeUtente(b)));
+  // Io sono sul telefono con un id mio e non risulto fra i colleghi del
+  // server: mi aggiungo a mano, in cima, con l'id che il server conosce.
+  const persone = [io, ...store.state.users.filter((u) => u.daServer && u.attivo && u.id !== io.id)
+    .sort((a, b) => nomeUtente(a).localeCompare(nomeUtente(b)))]
+    .filter((u) => store.idServerDi(u.id));
   return html`
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
@@ -1250,10 +1252,10 @@ export function provaNotifiche() {
     <div id="lista-prova">
       ${raw(persone.map((u) => html`
       <label class="riga-iscritto card" style="display:flex;gap:12px;align-items:center">
-        <input type="checkbox" data-prova="${u.id}">
+        <input type="checkbox" data-prova="${store.idServerDi(u.id)}">
         <span class="avatar">${iniziali(u)}</span>
         <span style="flex:1"><strong>${nomeUtente(u)}${u.id === io.id ? ' (tu)' : ''}</strong>
-          <span class="meta" data-dispositivi="${u.id}" style="display:block">controllo…</span></span>
+          <span class="meta" data-dispositivi="${store.idServerDi(u.id)}" style="display:block">controllo…</span></span>
       </label>`).join(''))}
     </div>
     <div class="barra-azioni">

@@ -794,6 +794,16 @@ export const store = {
     return { ok: true };
   },
 
+  /**
+   * Gli id che il server conosce. Io sul telefono sono `u_io` e per il server
+   * un'altra cosa (`profilo.idServer`): chi parla con una funzione del server
+   * passa da qui, non da `u.id`.
+   */
+  idServerDi(userId) { return serverDi(this.state, userId); },
+  utenteDaIdServer(idServer) {
+    return this.state.profilo?.idServer === idServer ? this.me : this.user(idServer);
+  },
+
   proponiScambio({ requestId, shiftOffertoId, messaggio }) {
     const r = this.request(requestId);
     if (!r) return { errori: ['Richiesta non trovata: forse è stata chiusa o cancellata. Aggiorna la pagina.'] };

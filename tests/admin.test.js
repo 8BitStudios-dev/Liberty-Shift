@@ -56,6 +56,16 @@ test('la richiesta chiusa da un admin resta visibile 6 ore a chi l\'ha pubblicat
   assert.deepEqual(store.chiuseDaAdminRecenti(adesso + 6.1 * 3600 * 1000).map((r) => r.id), []);
 });
 
+test('per il server io sono il mio idServer, e viceversa: serve alla prova delle notifiche', () => {
+  store.reset(seed());
+  store.state.profilo = { ...store.state.profilo, idServer: 'srv-lorenzo' };
+  const me = store.state.currentUserId;
+  assert.equal(store.idServerDi(me), 'srv-lorenzo');
+  assert.equal(store.utenteDaIdServer('srv-lorenzo').id, me);
+  // Gli altri hanno già l'id del server.
+  assert.equal(store.idServerDi('u_martina'), 'u_martina');
+});
+
 test('un admin rimuove la richiesta di un altro: stato dedicato, non una chiusura normale', () => {
   store.reset(seed());
   const { ok } = store.adminRimuoviRichiesta('rq_luca_1', 'Contenuto duplicato.');

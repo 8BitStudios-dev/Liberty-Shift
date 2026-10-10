@@ -170,7 +170,7 @@ async function mostraEsiti() {
   if (errore) { box.textContent = errore; return; }
   if (!dati.prove.length) { box.textContent = 'Ancora nessuna prova.'; return; }
   box.innerHTML = dati.prove.map((p) => {
-    const nome = nomeUtente(store.user(p.user_id)) || 'Sconosciuto';
+    const nome = nomeUtente(store.utenteDaIdServer(p.user_id)) || 'Sconosciuto';
     const quando = new Date(p.inviata_il).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     return `<p><strong>${esc(nome)}</strong> · ${quando}: ${p.esito ? ETICHETTA_ESITO[p.esito] : senzaRisposta(p)}</p>`;
   }).join('');
@@ -549,7 +549,7 @@ const AZIONI = {
     el.disabled = false;
     if (errore) { esito.textContent = errore; return; }
     esito.innerHTML = dati.esiti.map((r) => {
-      const nome = nomeUtente(store.user(r.id)) || 'Sconosciuto';
+      const nome = nomeUtente(store.utenteDaIdServer(r.id)) || 'Sconosciuto';
       const dettaglio = r.inviate ? `partita su ${r.inviate} ${r.inviate === 1 ? 'dispositivo' : 'dispositivi'}`
         : r.rimosse ? 'iscrizione scaduta, rimossa: deve riaccendere le notifiche'
           : r.errori.length ? `errore: ${esc(r.errori.join(', '))}` : 'nessun dispositivo registrato';
