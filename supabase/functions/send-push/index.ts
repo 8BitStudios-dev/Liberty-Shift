@@ -543,6 +543,17 @@ async function provaNotifiche(req: Request) {
     return rispostaCors({ ok: true });
   }
 
+  // Se il tocco sulla notifica non porta alla prova (su iPhone, con l'app
+  // chiusa, il collegamento può andare perso), è l'app a chiederlo: c'è una
+  // prova mia senza risposta, ancora entro l'ora in cui conta come in attesa?
+  if (corpo.azione === 'mie') {
+    const da = new Date(Date.now() - RULES.provaNotificheAttesaOre * 3600_000).toISOString();
+    const [prova] = await leggi(
+      `prove_notifiche?user_id=eq.${io.id}&esito=is.null&inviata_il=gte.${encodeURIComponent(da)}&select=id&order=inviata_il.desc&limit=1`,
+    );
+    return rispostaCors({ prova: prova?.id || null });
+  }
+
   // Il resto è del SuperAdmin.
   if (!io.super_admin) return rispostaCors({ errore: 'non autorizzato' }, 401);
 

@@ -6,7 +6,7 @@
 // una cache-first pura, pubblicare una correzione non sarebbe servito a niente
 // finché qualcuno non svuotava il browser — e nessuno lo fa.
 
-const CACHE = 'liberty-shift-v122';
+const CACHE = 'liberty-shift-v123';
 
 const ASSET = [
   './',
@@ -105,7 +105,12 @@ self.addEventListener('notificationclick', (e) => {
   const url = e.notification.data?.url || qui('#/home');
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((finestre) => {
     const aperta = finestre.find((c) => c.url.startsWith(self.registration.scope) && 'focus' in c);
-    if (aperta) return aperta.focus().then((c) => (c || aperta).navigate?.(url)).catch(() => {});
+    // Con l'app aperta si manda a dire dove andare, invece di fidarsi di
+    // `navigate`, che su iPhone non sempre parte: la pagina cambia il suo `#`.
+    if (aperta) {
+      aperta.postMessage({ vai: new URL(url).hash });
+      return aperta.focus().catch(() => {});
+    }
     return self.clients.openWindow(url);
   }));
 });

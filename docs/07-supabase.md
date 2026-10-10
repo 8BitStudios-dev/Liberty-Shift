@@ -589,6 +589,11 @@ arrivata o non è stata toccata: l'app lo scrive *in attesa* per la prima ora e 
 *nessuna risposta*. La risposta vale una volta sola. Il SuperAdmin
 rivede le ultime 30 prove nella stessa pagina. I pulsanti stanno nell'app e non
 nella notifica perché su iPhone le azioni nelle notifiche web non esistono.
+Se il tocco sulla notifica non porta alla pagina (su iPhone, con l'app chiusa,
+il collegamento può perdersi e si apre la Home), l'app lo chiede al server
+(`azione: 'mie'`) all'apertura e a ogni ripresa, e porta da sola alla prova
+ancora senza risposta della prima ora. Con l'app già aperta, il service worker
+manda a dire la destinazione (`postMessage`) e la pagina cambia il suo `#`.
 
 Passa tutto da `send-push`, che per questo ha un secondo ingresso: senza
 `x-webhook-secret` e con un token di sessione, controlla da sé con Auth chi

@@ -18,7 +18,7 @@ import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
 import { karma, traguardiNuovi } from '../core/karma.js';
-import { scaricaCalendario, candidatiAccesso, provaNotifiche } from '../core/supabase.js';
+import { scaricaCalendario, candidatiAccesso, provaNotifiche, collegato } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
 import {
   campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito, coppiaCedoCerco,
@@ -1701,6 +1701,7 @@ avviaOreBrevi();
 render();
 aggiornamentoSilenzioso();
 sincronizzaSilenziosa();
+controllaProvaInSospeso();
 
 /**
  * La bacheca dei colleghi, all'apertura.
@@ -1749,6 +1750,19 @@ function allaRipresa() {
   ultimaRipresa = Date.now();
   aggiornamentoSilenzioso();
   sincronizzaSilenziosa();
+  controllaProvaInSospeso();
+}
+
+/**
+ * Una notifica di prova senza risposta porta alla sua pagina anche se il
+ * tocco sulla notifica non c'è arrivato: su iPhone, con l'app chiusa, il
+ * collegamento della notifica può perdersi e si apre la Home. Vale solo per
+ * la prima ora (`RULES.provaNotificheAttesaOre`), poi è "nessuna risposta".
+ */
+async function controllaProvaInSospeso() {
+  if (!collegato() || location.hash.startsWith('#/prova')) return;
+  const { dati } = await provaNotifiche({ azione: 'mie' });
+  if (dati?.prova && !location.hash.startsWith('#/prova')) location.hash = `#/prova?id=${dati.prova}`;
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') allaRipresa();
@@ -1781,6 +1795,16 @@ setInterval(() => {
 //  · quando la versione nuova prende il controllo, la pagina si ricarica da
 //    sola, ma solo se non c'è un foglio aperto (un messaggio a metà non si
 //    butta): in quel caso si aspetta che l'app torni in primo piano.
+// Il tocco su una notifica con l'app già aperta: il service worker non può
+// cambiare la pagina da sé con certezza (su iPhone `navigate` non sempre parte),
+// quindi la manda a dire e qui si cambia il pezzo dopo il `#`.
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    const vai = e.data?.vai;
+    if (typeof vai === 'string' && vai.startsWith('#/')) location.hash = vai;
+  });
+}
+
 if ('serviceWorker' in navigator) {
   // Alla prima installazione non c'è niente da ricaricare: la pagina è già
   // quella giusta.
