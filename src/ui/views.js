@@ -382,6 +382,7 @@ export function profilo() {
         <summary><span class="titolo-admin">${icona('admin', { px: 18 })} Amministrazione</span></summary>
         ${me.admin ? '<button class="btn secondario largo" data-act="vai" data-to="#/statistiche">Statistiche</button>' : ''}
         ${tastoIscritti(me)}
+        ${me.superAdmin ? '<button class="btn secondario largo" data-act="vai" data-to="#/prova-notifiche">Prova notifiche</button>' : ''}
       </details>
     </section>` : '')}`;
 }

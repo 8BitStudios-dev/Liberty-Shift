@@ -18,7 +18,7 @@ import { GUIDE, schedaGuida, VERSIONE_GUIDA } from './guida.js';
 import { noteLegali, VERSIONE_NOTE } from './legale.js';
 import { controllaPassword } from '../core/accesso.js';
 import { karma, traguardiNuovi } from '../core/karma.js';
-import { scaricaCalendario, candidatiAccesso } from '../core/supabase.js';
+import { scaricaCalendario, candidatiAccesso, provaNotifiche } from '../core/supabase.js';
 import { serverConfigurato } from '../core/config.js';
 import {
   campoPortachiavi, nomeUtente, chipsOrariTipici, messaggioAvviso, messaggioInvito, coppiaCedoCerco,
@@ -143,6 +143,19 @@ function eIndietro(el) {
 // usa l'app. Resta dov'era: tornare in cima ogni dieci minuti a chi sta
 // leggendo la bacheca sarebbe peggio di una bacheca vecchia di dieci minuti.
 // (Da `hashchange` arriva un Event, che `fermo` non ce l'ha.)
+/** Quanti dispositivi ha ognuno, scritto direttamente sulle righe già disegnate. */
+async function mostraDispositivi() {
+  const { errore, dati } = await provaNotifiche({ azione: 'elenco' });
+  const righe = document.querySelectorAll('[data-dispositivi]');
+  righe.forEach((el) => {
+    if (errore) { el.textContent = 'non so'; return; }
+    const n = dati.dispositivi?.[el.dataset.dispositivi] || 0;
+    el.textContent = n ? `${n} ${n === 1 ? 'dispositivo' : 'dispositivi'}` : 'nessun dispositivo';
+    if (!n) el.style.opacity = '.6';
+  });
+  if (errore) toast(errore);
+}
+
 function render({ fermo = false } = {}) {
   const { percorso, params } = parseHash();
   const posizione = fermo ? { app: app.scrollTop, finestra: window.scrollY } : null;
@@ -198,6 +211,7 @@ function render({ fermo = false } = {}) {
     richiesta: F.dettaglio,
     statistiche: F.statistiche,
     iscritti: F.gestioneIscritti,
+    'prova-notifiche': F.provaNotifiche,
     setup: P.schermataProfilo,
     'primi-turni': P.schermataPrimiTurni,
     impostazioni: V.impostazioni,
@@ -225,6 +239,7 @@ function render({ fermo = false } = {}) {
   // La guida della sezione, la prima volta che ci si entra.
   if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
   if (percorso === 'profilo') annunciaTraguardi();
+  if (percorso === 'prova-notifiche' && store.me.superAdmin) mostraDispositivi();
 
   // Lo stato delle notifiche si scopre solo chiedendo al browser: si ridisegna
   // quando arriva, e solo se è cambiato, altrimenti sarebbe un giro infinito.
@@ -498,6 +513,30 @@ const AZIONI = {
     }
     render();
     sheet('Password temporanea', F.passwordTemporanea(u, esito.password));
+  },
+
+  'invia-prova': async (_, el) => {
+    const scelti = [...document.querySelectorAll('[data-prova]:checked')].map((c) => c.dataset.prova);
+    if (!scelti.length) { toast('Scegli almeno una persona.'); return; }
+    const esito = document.getElementById('esito-prova');
+    el.disabled = true;
+    esito.textContent = 'Invio in corso…';
+    const { errore, dati } = await provaNotifiche({
+      azione: 'invia',
+      destinatari: scelti,
+      titolo: document.querySelector('[data-campo="prova-titolo"]')?.value,
+      testo: document.querySelector('[data-campo="prova-testo"]')?.value,
+    });
+    el.disabled = false;
+    if (errore) { esito.textContent = errore; return; }
+    esito.innerHTML = dati.esiti.map((r) => {
+      const nome = nomeUtente(store.user(r.id)) || 'Sconosciuto';
+      const dettaglio = r.inviate ? `partita su ${r.inviate} ${r.inviate === 1 ? 'dispositivo' : 'dispositivi'}`
+        : r.rimosse ? 'iscrizione scaduta, rimossa: deve riaccendere le notifiche'
+          : r.errori.length ? `errore: ${esc(r.errori.join(', '))}` : 'nessun dispositivo registrato';
+      return `<p><strong>${esc(nome)}</strong>: ${dettaglio}</p>`;
+    }).join('');
+    mostraDispositivi();
   },
 
   esci: () => {

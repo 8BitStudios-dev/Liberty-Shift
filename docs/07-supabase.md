@@ -578,6 +578,16 @@ Cambiare la coppia VAPID vuol dire cambiare anche `chiaveVapidPubblica` in
 `src/core/config.js`, e tutti i dispositivi dovranno riaccendere le notifiche:
 le iscrizioni vecchie sono legate alla chiave vecchia.
 
+**La prova delle notifiche (solo SuperAdmin).** In Profilo → Amministrazione →
+*Prova notifiche* si sceglie a chi mandare una notifica di test, con titolo e
+testo a piacere. La pagina dice anche quanti dispositivi ha registrato ognuno e,
+dopo l'invio, com'è andata per ciascuno (partita, iscrizione scaduta e rimossa,
+nessun dispositivo, errore). Passa da `send-push`, che per questo ha un secondo
+ingresso: senza `x-webhook-secret` e con un token di sessione, controlla da sé
+con Auth che chi chiama sia un profilo attivo con `super_admin` (la funzione è
+pubblicata senza verifica JWT). Un segreto sbagliato resta un 401. Al massimo 20
+persone per invio. Dopo averla modificata va ripubblicata come al solito.
+
 **Il mittente VAPID** è l'indirizzo del sito, non un'email: il protocollo
 accetta entrambi, e così nessun indirizzo personale arriva ai servizi push.
 

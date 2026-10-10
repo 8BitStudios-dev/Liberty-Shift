@@ -428,6 +428,18 @@ export async function amministra(azione, id) {
 }
 
 /**
+ * La prova delle notifiche del SuperAdmin. Passa dalla funzione che le manda
+ * davvero (`send-push`), che controlla da sé che chi chiama sia il SuperAdmin.
+ * `azione`: 'elenco' (quanti dispositivi ha ognuno) oppure 'invia'.
+ */
+export async function provaNotifiche(corpo) {
+  const r = await chiama('/functions/v1/send-push', { method: 'POST', body: JSON.stringify(corpo) });
+  if (r.errore) return { errore: r.errore };
+  if (r.dati?.errore) return { errore: r.dati.errore };
+  return { errore: null, dati: r.dati };
+}
+
+/**
  * "Ho dimenticato la password": lascia sul server la richiesta che permette a
  * un admin di generarne una temporanea. Senza sessione, come la ricerca
  * dell'account: è proprio la password che manca. Restituisce quanti account

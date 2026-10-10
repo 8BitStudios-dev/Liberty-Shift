@@ -481,10 +481,75 @@ const json = (corpo: unknown, stato = 200) => new Response(JSON.stringify(corpo)
   status: stato, headers: { 'Content-Type': 'application/json' },
 });
 
+// ---- PROVA DELLE NOTIFICHE (solo SuperAdmin)
+//
+// L'unico percorso che non arriva dal database ma dall'app. Qui la funzione è
+// pubblicata senza verifica del JWT, quindi il token si controlla da sé
+// chiedendolo a Auth: una firma falsa o scaduta non passa, e nemmeno la sola
+// chiave pubblica dell'app. Chi passa deve essere un profilo attivo con
+// `super_admin`: nessun altro può mandare notifiche a nome dell'app.
+
+const CORS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-webhook-secret',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+const rispostaCors = (corpo: unknown, stato = 200) => new Response(JSON.stringify(corpo), {
+  status: stato, headers: { ...CORS, 'Content-Type': 'application/json' },
+});
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PROVA_MAX_DESTINATARI = 20;
+
+async function superAdminChiamante(req: Request): Promise<string | null> {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  if (!token) return null;
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+    headers: { apikey: SERVICE_ROLE, Authorization: `Bearer ${token}` },
+  });
+  if (!r.ok) return null;
+  const utente = await r.json();
+  if (!utente?.id || !UUID.test(utente.id)) return null;
+  const profilo = (await leggi(`profili?id=eq.${utente.id}&select=super_admin,attivo`))[0];
+  return profilo?.super_admin && profilo?.attivo ? utente.id : null;
+}
+
+async function provaNotifiche(req: Request) {
+  if (!await superAdminChiamante(req)) return rispostaCors({ errore: 'non autorizzato' }, 401);
+  let corpo: { azione?: string; destinatari?: unknown; titolo?: unknown; testo?: unknown };
+  try { corpo = await req.json(); } catch { return rispostaCors({ errore: 'Richiesta illeggibile.' }, 400); }
+
+  // Chi ha almeno un dispositivo: serve a scegliere a chi mandare la prova.
+  if (corpo.azione === 'elenco') {
+    const righe = await leggi('push_subscriptions?select=user_id');
+    const dispositivi: Record<string, number> = {};
+    for (const r of righe as { user_id: string }[]) dispositivi[r.user_id] = (dispositivi[r.user_id] || 0) + 1;
+    return rispostaCors({ dispositivi });
+  }
+
+  if (corpo.azione !== 'invia') return rispostaCors({ errore: 'Azione non riconosciuta.' }, 400);
+  const destinatari = Array.isArray(corpo.destinatari) ? [...new Set(corpo.destinatari)] : [];
+  if (!destinatari.length) return rispostaCors({ errore: 'Scegli almeno una persona.' }, 400);
+  if (destinatari.length > PROVA_MAX_DESTINATARI || !destinatari.every((d) => typeof d === 'string' && UUID.test(d))) {
+    return rispostaCors({ errore: 'Destinatari non validi.' }, 400);
+  }
+  const title = String(corpo.titolo || '').trim().slice(0, 80) || 'Prova notifiche';
+  const body = String(corpo.testo || '').trim().slice(0, 200) || 'Questa è una notifica di prova di Liberty Shift.';
+  const esiti = [];
+  for (const id of destinatari as string[]) {
+    esiti.push({ id, ...(await invia(id, { title, body, url: '#/home' })) });
+  }
+  return rispostaCors({ esiti });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS });
   const s = await caricaSegreti();
   if (!s) return json({ errore: 'Segreti delle notifiche non configurati.' }, 500);
-  if (req.headers.get('x-webhook-secret') !== s.push_webhook) return json({ errore: 'non autorizzato' }, 401);
+  if (req.headers.get('x-webhook-secret') !== s.push_webhook) {
+    // Senza il segreto del database l'unica strada è la prova del SuperAdmin.
+    if (!req.headers.has('x-webhook-secret')) return provaNotifiche(req);
+    return json({ errore: 'non autorizzato' }, 401);
+  }
 
   const { type, record, old_record, autore, destinatario, giorno, utenti } = await req.json();
   if (type === 'PASSWORD') {

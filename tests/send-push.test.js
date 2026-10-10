@@ -232,3 +232,20 @@ test('il favore da ricambiare si dice per mese, come nell\'app', () => {
   assert.equal(meseDelFavore('2026-10-02T09:00:00Z', '2026-10-04'), 'questo mese');
   assert.equal(meseDelFavore('2026-09-20T18:00:00Z', '2026-10-04'), 'a settembre');
 });
+
+test('la prova delle notifiche passa solo per un SuperAdmin attivo, verificato da Auth', () => {
+  const prova = sorgente.slice(sorgente.indexOf('async function superAdminChiamante'), sorgente.indexOf('Deno.serve'));
+  // Il token non si legge a occhio: si chiede a Auth, la funzione non ha verifica JWT.
+  assert.match(prova, /auth\/v1\/user/);
+  assert.match(prova, /super_admin && profilo\?\.attivo/);
+  assert.match(prova, /rispostaCors\(\{ errore: 'non autorizzato' \}, 401\)/);
+  // Si può provare a un massimo di persone, e solo con id veri.
+  assert.match(prova, /PROVA_MAX_DESTINATARI/);
+});
+
+test('senza segreto e senza sessione la funzione risponde ancora 401 non autorizzato', () => {
+  const gestore = sorgente.slice(sorgente.indexOf('Deno.serve'));
+  // Un segreto sbagliato non apre la strada della prova: solo la sua assenza.
+  assert.match(gestore, /if \(!req\.headers\.has\('x-webhook-secret'\)\) return provaNotifiche\(req\)/);
+  assert.match(gestore, /return json\(\{ errore: 'non autorizzato' \}, 401\)/);
+});

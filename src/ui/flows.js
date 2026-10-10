@@ -1228,6 +1228,45 @@ export function statistiche() {
  * di chi l'ha chiesta: il tasto compare solo lì, e anche se comparisse
  * altrove il server lo rifiuterebbe.
  */
+/**
+ * La prova delle notifiche, solo per il SuperAdmin: si sceglie a chi mandare
+ * una notifica di test e cosa dice. I dispositivi di ognuno arrivano dopo, dal
+ * server (vedi `prova-elenco` in app.js): il telefono non può leggere le
+ * iscrizioni degli altri.
+ */
+export function provaNotifiche() {
+  const io = store.me;
+  if (!io.superAdmin) return vuoto('Sezione riservata', 'Solo il SuperAdmin può mandare notifiche di prova.');
+  const persone = store.state.users
+    .filter((u) => u.daServer && u.attivo)
+    .sort((a, b) => (b.id === io.id) - (a.id === io.id) || nomeUtente(a).localeCompare(nomeUtente(b)));
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
+      <h1>Prova notifiche</h1>
+    </header>
+    <p class="testo-tenue">Scegli a chi mandare una notifica di test. Arriva solo a chi ha le notifiche accese su almeno un dispositivo.</p>
+    <label class="campo">
+      <input type="text" class="testo" data-campo="prova-titolo" maxlength="80" value="Prova notifiche" autocomplete="off">
+    </label>
+    <label class="campo">
+      <input type="text" class="testo" data-campo="prova-testo" maxlength="200" value="Questa è una notifica di prova di Liberty Shift." autocomplete="off">
+    </label>
+    <div id="lista-prova">
+      ${raw(persone.map((u) => html`
+      <label class="riga-iscritto card" style="display:flex;gap:12px;align-items:center">
+        <input type="checkbox" data-prova="${u.id}">
+        <span class="avatar">${iniziali(u)}</span>
+        <span style="flex:1"><strong>${nomeUtente(u)}${u.id === io.id ? ' (tu)' : ''}</strong>
+          <span class="meta" data-dispositivi="${u.id}" style="display:block">controllo…</span></span>
+      </label>`).join(''))}
+    </div>
+    <div class="barra-azioni">
+      <button class="btn primario largo" data-act="invia-prova">Invia la prova</button>
+    </div>
+    <div id="esito-prova" class="testo-tenue" aria-live="polite"></div>`;
+}
+
 export function gestioneIscritti() {
   const io = store.me;
   if (!io.superAdmin && !io.admin) return vuoto('Sezione riservata', 'Solo gli admin possono vederla.');
