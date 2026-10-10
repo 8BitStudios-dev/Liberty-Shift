@@ -90,13 +90,67 @@ export function aiutiNelMese(userId, stato, mese) {
  */
 export const daiAiuta = (aiuto) => aiuto.origine == null || aiuto.origine === 'aiuta';
 
+/** Una data più `n` mesi, senza sforare: il 31 gennaio più un mese è il 28 febbraio. */
+function piuMesi(data, n) {
+  const d = new Date(data);
+  const giorno = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  const ultimo = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(giorno, ultimo));
+  return d;
+}
+
 /**
- * Le priorità del mese: una di base, più una per ogni aiuto, fino al tetto.
- * `usate` le conta chi chiama: sul telefono stanno nelle sue richieste.
+ * Le priorità che una persona può usare adesso, ognuna con la sua scadenza.
+ *
+ * Ogni priorità è un gettone con una data di nascita e una di scadenza, un
+ * mese dopo (`RULES.priority.scadenzaMesi`):
+ *  - quella mensile nasce il primo del mese e vale fino al primo del mese dopo;
+ *  - quella di un aiuto nasce quando UKG approva il cambio (solo "Aiuta un
+ *    collega", vedi `daiAiuta`) e vale fino allo stesso giorno del mese dopo.
+ *
+ * Ogni richiesta pubblicata con la priorità ne ha consumata una, la prima a
+ * scadere fra quelle valide quel giorno: così non se ne spreca nessuna. Le
+ * ancora libere adesso, fino al tetto, sono quelle da usare. Si conta tutto
+ * da quello che sta sul server, non da un contatore sul telefono.
+ *
+ * Restituisce `{ disponibili, prossimaScadenza }`; la scadenza è quella della
+ * prima a scadere fra le libere, `null` se non ce ne sono.
  */
-export function prioritaDelMese(aiuti, usate) {
-  const { creditsPerMonth, perAiuto, tetto } = RULES.priority;
-  return Math.max(0, Math.min(tetto, creditsPerMonth + aiuti * perAiuto) - usate);
+export function prioritaDisponibili(userId, stato, adesso = new Date()) {
+  const { scadenzaMesi, tetto } = RULES.priority;
+  const usi = (stato.requests || [])
+    .filter((r) => r.userId === userId && r.prioritaFinoA && r.createdAt)
+    .map((r) => new Date(r.createdAt))
+    .sort((a, b) => a - b);
+
+  // Un gettone mensile per ogni mese in cui si è usata o si può usare una priorità.
+  const mesi = new Map();
+  for (const quando of [...usi, adesso]) {
+    const da = new Date(quando.getFullYear(), quando.getMonth(), 1);
+    mesi.set(da.getTime(), { da, fino: piuMesi(da, scadenzaMesi) });
+  }
+  const gettoni = [...mesi.values()];
+  for (const aiuto of aiutiConclusi(stato)) {
+    if (aiuto.aiutante !== userId || !aiuto.approvatoIl || !daiAiuta(aiuto)) continue;
+    const da = new Date(aiuto.approvatoIl);
+    gettoni.push({ da, fino: piuMesi(da, scadenzaMesi) });
+  }
+
+  const validoAl = (g, quando) => g.da <= quando && quando < g.fino;
+  for (const quando of usi) {
+    const consumato = gettoni
+      .filter((g) => !g.usato && validoAl(g, quando))
+      .sort((a, b) => a.fino - b.fino)[0];
+    if (consumato) consumato.usato = true;
+  }
+
+  const libere = gettoni.filter((g) => !g.usato && validoAl(g, adesso)).sort((a, b) => a.fino - b.fino);
+  return {
+    disponibili: Math.min(tetto, libere.length),
+    prossimaScadenza: libere[0]?.fino || null,
+  };
 }
 
 /** L'ultimo aiuto per persona, dal punto di vista scelto. */

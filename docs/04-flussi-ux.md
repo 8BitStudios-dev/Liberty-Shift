@@ -108,6 +108,14 @@ si può proporre uno scambio in cui nessuno dei due cambierebbe orario: né il
 tasto Proponi né Aiuta lo offrono. Il Full Time che prende un turno corto non
 entra mai prima delle 08:00: l'11:00–16:00 diventa 11:00–20:00.
 
+### Le priorità scadono dopo un mese
+Ogni priorità, mensile o da aiuto, vale un mese da quando è stata generata
+(`RULES.priority.scadenzaMesi`; calcolo in `prioritaDisponibili`, `karma.js`).
+Il riquadro di Aiuta un collega dice quante ne hai e quando scade la prima
+(«la prima scade il 12 novembre»); lo stesso fa il foglio «Come funziona la
+priorità». Quando ne usi una si consuma quella che scade prima. Il tetto di 3
+conta quelle da usare insieme, non quelle del mese.
+
 ### La priorità la dà solo Aiuta un collega
 Il pulsante *Proponi lo scambio* di Aiuta un collega scrive sulla proposta
 `origine: 'aiuta'` (`data-origine` sul pulsante, letta dal foglio di proposta);

@@ -138,7 +138,7 @@ export function home() {
         </div>
         <span class="hero-azioni">
           <button class="priorita-tasto ${credito > 0 ? '' : 'usata'}" data-act="spiega-priorita"
-                  aria-label="${credito > 0 ? 'Priorità del mese disponibile' : 'Priorità del mese già usata'}">
+                  aria-label="${credito > 0 ? 'Hai una priorità da usare' : 'Nessuna priorità da usare'}">
             <span class="priorita-cerchio">${raw(icona('priorita', { px: 18 }))}</span>
             <span class="priorita-etichetta">Priorità</span>
           </button>
@@ -317,7 +317,7 @@ export function bacheca(params) {
 // -------------------------------------------------------------- PROFILO
 
 /**
- * Quando hai usato la priorità del mese, se l'hai usata. Sta nella tendina
+ * Quando le priorità sono finite, e l'ultima volta che ne hai usata una. Sta nella tendina
  * che si apre dalla stella in Home: il riquadro del Profilo che la mostrava
  * ripeteva quello che la stella dice già.
  *
@@ -327,13 +327,12 @@ export function bacheca(params) {
  */
 export function usoPriorita() {
   if (store.creditoPriorita() > 0) return '';
-  const mese = monthKey(todayISO());
   const usata = store.state.requests
-    .filter((r) => r.userId === store.me.id && r.prioritaFinoA && r.createdAt?.slice(0, 7) === mese)
+    .filter((r) => r.userId === store.me.id && r.prioritaFinoA)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   return `<p class="priorita-usata">${usata
-    ? `L'hai usata ${formatDay(usata.createdAt.slice(0, 10), true).toLowerCase()}.`
-    : "L'hai già usata questo mese."}</p>`;
+    ? `L'ultima l'hai usata ${formatDay(usata.createdAt.slice(0, 10), true).toLowerCase()}.`
+    : "Non ne hai da usare."}</p>`;
 }
 
 export function profilo() {

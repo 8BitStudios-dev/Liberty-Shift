@@ -387,7 +387,7 @@ export function cambioDalGiorno() {
       </label>
       <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
         <input type="checkbox" data-act="priorita-giorno" ${raw(dalGiorno.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
-        <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (te ne resta ${credito}, dura ${RULES.priority.durationHours} ore)</span>
+        <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa una priorità (te ne ${credito === 1 ? 'resta 1' : `restano ${credito}`}, dura ${RULES.priority.durationHours} ore)</span>
       </label>`)}
     ${raw(errori.length ? '' : risultati.length ? html`
       <h2 class="titolo-gruppo">Colleghi disponibili (${risultati.length})</h2>
@@ -626,7 +626,7 @@ function passoRiepilogo() {
 
     <label class="switch ${credito < 1 ? 'disabilitato' : ''}">
       <input type="checkbox" data-act="priorita" ${raw(draft.usaPriorita ? 'checked' : '')} ${raw(credito < 1 ? 'disabled' : '')}>
-      <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa la priorità del mese (te ne resta ${credito}, dura ${RULES.priority.durationHours} ore)</span>
+      <span><span class="icona-in-riga stella">${raw(icona('priorita', { px: 15 }))}</span> Usa una priorità (te ne ${credito === 1 ? 'resta 1' : `restano ${credito}`}, dura ${RULES.priority.durationHours} ore)</span>
     </label>
     <p class="testo-tenue">La priorità si sceglie adesso: non si aggiunge dopo, e se cancelli la richiesta non ti viene restituita.</p>
 
@@ -1112,28 +1112,27 @@ export function formGrazie(proposalId) {
  * altrimenti chi ha appena aiutato non vedrebbe cambiare niente.
  */
 function riquadroRicompensa() {
-  const { creditsPerMonth, perAiuto, tetto } = RULES.priority;
-  const aiuti = store.aiutiDelMese();
-  const guadagnate = Math.min(tetto - creditsPerMonth, aiuti * perAiuto);
-  const ancora = tetto - creditsPerMonth - guadagnate;
+  const info = store.prioritaInfo();
   const inAttesa = store.aiutiInAttesa();
-  const volte = aiuti === 1 ? 'un tuo aiuto' : `${aiuti} tuoi aiuti`;
-  const stato = ancora > 0
-    ? `Questo mese UKG ha approvato ${volte}: ${guadagnate === 1 ? 'una priorità in più' : `${guadagnate} priorità in più`}. Ne puoi guadagnare ancora ${ancora}.`
-    : `Questo mese UKG ha approvato ${volte}: hai già tutte le priorità che si possono avere (${tetto}).`;
-  const attesa = inAttesa && ancora > 0
-    ? ` ${inAttesa === 1 ? 'Un altro cambio aspetta' : `Altri ${inAttesa} cambi aspettano`} l'approvazione di UKG.`
+  const attesa = inAttesa
+    ? ` ${inAttesa === 1 ? 'Un tuo cambio aspetta' : `${inAttesa} tuoi cambi aspettano`} l'approvazione di UKG.`
     : '';
-  // Finché UKG non ha approvato niente basta l'invito: i conti li fa chi ha
-  // già cominciato ad aiutare.
-  const testo = aiuti === 0
-    ? `Sii gentile e puoi guadagnare priorità.${inAttesa ? ` ${inAttesa === 1 ? 'Un tuo cambio aspetta' : `${inAttesa} tuoi cambi aspettano`} l'approvazione di UKG.` : ''}`
-    : html`${stato}${attesa} Ora ne hai <strong>${store.creditoPriorita()}</strong> da usare.`;
+  // Finché non c'è niente da dire sul conto basta l'invito: la priorità in più
+  // arriva con l'approvazione di UKG e dura un mese da quel giorno.
+  const conto = info.disponibili
+    ? html` Ora ne hai <strong>${info.disponibili}</strong> da usare, la prima scade ${scadenzaPriorita(info.prossimaScadenza)}.`
+    : ' Ora non ne hai da usare.';
+  const testo = html`Ogni aiuto approvato da UKG ti dà una priorità in più, valida un mese.${attesa}${conto}`;
   return html`
     <div class="ricompensa-aiuto">
       <span class="icona-in-riga stella">${raw(icona('priorita', { px: 16 }))}</span>
       <p>${raw(testo)}</p>
     </div>`;
+}
+
+/** "il 12 novembre", per dire quando scade la prima priorità. */
+export function scadenzaPriorita(data) {
+  return data ? `il ${data.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}` : '';
 }
 
 /**
@@ -1152,7 +1151,7 @@ export function aiuta() {
       <button class="icon-btn" data-act="guida" data-sezione="aiuta" title="Come funziona">?</button>
     </header>
     <p class="occhiello">
-      Dai una mano a un collega e guadagni una priorità in più per il mese.
+      Dai una mano a un collega e guadagni una priorità in più, valida un mese.
       Vedi solo le richieste che puoi coprire con i tuoi turni: prima le ultime chiamate, poi quelle che aspettano da più tempo.
     </p>
     ${raw(riquadroRicompensa())}

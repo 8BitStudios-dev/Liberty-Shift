@@ -1096,9 +1096,9 @@ const AZIONI = {
         <p>Inserite il cambio su UKG: basta che lo faccia uno dei due.</p>
         <p class="testo-tenue">${raw(icona('priorita', { px: 14 }))} Hai aiutato un collega. ${wrap.dataset.origine !== 'aiuta'
     ? 'La priorità in più la guadagni aiutando da “Aiuta un collega”.'
-    : store.aiutiDelMese() * RULES.priority.perAiuto + RULES.priority.creditsPerMonth < RULES.priority.tetto
-      ? 'Quando UKG approva il cambio, ricevi una priorità in più.'
-      : 'Questo mese hai già tutte le priorità che si possono avere.'}</p>`, {
+    : store.creditoPriorita() < RULES.priority.tetto
+      ? 'Quando UKG approva il cambio, ricevi una priorità in più, valida un mese.'
+      : `Hai già tutte le priorità che si possono avere insieme (${RULES.priority.tetto}).`}</p>`, {
         azioni: '<button class="btn primario largo" data-chiudi>Ho capito</button>',
       });
     } else {
@@ -1531,15 +1531,16 @@ const AZIONI = {
   'spiega-priorita': () => {
     sheet('Come funziona la priorità', html`
       <ul class="elenco">
-        <li>Hai <strong>1 priorità al mese</strong>, dura <strong>48 ore</strong>.</li>
-        <li>Ogni collega che aiuti te ne dà <strong>una in più</strong>, quando UKG approva il cambio, fino a ${RULES.priority.tetto} al mese.</li>
+        <li>Hai <strong>1 priorità al mese</strong>: arriva il primo del mese e scade il primo del mese dopo. Quando la usi, la richiesta resta in cima per <strong>48 ore</strong>.</li>
+        <li>Ogni collega che aiuti da «Aiuta un collega» te ne dà <strong>una in più</strong>, quando UKG approva il cambio: vale <strong>un mese</strong> da quel giorno.</li>
+        <li>Ne puoi avere al massimo ${RULES.priority.tetto} insieme.</li>
         <li>La richiesta va in cima alla bacheca ed è evidenziata nel calendario.</li>
         <li>Ti dà visibilità, non precedenza: nessuno è obbligato ad accettare.</li>
         <li>Si sceglie al momento della pubblicazione: non si può aggiungere dopo.</li>
         <li>Se cancelli la richiesta, la priorità usata non ti viene restituita.</li>
       </ul>
       ${raw(store.creditoPriorita() > 0
-    ? `<p class="testo-tenue">Questo mese ne hai ancora ${store.creditoPriorita()}.</p>`
+    ? `<p class="testo-tenue">Ne hai ancora ${store.creditoPriorita()}, la prima scade ${F.scadenzaPriorita(store.prioritaInfo().prossimaScadenza)}.</p>`
     : V.usoPriorita())}`);
   },
 

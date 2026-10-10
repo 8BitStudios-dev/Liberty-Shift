@@ -24,7 +24,7 @@ import {
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi, DAL_SERVER,
 } from './sincronia.js';
 import {
-  aiutiConclusi, aiutiNelMese, daiAiuta, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
+  aiutiConclusi, aiutiNelMese, daiAiuta, prioritaDisponibili, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
 } from './karma.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
@@ -364,19 +364,15 @@ export const store = {
     return giorni;
   },
   /**
-   * Le priorità ancora da usare questo mese: una di base, più una per ogni
-   * collega aiutato, fino al tetto (vedi `prioritaDelMese`).
-   *
-   * Tutto si conta da quello che sta sul server: le usate dalle proprie
-   * richieste (che l'app non cancella mai, al massimo chiude), le guadagnate
-   * dalle proposte approvate su UKG. Un contatore sul telefono si perdeva
-   * reinstallando l'app, e su due telefoni dava due risposte diverse.
+   * Le priorità ancora da usare, e quando scade la prima (vedi
+   * `prioritaDisponibili`): una al mese più una per ogni aiuto da "Aiuta un
+   * collega", ciascuna valida un mese.
    */
+  prioritaInfo(userId = this.state.currentUserId) {
+    return prioritaDisponibili(userId, this.state);
+  },
   creditoPriorita(userId = this.state.currentUserId) {
-    const mese = monthKey(todayISO());
-    const usate = this.state.requests
-      .filter((r) => r.userId === userId && r.prioritaFinoA && r.createdAt?.slice(0, 7) === mese).length;
-    return prioritaDelMese(this.aiutiDelMese(userId), usate);
+    return this.prioritaInfo(userId).disponibili;
   },
   aiutiDelMese(userId = this.state.currentUserId) {
     return aiutiNelMese(userId, this.state, monthKey(todayISO()));

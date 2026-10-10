@@ -183,7 +183,13 @@ export const RULES = {
   priority: {
     creditsPerMonth: 1,
     perAiuto: 1,
+    // Al massimo tre da usare insieme, qualunque ne sia l'origine.
     tetto: 3,
+    // Ogni priorità scade dopo un mese da quando è stata generata: quella
+    // mensile il primo del mese vale fino al primo del mese dopo, quella di
+    // un aiuto dal giorno in cui UKG approva fino allo stesso giorno del mese
+    // dopo. Una non usata non si accumula per sempre.
+    scadenzaMesi: 1,
     durationHours: 48,
     refundOnCancel: false,
     canBeAddedLater: false,

@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { costoDelCambio } from '../src/core/compatibili.js';
 import {
-  aiutiConclusi, aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto, ultimaChiamata,
+  aiutiConclusi, aiutiNelMese, prioritaDisponibili, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto, ultimaChiamata,
 } from '../src/core/karma.js';
 
 const D = '2026-10-14'; // un mercoledì
@@ -93,12 +93,57 @@ test('solo l\'aiuto nato da "Aiuta un collega" vale una priorità; quelli di pri
   assert.equal(aiutiConclusi(nuovo('altro')).length, 1);
 });
 
-test('priorità: una di base, una per aiuto, mai oltre il tetto', () => {
-  assert.equal(prioritaDelMese(0, 0), 1);
-  assert.equal(prioritaDelMese(1, 0), 2);
-  assert.equal(prioritaDelMese(5, 0), 3);
-  assert.equal(prioritaDelMese(5, 1), 2);
-  assert.equal(prioritaDelMese(0, 2), 0);
+// Date a mezzogiorno UTC e a metà mese: l'ora legale e i fusi non cambiano il giorno.
+const quando = (iso) => new Date(`${iso}T12:00:00Z`);
+const approvato = (iso, origine = 'aiuta') => ({
+  requests: [{ id: 'r', userId: 'giulia', chiusaIl: `${iso}T10:00:00Z` }],
+  proposals: [{
+    id: `p${iso}`, requestId: 'r', daUserId: 'lorenzo', aUserId: 'giulia', status: 'ACCORDO', confermataIl: `${iso}T12:00:00Z`, origine,
+  }],
+});
+const usata = (id, iso) => ({
+  id, userId: 'lorenzo', createdAt: `${iso}T09:00:00Z`, prioritaFinoA: `${iso}T23:00:00Z`,
+});
+const unisci = (...stati) => ({
+  requests: stati.flatMap((x) => x.requests),
+  proposals: stati.flatMap((x) => x.proposals || []),
+});
+
+test('priorità: una al mese, una per aiuto da Aiuta, mai oltre il tetto', () => {
+  const nessuno = { requests: [], proposals: [] };
+  assert.equal(prioritaDisponibili('lorenzo', nessuno, quando('2026-10-15')).disponibili, 1);
+  assert.equal(prioritaDisponibili('lorenzo', approvato('2026-10-10'), quando('2026-10-15')).disponibili, 2);
+  const molti = unisci(approvato('2026-10-02'), approvato('2026-10-05'), approvato('2026-10-08'), approvato('2026-10-09'));
+  molti.proposals.forEach((p, i) => { p.id = `p${i}`; });
+  assert.equal(prioritaDisponibili('lorenzo', molti, quando('2026-10-15')).disponibili, 3, 'tetto di tre insieme');
+});
+
+test('priorità: la mensile scade il primo del mese dopo, quella di un aiuto un mese dopo l\'approvazione', () => {
+  // Approvata il 25 settembre: il 15 ottobre vale ancora, il 26 ottobre no.
+  const aiuto = approvato('2026-09-25');
+  assert.equal(prioritaDisponibili('lorenzo', aiuto, quando('2026-10-15')).disponibili, 2, 'mensile di ottobre + aiuto di settembre');
+  assert.equal(prioritaDisponibili('lorenzo', aiuto, quando('2026-10-26')).disponibili, 1, 'l\'aiuto è scaduto, resta la mensile');
+  // La mensile di settembre non passa a ottobre: il primo ottobre è una nuova.
+  const nessuno = { requests: [], proposals: [] };
+  assert.equal(prioritaDisponibili('lorenzo', nessuno, quando('2026-11-03')).disponibili, 1);
+});
+
+test('priorità: una usata consuma la prima a scadere, e la scadenza si vede', () => {
+  const aiuto = approvato('2026-09-25');
+  const stato = { ...aiuto, requests: [...aiuto.requests, usata('u1', '2026-10-05')] };
+  // Il 5 ottobre erano valide la mensile (scade il 1 novembre) e l'aiuto
+  // (scade il 25 ottobre): ha consumato l'aiuto, e resta la mensile.
+  const dopo = prioritaDisponibili('lorenzo', stato, quando('2026-10-15'));
+  assert.equal(dopo.disponibili, 1);
+  assert.equal(dopo.prossimaScadenza.getMonth(), 10, 'quella che resta scade a novembre');
+  // Le due usate nello stesso giorno le finiscono: niente.
+  const finite = { ...aiuto, requests: [...aiuto.requests, usata('u1', '2026-10-05'), usata('u2', '2026-10-06')] };
+  assert.equal(prioritaDisponibili('lorenzo', finite, quando('2026-10-15')).disponibili, 0);
+});
+
+test('priorità: un aiuto dalla bacheca non dà niente, uno di prima senza origine sì', () => {
+  assert.equal(prioritaDisponibili('lorenzo', approvato('2026-10-10', 'altro'), quando('2026-10-15')).disponibili, 1);
+  assert.equal(prioritaDisponibili('lorenzo', approvato('2026-10-10', undefined), quando('2026-10-15')).disponibili, 2);
 });
 
 test('favori: chi ti ha aiutato e chi hai aiutato, con l\'ultima volta', () => {

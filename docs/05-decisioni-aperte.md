@@ -157,8 +157,9 @@ permette", non a "è lecito in generale".
 ## Da decidere presto
 
 ### 3. Priorità
-Le assunzioni implementate: rinnovo il primo del mese, credito consumato
-all'uso, niente rimborso se cancelli. Da confermare, in particolare cosa
+Le assunzioni implementate: una priorità nuova il primo del mese e una per
+ogni aiuto da «Aiuta un collega», ognuna valida un mese da quando nasce (tetto
+3 insieme), credito consumato all'uso, niente rimborso se cancelli. Da confermare, in particolare cosa
 succede se la richiesta si chiude dopo due ore invece che dopo 48.
 
 ### 4. Permessi dell'Admin — deciso e costruito

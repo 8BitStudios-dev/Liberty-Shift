@@ -213,8 +213,15 @@ Una richiesta scade quando è passata la data del turno ceduto o di quello
 cercato. Sparisce da bacheca, calendario e match; resta nei dati.
 
 ## R14 — Priorità
-1 al mese, più 1 per ogni collega aiutato con un cambio approvato su UKG nello
-stesso mese, fino a 3. Dura 48 ore e si sceglie alla pubblicazione.
+1 al mese, più 1 per ogni collega aiutato da «Aiuta un collega» con un cambio
+approvato su UKG. **Ogni priorità scade dopo un mese da quando è stata
+generata**: quella mensile nasce il primo del mese e vale fino al primo del mese
+dopo; quella di un aiuto nasce il giorno in cui UKG approva e vale fino allo
+stesso giorno del mese dopo. Al massimo 3 da usare insieme. Quando la si usa,
+la richiesta resta in cima per 48 ore, e si sceglie alla pubblicazione.
+
+Chi ne usa una consuma sempre quella che scade prima, così non se ne spreca
+nessuna.
 
 **Assunzioni** (tutte in `RULES.priority`):
 - aiuta chi conclude un accordo sulla richiesta di un altro; un accordo
@@ -224,8 +231,8 @@ stesso mese, fino a 3. Dura 48 ore e si sceglie alla pubblicazione.
   fatta dalla bacheca, dal calendario o dal cambio rapido ha `origine: 'altro'`
   e non dà priorità (il favore da ricambiare resta uguale). Quelle di prima di
   questa regola, senza origine, continuano a contare come allora;
-- la priorità arriva solo quando UKG approva il cambio, e vale nel mese
-  dell'approvazione: un accordo che poi non si fa non vale niente, e due
+- la priorità arriva solo quando UKG approva il cambio, e vale un mese da
+  quel giorno (non più «nel mese dell'approvazione»): un accordo che poi non si fa non vale niente, e due
   amici non possono guadagnarne con scambi finti;
 - il tetto c'è perché la priorità serve a farsi vedere: se ce l'hanno tutti,
   non la vede nessuno;
