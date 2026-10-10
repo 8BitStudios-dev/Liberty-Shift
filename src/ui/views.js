@@ -362,8 +362,8 @@ export function profilo() {
       <h2 class="titolo-mese">Il tuo calendario</h2>
       ${raw(legendaPersonale())}
       ${raw(ilTuoMese())}
-      <p class="testo-tenue nota-mese">
-        Tocca un giorno per vedere o cambiare il turno e le tue richieste.
+      <p class="nota-mese invito-giorno">
+        Tocca un giorno per inserire o vedere una richiesta di cambio turno.
       </p>
     </section>
 

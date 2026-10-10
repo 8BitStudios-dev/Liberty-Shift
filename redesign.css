@@ -665,6 +665,9 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .legenda-apribile > .legenda-mese { margin: 12px 2px 0; }
 .legenda-personale { gap: 8px 16px; }
 .nota-mese { margin: 14px 0 0; }
+/* L'invito sotto il calendario del Profilo è l'azione principale della schermata:
+   non una nota in grigio ma una frase in evidenza. */
+.nota-mese.invito-giorno { font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--testo); }
 .campione { width: 16px; height: 12px; border-radius: 4px; border: 1px solid var(--bordo); background: var(--superficie); }
 .campione.prioritaria { border: 2px solid var(--oro); }
 .campione.riposo { background: transparent; border: 1px solid var(--linea); border-radius: 4px; }
