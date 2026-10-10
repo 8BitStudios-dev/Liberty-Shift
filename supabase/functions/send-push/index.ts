@@ -607,7 +607,7 @@ Deno.serve(async (req) => {
     return json({ errore: 'non autorizzato' }, 401);
   }
 
-  const { type, record, old_record, autore, destinatario, giorno, utenti, persona, conteggio } = await req.json();
+  const { type, record, old_record, autore, destinatario, giorno, utenti, persona: chiHaProvato, conteggio } = await req.json();
   if (type === 'PASSWORD') {
     if (!Array.isArray(utenti) || !utenti.length) return json({ inviate: 0, motivo: 'nessuno da nominare' });
     const richiedenti = await leggi(`profili?id=in.(${utenti.join(',')})&select=id,nome,cognome_iniziale`);
@@ -625,14 +625,14 @@ Deno.serve(async (req) => {
   // (vedi `limita_priorita` in schema.sql): l'app non lo permette, quindi è un
   // client modificato o un'anomalia. Chi ci ha provato non riceve niente.
   if (type === 'PRIORITA_ECCESSIVA') {
-    if (typeof persona !== 'string' || !UUID.test(persona) || !Number.isInteger(conteggio)) {
+    if (typeof chiHaProvato !== 'string' || !UUID.test(chiHaProvato) || !Number.isInteger(conteggio)) {
       return json({ inviate: 0, motivo: 'riga incompleta' });
     }
-    const [chi] = await leggi(`profili?id=eq.${persona}&select=id,nome,cognome_iniziale`);
+    const [chi] = await leggi(`profili?id=eq.${chiHaProvato}&select=id,nome,cognome_iniziale`);
     if (!chi) return json({ inviate: 0, motivo: 'profilo non trovato' });
     const superAdmin = await leggi('profili?attivo=eq.true&super_admin=eq.true&select=id');
     let inviate = 0;
-    for (const a of superAdmin.filter((x: { id: string }) => x.id !== persona)) {
+    for (const a of superAdmin.filter((x: { id: string }) => x.id !== chiHaProvato)) {
       inviate += (await invia(a.id, {
         title: 'Priorità oltre il limite',
         body: `${nomeBreve(chi)} ha provato a usare una priorità oltre il limite: ne aveva già usate ${conteggio} nell'ultimo mese.`,

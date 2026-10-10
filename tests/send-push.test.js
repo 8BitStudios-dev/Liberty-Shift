@@ -288,6 +288,16 @@ test('chi prova a usare una quarta priorità in un mese: avviso al SuperAdmin co
   const gestore = sorgente.slice(sorgente.indexOf("if (type === 'PRIORITA_ECCESSIVA')"), sorgente.indexOf("if (type === 'RICHIESTA')"));
   // Lo riceve il SuperAdmin attivo, mai chi ha provato, e dice nome e numero.
   assert.match(gestore, /super_admin=eq\.true/);
-  assert.match(gestore, /x\.id !== persona/);
+  assert.match(gestore, /x\.id !== chiHaProvato/);
   assert.match(gestore, /nomeBreve\(chi\)\} ha provato a usare una priorità oltre il limite/);
+});
+
+test('send-push si compila: un nome dichiarato due volte lo ferma all\'avvio, per tutte le notifiche', async () => {
+  // Una `const` doppia nello stesso blocco è un errore di sintassi che Deno scopre
+  // solo avviando la funzione: da lì in poi ogni chiamata risponde 503.
+  const { stripTypeScriptTypes } = await import('node:module');
+  const js = stripTypeScriptTypes(sorgente)
+    .replace(/^import .*$/gm, '')
+    .replace(/Deno\.serve\(/, 'void (');
+  assert.doesNotThrow(() => new Function(`return (async () => {\n${js}\n});`));
 });
