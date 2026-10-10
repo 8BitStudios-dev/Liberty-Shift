@@ -1042,6 +1042,16 @@ core e il server continuano a scrivere "09:30–18:30", e i campi orario
 (`<input type="time">`) restano com'erano. Un pezzo che deve restare intero si
 segna con `data-ore-intere`. Mezzanotte resta "00:00".
 
+## La legenda del Calendario
+
+La legenda del Calendario pubblico è chiusa: un pulsante "Legenda" con
+un'anteprima dei tre colori (orario, OFF che lascia, OFF che prende). Si apre al
+tocco e mostra tutte le voci (anche priorità, richieste del giorno, "puoi
+aiutare"). Resta aperta o chiusa come l'hai lasciata quando la schermata si
+ridisegna e quando cambi mese (`riquadriAperti`, chiave `legenda-calendario`).
+La legenda del Calendario personale, nel Profilo, resta sempre visibile: ha due
+voci sole.
+
 ## Le tre forme
 
 Ogni scatola dell'app è di una di tre famiglie, e ogni famiglia ha un solo

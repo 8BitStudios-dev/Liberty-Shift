@@ -196,7 +196,16 @@ export function home() {
  * significato, una legenda sola per mese.
  */
 function legendaPubblica() {
+  // Chiusa mostra solo un'anteprima dei colori; si apre al tocco, e resta
+  // com'era (aperta o chiusa) quando la schermata si ridisegna.
+  const aperta = riquadriAperti.has('legenda-calendario');
+  const barra = (c) => `<span class="barre in-legenda"><i class="${c}"></i></span>`;
   return `
+    <details class="legenda-apribile" data-riquadro="legenda-calendario" ${aperta ? 'open' : ''}>
+    <summary>
+      <span>Legenda</span>
+      <span class="anteprima" aria-hidden="true">${barra('orario')}${barra('cerca')}${barra('offre')}</span>
+    </summary>
     <ul class="legenda-mese">
       <li><span class="barre in-legenda"><i class="orario"></i></span>cambio orario</li>
       <li><span class="barre in-legenda"><i class="cerca"></i></span>OFF: qualcuno lascia</li>
@@ -204,7 +213,8 @@ function legendaPubblica() {
       <li><span class="campione prioritaria"></span>priorità</li>
       <li><span class="conta-giorno in-legenda">2</span>richieste del giorno</li>
       <li><span class="quota campione-quota">%</span>puoi aiutare</li>
-    </ul>`;
+    </ul>
+    </details>`;
 }
 
 /**
