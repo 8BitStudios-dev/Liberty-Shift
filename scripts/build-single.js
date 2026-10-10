@@ -49,10 +49,10 @@ const MODULI_APP = [
   'src/ui/app.js',
 ];
 
-/** Nella demo tre moduli in più: i dati prima dello store, l'avvio prima dell'app, le notifiche dopo. */
+/** Nella demo quattro moduli in più: i dati prima dello store, l'avvio prima dell'app, la notifica e il tasto per ricominciare dopo. */
 const MODULI = !DEMO ? MODULI_APP : MODULI_APP.flatMap((m) => {
   if (m === 'src/core/model.js') return [m, 'demo/dati-demo.js'];
-  if (m === 'src/ui/app.js') return ['demo/avvio-demo.js', m, 'demo/notifiche-demo.js'];
+  if (m === 'src/ui/app.js') return ['demo/avvio-demo.js', m, 'demo/notifiche-demo.js', 'demo/ricomincia-demo.js'];
   return [m];
 });
 

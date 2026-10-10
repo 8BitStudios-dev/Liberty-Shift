@@ -1112,7 +1112,7 @@ scendono con la sincronizzazione, insieme alla propria riga di `profili`.
 Per registrare un video serve invece un'app piena, e per questo esiste una
 versione a parte: `npm run demo` produce `dist/liberty-shift-demo.html`, e a
 ogni push su `main` il workflow la pubblica anche come `demo.html` accanto
-all'app (stesso indirizzo del sito, `/demo.html`). È la stessa app, con tre
+all'app (stesso indirizzo del sito, `/demo.html`). È la stessa app, con quattro
 differenze:
 
 - **Lorenzo e 25 colleghi inventati** (`demo/dati-demo.js`): venti con una
@@ -1134,6 +1134,10 @@ differenze:
   dopo la prima apertura di Proposte e poi mai più. Cambia anche lo stato: è
   il quinto grazie, e toccandola il Profilo annuncia il traguardo. `?guida=1`
   lascia comparire le schede della guida, che di base sono già lette.
+- **Un tasto per ricominciare la registrazione** (`demo/ricomincia-demo.js`):
+  in fondo alle Impostazioni, solo nella demo. Torna alla Home e ricarica la
+  pagina, così i dati, le scelte e la notifica di Rita ripartono da capo. Non
+  chiede conferma, per non mettere una finestra in più nel video.
 
 Le percentuali del Cambio rapido sono di chi guarda (vedi `punteggioDi` in
 `engine.js`): contano le preferenze di Lorenzo e le ore adattate, non quanto

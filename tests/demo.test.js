@@ -79,3 +79,16 @@ test('demo: il Cambio rapido ha percentuali miste, non solo 100%', () => {
 test('demo: è deterministica, così ogni ripresa parte uguale', () => {
   assert.deepEqual(stato(), stato());
 });
+
+test('demo: il tasto per ricominciare c\'è solo nel file della demo', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const build = await readFile(new URL('../scripts/build-single.js', import.meta.url), 'utf8');
+  // Il modulo è nell'elenco della demo e non in quello dell'app vera.
+  assert.match(build, /'demo\/ricomincia-demo\.js'/);
+  const app = build.slice(build.indexOf('const MODULI_APP'), build.indexOf('const MODULI = '));
+  assert.doesNotMatch(app, /ricomincia-demo/);
+  // Ricarica la pagina dalla Home: la demo riparte da capo a ogni apertura.
+  const modulo = await readFile(new URL('../demo/ricomincia-demo.js', import.meta.url), 'utf8');
+  assert.match(modulo, /location\.reload\(\)/);
+  assert.match(modulo, /Ricomincia la registrazione/);
+});
