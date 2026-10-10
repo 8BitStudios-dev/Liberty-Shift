@@ -144,35 +144,6 @@ export function badgeStato(status) {
   return html`<span class="badge stato-${status}"><i class="pallino-stato"></i> ${m.label}</span>`;
 }
 
-/**
- * Il blocco della richiesta: è l'unità visiva di tutta l'app.
- *
- * Parla a chi lo guarda, come le spiegazioni dei match: all'autore con le
- * sue parole, a un collega con le sue. Scritto sempre in prima persona
- * dell'autore, un collega leggeva "LASCIO 11:00–20:00" e lo prendeva per il
- * proprio turno, con il turno che offriva davvero subito sotto.
- *
- * Si legge sempre dal punto di vista di chi guarda, e sempre nello stesso
- * ordine: **prima cosa prendi, poi cosa lasci**. Chi apre la richiesta di
- * Elisa vuole sapere cosa farà lui, non cosa fa lei: "Elisa lascia / Elisa
- * prende" costringeva a ribaltare tutto a mente.
- *
- * Le parole sono due paia, e ognuno ha il suo: **prendi** e **lasci** per te,
- * **offre** e **cerca** per un'altra persona (vedi `altroPunto`; offre = quello
- * che tu prendi, cerca = quello che tu lasci). Prima erano quattro paia
- * mescolate (lascio/cerco, lasci/prendi, cerca/offre, cede/cerca) e "cerca"
- * voleva dire cose opposte: nel cambio OFF il giorno che si lascia, nel cambio
- * orario quello che si vuole ricevere. Ora "cerca" guarda sempre dal tuo lato.
- *
- * - Un collega, prima di scegliere il suo turno: prendi quello che l'autore
- *   lascia, lasci quello che l'autore cerca ("uno dei tuoi turni"…).
- * - Un collega che ha già scelto: prendi il turno dell'autore, con le ore
- *   che faresti davvero, lasci il tuo.
- * - L'autore: prendi quello che cerca, lasci il suo turno.
- *
- * I colori restano veri e non seguono la posizione: il blu è sempre il turno
- * che lascia chi guarda, il verde quello che prende.
- */
 /** Il cerchio del tipo di cambio, con icona e scritta ("OFF", "orario"): lo stesso nella box e nelle liste. */
 export function cerchioTipo(tipo) {
   const meta = TIPO_META[tipo] || TIPO_META.ORARIO;
@@ -188,120 +159,135 @@ export function pillolaStato(tono, testo) {
 }
 
 /**
- * L'unico punto dove si disegna la box: due metà, prima quello che prendi
- * (verde) e poi quello che lasci (blu). Ogni metà è un giorno, un orario e,
- * se serve, una nota; chi la chiama decide cosa metterci.
- */
-export function boxScambio(tipo, prendi, lasci, { compatto = false } = {}) {
-  const meta = TIPO_META[tipo] || TIPO_META.ORARIO;
-  const freccia = (nome) => raw(icona(nome, { px: 14, forte: true }));
-  const lato = (classe, parola, simbolo, m) => html`
-    <div class="lato ${classe}">
-      <span class="etichetta">${freccia(simbolo)} ${parola}</span>
-      <strong>${m.giorno}</strong>
-      <span class="orario">${m.orario}</span>
-      ${raw(m.nota ? `<div class="nota">${m.nota}</div>` : '')}
-    </div>`;
-  return html`
-    <div class="coppia ${compatto ? 'compatta' : ''}" data-tipo="${esc(tipo)}">
-      <div class="lati">
-        ${raw(cerchioTipo(tipo))}
-        ${raw(lato('cerco', 'prendi', 'prendo', prendi))}
-        <div class="freccia">⇄</div>
-        ${raw(lato('cedo', 'lasci', 'cedo', lasci))}
-      </div>
-    </div>`;
-}
-
-/**
- * La riga piccola sotto la box: cosa fa l'altra persona, dopo di te. Chi apre
- * una richiesta pensa a sé, il resto è contesto.
+ * L'unico punto dove si disegna la box di uno scambio.
  *
- * Di un'altra persona si dice **offre** e **cerca**, di te prendi e lasci. Con
- * "lascia/prende" accanto a "lasci/prendi" bastava una lettera a separare te
- * da lei, e le righe si leggevano al contrario. Il legame è fisso e vale per
- * ogni tipo di cambio: quello che lei **offre** è quello che tu **prendi**,
- * quello che lei **cerca** è quello che tu **lasci**. (Prima "cerca" cambiava
- * senso fra OFF e orario: ora non può, perché guarda sempre dal tuo lato.)
+ * Come nel gruppo WhatsApp del negozio: prima il messaggio di chi chiede, con
+ * le sue parole (**CERCO** e **OFFRO**), poi **Cosa faresti tu**, giorno per
+ * giorno, con parole concrete ("lavori 14–20", "sei a casa"). Prima la box
+ * parlava solo dal lato di chi guarda (prendi/lasci) e "lasci" non si capiva:
+ * in un cambio OFF chi legge "lascia" un giorno di lavoro e resta a casa, e
+ * scritto così sembrava che lasciasse un OFF.
+ *
+ * Il cerchio a sinistra dice il tipo (orario, OFF), con le stesse icone di
+ * sempre. `messaggio` è { cerco, offro, nota }; `righe` sono [{ giorno, testo }]
+ * e mancano quando non c'è niente da dire a chi guarda (la propria richiesta).
  */
-export function altroPunto(nome, offre, cerca) {
-  return html`<p class="altro-punto">${nome} offre ${offre} · cerca ${cerca}</p>`;
+export function boxScambio(tipo, { messaggio = null, righe = [], compatto = false } = {}) {
+  const bolla = messaggio ? `
+      <div class="msg">
+        ${cerchioTipo(tipo)}
+        <div class="bolla">
+          <p><span class="verbo cerco">CERCO</span>${messaggio.cerco}</p>
+          <p><span class="verbo offro">OFFRO</span>${messaggio.offro}</p>
+          ${messaggio.nota ? `<p class="nota">${messaggio.nota}</p>` : ''}
+        </div>
+      </div>` : '';
+  const tu = righe.length ? `
+      <div class="tu">
+        ${messaggio ? '<span class="tu-titolo">Cosa faresti tu</span>' : cerchioTipo(tipo)}
+        <div class="tu-righe">${righe.map((r) => `<p class="riga-tu"><span class="gg">${r.giorno}</span><span>${r.testo}</span></p>`).join('')}</div>
+      </div>` : '';
+  return `<div class="coppia messaggio ${compatto ? 'compatta' : ''} ${messaggio ? '' : 'solo-tu'}" data-tipo="${esc(tipo)}">${bolla}${tu}</div>`;
 }
 
-/**
- * Cosa lascia chi legge un cambio OFF: il suo turno in uno dei giorni che
- * l'autore offre. Con un giorno solo in cui lavora, quello preciso ("Mer 14/10 ·
- * 10–19"); con più giorni, "uno dei tuoi turni" nei soli giorni in cui lavora;
- * se non lavora in nessuno (la richiesta non è per lui) lo dice.
- */
-function turnoCheLasciInUnOff(giorni) {
-  const io = store.state.currentUserId;
-  const miei = giorni
-    .map((g) => store.state.shifts.find((s) => s.userId === io && s.data === g && s.tipo === 'WORK'))
-    .filter(Boolean);
-  if (miei.length === 1) return { giorno: formatDay(miei[0].data), orario: shiftLabel(miei[0]) };
-  if (miei.length) return { giorno: miei.map((s) => formatDay(s.data)).join(' o '), orario: 'uno dei tuoi turni' };
-  return {
-    giorno: giorni.map((g) => formatDay(g)).join(' o '),
-    orario: giorni.length > 1 ? 'non lavori in quei giorni' : 'non lavori quel giorno',
-  };
-}
-
-export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, offerto = null, riga = false } = {}) {
+/** Il messaggio di chi chiede, con le sue parole: come lo scriverebbe nel gruppo. */
+function messaggioDi(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
-  const off = request.tipo === TIPO_CAMBIO.OFF;
+  const giorno = cedo ? formatDay(cedo.data) : '—';
+  if (request.tipo === TIPO_CAMBIO.OFF) {
+    return {
+      cerco: `OFF ${esc(giorno)} <span class="tenue">(${esc(shiftLabel(cedo))})</span>`,
+      offro: `OFF ${esc(giorni.map((g) => formatDay(g)).join(' o '))}`,
+      nota: request.cedo.flessibile ? 'disponibile anche per altri turni' : '',
+    };
+  }
+  return {
+    cerco: `${esc(giorno)}, ${esc(wantLabel(request.cerco))}`,
+    offro: `${esc(giorno)}, ${esc(shiftLabel(cedo))}`,
+    nota: request.cedo.flessibile ? 'disponibile anche per altri turni' : '',
+  };
+}
+
+/** L'orario che faresti tu ricevendo `riceve` al posto di `cede`, con la stima se si adatta. */
+function orarioPerMe(riceve, cede) {
+  if (!riceve) return '—';
+  const t = cede ? trasformaTurno(riceve, cede, personaDi) : { trasformato: false };
+  return `${esc(t.trasformato ? `${t.start}–${t.end}` : shiftLabel(riceve))}${stimatoPer(t.trasformato)}`;
+}
+
+const nomeDi = (id) => esc(store.user(id)?.nome || 'l\'altra persona');
+const mioTurnoIl = (data) => store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
+const riga = (data, testo) => ({ giorno: esc(formatDay(data)), testo });
+
+/**
+ * Cosa faresti tu, giorno per giorno. `prendi` è il turno che faresti (di
+ * un'altra persona), `lasci` il tuo che fa lei; in un cambio orario sono lo
+ * stesso giorno, in un OFF due giorni diversi.
+ */
+function righeTu(tipo, { prendi, lasci, nome }) {
+  if (tipo === TIPO_CAMBIO.OFF) {
+    return [
+      prendi && riga(prendi.data, `lavori <b class="prendo">${orarioPerMe(prendi, lasci)}</b> al posto di ${nome}`),
+      lasci && riga(lasci.data, `<b class="cedo">sei a casa</b>, il tuo ${esc(shiftLabel(lasci))} lo fa ${nome}`),
+    ].filter(Boolean);
+  }
+  if (!prendi || !lasci) return [];
+  return [riga(prendi.data, `fai <b class="prendo">${orarioPerMe(prendi, lasci)}</b> invece del tuo ${esc(shiftLabel(lasci))}`)];
+}
+
+/**
+ * Chi legge una richiesta altrui senza aver ancora scelto un turno: i suoi
+ * turni veri nei giorni in gioco. Se non lavora nei giorni giusti lo si dice,
+ * senza inventare un turno.
+ */
+function righeTuSenzaScelta(request, nome) {
+  const cedo = store.shift(request.cedo.shiftId);
+  const giorni = request.cerco.giorni || [];
+  if (request.tipo !== TIPO_CAMBIO.OFF) {
+    const mio = mioTurnoIl(cedo?.data);
+    if (!mio || mio.tipo !== 'WORK') return cedo ? [riga(cedo.data, 'non lavori quel giorno')] : [];
+    return righeTu(request.tipo, { prendi: cedo, lasci: mio, nome });
+  }
+  const miei = giorni.map(mioTurnoIl).filter((s) => s?.tipo === 'WORK');
+  const quelGiorno = mioTurnoIl(cedo?.data);
+  const righe = [];
+  if (cedo) {
+    righe.push(quelGiorno?.tipo === 'WORK'
+      ? riga(cedo.data, `lavori già (${esc(shiftLabel(quelGiorno))})`)
+      : riga(cedo.data, `lavori <b class="prendo">${orarioPerMe(cedo, miei[0])}</b> al posto di ${nome}`));
+  }
+  if (miei.length === 1) {
+    righe.push(riga(miei[0].data, `<b class="cedo">sei a casa</b>, il tuo ${esc(shiftLabel(miei[0]))} lo fa ${nome}`));
+  } else if (miei.length > 1) {
+    righe.push({ giorno: esc(miei.map((s) => formatDay(s.data)).join(' o ')), testo: `<b class="cedo">sei a casa</b> in uno di questi, il tuo turno lo fa ${nome}` });
+  } else if (giorni.length) {
+    righe.push({ giorno: esc(giorni.map((g) => formatDay(g)).join(' o ')), testo: giorni.length > 1 ? 'non lavori in quei giorni' : 'non lavori quel giorno' });
+  }
+  return righe;
+}
+
+export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, offerto = null } = {}) {
+  const cedo = store.shift(request.cedo.shiftId);
   const mia = request.userId === store.state.currentUserId;
-  const opz = { compatto };
+  const messaggio = messaggioDi(request);
 
-  // Il turno che l'autore lascia, e quello che cerca: gli stessi due pezzi per
-  // chiunque guardi, cambia solo da che parte stanno.
-  const turnoDellAutore = {
-    giorno: cedo ? formatDay(cedo.data) : '—',
-    orario: shiftLabel(cedo),
-    nota: request.cedo.flessibile ? 'disponibile a lasciare anche altri turni' : '',
-  };
-  const cosaCerca = {
-    giorno: off ? giorni.map((g) => formatDay(g)).join(' o ') : 'stesso giorno',
-    orario: wantLabel(request.cerco),
-  };
-
-  // Una proposta già fatta, vista da chi ha scritto la richiesta: prendi il
-  // turno preciso che gli è stato offerto, non la richiesta in astratto.
+  // Chi ha scritto la richiesta e legge una proposta: faresti il turno che ti
+  // offrono, e il tuo lo fa chi l'ha proposto.
   if (mia && offerto) {
-    const perMe = trasformaTurno(offerto, cedo, personaDi);
     return boxScambio(request.tipo, {
-      giorno: formatDay(offerto.data),
-      orario: raw(`${perMe.trasformato ? `${perMe.start}–${perMe.end}` : esc(shiftLabel(offerto))}${stimatoPer(perMe.trasformato)}`),
-      nota: perMe.trasformato ? `${esc(shiftLabel(offerto))} adattato al tuo contratto` : '',
-    }, turnoDellAutore, opz);
+      messaggio, compatto, righe: righeTu(request.tipo, { prendi: offerto, lasci: cedo, nome: nomeDi(offerto.userId) }),
+    });
   }
+  // La propria richiesta, da sola: è il tuo messaggio, non c'è altro da dire.
+  if (mia) return boxScambio(request.tipo, { messaggio, compatto });
 
-  if (!mia && mioTurno) {
-    const perMe = trasformaTurno(cedo, mioTurno, personaDi);
-    return boxScambio(request.tipo, {
-      giorno: cedo ? formatDay(cedo.data) : '—',
-      orario: raw(`${perMe.trasformato ? `${perMe.start}–${perMe.end}` : esc(shiftLabel(cedo))}${stimatoPer(perMe.trasformato)}`),
-      nota: perMe.trasformato ? `${esc(shiftLabel(cedo))} adattato al tuo contratto: ${TESTO_STIMA.charAt(0).toLowerCase() + TESTO_STIMA.slice(1)}` : '',
-    }, { giorno: formatDay(mioTurno.data), orario: shiftLabel(mioTurno) }, opz);
+  const nome = nomeDi(request.userId);
+  // Un collega che ha già scelto il turno da offrire: quello, e basta.
+  if (mioTurno) {
+    return boxScambio(request.tipo, { messaggio, compatto, righe: righeTu(request.tipo, { prendi: cedo, lasci: mioTurno, nome }) });
   }
-
-  if (mia) return boxScambio(request.tipo, cosaCerca, turnoDellAutore, opz);
-
-  // In un cambio OFF chi legge lascia il turno che ha in uno dei giorni offerti:
-  // il suo, non "qualsiasi turno" (che è giusto solo per chi lo prenderebbe,
-  // cioè l'autore) e non "OFF" (lo lascia chi è a casa, e chi legge lavora).
-  const cosaCercaPerMe = off ? turnoCheLasciInUnOff(giorni) : cosaCerca;
-
-  // Prima il tuo punto di vista, poi quello dell'altra persona: sotto la box,
-  // in piccolo, cosa fa l'autore. In una riga di lista il nome sta già sopra.
-  if (riga) return boxScambio(request.tipo, turnoDellAutore, cosaCercaPerMe, opz);
-  const nome = store.user(request.userId)?.nome || 'chi chiede';
-  const suoLascia = off ? formatDay(cedo?.data) : `${formatDay(cedo?.data)} ${shiftLabel(cedo)}`;
-  const suoPrende = off ? giorni.map((g) => formatDay(g)).join(' o ') : wantLabel(request.cerco);
-  return html`
-    ${raw(boxScambio(request.tipo, turnoDellAutore, cosaCercaPerMe, opz))}
-    ${raw(altroPunto(nome, suoLascia, suoPrende))}`;
+  return boxScambio(request.tipo, { messaggio, compatto, righe: righeTuSenzaScelta(request, nome) });
 }
 
 /**
@@ -401,7 +387,7 @@ export function cardRichiesta(request, giorno = null) {
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
         </span>
-        ${raw(coppiaCedoCerco(request, { compatto: true, riga: true }))}
+        ${raw(coppiaCedoCerco(request, { compatto: true }))}
         ${raw(nonPerMe ? `<span class="non-puoi">${esc(motivoNonOfferibile(request, { breve: true }))}</span>` : '')}
       </span>
     </div>`;
@@ -420,23 +406,13 @@ export function cardRichiesta(request, giorno = null) {
  * la riguarda, non te (vedi `verificheIncrociate`, stessa regola).
  */
 function riassuntoMatch(match, u, turno, opzioni) {
-  // Dal tuo punto di vista: prendi il turno del collega (con le ore che
-  // faresti davvero), lasci il tuo. L'altra persona viene dopo.
+  // La richiesta è la tua: il messaggio lo conosci. Qui serve solo cosa
+  // faresti tu con questo collega, giorno per giorno.
   const mioCedo = opzioni.mioCedo || store.shift(store.request(opzioni.miaRichiestaId)?.cedo.shiftId);
-  const preso = match.adattato?.trasformato ? `${match.adattato.start}–${match.adattato.end}` : shiftLabel(turno);
-  const off = match.cambio === TIPO_CAMBIO.OFF;
-  const box = boxScambio(match.cambio, {
-    giorno: formatDay(turno?.data),
-    orario: raw(`${esc(preso)}${stimatoPer(match.adattato?.trasformato)}`),
-    nota: off && opzioni.mioCedo ? 'quel giorno lavori al posto suo' : '',
-  }, mioCedo
-    ? { giorno: formatDay(mioCedo.data), orario: shiftLabel(mioCedo), nota: off ? 'quel giorno diventi OFF' : '' }
-    : { giorno: '—', orario: '' }, { compatto: Boolean(opzioni.compatta) });
-  if (!mioCedo || !u) return box;
-  const perLei = match.adattatoControparte?.trasformato
-    ? `${match.adattatoControparte.start}–${match.adattatoControparte.end}`
-    : shiftLabel(mioCedo);
-  return html`${raw(box)}${raw(altroPunto(u.nome, `${formatDay(turno?.data)} ${shiftLabel(turno)}`, `${formatDay(mioCedo.data)} ${perLei}`))}`;
+  return boxScambio(match.cambio, {
+    compatto: Boolean(opzioni.compatta),
+    righe: righeTu(match.cambio, { prendi: turno, lasci: mioCedo, nome: esc(u?.nome || 'il collega') }),
+  });
 }
 
 /**
@@ -665,11 +641,6 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
   const u = store.user(richiesta.userId);
   const verde = match.tipo === 'MATCH';
   const mioTurno = store.shift(match.shiftOffertoId);
-  // Le due cose che contano: che turno farei io (lo dice il blocco, dal mio
-  // lato) e che turno farebbe l'altra persona, con le ore del turno che lascia.
-  const perLei = match.adattato?.trasformato
-    ? `${match.adattato.start}–${match.adattato.end}`
-    : shiftLabel(mioTurno);
   const stella = !aiuta && hasPriority(richiesta);
   return html`
     <article class="card match ${verde ? 'verde' : 'giallo'} ${stella ? 'prioritaria' : ''}">
@@ -684,7 +655,6 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
       ${raw(etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, aiuta))}
       ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
-      ${raw(altroPunto(u?.nome, `${formatDay(store.shift(richiesta.cedo.shiftId)?.data)} ${shiftLabel(store.shift(richiesta.cedo.shiftId))}`, `${formatDay(mioTurno?.data)} ${perLei}`))}
       ${raw(adattamento(match) ? notaStima() : '')}
       ${raw(notaPausa([mioTurno, store.shift(richiesta.cedo.shiftId)]))}
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>

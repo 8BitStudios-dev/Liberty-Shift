@@ -17,7 +17,7 @@ import {
 } from '../core/time.js';
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
-  cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, altroPunto, nomeUtente, badgeStato, vuoto, iniziali,
+  cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, nomeUtente, badgeStato, vuoto, iniziali,
   tastoAggiorna, rigaAggiornamento,
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
   notaStima, notaPausa, personaDi,
@@ -966,11 +966,6 @@ function vocebox(v) {
         </div>
       </header>
       ${raw(coppiaCedoCerco(r, { compatto: true, mioTurno: ioHoProposto ? offerto : null, offerto: ioHoProposto ? null : offerto }))}
-      ${raw(altroPunto(
-    altro.nome,
-    `${formatDay((ioHoProposto ? store.shift(r.cedo.shiftId) : offerto)?.data)} ${shiftLabel(ioHoProposto ? store.shift(r.cedo.shiftId) : offerto)}`,
-    `${formatDay((ioHoProposto ? offerto : store.shift(r.cedo.shiftId))?.data)} ${shiftLabel(ioHoProposto ? offerto : store.shift(r.cedo.shiftId))}`,
-  ))}
       ${raw(p.messaggio ? `<p class="nota-utente">“${p.messaggio}”</p>` : '')}
       ${raw(p.annullataIl
     ? `<p class="nota-utente">Scambio annullato dopo l'accordo${p.motivoRifiuto ? `: “${esc(p.motivoRifiuto)}”` : ''}</p>`

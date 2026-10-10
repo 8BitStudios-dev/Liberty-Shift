@@ -42,82 +42,86 @@ function scena({ mioOrario = ['09:30', '18:30'] } = {}) {
 /** Il testo visibile, senza tag e spazi doppi. */
 const testo = (h) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-test("a chi propone, il blocco parla del suo scambio: prende quello dell'autore, lascia il suo turno", () => {
+// La box parla come il gruppo WhatsApp: prima il messaggio di chi chiede
+// (CERCO / OFFRO, con le sue parole), poi "Cosa faresti tu", giorno per giorno.
+// "Lasci" non c'è più: in un cambio OFF faceva credere di lasciare un OFF.
+
+test('un collega che ha scelto il suo turno legge il messaggio e poi cosa farebbe lui', () => {
   const { richiesta, mio } = scena();
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: mio }));
-  assert.match(t, /prendi .*11:00–20:00 .*lasci .*09:30–18:30/);
-  assert.doesNotMatch(t, /lascio|cerco/, 'le parole dell\'autore non devono arrivare a chi guarda');
+  assert.match(t, /CERCO .*qualsiasi turno .*OFFRO .*11:00–20:00/, 'prima il messaggio di Lorenzo');
+  assert.match(t, /Cosa faresti tu .*fai 11:00–20:00 invece del tuo 09:30–18:30/);
+  assert.ok(t.indexOf('OFFRO') < t.indexOf('Cosa faresti tu'), 'prima lui, poi tu');
+  assert.doesNotMatch(t, /\blasci\b|\bprendi\b/i);
 });
 
-test('il turno preso si legge con le ore che farebbe davvero chi guarda', () => {
+test('il turno che faresti si legge con le ore che faresti davvero, con la stima', () => {
   // Il mio turno dura sei ore: quello di Lorenzo, nove, si adatta a me.
   const { richiesta, mio } = scena({ mioOrario: ['09:00', '15:00'] });
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: mio }));
-  assert.doesNotMatch(t, /prendi \S+ \S+ 11:00–20:00/, "l'orario intero di Lorenzo non è quello che farei");
-  assert.match(t, /11:00–20:00 adattato al tuo contratto/);
+  assert.doesNotMatch(t, /fai 11:00–20:00/, "l'orario intero di Lorenzo non è quello che farei");
+  assert.match(t, /fai \S+ \(stimato per/);
 });
 
-test('prima di scegliere un turno, un collega legge cosa prende e cosa lascia, senza il nome dell\'autore', () => {
+test('senza aver scelto un turno: i tuoi turni veri, o che quel giorno non lavori', () => {
   const { richiesta } = scena();
-  const t = testo(coppiaCedoCerco(richiesta));
-  // Prima cosa prende (il turno che l'autore lascia), poi cosa lascia (quello che l'autore cerca).
-  assert.match(t, /prendi .*11:00–20:00 .*lasci .*stesso giorno/);
-  assert.doesNotMatch(t, /lascio|cerco /);
-  // Il punto di vista dell'altra persona viene dopo, e solo lì compare il nome.
-  assert.ok(t.indexOf('prendi') < t.indexOf('Lorenzo offre'), 'prima io, poi lui');
-  assert.match(t, /Lorenzo offre .*11:00–20:00 · cerca/);
+  assert.match(testo(coppiaCedoCerco(richiesta)), /fai 11:00–20:00 invece del tuo 09:30–18:30/);
+  const io = store.state.currentUserId;
+  store.state.shifts = store.state.shifts.filter((s) => s.userId !== io);
+  assert.match(testo(coppiaCedoCerco(richiesta)), /non lavori quel giorno/);
 });
 
-test("all'autore il blocco parla con le sue parole", () => {
+test("all'autore la box mostra il suo messaggio, senza \"Cosa faresti tu\"", () => {
   const { richiesta } = scena();
   store.state.currentUserId = 'lorenzo';
-  const t = testo(coppiaCedoCerco(richiesta, { mioTurno: store.shift('sh-mio') }));
-  assert.match(t, /prendi .*stesso giorno .*lasci .*11:00–20:00/);
-  assert.doesNotMatch(t, /lascio|cerco|Lorenzo/);
+  const t = testo(coppiaCedoCerco(richiesta));
+  assert.match(t, /CERCO .*OFFRO .*11:00–20:00/);
+  assert.doesNotMatch(t, /Cosa faresti tu/);
 });
 
-// Un cambio OFF letto da un collega: lascia il suo turno in uno dei giorni che
-// l'autore offre. Non "qualsiasi turno" (giusto solo per l'autore) e non "OFF":
-// chi lo legge lavora quel giorno, e un OFF non lo lascia.
+test("all'autore che legge una proposta: cosa farebbe, con il nome di chi l'ha fatta", () => {
+  const { richiesta, mio } = scena();
+  const io = store.state.currentUserId;
+  store.state.users.push({ id: io, nome: 'Anna', cognomeIniziale: 'F', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} });
+  store.state.currentUserId = 'lorenzo';
+  const t = testo(coppiaCedoCerco(richiesta, { offerto: mio }));
+  assert.match(t, /Cosa faresti tu .*fai 09:30–18:30 invece del tuo 11:00–20:00/);
+});
+
+// Un cambio OFF letto da un collega: il messaggio dice cosa cerca e offre lei,
+// sotto i tuoi due giorni (lavori al posto suo, sei a casa).
 function scenaOff(giorniOfferti, turniMiei = {}) {
   const { richiesta } = scena();
+  // Il giorno che Lorenzo vuole libero, io sono a casa.
+  const io = store.state.currentUserId;
+  store.state.shifts = store.state.shifts.filter((s) => s.userId !== io);
   richiesta.tipo = 'OFF';
   richiesta.cerco = { giorni: giorniOfferti, mode: 'ANY' };
-  const io = store.state.currentUserId;
   for (const [data, orario] of Object.entries(turniMiei)) {
     store.state.shifts.push({ id: `sh-${data}`, userId: io, data, tipo: 'WORK', start: orario[0], end: orario[1] });
   }
   return richiesta;
 }
 
-test('un cambio OFF: a chi lavora in uno dei giorni offerti dice il suo turno, non OFF né "qualsiasi turno"', () => {
+test('un cambio OFF: CERCO OFF e OFFRO OFF come nel gruppo, poi "lavori" e "sei a casa"', () => {
   const offerto = addDays(giorno, 2);
   const richiesta = scenaOff([offerto], { [offerto]: ['10:00', '19:00'] });
-  for (const opzioni of [{}, { riga: true }]) {
-    const t = testo(coppiaCedoCerco(richiesta, opzioni));
-    assert.match(t, /lasci .*10(:00)?–19(:00)?/, 'il suo turno di quel giorno');
-    assert.doesNotMatch(t, /lasci .*OFF|qualsiasi turno/);
-  }
+  const t = testo(coppiaCedoCerco(richiesta));
+  assert.match(t, new RegExp(`CERCO OFF ${formatDay(giorno).replace('/', '\\/')} \\(11:00–20:00\\)`));
+  assert.match(t, new RegExp(`OFFRO OFF ${formatDay(offerto).replace('/', '\\/')}`));
+  assert.match(t, /lavori 11:00–20:00 al posto di Lorenzo/);
+  assert.match(t, /sei a casa ?, il tuo 10:00–19:00 lo fa Lorenzo/);
+  assert.doesNotMatch(t, /\blasci\b|qualsiasi turno/);
 });
 
-test('un cambio OFF con più giorni offerti: "uno dei tuoi turni" nei soli giorni in cui lavora', () => {
+test('un cambio OFF con più giorni in cui lavori: sei a casa in uno di questi', () => {
   const [uno, due, tre] = [addDays(giorno, 2), addDays(giorno, 3), addDays(giorno, 4)];
   const richiesta = scenaOff([uno, due, tre], { [uno]: ['10:00', '19:00'], [tre]: ['08:00', '17:00'] });
-  const t = testo(coppiaCedoCerco(richiesta, { riga: true }));
-  assert.match(t, /uno dei tuoi turni/);
-  assert.match(t, new RegExp(formatDay(uno).replace(/[/]/g, '\\/')));
-  assert.doesNotMatch(t, new RegExp(formatDay(due).replace(/[/]/g, '\\/') + ' o'), 'il giorno libero non è tra quelli che lasci');
+  const t = testo(coppiaCedoCerco(richiesta));
+  assert.match(t, /sei a casa in uno di questi/);
 });
 
-test('un cambio OFF in cui chi legge non lavora nei giorni offerti lo dice, senza inventare un turno', () => {
+test('un cambio OFF in cui non lavori nei giorni offerti lo dice, senza inventare un turno', () => {
   const richiesta = scenaOff([addDays(giorno, 2)]);
-  const t = testo(coppiaCedoCerco(richiesta, { riga: true }));
-  assert.match(t, /non lavori quel giorno/);
-});
-
-test('un cambio OFF: all\'autore "prendi" resta "qualsiasi turno", perché lavorerebbe quel giorno', () => {
-  const richiesta = scenaOff();
-  store.state.currentUserId = 'lorenzo';
-  const t = testo(coppiaCedoCerco(richiesta, { mioTurno: store.shift('sh-mio') }));
-  assert.match(t, /qualsiasi turno/);
+  assert.match(testo(coppiaCedoCerco(richiesta)), /non lavori quel giorno/);
 });

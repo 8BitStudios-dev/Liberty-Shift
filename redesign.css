@@ -1218,3 +1218,42 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   background: color-mix(in srgb, var(--accento) 7%, transparent);
 }
 .riga-aggiornamento svg { flex: none; color: var(--accento); }
+
+/* La box dello scambio: il messaggio di chi chiede (CERCO / OFFRO), nel colore
+   del tipo con il suo cerchio, e sotto "Cosa faresti tu", giorno per giorno. */
+.coppia.messaggio { display: flex; flex-direction: column; gap: 10px; }
+.coppia.messaggio .msg {
+  display: flex; gap: 12px; align-items: center; padding: 12px;
+  border-radius: var(--raggio-s);
+  background: color-mix(in srgb, var(--tipo) 14%, var(--superficie));
+  border: 1px solid color-mix(in srgb, var(--tipo) 35%, transparent);
+}
+.coppia.messaggio .cerchio-tipo {
+  background: var(--superficie);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tipo) 40%, transparent);
+}
+.coppia.messaggio .bolla { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.coppia.messaggio .bolla p { margin: 0; font-size: 16px; line-height: 1.35; }
+.coppia.messaggio .bolla .nota { font-size: 13px; color: var(--testo-tenue); font-style: italic; }
+.coppia.messaggio .tenue { color: var(--testo-tenue); font-weight: 400; }
+.coppia.messaggio .verbo { font-size: 12px; font-weight: 800; letter-spacing: .07em; margin-right: 7px; }
+.coppia.messaggio .verbo.cerco { color: color-mix(in srgb, var(--tipo) 70%, var(--testo)); }
+.coppia.messaggio .verbo.offro { color: var(--prendo); }
+.coppia.messaggio .tu { border-left: 3px solid var(--accento); padding: 2px 0 2px 11px; }
+.coppia.messaggio .tu-titolo {
+  display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--testo-tenue);
+}
+.coppia.messaggio .riga-tu { display: flex; gap: 10px; align-items: baseline; margin: 0; padding: 2px 0; font-size: 15px; line-height: 1.35; }
+.coppia.messaggio .riga-tu .gg { flex: none; min-width: 74px; font-weight: 800; }
+.coppia.messaggio .riga-tu b.prendo { color: var(--prendo); }
+.coppia.messaggio .riga-tu b.cedo { color: var(--cedo); }
+.coppia.messaggio .riga-tu .stima-contratto { display: inline; margin-left: 4px; }
+/* Senza messaggio (le proposte per la tua richiesta): il cerchio accanto alle righe. */
+.coppia.messaggio.solo-tu .tu { display: flex; gap: 12px; align-items: center; border-left: 0; padding: 0; }
+.coppia.messaggio.compatta .bolla p { font-size: 15px; }
+.coppia.messaggio.compatta .riga-tu { font-size: 14px; }
+.riga-richiesta .coppia.messaggio .msg { padding: 10px; }
+@media (max-width: 374px) {
+  .coppia.messaggio .riga-tu .gg { min-width: 64px; }
+}

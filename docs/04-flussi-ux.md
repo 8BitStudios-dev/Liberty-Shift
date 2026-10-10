@@ -133,15 +133,10 @@ riceve tocca la notifica e trova due tasti, *Tutto a posto* e *Ci sono
 problemi*; il server registra entrambe le risposte (vedi `docs/07-supabase.md`).
 Serve a capire se una notifica non arriva per colpa del server o del telefono.
 
-### Cambio OFF: cosa lasci è il tuo turno
-In una richiesta OFF, nella box di chi legge (non l'autore), quello che lasci è il
-**tuo turno** in uno dei giorni che l'autore offre: «LASCI Mer 14/10 · 10–19».
-Non «qualsiasi turno» (giusto solo per l'autore, che quel giorno lavorerebbe un
-turno qualunque) e non «OFF»: chi legge lavora quel giorno, e un OFF non lo lascia
-(l'avevamo scritto così, ed era sbagliato). Se in più dei giorni offerti lavori,
-la box elenca solo quelli e dice «uno dei tuoi turni»; se non lavori in nessuno
-dice «non lavori quel giorno» e non inventa un turno. Vale nel dettaglio, nelle
-righe delle liste e nel foglio di un giorno del calendario.
+### Cambio OFF: cosa fai tu, giorno per giorno
+Vedi «Il blocco dello scambio: il messaggio, poi tu». Prima la box diceva «LASCI
+Mer 14/10 · qualsiasi turno», poi «· OFF»: tutte e due si leggevano al contrario.
+Ora dice «Mer 14/10 · sei a casa, il tuo 10–19 lo fa Jesse».
 
 ### Aggiornare i dati a mano
 Sull'iPhone, con l'app sulla Home, non c'è il pulsante di ricarica di Safari né il
@@ -290,46 +285,39 @@ degli altri non escono dal loro telefono, e l'altra persona fa lo stesso
 controllo dal suo. Prima il secondo passo era solo un'etichetta "cambio
 inserito" sotto la frase del primo, e sembrava che mancasse un tasto.
 
-### Il blocco dello scambio parla a chi lo guarda
-Il riquadro con i due lati (blu a sinistra, verde a destra) cambia parole
-secondo chi lo legge, e il blu resta sempre il turno che cede chi guarda:
+### Il blocco dello scambio: il messaggio, poi tu
+Il blocco parla come il gruppo WhatsApp del negozio, dove la gente scrive
+«CERCO … / CEDO …». Ha due parti:
 
-| Chi guarda | A sinistra (verde) | A destra (blu) |
+1. **Il messaggio di chi chiede**, con le sue parole e nel colore del tipo, con
+   il cerchio di sempre (orologio per l'orario, ombrellone per l'OFF):
+   - orario: «CERCO Mer 21/10, qualsiasi turno che finisca entro le 19» ·
+     «OFFRO Mer 21/10, 12–20»;
+   - OFF: «CERCO OFF Ven 16/10 (14–20)» · «OFFRO OFF Mer 14/10 o Gio 15/10».
+   Si scrive «offro» e non «cedo», per scelta di Lorenzo.
+2. **Cosa faresti tu**, giorno per giorno, con parole concrete:
+   - orario: «Mer 21/10 · fai 12–20 invece del tuo 10–19» (con «stimato per FT»
+     quando si adatta al contratto);
+   - OFF: «Ven 16/10 · lavori 14–20 al posto di Jesse» e «Mer 14/10 · sei a casa,
+     il tuo 10–19 lo fa Jesse». Con più giorni offerti in cui lavori: «sei a casa
+     in uno di questi»; se non lavori nei giorni giusti lo dice («non lavori quel
+     giorno», «lavori già (11–20)») senza inventare un turno.
+
+**Chi guarda:**
+| Chi guarda | Messaggio | Cosa faresti tu |
 | --- | --- | --- |
-| un collega, prima di scegliere il suo turno | **prendi** il turno che l'autore lascia | **lasci** quello che l'autore cerca ("stesso giorno, finisca entro le 18", "Gio o Ven") |
-| un collega, con il turno che offre (tendina "Proponi lo scambio", Aiuta un collega, Cambio rapido, una proposta già fatta) | **prendi** il turno dell'autore, con le ore che faresti davvero | **lasci** il tuo turno |
-| chi ha scritto la richiesta | **prendi** quello che cerchi (nel cambio OFF, uno dei giorni che offri) | **lasci** il tuo turno |
+| un collega, prima di scegliere il suo turno | quello dell'autore | con i suoi turni veri in quei giorni |
+| un collega, con il turno che offre (tendina «Proponi lo scambio», Aiuta un collega, Cambio rapido, una proposta già fatta) | quello dell'autore | con il turno scelto |
+| chi ha scritto la richiesta | il suo | niente: è la sua richiesta |
+| chi ha scritto la richiesta, su una proposta ricevuta | il suo | con il turno che gli è stato offerto, e il nome di chi l'ha proposto |
+| chi ha scritto la richiesta, nei match | — | solo «cosa faresti tu» con quel collega |
 
-**Sempre prima il tuo punto di vista, poi quello dell'altra persona.** Chi apre
-la richiesta di Elisa vuole sapere cosa farà lui, non cosa fa lei: "Elisa
-lascia, Elisa prende" costringeva a ribaltare tutto a mente. Ora la box parla a
-chi guarda, e **prima cosa prendi, poi cosa lasci**. L'altra persona viene
-dopo: sotto la box, in piccolo, "Elisa offre Mar 20/10 · cerca Gio 22/10 o
-Ven 23/10"; in Aiuta un collega, nel Cambio rapido e in Proposte la stessa
-riga ("Davide offre Sab 10 · cerca Sab 10 11:00–20:00"), con la stessa
-sintassi e sempre dopo la tua. Lo stesso ordine vale per le spiegazioni del
-match ("Prendi il turno 08:00–17:00 di Davide F.", "Lasci Dom 11/10 e prendi
-Lun 12/10: l'esatto contrario") e per il giorno del calendario ("prendi questo
-giorno · in cambio lasci
-Lun 12/10"). I colori non seguono la posizione: il blu è sempre il turno che
-lasci, il verde quello che prendi.
-
-Le parole sono due paia, e ognuno ha il suo: **prendi** e **lasci** per te,
-**offre** e **cerca** per un'altra persona. Il legame è fisso, per ogni tipo di
-cambio: quello che lei **offre** è quello che tu **prendi**, quello che lei
-**cerca** è quello che tu **lasci**. «Lascia/prende» accanto a «lasci/prendi»
-si distinguevano per una lettera, e le righe si leggevano al contrario. Prima
-erano quattro paia mescolate (lascio/cerco, lasci/prendi, cerca/offre,
-cede/cerca) e "cerca" voleva dire cose opposte: nel cambio OFF il giorno che si
-lascia, nel cambio orario quello che si vuole ricevere; ora guarda sempre dal tuo
-lato e non può più. Anche la Home ("Lasci Gio 15/10") e la legenda del mese
-parlano a te. I titoli del calendario («Lasciano», «Prendono») restano com'erano.
-
-Scritto sempre con le parole dell'autore, il blocco faceva leggere a chi
-proponeva "LASCIO 11:00–20:00" come se fosse il suo turno, con il turno che
-offriva davvero subito sotto. Nella tendina il lato «lasci» segue il menu
-"Il turno che offri". In Proposte chi ha scritto la richiesta legge nella box
-"prendi" il turno che gli è stato offerto, e sotto cosa fa chi l'ha proposto.
+Le persone si nominano per nome («al posto di Jesse»), non con lui o lei. La riga
+piccola «Jesse offre … · cerca …» sotto la box non c'è più: il messaggio dice già
+la stessa cosa. **«Lasci» non compare più nel blocco**: in un cambio OFF chi
+leggeva «LASCI Mer 14/10» credeva di lasciare un OFF, mentre quel giorno lavora e
+resta a casa. La Home e la legenda del mese parlano ancora con prendi e lasci; i
+titoli del calendario («Lasciano», «Prendono») restano com'erano.
 
 Una proposta fatta si può **ritirare** finché l'altra persona non l'ha
 accettata: "Ritira la proposta", in Proposte e nel dettaglio della richiesta,
