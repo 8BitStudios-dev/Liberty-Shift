@@ -559,6 +559,14 @@ autorizzato"}`: vuol dire che il modulo si è caricato e ha letto i segreti.
 Funziona finché il repository è pubblico; se diventasse privato si torna a
 pubblicare i file.
 
+**Due cose che facevano arrivare le notifiche "a volte".** Ogni invio parte
+con `urgency: high`: senza, Apple la considera rimandabile e con il risparmio
+energetico o il telefono fermo la consegna slitta o salta, mentre al server
+risponde 201 come se fosse andata. E il telefono ricorda la sua iscrizione al
+server a ogni apertura (`riallinea` in `src/ui/notifiche.js`), non solo al
+tocco sull'interruttore: iPhone può cambiarla da solo, e una riga persa non
+tornava più. Il salvataggio è per `endpoint`, quindi non crea doppioni.
+
 Le risposte della funzione restano per qualche ora in `net._http_response`
 (`{"inviate":1,"rimosse":0,"errori":[]}`): è il primo posto dove guardare se
 una notifica non arriva, prima ancora dei log.

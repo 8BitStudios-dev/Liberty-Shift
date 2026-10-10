@@ -73,11 +73,33 @@ async function iscrizioneAttuale() {
   }
 }
 
+// L'endpoint già ricordato al server in questa apertura dell'app.
+let riallineato = null;
+
 export async function statoNotifiche(state) {
   const s = statoDaAmbiente(ambiente(), sulServer(state));
-  noto = s !== STATO.DA_ATTIVARE ? s
-    : (await iscrizioneAttuale()) && ambiente().permesso === 'granted' ? STATO.ATTIVE : s;
+  const iscrizione = s === STATO.DA_ATTIVARE && ambiente().permesso === 'granted'
+    ? await iscrizioneAttuale() : null;
+  noto = iscrizione ? STATO.ATTIVE : s;
+  if (iscrizione) riallinea(state, iscrizione);
   return noto;
+}
+
+/**
+ * Ricorda al server l'iscrizione di questo telefono, una volta per apertura.
+ *
+ * Prima la si salvava solo al tocco sull'interruttore. Ma iPhone può cambiarla
+ * da solo (un aggiornamento, un ripristino), e una riga persa per un errore di
+ * rete non tornava più: l'interruttore restava acceso, il server mandava a un
+ * indirizzo vecchio, e le notifiche arrivavano "a volte". Il salvataggio è per
+ * endpoint, quindi ripeterlo non crea doppioni.
+ */
+function riallinea(state, iscrizione) {
+  if (riallineato === iscrizione.endpoint) return;
+  riallineato = iscrizione.endpoint;
+  salvaDispositivoPush(state, iscrizione.toJSON())
+    .then(({ errore }) => { if (errore) riallineato = null; })
+    .catch(() => { riallineato = null; });
 }
 
 /** La chiave VAPID arriva in base64url, `subscribe()` la vuole in byte. */

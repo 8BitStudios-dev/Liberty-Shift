@@ -301,3 +301,10 @@ test('send-push si compila: un nome dichiarato due volte lo ferma all\'avvio, pe
     .replace(/Deno\.serve\(/, 'void (');
   assert.doesNotThrow(() => new Function(`return (async () => {\n${js}\n});`));
 });
+
+test('ogni notifica parte con urgenza alta: senza, iPhone la può rimandare o saltare', () => {
+  const invia = sorgente.slice(sorgente.indexOf('async function invia('));
+  assert.match(invia, /sendNotification\([^)]*urgency: 'high'/);
+  // Una sola chiamata a sendNotification: un secondo invio a parte salterebbe l'urgenza.
+  assert.equal(sorgente.match(/sendNotification\(/g).length, 1);
+});

@@ -291,7 +291,10 @@ async function invia(utente: string, notifica: { title: string; body: string; ur
   const errori: string[] = [];
   await Promise.all(dispositivi.map(async (d: { id: string; subscription: Parameters<typeof webpush.sendNotification>[0] }) => {
     try {
-      await webpush.sendNotification(d.subscription, payload, { TTL: 60 * 60 * 24 });
+      // Senza `urgency: high` Apple tratta la notifica come rimandabile: con il
+      // risparmio energetico o il telefono fermo da un po' la consegna slitta o
+      // salta, e il servizio risponde 201 lo stesso. Era il "a volte non arriva".
+      await webpush.sendNotification(d.subscription, payload, { TTL: 60 * 60 * 24, urgency: 'high' });
       inviate += 1;
     } catch (err) {
       const stato = (err as { statusCode?: number }).statusCode;
