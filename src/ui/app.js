@@ -1636,6 +1636,14 @@ on(document.body, 'click', '[data-act]', (e, el) => {
   fn(e, el);
 });
 
+// Le righe delle liste sono <div role="button">: senza questo, da tastiera non
+// si potrebbero aprire (un <button> vero risponde da solo a Invio e Spazio).
+on(document.body, 'keydown', '[role="button"][data-act]', (e, el) => {
+  if (e.target !== el || (e.key !== 'Enter' && e.key !== ' ')) return;
+  e.preventDefault();
+  el.click();
+});
+
 on(document.body, 'change', '[data-act]', (e, el) => {
   if (el.tagName !== 'INPUT' && el.tagName !== 'SELECT') return;
   const fn = AZIONI[el.dataset.act];

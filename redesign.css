@@ -60,6 +60,8 @@
      schede, e nel Calendario "cerca" e "lascia" non si capivano. Anche la
      pillola "Cambio OFF" lo usa: chi pubblica un OFF è sempre chi lo cerca. */
   --cerca-off: #e0620d;
+  /* L'arancio dei testi piccoli (scritte, cerchi): più scuro, perché a 3,5:1 sul bianco non si legge. */
+  --cerca-off-testo: #b04a00;
   /* Nome storico di --prendo, ancora usato da styles.css. */
   --verde: var(--prendo);
   --marchio: linear-gradient(118deg, #1d66db 0%, #0b7a52 100%);
@@ -134,6 +136,7 @@
     --prendo-tenue: #12302a;
     --orario: #b496ff;
     --cerca-off: #ff9a52;
+    --cerca-off-testo: #ff9a52;
     --rosso: #ff7b80;
     --ambra: #ffb066;
     --oro: #e8c04c;
@@ -178,6 +181,7 @@
   --prendo-tenue: #12302a;
   --orario: #b496ff;
   --cerca-off: #ff9a52;
+  --cerca-off-testo: #ff9a52;
   --rosso: #ff7b80;
   --ambra: #ffb066;
   --oro: #e8c04c;
@@ -313,8 +317,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
    spento, a metà fra il rosso e il testo tenue. Si vede, ma non è un errore:
    è un fatto sui tuoi turni di adesso. La riga resta toccabile, più quieta. */
 .riga-richiesta .non-puoi { color: color-mix(in srgb, var(--rosso) 65%, var(--testo-tenue)); font-size: 14px; margin: 3px 0 0; }
-.riga-richiesta.non-per-me .riga-titolo,
-.riga-richiesta.non-per-me .avatar { opacity: .62; }
+.riga-richiesta.non-per-me .riga-titolo { opacity: .62; }
 .non-puoi { font-size: 14px; }
 .motivo-non-puoi { color: color-mix(in srgb, var(--rosso) 65%, var(--testo-tenue)); font-size: 14px; margin: 8px 0 0; }
 
@@ -331,7 +334,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .stato-pill.rosso { color: var(--rosso); background: color-mix(in srgb, var(--rosso) 14%, transparent); }
 .stato-pill.grigio { color: var(--testo-tenue); background: color-mix(in srgb, var(--testo-tenue) 16%, transparent); }
 .stato-pill.verde { color: var(--concordato-segno); background: var(--concordato); }
-.stato-pill.oro { color: var(--da-cambiare-segno); background: color-mix(in srgb, var(--rapido-segno) 38%, transparent); }
+.stato-pill.oro { color: var(--da-cambiare-segno); background: color-mix(in srgb, var(--rapido-segno) 30%, transparent); }
 .stato-pill.oro .pallino-stato { background: var(--rapido-segno); }
 .stato-pill.blu { color: var(--accento); background: var(--accento-tenue); }
 .lista-cambi, .lista-turni { border: 0; box-shadow: var(--ombra); }
@@ -368,8 +371,8 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
   font-size: 12px; letter-spacing: .05em; text-transform: uppercase;
   display: inline-flex; align-items: center; gap: 4px;
 }
-.coppia .cedo .etichetta { color: var(--cedo); }
-.coppia .cerco .etichetta { color: var(--prendo); }
+.coppia .cedo .etichetta { color: color-mix(in srgb, var(--cedo) 85%, var(--testo)); }
+.coppia .cerco .etichetta { color: color-mix(in srgb, var(--prendo) 85%, var(--testo)); }
 .coppia strong { font-size: 16px; }
 .coppia .nota { font-size: 14px; }
 .coppia.compatta { padding: 0; }
@@ -392,9 +395,10 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .coppia .stima-contratto { display: block; margin-left: 0; }
 .stima-contratto { font-size: 12px; font-weight: 500; color: var(--testo-tenue); margin-left: 4px; white-space: nowrap; }
 .cerchio-testo { font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .01em; }
-.cerchio-tipo[data-tipo] { color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent); }
+.tipo-etichetta[data-tipo="OFF"], .tipo-pill[data-tipo="OFF"], .cerchio-tipo[data-tipo="OFF"] { --tipo-testo: var(--cerca-off-testo); }
+.cerchio-tipo[data-tipo] { color: var(--tipo-testo, var(--tipo)); background: color-mix(in srgb, var(--tipo) 14%, transparent); }
 .tipo-etichetta, .tipo-pill[data-tipo] {
-  color: var(--tipo); background: color-mix(in srgb, var(--tipo) 14%, transparent);
+  color: var(--tipo-testo, var(--tipo)); background: color-mix(in srgb, var(--tipo) 14%, transparent);
 }
 .tipo-etichetta {
   display: inline-flex; align-items: center; gap: 6px;
@@ -405,7 +409,7 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 /* I filtri della Bacheca portano il colore del tipo che filtrano, da spenti:
    da accesi il fondo pieno dice già che sono scelti. */
 .chip[data-filtro="ORARIO"]:not(.attivo) { color: var(--orario); }
-.chip[data-filtro="OFF"]:not(.attivo) { color: var(--cerca-off); }
+.chip[data-filtro="OFF"]:not(.attivo) { color: var(--cerca-off-testo); }
 
 .scambio-secco > div { font-size: 15px; padding: 8px 0; border-bottom: 1px solid var(--filetto); }
 .scambio-secco > div:last-child { border-bottom: 0; }
@@ -1157,7 +1161,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 .riga-richiesta .coppia .orario { font-size: 13px; }
 .riga-richiesta { cursor: pointer; }
 .riga-richiesta { align-items: flex-start; }
-.riga-richiesta.non-per-me .coppia { opacity: .62; }
+.riga-richiesta.non-per-me .coppia { opacity: .78; }
 /* Fino a 374px la box si stringe: cerchio più piccolo, spazi minori. */
 @media (max-width: 374px) {
   .coppia .lati, .riga-richiesta .coppia .lati { gap: 8px; padding: 12px 10px; }

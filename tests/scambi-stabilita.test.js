@@ -215,7 +215,7 @@ azioni.importa = (c) => {
   store.importaTurni(turni);
   return `importa ${u.id} ${turni.length} giorni`;
 };
-const BRUTTI = /undefined|NaN|\[object Object\]|\bnull\b/;
+const BRUTTI = /undefined|NaN|\[object Object\]|\bnull\b|&lt;\/?[a-z]/;
 const pulito = (h) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 async function disegna(log) {
   const V = await import(`${R}/ui/views.js`);

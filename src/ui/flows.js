@@ -1120,11 +1120,11 @@ function riquadroRicompensa() {
   // Finché non c'è niente da dire sul conto basta l'invito: la priorità in più
   // arriva con l'approvazione di UKG e dura un mese da quel giorno.
   const conto = info.disponibili
-    ? html` Ora ne hai <strong>${info.disponibili}</strong> da usare, la prima scade ${scadenzaPriorita(info.prossimaScadenza)}.`
+    ? html` Ora ne hai <strong>${info.disponibili}</strong> da usare, ${info.disponibili === 1 ? 'scade' : 'la prima scade'} ${scadenzaPriorita(info.prossimaScadenza)}.`
     : info.sbloccoIl
       ? html` Ne hai già usate ${RULES.priority.tetto} nell'ultimo mese: la prossima la potrai usare ${scadenzaPriorita(info.sbloccoIl)}.`
       : ' Ora non ne hai da usare.';
-  const testo = html`Ogni aiuto approvato da UKG ti dà una priorità in più, valida un mese.${attesa}${conto}`;
+  const testo = html`Ogni aiuto approvato da UKG ti dà una priorità in più, valida un mese.${attesa}${raw(conto)}`;
   return html`
     <div class="ricompensa-aiuto">
       <span class="icona-in-riga stella">${raw(icona('priorita', { px: 16 }))}</span>
@@ -1134,7 +1134,10 @@ function riquadroRicompensa() {
 
 /** "il 12 novembre", per dire quando scade la prima priorità. */
 export function scadenzaPriorita(data) {
-  return data ? `il ${data.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}` : '';
+  if (!data) return '';
+  const mese = data.toLocaleDateString('it-IT', { month: 'long' });
+  // In italiano il primo del mese è "il 1°", non "il 1".
+  return `il ${data.getDate() === 1 ? '1°' : data.getDate()} ${mese}`;
 }
 
 /**
