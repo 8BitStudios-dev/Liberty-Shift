@@ -1113,7 +1113,7 @@ Per registrare un video serve invece un'app piena, e per questo esiste una
 versione a parte: `npm run demo` produce `dist/liberty-shift-demo.html`, e a
 ogni push su `main` il workflow la pubblica anche come `demo.html` accanto
 all'app (stesso indirizzo del sito, `/demo.html`). È la stessa app, con quattro
-differenze:
+differenze (e una modalità in più):
 
 - **Lorenzo e 25 colleghi inventati** (`demo/dati-demo.js`): venti con una
   richiesta aperta, sette che Lorenzo può coprire (due gli convengono, una gli
@@ -1134,10 +1134,18 @@ differenze:
   dopo la prima apertura di Proposte e poi mai più. Cambia anche lo stato: è
   il quinto grazie, e toccandola il Profilo annuncia il traguardo. `?guida=1`
   lascia comparire le schede della guida, che di base sono già lette.
-- **Un tasto per ricominciare la registrazione** (`demo/ricomincia-demo.js`):
-  in fondo alle Impostazioni, solo nella demo. Torna alla Home e ricarica la
-  pagina, così i dati, le scelte e la notifica di Rita ripartono da capo. Non
-  chiede conferma, per non mettere una finestra in più nel video.
+- **Un tasto per ricominciare la registrazione da zero**
+  (`demo/ricomincia-demo.js`, `demo/avvio-demo.js`): in fondo alle Impostazioni,
+  solo nella demo. Ricarica con `?registrazione=1`: un telefono nuovo che
+  parte dal codice dello store, poi nome, contratto, preferenze, password,
+  note e primi turni, con le schede della guida che compaiono da sole. Non
+  chiede conferma. Per rifarla a metà basta ricaricare la pagina, e «Torna alla
+  demo con i dati» riporta a Lorenzo. Non c'è un server vero: un finto `fetch`
+  risponde solo all'indirizzo della demo (nessun omonimo, il calendario di
+  Lorenzo per i primi turni, un errore garbato per il resto) e l'iscrizione
+  accetta un solo codice, **1234** (le cifre dopo la R, ricordate sotto il
+  campo), così si prova anche l'errore del codice sbagliato. Nessuna notifica
+  di Rita in questa modalità.
 
 Le percentuali del Cambio rapido sono di chi guarda (vedi `punteggioDi` in
 `engine.js`): contano le preferenze di Lorenzo e le ore adattate, non quanto

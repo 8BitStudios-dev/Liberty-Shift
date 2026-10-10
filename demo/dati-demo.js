@@ -99,6 +99,22 @@ function turniCasuali(rnd, contratto, ore) {
   });
 }
 
+/**
+ * Il calendario di Lorenzo come lo scaricherebbe il server, per provare
+ * l'importazione dei primi turni nella registrazione da zero: stessi turni
+ * di `SETTIMANA_LORENZO`, nelle tre settimane della demo.
+ */
+export function calendarioDemoIcs(oggi = todayISO()) {
+  const ora = (hhmm) => `${hhmm.replace(':', '')}00`;
+  const eventi = [];
+  settimaneDemo(oggi).forEach((w) => SETTIMANA_LORENZO.forEach((t, i) => {
+    if (t === OFF) return;
+    const giorno = addDays(w, i).replace(/-/g, '');
+    eventi.push(`BEGIN:VEVENT\r\nDTSTART:${giorno}T${ora(t[0])}\r\nDTEND:${giorno}T${ora(t[1])}\r\nSUMMARY:R667 - Piazza Liberty\r\nEND:VEVENT`);
+  }));
+  return `BEGIN:VCALENDAR\r\nVERSION:2.0\r\n${eventi.join('\r\n')}\r\nEND:VCALENDAR`;
+}
+
 export function statoDemo(oggi = todayISO(), adesso = new Date()) {
   const rnd = mulberry32(2610);
   const [w0, w1, w2] = settimaneDemo(oggi);

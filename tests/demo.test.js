@@ -80,15 +80,37 @@ test('demo: è deterministica, così ogni ripresa parte uguale', () => {
   assert.deepEqual(stato(), stato());
 });
 
-test('demo: il tasto per ricominciare c\'è solo nel file della demo', async () => {
+test('demo: il tasto per ricominciare la registrazione c\'è solo nel file della demo', async () => {
   const { readFile } = await import('node:fs/promises');
   const build = await readFile(new URL('../scripts/build-single.js', import.meta.url), 'utf8');
   // Il modulo è nell'elenco della demo e non in quello dell'app vera.
   assert.match(build, /'demo\/ricomincia-demo\.js'/);
   const app = build.slice(build.indexOf('const MODULI_APP'), build.indexOf('const MODULI = '));
   assert.doesNotMatch(app, /ricomincia-demo/);
-  // Ricarica la pagina dalla Home: la demo riparte da capo a ogni apertura.
+  // Ricarica la demo come un telefono nuovo, con un indirizzo diverso a ogni tocco.
   const modulo = await readFile(new URL('../demo/ricomincia-demo.js', import.meta.url), 'utf8');
-  assert.match(modulo, /location\.reload\(\)/);
+  assert.match(modulo, /\?registrazione=1&r=\$\{ora\}/);
   assert.match(modulo, /Ricomincia la registrazione/);
+});
+
+test('demo: il calendario del finto server si legge come uno vero, con i turni di Lorenzo', async () => {
+  const { calendarioDemoIcs } = await import('../demo/dati-demo.js');
+  const { parseICS } = await import('../src/core/ics.js');
+  const { turni, ignorati } = parseICS(calendarioDemoIcs(OGGI));
+  // Cinque turni a settimana, tre settimane: gli stessi di SETTIMANA_LORENZO.
+  assert.equal(turni.length, 15);
+  assert.equal(ignorati.length, 0);
+  assert.ok(turni.every((t) => t.tipo === 'WORK' && t.start && t.end));
+});
+
+test('app: il controllo della prova in sospeso è dichiarato prima dell\'avvio', async () => {
+  // All'avvio `controllaProvaInSospeso()` gira subito: una `const` dichiarata più in
+  // basso non esiste ancora, e l'errore sparisce in una promessa rifiutata.
+  const { readFile } = await import('node:fs/promises');
+  const app = await readFile(new URL('../src/ui/app.js', import.meta.url), 'utf8');
+  const avvio = app.indexOf('\nrender();\naggiornamentoSilenzioso();');
+  assert.ok(avvio > 0);
+  assert.ok(app.indexOf('function suPaginaProva') < avvio);
+  assert.ok(app.indexOf('let ultimaProva') < avvio);
+  assert.ok(app.indexOf('function controllaProvaInSospeso') < avvio);
 });

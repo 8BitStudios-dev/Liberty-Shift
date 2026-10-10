@@ -7,6 +7,7 @@
 
 import { store } from '../src/core/store.js';
 import { notificaDemo } from './dati-demo.js';
+import { REGISTRAZIONE_DA_ZERO } from './avvio-demo.js';
 
 const ATTESA_MS = 2000;
 const notifica = notificaDemo();
@@ -70,7 +71,8 @@ function arriva() {
 
 /** Parte solo la prima volta che si apre Proposte: poi la demo resta in silenzio. */
 function controlla() {
-  if (programmata || !location.hash.startsWith('#/inbox')) return;
+  // Nella registrazione da zero non c'è nessun grazie da ricevere: il telefono è nuovo.
+  if (REGISTRAZIONE_DA_ZERO || programmata || !location.hash.startsWith('#/inbox')) return;
   programmata = true;
   window.removeEventListener('hashchange', controlla);
   setTimeout(arriva, ATTESA_MS);

@@ -1714,6 +1714,29 @@ store.init();
 store.subscribe(() => {});
 if (!location.hash) location.hash = '#/home';
 avviaOreBrevi();
+/**
+ * Una notifica di prova senza risposta porta alla sua pagina anche se il
+ * tocco sulla notifica non c'è arrivato: su iPhone, con l'app chiusa, il
+ * collegamento della notifica può perdersi e si apre la Home. Vale solo per
+ * la prima ora (`RULES.provaNotificheAttesaOre`), poi è "nessuna risposta".
+ *
+ * Sta prima dell'avvio: la prima chiamata parte da lì, e una `const` più in
+ * basso non esisterebbe ancora (errore silenzioso, e la prova non si trovava).
+ */
+// Attenzione: `#/prova-notifiche` (la pagina del SuperAdmin) comincia allo
+// stesso modo ma è un'altra schermata, e da lì il tocco sulla notifica deve
+// portare comunque alla prova.
+function suPaginaProva() {
+  return /^#\/prova(\?|$)/.test(location.hash);
+}
+let ultimaProva = 0;
+async function controllaProvaInSospeso() {
+  if (!collegato() || suPaginaProva() || Date.now() - ultimaProva < 5000) return;
+  ultimaProva = Date.now();
+  const { dati } = await provaNotifiche({ azione: 'mie' });
+  if (dati?.prova && !suPaginaProva()) location.hash = `#/prova?id=${dati.prova}`;
+}
+
 render();
 aggiornamentoSilenzioso();
 sincronizzaSilenziosa();
@@ -1769,23 +1792,6 @@ function allaRipresa() {
   controllaProvaInSospeso();
 }
 
-/**
- * Una notifica di prova senza risposta porta alla sua pagina anche se il
- * tocco sulla notifica non c'è arrivato: su iPhone, con l'app chiusa, il
- * collegamento della notifica può perdersi e si apre la Home. Vale solo per
- * la prima ora (`RULES.provaNotificheAttesaOre`), poi è "nessuna risposta".
- */
-// Attenzione: `#/prova-notifiche` (la pagina del SuperAdmin) comincia allo
-// stesso modo ma è un'altra schermata, e da lì il tocco sulla notifica deve
-// portare comunque alla prova.
-const suPaginaProva = () => /^#\/prova(\?|$)/.test(location.hash);
-let ultimaProva = 0;
-async function controllaProvaInSospeso() {
-  if (!collegato() || suPaginaProva() || Date.now() - ultimaProva < 5000) return;
-  ultimaProva = Date.now();
-  const { dati } = await provaNotifiche({ azione: 'mie' });
-  if (dati?.prova && !suPaginaProva()) location.hash = `#/prova?id=${dati.prova}`;
-}
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   allaRipresa();
