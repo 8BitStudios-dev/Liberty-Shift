@@ -606,6 +606,25 @@ create policy "utente gestisce le sue subscription"
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
 
+-- Le notifiche di prova del SuperAdmin (vedi `send-push`): una riga per
+-- persona e per invio. `esito` resta vuoto finché chi l'ha ricevuta non preme
+-- "Tutto a posto" (OK) o "Ci sono problemi" (PROBLEMI): una prova senza risposta
+-- dice che la notifica non è arrivata, o non è stata toccata. Nessuna policy:
+-- né il client né gli altri ruoli la toccano, ci pensa solo `send-push`.
+create table if not exists public.prove_notifiche (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profili(id) on delete cascade,
+  inviata_da  uuid references public.profili(id) on delete set null,
+  inviata_il  timestamptz not null default now(),
+  esito       text check (esito in ('OK', 'PROBLEMI')),
+  risposta_il timestamptz
+);
+
+create index if not exists prove_notifiche_inviata_il_idx on public.prove_notifiche (inviata_il desc);
+
+alter table public.prove_notifiche enable row level security;
+revoke all on public.prove_notifiche from anon, authenticated;
+
 -- I segreti delle notifiche stanno in Vault, cifrati nel database, e non nei
 -- secrets delle Edge Functions: così si impostano una volta da SQL Editor
 -- (vedi docs/07-supabase.md) e non finiscono mai in un file del repository.

@@ -1246,12 +1246,7 @@ export function provaNotifiche() {
       <h1>Prova notifiche</h1>
     </header>
     <p class="testo-tenue">Scegli a chi mandare una notifica di test. Arriva solo a chi ha le notifiche accese su almeno un dispositivo.</p>
-    <label class="campo">
-      <input type="text" class="testo" data-campo="prova-titolo" maxlength="80" value="Prova notifiche" autocomplete="off">
-    </label>
-    <label class="campo">
-      <input type="text" class="testo" data-campo="prova-testo" maxlength="200" value="Questa è una notifica di prova di Liberty Shift." autocomplete="off">
-    </label>
+    <p class="meta">Il testo dice di premere “Tutto a posto” o “Ci sono problemi”. Il server tiene traccia di entrambe le risposte.</p>
     <div id="lista-prova">
       ${raw(persone.map((u) => html`
       <label class="riga-iscritto card" style="display:flex;gap:12px;align-items:center">
@@ -1264,7 +1259,28 @@ export function provaNotifiche() {
     <div class="barra-azioni">
       <button class="btn primario largo" data-act="invia-prova">Invia la prova</button>
     </div>
-    <div id="esito-prova" class="testo-tenue" aria-live="polite"></div>`;
+    <div id="esito-prova" class="testo-tenue" aria-live="polite"></div>
+    <h2>Ultime prove</h2>
+    <div id="esiti-prove" class="testo-tenue">Carico…</div>`;
+}
+
+/**
+ * Dove porta il tocco sulla notifica di prova: chi l'ha ricevuta dice com'è
+ * andata. Il server ricorda entrambe le risposte, e una prova vale una volta.
+ */
+export function rispostaProva(params = {}) {
+  const id = params.id || '';
+  return html`
+    <header class="testata">
+      <button class="icon-btn" data-act="vai" data-to="#/home">‹</button>
+      <h1>Notifica di prova</h1>
+    </header>
+    <p>Hey, questa è una notifica test. Se l'hai ricevuta correttamente premi “Tutto a posto”, altrimenti “Ci sono problemi”.</p>
+    <div id="risposta-prova" class="barra-azioni">
+      <button class="btn primario largo" data-act="risposta-prova" data-prova="${id}" data-esito="OK">Tutto a posto</button>
+      <button class="btn secondario largo" data-act="risposta-prova" data-prova="${id}" data-esito="PROBLEMI">Ci sono problemi</button>
+    </div>
+    <p id="esito-risposta" class="testo-tenue" aria-live="polite"></p>`;
 }
 
 export function gestioneIscritti() {

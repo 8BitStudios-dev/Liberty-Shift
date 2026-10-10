@@ -234,10 +234,11 @@ test('il favore da ricambiare si dice per mese, come nell\'app', () => {
 });
 
 test('la prova delle notifiche passa solo per un SuperAdmin attivo, verificato da Auth', () => {
-  const prova = sorgente.slice(sorgente.indexOf('async function superAdminChiamante'), sorgente.indexOf('Deno.serve'));
+  const prova = sorgente.slice(sorgente.indexOf('async function profiloChiamante'), sorgente.indexOf('Deno.serve'));
   // Il token non si legge a occhio: si chiede a Auth, la funzione non ha verifica JWT.
   assert.match(prova, /auth\/v1\/user/);
-  assert.match(prova, /super_admin && profilo\?\.attivo/);
+  assert.match(prova, /profilo\?\.attivo/);
+  assert.match(prova, /if \(!io\.super_admin\) return rispostaCors/);
   assert.match(prova, /rispostaCors\(\{ errore: 'non autorizzato' \}, 401\)/);
   // Si può provare a un massimo di persone, e solo con id veri.
   assert.match(prova, /PROVA_MAX_DESTINATARI/);
@@ -248,4 +249,13 @@ test('senza segreto e senza sessione la funzione risponde ancora 401 non autoriz
   // Un segreto sbagliato non apre la strada della prova: solo la sua assenza.
   assert.match(gestore, /if \(!req\.headers\.has\('x-webhook-secret'\)\) return provaNotifiche\(req\)/);
   assert.match(gestore, /return json\(\{ errore: 'non autorizzato' \}, 401\)/);
+});
+
+test('la prova porta il testo scelto e registra entrambe le risposte, una volta sola', () => {
+  assert.match(sorgente, /Se l\\'hai ricevuta correttamente premi “Tutto a posto” altrimenti “Ci sono problemi”/);
+  assert.match(sorgente, /ESITI_PROVA = \['OK', 'PROBLEMI'\]/);
+  // Solo la propria riga, e solo se non c'è già una risposta.
+  assert.match(sorgente, /user_id=eq\.\$\{io\.id\}&esito=is\.null/);
+  // Il tocco sulla notifica porta alla riga di quella prova.
+  assert.match(sorgente, /url: `#\/prova\?id=\$\{riga\.id\}`/);
 });

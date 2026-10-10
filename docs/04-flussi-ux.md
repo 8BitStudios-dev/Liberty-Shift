@@ -109,11 +109,12 @@ tasto Proponi né Aiuta lo offrono. Il Full Time che prende un turno corto non
 entra mai prima delle 08:00: l'11:00–16:00 diventa 11:00–20:00.
 
 ### Prova notifiche (SuperAdmin)
-In Amministrazione, solo per il SuperAdmin: si scelgono le persone, si scrive
-titolo e testo e si manda una notifica di prova. Accanto a ognuno c'è quanti
-dispositivi ha registrati, e dopo l'invio l'esito per persona. Serve a capire
-se una notifica non arriva per colpa del server o del telefono (vedi
-`docs/07-supabase.md`).
+In Amministrazione, solo per il SuperAdmin: si scelgono le persone e si manda una
+notifica di prova. Accanto a ognuno c'è quanti dispositivi ha registrati, dopo
+l'invio l'esito per persona, e in fondo le ultime prove con la risposta. Chi la
+riceve tocca la notifica e trova due tasti, *Tutto a posto* e *Ci sono
+problemi*; il server registra entrambe le risposte (vedi `docs/07-supabase.md`).
+Serve a capire se una notifica non arriva per colpa del server o del telefono.
 
 ### Richiesta chiusa dall'amministratore
 Quando un admin **chiude** una richiesta (non la rimuove), sulla Home di chi

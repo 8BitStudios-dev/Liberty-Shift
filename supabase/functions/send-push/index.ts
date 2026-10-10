@@ -481,13 +481,13 @@ const json = (corpo: unknown, stato = 200) => new Response(JSON.stringify(corpo)
   status: stato, headers: { 'Content-Type': 'application/json' },
 });
 
-// ---- PROVA DELLE NOTIFICHE (solo SuperAdmin)
+// ---- PROVA DELLE NOTIFICHE (la manda il SuperAdmin, la conferma chi la riceve)
 //
 // L'unico percorso che non arriva dal database ma dall'app. Qui la funzione è
 // pubblicata senza verifica del JWT, quindi il token si controlla da sé
 // chiedendolo a Auth: una firma falsa o scaduta non passa, e nemmeno la sola
-// chiave pubblica dell'app. Chi passa deve essere un profilo attivo con
-// `super_admin`: nessun altro può mandare notifiche a nome dell'app.
+// chiave pubblica dell'app. Mandare e leggere le prove è del profilo attivo con
+// `super_admin`; rispondere a una propria prova lo può fare chiunque sia attivo.
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -500,7 +500,11 @@ const rispostaCors = (corpo: unknown, stato = 200) => new Response(JSON.stringif
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PROVA_MAX_DESTINATARI = 20;
 
-async function superAdminChiamante(req: Request): Promise<string | null> {
+const TESTO_PROVA = 'Hey, questa è una notifica test. Se l\'hai ricevuta correttamente premi “Tutto a posto” altrimenti “Ci sono problemi”';
+const ESITI_PROVA = ['OK', 'PROBLEMI'];
+
+/** Chi ha chiamato, se il token è vero e il profilo è attivo. */
+async function profiloChiamante(req: Request): Promise<{ id: string; super_admin: boolean } | null> {
   const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   if (!token) return null;
   const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -510,13 +514,37 @@ async function superAdminChiamante(req: Request): Promise<string | null> {
   const utente = await r.json();
   if (!utente?.id || !UUID.test(utente.id)) return null;
   const profilo = (await leggi(`profili?id=eq.${utente.id}&select=super_admin,attivo`))[0];
-  return profilo?.super_admin && profilo?.attivo ? utente.id : null;
+  return profilo?.attivo ? { id: utente.id, super_admin: Boolean(profilo.super_admin) } : null;
 }
 
 async function provaNotifiche(req: Request) {
-  if (!await superAdminChiamante(req)) return rispostaCors({ errore: 'non autorizzato' }, 401);
-  let corpo: { azione?: string; destinatari?: unknown; titolo?: unknown; testo?: unknown };
+  const io = await profiloChiamante(req);
+  if (!io) return rispostaCors({ errore: 'non autorizzato' }, 401);
+  let corpo: { azione?: string; destinatari?: unknown; prova?: unknown; esito?: unknown };
   try { corpo = await req.json(); } catch { return rispostaCors({ errore: 'Richiesta illeggibile.' }, 400); }
+
+  // L'unica azione aperta a chiunque: chi ha ricevuto la prova dice com'è andata.
+  // Vale una volta sola e solo per la propria riga: l'esito resta quello che
+  // era stato premuto, anche se qualcuno riapre il collegamento.
+  if (corpo.azione === 'rispondi') {
+    if (typeof corpo.prova !== 'string' || !UUID.test(corpo.prova) || !ESITI_PROVA.includes(String(corpo.esito))) {
+      return rispostaCors({ errore: 'Risposta non valida.' }, 400);
+    }
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/prove_notifiche?id=eq.${corpo.prova}&user_id=eq.${io.id}&esito=is.null`,
+      {
+        method: 'PATCH',
+        headers: { ...intestazioni, Prefer: 'return=representation' },
+        body: JSON.stringify({ esito: corpo.esito, risposta_il: new Date().toISOString() }),
+      },
+    );
+    const righe = r.ok ? await r.json() : [];
+    if (!righe.length) return rispostaCors({ errore: 'Hai già risposto a questa prova, o non è tua.' }, 409);
+    return rispostaCors({ ok: true });
+  }
+
+  // Il resto è del SuperAdmin.
+  if (!io.super_admin) return rispostaCors({ errore: 'non autorizzato' }, 401);
 
   // Chi ha almeno un dispositivo: serve a scegliere a chi mandare la prova.
   if (corpo.azione === 'elenco') {
@@ -526,17 +554,34 @@ async function provaNotifiche(req: Request) {
     return rispostaCors({ dispositivi });
   }
 
+  // Le ultime prove e come sono andate: senza risposta vuol dire in attesa.
+  if (corpo.azione === 'esiti') {
+    const prove = await leggi('prove_notifiche?select=id,user_id,inviata_il,esito,risposta_il&order=inviata_il.desc&limit=30');
+    return rispostaCors({ prove });
+  }
+
   if (corpo.azione !== 'invia') return rispostaCors({ errore: 'Azione non riconosciuta.' }, 400);
   const destinatari = Array.isArray(corpo.destinatari) ? [...new Set(corpo.destinatari)] : [];
   if (!destinatari.length) return rispostaCors({ errore: 'Scegli almeno una persona.' }, 400);
   if (destinatari.length > PROVA_MAX_DESTINATARI || !destinatari.every((d) => typeof d === 'string' && UUID.test(d))) {
     return rispostaCors({ errore: 'Destinatari non validi.' }, 400);
   }
-  const title = String(corpo.titolo || '').trim().slice(0, 80) || 'Prova notifiche';
-  const body = String(corpo.testo || '').trim().slice(0, 200) || 'Questa è una notifica di prova di Liberty Shift.';
   const esiti = [];
   for (const id of destinatari as string[]) {
-    esiti.push({ id, ...(await invia(id, { title, body, url: '#/home' })) });
+    // Prima la riga, poi la notifica: il collegamento che porta con sé è
+    // quello della riga, e il server tiene traccia anche di chi non risponde.
+    const nuova = await fetch(`${SUPABASE_URL}/rest/v1/prove_notifiche`, {
+      method: 'POST',
+      headers: { ...intestazioni, Prefer: 'return=representation' },
+      body: JSON.stringify({ user_id: id, inviata_da: io.id }),
+    });
+    const riga = nuova.ok ? (await nuova.json())[0] : null;
+    if (!riga) { esiti.push({ id, inviate: 0, rimosse: 0, errori: ['prova non salvata'] }); continue; }
+    esiti.push({
+      id,
+      prova: riga.id,
+      ...(await invia(id, { title: 'Notifica di prova', body: TESTO_PROVA, url: `#/prova?id=${riga.id}` })),
+    });
   }
   return rispostaCors({ esiti });
 }

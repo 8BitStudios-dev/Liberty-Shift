@@ -156,6 +156,22 @@ async function mostraDispositivi() {
   if (errore) toast(errore);
 }
 
+const ETICHETTA_ESITO = { OK: 'Tutto a posto', PROBLEMI: 'Ci sono problemi' };
+
+/** Le ultime prove e come sono andate, per chi le ha mandate. */
+async function mostraEsiti() {
+  const { errore, dati } = await provaNotifiche({ azione: 'esiti' });
+  const box = document.getElementById('esiti-prove');
+  if (!box) return;
+  if (errore) { box.textContent = errore; return; }
+  if (!dati.prove.length) { box.textContent = 'Ancora nessuna prova.'; return; }
+  box.innerHTML = dati.prove.map((p) => {
+    const nome = nomeUtente(store.user(p.user_id)) || 'Sconosciuto';
+    const quando = new Date(p.inviata_il).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return `<p><strong>${esc(nome)}</strong> · ${quando}: ${p.esito ? ETICHETTA_ESITO[p.esito] : 'nessuna risposta'}</p>`;
+  }).join('');
+}
+
 function render({ fermo = false } = {}) {
   const { percorso, params } = parseHash();
   const posizione = fermo ? { app: app.scrollTop, finestra: window.scrollY } : null;
@@ -212,6 +228,7 @@ function render({ fermo = false } = {}) {
     statistiche: F.statistiche,
     iscritti: F.gestioneIscritti,
     'prova-notifiche': F.provaNotifiche,
+    prova: F.rispostaProva,
     setup: P.schermataProfilo,
     'primi-turni': P.schermataPrimiTurni,
     impostazioni: V.impostazioni,
@@ -239,7 +256,7 @@ function render({ fermo = false } = {}) {
   // La guida della sezione, la prima volta che ci si entra.
   if (GUIDE[percorso]) setTimeout(() => apriGuida(percorso, { automatica: true }), 60);
   if (percorso === 'profilo') annunciaTraguardi();
-  if (percorso === 'prova-notifiche' && store.me.superAdmin) mostraDispositivi();
+  if (percorso === 'prova-notifiche' && store.me.superAdmin) { mostraDispositivi(); mostraEsiti(); }
 
   // Lo stato delle notifiche si scopre solo chiedendo al browser: si ridisegna
   // quando arriva, e solo se è cambiato, altrimenti sarebbe un giro infinito.
@@ -524,8 +541,6 @@ const AZIONI = {
     const { errore, dati } = await provaNotifiche({
       azione: 'invia',
       destinatari: scelti,
-      titolo: document.querySelector('[data-campo="prova-titolo"]')?.value,
-      testo: document.querySelector('[data-campo="prova-testo"]')?.value,
     });
     el.disabled = false;
     if (errore) { esito.textContent = errore; return; }
@@ -537,6 +552,20 @@ const AZIONI = {
       return `<p><strong>${esc(nome)}</strong>: ${dettaglio}</p>`;
     }).join('');
     mostraDispositivi();
+    mostraEsiti();
+  },
+
+  'risposta-prova': async (_, el) => {
+    const esito = document.getElementById('esito-risposta');
+    document.querySelectorAll('[data-act="risposta-prova"]').forEach((b) => { b.disabled = true; });
+    const { errore } = await provaNotifiche({ azione: 'rispondi', prova: el.dataset.prova, esito: el.dataset.esito });
+    if (errore) {
+      esito.textContent = errore;
+      document.querySelectorAll('[data-act="risposta-prova"]').forEach((b) => { b.disabled = false; });
+      return;
+    }
+    document.getElementById('risposta-prova').hidden = true;
+    esito.textContent = el.dataset.esito === 'OK' ? 'Grazie, segnato: tutto a posto.' : 'Grazie, segnato: ci sono problemi.';
   },
 
   esci: () => {
