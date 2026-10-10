@@ -133,6 +133,12 @@ riceve tocca la notifica e trova due tasti, *Tutto a posto* e *Ci sono
 problemi*; il server registra entrambe le risposte (vedi `docs/07-supabase.md`).
 Serve a capire se una notifica non arriva per colpa del server o del telefono.
 
+### Cambio OFF: cosa lasci dice OFF
+In una richiesta OFF, nella box di chi legge (non l'autore), il giorno che si lascia
+non dice «qualsiasi turno» ma **OFF**: «LASCI Mer 14/10 · OFF», perché per chi legge
+quel giorno diventa libero. «Qualsiasi turno» resta per l'autore, che quel giorno
+lavorerebbe un turno qualunque. Vale anche nelle righe delle liste.
+
 ### Aggiornare i dati a mano
 Sull'iPhone, con l'app sulla Home, non c'è il pulsante di ricarica di Safari né il
 gesto di tirare giù: chi aspetta una risposta non aveva modo di chiedere se è
