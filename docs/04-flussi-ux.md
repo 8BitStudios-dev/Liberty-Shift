@@ -289,27 +289,33 @@ inserito" sotto la frase del primo, e sembrava che mancasse un tasto.
 Il blocco parla come il gruppo WhatsApp del negozio, dove la gente scrive
 «CERCO … / CEDO …». Ha due parti:
 
+**Ogni voce sta su una riga sola**, anche su un iPhone da 375 punti: il blocco
+si legge di colpo d'occhio, come un messaggio. Per starci le parole sono quelle
+del gruppo e i nomi non si ripetono (sono già in cima alla card).
+
 1. **Il messaggio di chi chiede**, con le sue parole e nel colore del tipo, con
    il cerchio di sempre (orologio per l'orario, ombrellone per l'OFF):
-   - orario: «CERCO Mer 21/10, qualsiasi turno che finisca entro le 19» ·
-     «OFFRO Mer 21/10, 12–20»;
-   - OFF: «CERCO OFF Ven 16/10 (14–20)» · «OFFRO OFF Mer 14/10 o Gio 15/10».
+   - orario: «CERCO Mer 21/10, entro le 19» · «OFFRO 12–20». Il giorno si scrive
+     una volta sola; «dopo le 11» e «tra le 11 e le 19» per gli altri casi
+     (`cercoBreve`);
+   - OFF: «CERCO OFF Ven 16/10 (14–20)» · «OFFRO OFF Mer 14 o Gio 15». Più giorni
+     dello stesso mese si scrivono corti, e il mese si toglie quando è quello del
+     giorno cercato («Lun 19, Mar 20 o Mer 21»; `giorniBrevi`).
    Si scrive «offro» e non «cedo», per scelta di Lorenzo.
-2. **Cosa faresti tu**, giorno per giorno, con parole concrete:
-   - orario: «Mer 21/10 · fai 12–20 invece del tuo 10–19» (con «stimato per FT»
-     quando si adatta al contratto);
-   - OFF: «Ven 16/10 · lavori 14–20 al posto di Jesse» e «Mer 14/10 · sei a casa,
-     il tuo 10–19 lo fa Jesse». Nel dettaglio della
-     richiesta i giorni offerti in cui lavori diventano «In cambio · a casa» con un
-     pulsante piccolo per giorno, vicini e separati da una «o» (`Gio 29 · 12–21` o
-     `Ven 30 · 8–17`): il tocco apre «Proponi lo scambio» con quel turno già scelto.
-     Se non lavori nei giorni giusti lo dice («non lavori quel giorno», «lavori già
-     (11–20)») senza inventare un turno.
-3. **Nelle liste** (bacheca, foglio del giorno, match) un cambio OFF si accorcia a
-   due righe senza nome, che è già in cima alla card: «Lavori · Mar 27/10
-   9:30–18:30» e «A casa · Gio 29/10 o Ven 30/10», con i giorni in blu. Se quel
-   giorno sei già di turno o se sei già OFF nei giorni offerti, lo dice in grigio.
-   Una riga per giorno con «oppure» e il nome ripetuto si leggeva male.
+2. **Cosa faresti tu**, una voce per riga:
+   - orario: «Fai 12–20 invece del tuo 10–19». Un orario adattato al tuo
+     contratto ha davanti «≈» (al tocco lungo dice «Orario stimato per FT»);
+   - OFF: «Lavori · Ven 16/10 14–20» e «A casa · Mer 14/10», con i giorni a casa
+     in blu. Nelle liste (bacheca, foglio del giorno, match) i giorni a casa sono
+     testo («Gio 29/10 o Ven 30/10»); nel dettaglio della richiesta sono
+     pulsanti piccoli col tuo turno, vicini e separati da una «o» (`Gio 29 ·
+     12–21` o `Ven 30 · 8–17`), e il tocco apre «Proponi lo scambio» con quel
+     turno già scelto.
+   - Se non lavori nei giorni giusti lo dice in grigio («non lavori quel
+     giorno», «sei già di turno», «già OFF …») senza inventare un turno.
+   Prima c'erano «lavori 14–20 al posto di Jesse», «sei a casa, il tuo 10–19 lo
+   fa Jesse», una riga per giorno con «oppure» e «(stimato per FT)»: tutto vero,
+   ma ogni voce andava a capo e la card diventava un paragrafo.
 
 **Chi guarda:**
 | Chi guarda | Messaggio | Cosa faresti tu |
@@ -317,10 +323,10 @@ Il blocco parla come il gruppo WhatsApp del negozio, dove la gente scrive
 | un collega, prima di scegliere il suo turno | quello dell'autore | con i suoi turni veri in quei giorni |
 | un collega, con il turno che offre (tendina «Proponi lo scambio», Aiuta un collega, Cambio rapido, una proposta già fatta) | quello dell'autore | con il turno scelto |
 | chi ha scritto la richiesta | il suo | niente: è la sua richiesta |
-| chi ha scritto la richiesta, su una proposta ricevuta | il suo | con il turno che gli è stato offerto, e il nome di chi l'ha proposto |
+| chi ha scritto la richiesta, su una proposta ricevuta | il suo | con il turno che gli è stato offerto (il nome di chi l'ha proposto è in cima) |
 | chi ha scritto la richiesta, nei match | — | solo «cosa faresti tu» con quel collega |
 
-Le persone si nominano per nome («al posto di Jesse»), non con lui o lei. La riga
+Le persone si nominano per nome, non con lui o lei. La riga
 piccola «Jesse offre … · cerca …» sotto la box non c'è più: il messaggio dice già
 la stessa cosa. **«Lasci» non compare più nel blocco**: in un cambio OFF chi
 leggeva «LASCI Mer 14/10» credeva di lasciare un OFF, mentre quel giorno lavora e
@@ -336,7 +342,7 @@ del mese dice «qualcuno cerca OFF» / «qualcuno offre di lavorare».
 **Le liste non ripetono la box.** Sotto una card restano solo i motivi che la box
 non dice già (`motiviUtili` in `components.js` toglie «Hai X quel giorno», «Fai il
 turno …», «Lavori … al posto di …», «per te, diventa …»). Spariscono anche la
-nota sulla stima dell'orario (basta «stimato per FT» accanto al turno) e la riga
+nota sulla stima dell'orario (basta «≈» davanti al turno) e la riga
 «non puoi» sulle card della bacheca. Le spiegazioni del motore usano le stesse
 parole: «Cerchi / Jesse cerca …», «Fai / Jesse fa il turno …».
 

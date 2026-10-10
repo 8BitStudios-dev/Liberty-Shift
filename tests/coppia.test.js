@@ -17,7 +17,7 @@ globalThis.document = { addEventListener() {} };
 
 const { store } = await import('../src/core/store.js');
 const { addDays, todayISO, formatDay } = await import('../src/core/time.js');
-const { coppiaCedoCerco } = await import('../src/ui/components.js');
+const { coppiaCedoCerco, giorniBrevi, cercoBreve } = await import('../src/ui/components.js');
 
 const giorno = addDays(todayISO(), 7);
 
@@ -43,14 +43,15 @@ function scena({ mioOrario = ['09:30', '18:30'] } = {}) {
 const testo = (h) => h.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
 // La box parla come il gruppo WhatsApp: prima il messaggio di chi chiede
-// (CERCO / OFFRO, con le sue parole), poi "Cosa faresti tu", giorno per giorno.
+// (CERCO / OFFRO, con le sue parole), poi "Cosa faresti tu", una voce per riga
+// ("Fai", "Lavori", "A casa") e ogni voce su una riga sola, senza nomi ripetuti.
 // "Lasci" non c'è più: in un cambio OFF faceva credere di lasciare un OFF.
 
 test('un collega che ha scelto il suo turno legge il messaggio e poi cosa farebbe lui', () => {
   const { richiesta, mio } = scena();
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: mio }));
   assert.match(t, /CERCO .*qualsiasi turno .*OFFRO .*11:00–20:00/, 'prima il messaggio di Lorenzo');
-  assert.match(t, /Cosa faresti tu .*fai 11:00–20:00 invece del tuo 09:30–18:30/);
+  assert.match(t, /Cosa faresti tu Fai 11:00–20:00 invece del tuo 09:30–18:30/);
   assert.ok(t.indexOf('OFFRO') < t.indexOf('Cosa faresti tu'), 'prima lui, poi tu');
   assert.doesNotMatch(t, /\blasci\b|\bprendi\b/i);
 });
@@ -59,16 +60,28 @@ test('il turno che faresti si legge con le ore che faresti davvero, con la stima
   // Il mio turno dura sei ore: quello di Lorenzo, nove, si adatta a me.
   const { richiesta, mio } = scena({ mioOrario: ['09:00', '15:00'] });
   const t = testo(coppiaCedoCerco(richiesta, { mioTurno: mio }));
-  assert.doesNotMatch(t, /fai 11:00–20:00/, "l'orario intero di Lorenzo non è quello che farei");
-  assert.match(t, /fai \S+ \(stimato per/);
+  assert.doesNotMatch(t, /Fai 11:00–20:00/, "l'orario intero di Lorenzo non è quello che farei");
+  assert.match(t, /Fai ≈ \S+ invece del tuo 09:00–15:00/);
 });
 
 test('senza aver scelto un turno: i tuoi turni veri, o che quel giorno non lavori', () => {
   const { richiesta } = scena();
-  assert.match(testo(coppiaCedoCerco(richiesta)), /fai 11:00–20:00 invece del tuo 09:30–18:30/);
+  assert.match(testo(coppiaCedoCerco(richiesta)), /Fai 11:00–20:00 invece del tuo 09:30–18:30/);
   const io = store.state.currentUserId;
   store.state.shifts = store.state.shifts.filter((s) => s.userId !== io);
   assert.match(testo(coppiaCedoCerco(richiesta)), /non lavori quel giorno/);
+});
+
+test('più giorni nello stesso mese si scrivono corti, il mese una volta sola', () => {
+  assert.equal(giorniBrevi(['2026-10-19', '2026-10-20', '2026-10-21'], '2026-10-18'), 'Lun 19, Mar 20 o Mer 21');
+  assert.equal(giorniBrevi(['2026-11-02', '2026-11-03'], '2026-10-31'), 'Lun 02 o Mar 03/11');
+  assert.equal(giorniBrevi(['2026-10-31', '2026-11-02']), 'Sab 31/10 o Lun 02/11');
+});
+
+test('il cambio orario cerca con le parole del gruppo', () => {
+  assert.equal(cercoBreve({ mode: 'RANGE', entroLe: '19' }), 'entro le 19');
+  assert.equal(cercoBreve({ mode: 'RANGE', dalleOre: '11' }), 'dopo le 11');
+  assert.equal(cercoBreve({ mode: 'RANGE', dalleOre: '11', entroLe: '19' }), 'tra le 11 e le 19');
 });
 
 test("all'autore la box mostra il suo messaggio, senza \"Cosa faresti tu\"", () => {
@@ -79,13 +92,13 @@ test("all'autore la box mostra il suo messaggio, senza \"Cosa faresti tu\"", () 
   assert.doesNotMatch(t, /Cosa faresti tu/);
 });
 
-test("all'autore che legge una proposta: cosa farebbe, con il nome di chi l'ha fatta", () => {
+test("all'autore che legge una proposta: cosa farebbe", () => {
   const { richiesta, mio } = scena();
   const io = store.state.currentUserId;
   store.state.users.push({ id: io, nome: 'Anna', cognomeIniziale: 'F', contratto: 'FT', oreSettimanali: 40, preferenze: {}, disponibilita: {}, prioritaUsata: {} });
   store.state.currentUserId = 'lorenzo';
   const t = testo(coppiaCedoCerco(richiesta, { offerto: mio }));
-  assert.match(t, /Cosa faresti tu .*fai 09:30–18:30 invece del tuo 11:00–20:00/);
+  assert.match(t, /Cosa faresti tu Fai 09:30–18:30 invece del tuo 11:00–20:00/);
 });
 
 // Un cambio OFF letto da un collega: il messaggio dice cosa cerca e offre lei,
@@ -103,15 +116,15 @@ function scenaOff(giorniOfferti, turniMiei = {}) {
   return richiesta;
 }
 
-test('un cambio OFF: CERCO OFF e OFFRO OFF come nel gruppo, poi "lavori" e "sei a casa"', () => {
+test('un cambio OFF: CERCO OFF e OFFRO OFF come nel gruppo, poi «Lavori» e «A casa»', () => {
   const offerto = addDays(giorno, 2);
   const richiesta = scenaOff([offerto], { [offerto]: ['10:00', '19:00'] });
   const t = testo(coppiaCedoCerco(richiesta));
   assert.match(t, new RegExp(`CERCO OFF ${formatDay(giorno).replace('/', '\\/')} \\(11:00–20:00\\)`));
   assert.match(t, new RegExp(`OFFRO OFF ${formatDay(offerto).replace('/', '\\/')}`));
-  assert.match(t, /lavori 11:00–20:00 al posto di Lorenzo/);
-  assert.match(t, new RegExp(`In cambio a casa ${formatDay(offerto).replace(/\/\d+$/, '')} · 10:00–19:00`));
-  assert.doesNotMatch(t, /\blasci\b|qualsiasi turno/);
+  assert.match(t, new RegExp(`Lavori ${formatDay(giorno).replace('/', '\\/')} 11:00–20:00`));
+  assert.match(t, new RegExp(`A casa ${formatDay(offerto).replace(/\/\d+$/, '')} · 10:00–19:00`));
+  assert.doesNotMatch(t, /\blasci\b|qualsiasi turno|Lorenzo/);
 });
 
 test('un cambio OFF con più giorni in cui lavori, nel dettaglio: «a casa» e un pulsante per giorno', () => {
@@ -120,8 +133,8 @@ test('un cambio OFF con più giorni in cui lavori, nel dettaglio: «a casa» e u
   const h = coppiaCedoCerco(richiesta);
   const t = testo(h);
   const corto = (d) => formatDay(d).replace(/\/\d+$/, '');
-  assert.match(t, new RegExp(`In cambio a casa ${corto(uno)} · 10:00–19:00 o ${corto(tre)} · 08:00–17:00`));
-  assert.doesNotMatch(t, /uno di questi|oppure|lo fa Lorenzo/);
+  assert.match(t, new RegExp(`A casa ${corto(uno)} · 10:00–19:00 o ${corto(tre)} · 08:00–17:00`));
+  assert.doesNotMatch(t, /uno di questi|oppure|Lorenzo/);
   assert.equal((h.match(/class="chip-giorno"/g) || []).length, 2, `${formatDay(due)} non lavori: non è un'opzione`);
 });
 
@@ -136,5 +149,17 @@ test('nelle liste un cambio OFF dice solo «Lavori» e «A casa», senza nome', 
 
 test('un cambio OFF in cui non lavori nei giorni offerti lo dice, senza inventare un turno', () => {
   const richiesta = scenaOff([addDays(giorno, 2)]);
-  assert.match(testo(coppiaCedoCerco(richiesta)), /non lavori quel giorno/);
+  assert.match(testo(coppiaCedoCerco(richiesta)), /A casa già OFF/);
+});
+
+test('più giorni nello stesso mese si scrivono corti, il mese una volta sola', () => {
+  assert.equal(giorniBrevi(['2026-10-19', '2026-10-20', '2026-10-21'], '2026-10-18'), 'Lun 19, Mar 20 o Mer 21');
+  assert.equal(giorniBrevi(['2026-11-02', '2026-11-03'], '2026-10-31'), 'Lun 02 o Mar 03/11');
+  assert.equal(giorniBrevi(['2026-10-31', '2026-11-02']), 'Sab 31/10 o Lun 02/11');
+});
+
+test('il cambio orario cerca con le parole del gruppo', () => {
+  assert.equal(cercoBreve({ mode: 'RANGE', entroLe: '19' }), 'entro le 19');
+  assert.equal(cercoBreve({ mode: 'RANGE', dalleOre: '11' }), 'dopo le 11');
+  assert.equal(cercoBreve({ mode: 'RANGE', dalleOre: '11', entroLe: '19' }), 'tra le 11 e le 19');
 });

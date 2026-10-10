@@ -5,7 +5,7 @@ import {
   normalizzaPreferenze,
 } from '../core/model.js';
 import {
-  STATUS_META, TIPO_META, TIPO_CAMBIO, RULES, FASCE_PREFERENZE,
+  STATUS_META, TIPO_META, TIPO_CAMBIO, RULES, FASCE_PREFERENZE, WANT_MODE,
 } from '../core/rules.js';
 import { formatDay, GIORNI_LUNGHI, MESI, todayISO } from '../core/time.js';
 import { combaciaEsatto } from '../core/engine.js';
@@ -29,14 +29,14 @@ export function iconaTipo(tipo, px = 14) {
  * due lati di uno scambio, LASCI e PRENDI.
  */
 /**
- * "(stimato per FT)" accanto a un orario che l'app ha adattato al contratto di
+ * "≈" davanti a un orario che l'app ha adattato al contratto di
  * chi guarda: dice a quale contratto si riferisce il numero, senza spiegare
  * l'adattamento. Vuoto se l'orario è quello vero del turno.
  */
 export function stimatoPer(adattato) {
   if (!adattato) return '';
   const contratto = store.me?.contratto;
-  return `<span class="stima-contratto">(stimato per ${esc(contratto || 'FT')})</span>`;
+  return `<span class="stima-contratto" title="Orario stimato per ${esc(contratto || 'FT')}">≈</span>`;
 }
 
 export function etichettaTipo(tipo, testo, px = 16) {
@@ -170,8 +170,7 @@ export function pillolaStato(tono, testo) {
  *
  * Il cerchio a sinistra dice il tipo (orario, OFF), con le stesse icone di
  * sempre. `messaggio` è { cerco, offro, nota }; `righe` sono [{ giorno, testo }]
- * e mancano quando non c'è niente da dire a chi guarda (la propria richiesta);
- * `sotto` va su una riga intera sotto la riga, dove i pulsanti dei giorni stanno vicini.
+ * e mancano quando non c'è niente da dire a chi guarda (la propria richiesta).
  */
 export function boxScambio(tipo, { messaggio = null, righe = [], compatto = false } = {}) {
   const bolla = messaggio ? `
@@ -186,64 +185,86 @@ export function boxScambio(tipo, { messaggio = null, righe = [], compatto = fals
   const tu = righe.length ? `
       <div class="tu">
         ${messaggio ? (compatto ? '' : '<span class="tu-titolo">Cosa faresti tu</span>') : cerchioTipo(tipo)}
-        <div class="tu-righe">${righe.map((r) => `<p class="riga-tu"><span class="gg">${r.giorno}</span><span>${r.testo}</span></p>${r.sotto ? `<div class="scelta-giorni">${r.sotto}</div>` : ''}`).join('')}</div>
+        <div class="tu-righe">${righe.map((r) => `<p class="riga-tu"><span class="gg">${r.giorno}</span><span>${r.testo}</span></p>`).join('')}</div>
       </div>` : '';
   return `<div class="coppia messaggio ${compatto ? 'compatta' : ''} ${messaggio ? '' : 'solo-tu'}" data-tipo="${esc(tipo)}">${bolla}${tu}</div>`;
 }
 
-/** Il messaggio di chi chiede, con le sue parole: come lo scriverebbe nel gruppo. */
+/**
+ * Più giorni in una riga, perché il blocco dello scambio sta tutto su una riga
+ * per voce: "Lun 19, Mar 20 o Mer 21" quando sono nel mese di `rif` (il giorno
+ * cercato, scritto accanto con il mese), "Gio 29 o Ven 30/10" quando sono in un
+ * altro mese ma tutti nello stesso.
+ */
+export function giorniBrevi(giorni, rif = '') {
+  if (giorni.length < 2) return giorni.map((g) => formatDay(g)).join(' o ');
+  const mesi = new Set(giorni.map((g) => g.slice(0, 7)));
+  if (mesi.size > 1) return giorni.map((g) => formatDay(g)).join(' o ');
+  const corto = (g) => formatDay(g).replace(/\/\d+$/, '');
+  const ultimo = mesi.has(rif.slice(0, 7)) ? corto(giorni.at(-1)) : formatDay(giorni.at(-1));
+  return `${giorni.slice(0, -1).map(corto).join(', ')} o ${ultimo}`;
+}
+
+/**
+ * Cosa cerca in un cambio orario, in poche parole: come si scrive nel gruppo
+ * ("entro le 19"), non come una regola ("qualsiasi turno che finisca…").
+ */
+export function cercoBreve(cerco) {
+  if (cerco.mode === WANT_MODE.RANGE) {
+    if (cerco.entroLe && cerco.dalleOre) return `tra le ${cerco.dalleOre} e le ${cerco.entroLe}`;
+    if (cerco.entroLe) return `entro le ${cerco.entroLe}`;
+    if (cerco.dalleOre) return `dopo le ${cerco.dalleOre}`;
+  }
+  if (cerco.mode === WANT_MODE.SPECIFIC) return wantLabel(cerco);
+  return cerco.evitaChiusura ? 'non di chiusura' : 'qualsiasi turno';
+}
+
+/**
+ * Il messaggio di chi chiede, con le sue parole: come lo scriverebbe nel gruppo.
+ * Nel cambio orario il giorno è uno solo e si scrive una volta, nel CERCO.
+ */
 function messaggioDi(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   const giorno = cedo ? formatDay(cedo.data) : '—';
+  const nota = request.cedo.flessibile ? 'disponibile anche per altri turni' : '';
   if (request.tipo === TIPO_CAMBIO.OFF) {
     return {
       cerco: `OFF ${esc(giorno)} <span class="tenue">(${esc(shiftLabel(cedo))})</span>`,
-      offro: `OFF ${esc(giorni.map((g) => formatDay(g)).join(' o '))}`,
-      nota: request.cedo.flessibile ? 'disponibile anche per altri turni' : '',
+      offro: `OFF ${esc(giorniBrevi(giorni, cedo?.data))}`,
+      nota,
     };
   }
-  return {
-    cerco: `${esc(giorno)}, ${esc(wantLabel(request.cerco))}`,
-    offro: `${esc(giorno)}, ${esc(shiftLabel(cedo))}`,
-    nota: request.cedo.flessibile ? 'disponibile anche per altri turni' : '',
-  };
+  return { cerco: `${esc(giorno)}, ${esc(cercoBreve(request.cerco))}`, offro: esc(shiftLabel(cedo)), nota };
 }
 
 /** L'orario che faresti tu ricevendo `riceve` al posto di `cede`, con la stima se si adatta. */
 function orarioPerMe(riceve, cede) {
   if (!riceve) return '—';
   const t = cede ? trasformaTurno(riceve, cede, personaDi) : { trasformato: false };
-  return `${esc(t.trasformato ? `${t.start}–${t.end}` : shiftLabel(riceve))}${stimatoPer(t.trasformato)}`;
+  return `${stimatoPer(t.trasformato)}${esc(t.trasformato ? `${t.start}–${t.end}` : shiftLabel(riceve))}`;
 }
 
-const nomeDi = (id) => esc(store.user(id)?.nome || 'l\'altra persona');
 const mioTurnoIl = (data) => store.state.shifts.find((s) => s.userId === store.state.currentUserId && s.data === data);
-const riga = (data, testo) => ({ giorno: esc(formatDay(data)), testo });
 
 /**
- * Cosa faresti tu, giorno per giorno. `prendi` è il turno che faresti (di
- * un'altra persona), `lasci` il tuo che fa lei; in un cambio orario sono lo
- * stesso giorno, in un OFF due giorni diversi.
+ * Cosa faresti tu, una voce per riga e ogni voce su una riga sola: «Lavori» e
+ * «A casa» in un cambio OFF, «Fai» in un cambio orario (il giorno è già nel
+ * messaggio). `prendi` è il turno che faresti, `lasci` il tuo che fa l'altra
+ * persona. Il nome non si ripete: è già in cima alla card.
  */
-function righeTu(tipo, { prendi, lasci, nome, breve = false }) {
+function righeTu(tipo, { prendi, lasci }) {
   if (tipo === TIPO_CAMBIO.OFF) {
-    // Nelle liste solo quello che cambia per te: il nome è già in cima alla card.
-    if (breve) {
-      return [
-        prendi && { giorno: 'Lavori', testo: `${esc(formatDay(prendi.data))} <b class="prendo">${orarioPerMe(prendi, lasci)}</b>` },
-        lasci && { giorno: 'A casa', testo: `<b class="cedo">${esc(formatDay(lasci.data))}</b>` },
-      ].filter(Boolean);
-    }
     return [
-      prendi && riga(prendi.data, `lavori <b class="prendo">${orarioPerMe(prendi, lasci)}</b> al posto di ${nome}`),
-      lasci && riga(lasci.data, `<b class="cedo">sei a casa</b>, il tuo ${esc(shiftLabel(lasci))} lo fa ${nome}`),
+      prendi && rigaLavori(prendi, lasci),
+      lasci && { giorno: 'A casa', testo: `<b class="cedo">${esc(formatDay(lasci.data))}</b>` },
     ].filter(Boolean);
   }
   if (!prendi || !lasci) return [];
-  return [riga(prendi.data, `fai <b class="prendo">${orarioPerMe(prendi, lasci)}</b> invece del tuo ${esc(shiftLabel(lasci))}`)];
+  return [{ giorno: 'Fai', testo: `<b class="prendo">${orarioPerMe(prendi, lasci)}</b> invece del tuo ${esc(shiftLabel(lasci))}` }];
 }
 
+const rigaLavori = (turno, mio) => ({ giorno: 'Lavori', testo: `${esc(formatDay(turno.data))} <b class="prendo">${orarioPerMe(turno, mio)}</b>` });
 const O = ' <span class="tenue">o</span> ';
 
 /**
@@ -263,47 +284,33 @@ function chipGiorno(request, turno, cliccabile) {
  * turni veri nei giorni in gioco. Se non lavora nei giorni giusti lo si dice,
  * senza inventare un turno.
  *
- * Un OFF con più giorni offerti si legge in due modi. Nelle liste (`breve`)
- * «Lavori · Mar 27/10 9:30–18:30» e «A casa · Gio 29/10 o Ven 30/10». Nel
- * dettaglio «In cambio · a casa» con un pulsante per giorno, col tuo turno:
- * la prima versione, una riga per giorno con «oppure» e il nome ripetuto, era
- * lunga e confusa.
+ * In un OFF i giorni in cui saresti a casa sono testo nelle liste («Gio 29/10
+ * o Ven 30/10», in blu) e pulsanti piccoli nel dettaglio (`scegli`), col tuo
+ * turno: il tocco apre la proposta con quel giorno già scelto.
  */
-function righeTuSenzaScelta(request, nome, { breve = false, scegli = false } = {}) {
+function righeTuSenzaScelta(request, { breve = false, scegli = false } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   if (request.tipo !== TIPO_CAMBIO.OFF) {
     const mio = mioTurnoIl(cedo?.data);
-    if (!mio || mio.tipo !== 'WORK') return cedo ? [riga(cedo.data, 'non lavori quel giorno')] : [];
-    return righeTu(request.tipo, { prendi: cedo, lasci: mio, nome });
+    if (!mio || mio.tipo !== 'WORK') return cedo ? [{ giorno: '', testo: '<span class="tenue">non lavori quel giorno</span>' }] : [];
+    return righeTu(request.tipo, { prendi: cedo, lasci: mio });
   }
   const miei = giorni.map(mioTurnoIl).filter((s) => s?.tipo === 'WORK');
   const quelGiorno = mioTurnoIl(cedo?.data);
-  const giaDiTurno = quelGiorno?.tipo === 'WORK';
   const righe = [];
-  if (cedo && breve) {
-    righe.push({
-      giorno: 'Lavori',
-      testo: giaDiTurno
-        ? `${esc(formatDay(cedo.data))} <span class="tenue">sei già di turno (${esc(shiftLabel(quelGiorno))})</span>`
-        : `${esc(formatDay(cedo.data))} <b class="prendo">${orarioPerMe(cedo, miei[0])}</b>`,
-    });
-  } else if (cedo) {
-    righe.push(giaDiTurno
-      ? riga(cedo.data, `lavori già (${esc(shiftLabel(quelGiorno))})`)
-      : riga(cedo.data, `lavori <b class="prendo">${orarioPerMe(cedo, miei[0])}</b> al posto di ${nome}`));
+  if (cedo) {
+    righe.push(quelGiorno?.tipo === 'WORK'
+      ? { giorno: 'Lavori', testo: `${esc(formatDay(cedo.data))} <span class="tenue">sei già di turno</span>` }
+      : rigaLavori(cedo, miei[0]));
   }
   if (miei.length && breve) {
     righe.push({ giorno: 'A casa', testo: miei.map((s) => `<b class="cedo">${esc(formatDay(s.data))}</b>`).join(O) });
   } else if (miei.length) {
     const offribili = new Set(scegli ? store.turniOfferibili(request).map((s) => s.id) : []);
-    const chip = miei.map((s) => chipGiorno(request, s, offribili.has(s.id))).join('<span class="tenue">o</span>');
-    righe.push({ giorno: 'In cambio', testo: '<b class="cedo">a casa</b>', sotto: chip });
+    righe.push({ giorno: 'A casa', testo: `<span class="scelta-giorni">${miei.map((s) => chipGiorno(request, s, offribili.has(s.id))).join('<span class="tenue">o</span>')}</span>` });
   } else if (giorni.length) {
-    const quali = esc(giorni.map((g) => formatDay(g)).join(' o '));
-    righe.push(breve
-      ? { giorno: 'A casa', testo: `<span class="tenue">già OFF ${quali}</span>` }
-      : { giorno: quali, testo: giorni.length > 1 ? 'non lavori in quei giorni' : 'non lavori quel giorno' });
+    righe.push({ giorno: 'A casa', testo: `<span class="tenue">già OFF ${esc(giorniBrevi(giorni))}</span>` });
   }
   return righe;
 }
@@ -317,18 +324,17 @@ export function coppiaCedoCerco(request, { compatto = false, breve = false, sceg
   // offrono, e il tuo lo fa chi l'ha proposto.
   if (mia && offerto) {
     return boxScambio(request.tipo, {
-      messaggio, compatto, righe: righeTu(request.tipo, { prendi: offerto, lasci: cedo, nome: nomeDi(offerto.userId) }),
+      messaggio, compatto, righe: righeTu(request.tipo, { prendi: offerto, lasci: cedo }),
     });
   }
   // La propria richiesta, da sola: è il tuo messaggio, non c'è altro da dire.
   if (mia) return boxScambio(request.tipo, { messaggio, compatto });
 
-  const nome = nomeDi(request.userId);
   // Un collega che ha già scelto il turno da offrire: quello, e basta.
   if (mioTurno) {
-    return boxScambio(request.tipo, { messaggio, compatto, righe: righeTu(request.tipo, { prendi: cedo, lasci: mioTurno, nome, breve }) });
+    return boxScambio(request.tipo, { messaggio, compatto, righe: righeTu(request.tipo, { prendi: cedo, lasci: mioTurno }) });
   }
-  return boxScambio(request.tipo, { messaggio, compatto, righe: righeTuSenzaScelta(request, nome, { breve, scegli }) });
+  return boxScambio(request.tipo, { messaggio, compatto, righe: righeTuSenzaScelta(request, { breve, scegli }) });
 }
 
 /**

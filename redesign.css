@@ -1223,20 +1223,23 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
    del tipo con il suo cerchio, e sotto "Cosa faresti tu", giorno per giorno. */
 .coppia.messaggio { display: flex; flex-direction: column; gap: 10px; }
 .coppia.messaggio .msg {
-  display: flex; gap: 12px; align-items: center; padding: 12px;
+  display: flex; gap: 8px; align-items: center; padding: 10px 8px 10px 10px;
   border-radius: var(--raggio-s);
   background: color-mix(in srgb, var(--tipo) 14%, var(--superficie));
   border: 1px solid color-mix(in srgb, var(--tipo) 35%, transparent);
 }
 .coppia.messaggio .cerchio-tipo {
+  width: 38px; height: 38px; flex: none;
   background: var(--superficie);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--tipo) 40%, transparent);
 }
+/* «orario» deve stare dentro il cerchio piccolo. */
+.coppia.messaggio .cerchio-testo { font-size: 8.5px; letter-spacing: 0; }
 .coppia.messaggio .bolla { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.coppia.messaggio .bolla p { margin: 0; font-size: 16px; line-height: 1.35; }
+.coppia.messaggio .bolla p { margin: 0; font-size: 14px; line-height: 1.4; }
 .coppia.messaggio .bolla .nota { font-size: 13px; color: var(--testo-tenue); font-style: italic; }
 .coppia.messaggio .tenue { color: var(--testo-tenue); font-weight: 400; }
-.coppia.messaggio .verbo { font-size: 12px; font-weight: 800; letter-spacing: .07em; margin-right: 7px; }
+.coppia.messaggio .verbo { font-size: 11px; font-weight: 800; letter-spacing: .05em; margin-right: 4px; }
 .coppia.messaggio .verbo.cerco { color: color-mix(in srgb, var(--tipo) 70%, var(--testo)); }
 .coppia.messaggio .verbo.offro { color: var(--prendo); }
 .coppia.messaggio .tu { border-left: 3px solid var(--accento); padding: 2px 0 2px 11px; }
@@ -1244,24 +1247,22 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   display: block; margin-bottom: 4px; font-size: 12px; font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase; color: var(--testo-tenue);
 }
-.coppia.messaggio .riga-tu { display: flex; gap: 10px; align-items: baseline; margin: 0; padding: 2px 0; font-size: 15px; line-height: 1.35; }
-.coppia.messaggio .riga-tu .gg { flex: none; min-width: 74px; font-weight: 800; }
+.coppia.messaggio .riga-tu { display: flex; gap: 6px; align-items: baseline; margin: 0; padding: 2px 0; font-size: 14px; line-height: 1.4; }
+.coppia.messaggio .riga-tu .gg { flex: none; min-width: 56px; font-weight: 800; }
 .coppia.messaggio .riga-tu b.prendo { color: var(--prendo); white-space: nowrap; }
 .coppia.messaggio .riga-tu b.cedo { color: var(--cedo); }
-.coppia.messaggio .riga-tu .stima-contratto { display: inline; margin-left: 4px; }
+.coppia.messaggio .riga-tu .stima-contratto { display: inline; margin: 0 1px 0 0; font-size: inherit; color: inherit; }
+/* Il cambio orario ha una riga sola, «Fai»: niente colonna da allineare. */
+.coppia.messaggio[data-tipo="ORARIO"] .riga-tu .gg { min-width: 0; }
 .coppia.messaggio .riga-tu .tenue { color: var(--testo-tenue); }
 /* I giorni in cui saresti a casa, nel dettaglio: vicini, con una «o» piccola. */
-.coppia.messaggio .scelta-giorni { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 2px 0 4px; font-size: 13px; color: var(--testo-tenue); }
+.coppia.messaggio .scelta-giorni { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px 5px; font-size: 13px; }
 .coppia.messaggio .chip-giorno {
   font: inherit; font-size: 13px; white-space: nowrap; color: var(--cedo); background: none;
-  border: 1px solid var(--cedo); border-radius: 999px; padding: 1px 9px; line-height: 1.5;
+  border: 1px solid var(--cedo); border-radius: 999px; padding: 0 7px; line-height: 1.5;
 }
 .coppia.messaggio button.chip-giorno { cursor: pointer; }
 /* Senza messaggio (le proposte per la tua richiesta): il cerchio accanto alle righe. */
-.coppia.messaggio.solo-tu .tu { display: flex; gap: 12px; align-items: center; border-left: 0; padding: 0; }
-.coppia.messaggio.compatta .bolla p { font-size: 15px; }
-.coppia.messaggio.compatta .riga-tu { font-size: 14px; }
+.coppia.messaggio.solo-tu .tu { display: flex; gap: 10px; align-items: center; border-left: 0; padding: 0; }
 .riga-richiesta .coppia.messaggio .msg { padding: 10px; }
-@media (max-width: 374px) {
-  .coppia.messaggio .riga-tu .gg { min-width: 64px; }
-}
+
