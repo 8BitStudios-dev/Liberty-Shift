@@ -108,6 +108,13 @@ si può proporre uno scambio in cui nessuno dei due cambierebbe orario: né il
 tasto Proponi né Aiuta lo offrono. Il Full Time che prende un turno corto non
 entra mai prima delle 08:00: l'11:00–16:00 diventa 11:00–20:00.
 
+### Richiesta chiusa dall'amministratore
+Quando un admin **chiude** una richiesta (non la rimuove), sulla Home di chi
+l'aveva pubblicata, e di chi c'aveva fatto una proposta, la riga resta per
+**6 ore** (`RULES.chiusuraAdminOre`) con la pillola rossa *Scambio chiuso
+dall'amministratore* e il motivo sotto. Passate le 6 ore sparisce come ogni
+richiesta chiusa. Il dettaglio mostra la stessa frase senza limite di tempo.
+
 ### 📅 Cambio OFF — 3 passi
 1. **Quale giorno vuoi libero** — scegli il turno di quel giorno.
 2. **Cosa offri in cambio** — compaiono solo i tuoi giorni liberi della

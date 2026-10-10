@@ -133,6 +133,11 @@ export const RULES = {
   // la stessa cosa. Vale alla creazione (`validateRequest`) e nel foglio.
   giorniOffertiMax: 3,
 
+  // Per quante ore, dopo che un admin chiude una richiesta, resta sulla Home
+  // di chi l'aveva pubblicata o c'aveva proposto: il motivo si deve poter
+  // leggere, non solo ricevere come notifica che poi si perde.
+  chiusuraAdminOre: 6,
+
   // "Ultima chiamata" in Aiuta un collega: il turno è vicino e la richiesta
   // aspetta da giorni senza che nessuno l'abbia presa. È solo un bollino e un
   // posto in cima: non dà priorità né altro a nessuno.

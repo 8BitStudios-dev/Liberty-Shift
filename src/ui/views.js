@@ -105,9 +105,24 @@ export function home() {
       }),
     };
   });
+  // Una chiusura dell'admin resta leggibile per qualche ora: poi sparisce come
+  // ogni richiesta chiusa.
+  const righeChiuse = store.chiuseDaAdminRecenti().map((r) => {
+    const mia = r.userId === me.id;
+    const cerco = r.tipo === TIPO_CAMBIO.OFF ? (r.cerco.giorni || []).map((g) => formatDay(g)).join(' o ') : wantLabel(r.cerco);
+    return {
+      urgente: false,
+      html: riga({
+        tipo: r.tipo, nome: mia ? 'La tua richiesta' : nomeUtente(store.user(r.userId)),
+        frase: frase(cerco, pezzo(r.tipo, store.shift(r.cedo.shiftId))),
+        stato: pillolaStato('rosso', 'Scambio chiuso dall\'amministratore'), id: r.id,
+        extra: r.motivoAdmin ? `<span class="cambio-home-frase">“${esc(r.motivoAdmin)}”</span>` : '',
+      }),
+    };
+  });
   // Prima quello che aspetta una tua risposta, poi il resto nell'ordine in cui è arrivato.
-  const bloccoMiei = proposte.length || miei.length
-    ? [...righeProposte, ...righeMiei].sort((a, b) => Number(b.urgente) - Number(a.urgente)).map((x) => x.html).join('')
+  const bloccoMiei = proposte.length || miei.length || righeChiuse.length
+    ? [...righeProposte, ...righeMiei, ...righeChiuse].sort((a, b) => Number(b.urgente) - Number(a.urgente)).map((x) => x.html).join('')
     : '<p class="testo-tenue">Nessun cambio in corso.</p>';
 
   return html`

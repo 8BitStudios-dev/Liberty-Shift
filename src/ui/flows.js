@@ -778,7 +778,7 @@ export function dettaglio(params) {
       ${raw(r.cerco.note ? `<p class="nota-utente">“${r.cerco.note}”</p>` : '')}
       <div class="meta">${raw(badgeStato(r.status))} · pubblicata ${formatDay(r.createdAt.slice(0, 10))}</div>
       ${raw(r.chiusaDaAdmin
-    ? `<p class="avviso"><span class="icona-in-riga">${icona('admin', { px: 16 })}</span> ${r.status === STATUS.RIMOSSA ? 'Rimossa' : 'Chiusa'} da un admin: “${r.motivoAdmin}”</p>`
+    ? `<p class="avviso"><span class="icona-in-riga">${icona('admin', { px: 16 })}</span> ${r.status === STATUS.RIMOSSA ? 'Rimossa da un admin' : 'Scambio chiuso dall\'amministratore'}: “${r.motivoAdmin}”</p>`
     : '')}
     </article>
     ${raw(primaScelta ? `<p class="testo-tenue">Hai ${inAttesa.length} proposte, dalla più vicina a quello che hai chiesto. Quando ne accetti una, le altre si chiudono e chi le aveva fatte riceve un avviso.</p>` : '')}

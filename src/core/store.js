@@ -286,6 +286,18 @@ export const store = {
     const r = this.request(p.requestId);
     return Boolean(r) && isOpen(r);
   },
+  /**
+   * Le richieste che un admin ha chiuso da poco (`RULES.chiusuraAdminOre`) e
+   * che riguardano chi guarda: sue, o con una sua proposta sopra. Le rimosse
+   * no: sono un'altra cosa, e di quella resta traccia solo nel dettaglio.
+   */
+  chiuseDaAdminRecenti(adesso = Date.now()) {
+    const me = this.state.currentUserId;
+    const finestra = RULES.chiusuraAdminOre * 3600 * 1000;
+    return this.state.requests.filter((r) => r.status === STATUS.CHIUSA && r.chiusaDaAdmin && r.chiusaIl
+      && adesso - new Date(r.chiusaIl).getTime() < finestra
+      && (r.userId === me || this.state.proposals.some((p) => p.requestId === r.id && p.daUserId === me)));
+  },
   propostePerMe() {
     const me = this.state.currentUserId;
     return this.state.proposals.filter(

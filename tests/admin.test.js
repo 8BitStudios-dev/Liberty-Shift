@@ -46,6 +46,16 @@ test('un admin chiude la richiesta di un altro, con motivo', () => {
   assert.ok(store.state.notifications.some((n) => n.userId === 'u_martina' && n.testo.includes('chiuso')));
 });
 
+test('la richiesta chiusa da un admin resta visibile 6 ore a chi l\'ha pubblicata, poi sparisce', () => {
+  store.reset(seed());
+  store.adminChiudiRichiesta('rq_martina_1', 'Fatto fuori dall\'app.');
+  const adesso = Date.now();
+  store.state.currentUserId = 'u_martina';
+  assert.deepEqual(store.chiuseDaAdminRecenti(adesso).map((r) => r.id), ['rq_martina_1']);
+  assert.deepEqual(store.chiuseDaAdminRecenti(adesso + 5.9 * 3600 * 1000).map((r) => r.id), ['rq_martina_1']);
+  assert.deepEqual(store.chiuseDaAdminRecenti(adesso + 6.1 * 3600 * 1000).map((r) => r.id), []);
+});
+
 test('un admin rimuove la richiesta di un altro: stato dedicato, non una chiusura normale', () => {
   store.reset(seed());
   const { ok } = store.adminRimuoviRichiesta('rq_luca_1', 'Contenuto duplicato.');
