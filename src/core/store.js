@@ -179,6 +179,9 @@ export const store = {
     condividiNotifiche(this.state);
     const esito = await sincronizzaStato(this.state, { completo });
     this.state.ultimoErroreServer = esito.errore || null;
+    // Non si salva: all'apertura dell'app i dati si scaricano di nuovo, e un'ora
+    // vecchia di ieri direbbe una cosa falsa (vedi `rigaAggiornamento`).
+    if (!esito.errore && !esito.saltato) this.ultimoAggiornamento = Date.now();
     // Con lo scaricamento a pezzi il mio profilo non risale se non cambia:
     // chi era già iscritto la data la chiede una volta sola.
     if (!esito.errore && !this.state.profilo.iscrittoIl) {
@@ -188,6 +191,11 @@ export const store = {
     if (!esito.saltato) this.commit();
     return esito;
   },
+
+  /** Il tasto "aggiorna" ha senso solo con il server collegato: senza, non c'è niente da scaricare. */
+  puoAggiornare() { return sulServer(this.state); },
+  ultimoAggiornamento: null,
+  inAggiornamento: false,
 
   subscribe(fn) {
     this.listeners.add(fn);

@@ -133,6 +133,11 @@ export const RULES = {
   // la stessa cosa. Vale alla creazione (`validateRequest`) e nel foglio.
   giorniOffertiMax: 3,
 
+  // Dopo quanti minuti dall'ultimo aggiornamento compare, sotto il nome o in
+  // cima alla lista, "Aggiornato alle 14:32": prima l'ora sarebbe solo rumore,
+  // i dati sono appena arrivati.
+  aggiornamentoVisibileDopoMin: 5,
+
   // Per quante ore, dopo che un admin chiude una richiesta, resta sulla Home
   // di chi l'aveva pubblicata o c'aveva proposto: il motivo si deve poter
   // leggere, non solo ricevere come notifica che poi si perde.

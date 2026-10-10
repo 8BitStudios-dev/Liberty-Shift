@@ -18,6 +18,7 @@ import {
 import { cambiPerPersona, andamentoMensile, richiesteAperte } from '../core/statistiche.js';
 import {
   cardMatch, cardOpportunita, cardRichiesta, coppiaCedoCerco, altroPunto, nomeUtente, badgeStato, vuoto, iniziali,
+  tastoAggiorna, rigaAggiornamento,
   chipsOrariTipici, testoPromemoria, motivoNonOfferibile, iconaTipo, elencoErrori, segnoMatch,
   notaStima, notaPausa, personaDi,
 } from './components.js';
@@ -901,7 +902,9 @@ export function inbox() {
     <header class="testata">
       <button class="icon-btn" data-act="vai" data-to="#/profilo">‹</button>
       <h1>Proposte ricevute</h1>
+      ${raw(tastoAggiorna())}
     </header>
+    ${raw(rigaAggiornamento())}
 
     ${raw(voci.length ? '' : vuoto(
     'Niente da leggere',

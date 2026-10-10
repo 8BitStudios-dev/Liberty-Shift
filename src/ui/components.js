@@ -101,6 +101,44 @@ export function chipsOrariTipici(inizioAttuale = '') {
  * dell'emoji di `STATUS_META.dot`: le emoji cambiano forma su ogni telefono
  * e non stanno con il resto dei segni. Il colore sta in `.stato-*`.
  */
+// ---- AGGIORNAMENTO A MANO
+
+const ora = (t) => new Date(t).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+/** L'ultimo aggiornamento è abbastanza vecchio da valere la pena dirlo? */
+function vecchio() {
+  const t = store.ultimoAggiornamento;
+  return t == null || Date.now() - t >= RULES.aggiornamentoVisibileDopoMin * 60000;
+}
+
+/** L'icona rotonda nelle testate: gira mentre scarica. Senza server non c'è. */
+export function tastoAggiorna() {
+  if (!store.puoAggiornare()) return '';
+  return `<button class="icon-btn aggiorna ${store.inAggiornamento ? 'gira' : ''}" data-act="aggiorna-dati"
+    aria-label="Aggiorna" title="Aggiorna">${icona('aggiorna', { px: 20 })}</button>`;
+}
+
+/**
+ * La riga toccabile in cima alle liste: "Aggiornato alle 14:32 · tocca per
+ * aggiornare". Compare solo dopo cinque minuti dall'ultimo aggiornamento, o
+ * mentre si aggiorna: appena scaricati, i dati sono freschi e l'ora è rumore.
+ */
+export function rigaAggiornamento() {
+  if (!store.puoAggiornare() || (!store.inAggiornamento && !vecchio())) return '';
+  const t = store.ultimoAggiornamento;
+  const testo = store.inAggiornamento ? 'Aggiorno…'
+    : t == null ? 'Tocca per aggiornare' : `Aggiornato alle ${ora(t)} · tocca per aggiornare`;
+  return `<button class="riga-aggiornamento ${store.inAggiornamento ? 'gira' : ''}" data-act="aggiorna-dati">
+    ${icona('aggiorna', { px: 16 })}<span>${testo}</span></button>`;
+}
+
+/** Sotto il nome, nella Home: solo l'ora, e solo quando è vecchia. */
+export function statoAggiornamento() {
+  const t = store.ultimoAggiornamento;
+  if (!store.puoAggiornare() || t == null || store.inAggiornamento || !vecchio()) return '';
+  return `<p class="stato-aggiornamento">Aggiornato alle ${ora(t)}</p>`;
+}
+
 export function badgeStato(status) {
   const m = STATUS_META[status] || { label: status };
   return html`<span class="badge stato-${status}"><i class="pallino-stato"></i> ${m.label}</span>`;

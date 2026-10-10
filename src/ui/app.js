@@ -1537,6 +1537,23 @@ const AZIONI = {
    * (`skipWaiting`) e la pagina si ricarica da sola. I dati stanno in
    * `localStorage` e non si toccano.
    */
+  /**
+   * L'icona di ricarica e la riga "Aggiornato alle…": scarica subito proposte,
+   * richieste e accordi, senza aspettare il giro automatico. Non tocca i turni
+   * (il calendario ha il suo tetto di un'ora e il suo tasto nel Profilo).
+   */
+  'aggiorna-dati': async () => {
+    if (store.inAggiornamento) return;
+    store.inAggiornamento = true;
+    render({ fermo: true });
+    const esito = await store.sincronizza();
+    store.inAggiornamento = false;
+    render({ fermo: true });
+    programmaOraAggiornamento();
+    if (esito.errore) toast(esito.errore);
+    else if (esito.saltato) toast('Non sei collegato allo store: non c\'è niente da aggiornare.');
+  },
+
   'aggiorna-app': async (_, el) => {
     el.disabled = true;
     const libera = () => { el.disabled = false; };
@@ -1790,6 +1807,25 @@ controllaProvaInSospeso();
 async function sincronizzaSilenziosa() {
   const esito = await store.sincronizza();
   if (!esito.saltato && !esito.errore) render({ fermo: true });
+  programmaOraAggiornamento();
+}
+
+/**
+ * Cinque minuti dopo l'ultimo aggiornamento l'ora compare da sola: la schermata
+ * è statica, e senza questo resterebbe com'era finché qualcosa non la ridisegna.
+ * Se in quel momento c'è un foglio aperto o si sta scrivendo, si salta: ridisegnare
+ * toglierebbe il cursore (lo stesso criterio del giro dei dieci minuti).
+ */
+let oraAggiornamento = null;
+function programmaOraAggiornamento() {
+  clearTimeout(oraAggiornamento);
+  if (!store.puoAggiornare()) return;
+  oraAggiornamento = setTimeout(() => {
+    const { percorso } = parseHash();
+    if (!['home', 'inbox', 'bacheca'].includes(percorso)) return;
+    if (document.querySelector('.sheet-backdrop') || document.activeElement?.matches?.('input, textarea, select')) return;
+    render({ fermo: true });
+  }, RULES.aggiornamentoVisibileDopoMin * 60000 + 500);
 }
 
 /**

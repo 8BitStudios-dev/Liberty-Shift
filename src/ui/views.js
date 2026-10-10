@@ -2,6 +2,7 @@ import { html, raw, esc, riquadriAperti } from './dom.js';
 import { store } from '../core/store.js';
 import {
   cardRichiesta, cardOpportunita, coppiaCedoCerco, nomeUtente, iniziali, vuoto, badgeStato,
+  tastoAggiorna, rigaAggiornamento, statoAggiornamento,
   ruoloNelGiorno, testoPromemoria, iconaTipo, etichettaTipo, pillolaTipo, cerchioTipo, pillolaStato, formPreferenze, contaPreferenze,
 } from './components.js';
 import { icona } from './icone.js';
@@ -135,6 +136,7 @@ export function home() {
         <div>
           <p class="saluto">${saluto}</p>
           <h1>${me.nome}</h1>
+          ${raw(statoAggiornamento())}
         </div>
         <span class="hero-azioni">
           <button class="priorita-tasto ${credito > 0 ? '' : 'usata'}" data-act="spiega-priorita"
@@ -142,6 +144,7 @@ export function home() {
             <span class="priorita-cerchio">${raw(icona('priorita', { px: 18 }))}</span>
             <span class="priorita-etichetta">Priorità</span>
           </button>
+          ${raw(tastoAggiorna())}
           <button class="icon-btn" data-act="guida" data-sezione="home" title="Come funziona">?</button>
         </span>
       </div>
@@ -304,8 +307,10 @@ export function bacheca(params) {
   return html`
     <header class="testata">
       <h1>Bacheca</h1>
+      ${raw(tastoAggiorna())}
       <button class="icon-btn" data-act="guida" data-sezione="bacheca" title="Come funziona">?</button>
     </header>
+    ${raw(rigaAggiornamento())}
     <div class="chips">
       ${Object.entries(FILTRI).map(([k, v]) => raw(
     `<button class="chip ${k === filtro ? 'attivo' : ''}" data-filtro="${k}" data-act="vai" data-to="#/bacheca?filtro=${k}">${v.icona ? icona(v.icona, { px: 16 }) : ''}${v.label}</button>`,

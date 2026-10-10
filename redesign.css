@@ -1194,3 +1194,27 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   .coppia .lati .cerchio-tipo { width: 40px; height: 40px; }
   .coppia .cerchio-testo { font-size: 9px; }
 }
+
+/* I tre cerchi della Home (priorità, aggiorna, aiuto) un po' più piccoli dei 44px
+   dei bersagli di tutta l'app: la testata ne ha tre di fila. */
+.hero-azioni { --cerchio-hero: 38px; gap: 7px; }
+.hero-azioni .icon-btn, .priorita-cerchio { width: var(--cerchio-hero); height: var(--cerchio-hero); }
+.hero-azioni .icon-btn { font-size: 17px; }
+.priorita-etichetta { font-size: 11.5px; }
+
+/* "Aggiorna": l'icona nelle testate, e la riga toccabile con l'ora. Gira
+   mentre scarica; con "riduci movimento" resta ferma. */
+.icon-btn.aggiorna svg, .riga-aggiornamento svg { display: block; }
+.icon-btn.aggiorna.gira svg, .riga-aggiornamento.gira svg { animation: gira-aggiorna .9s linear infinite; }
+@keyframes gira-aggiorna { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn.aggiorna.gira svg, .riga-aggiornamento.gira svg { animation: none; }
+}
+.stato-aggiornamento { margin: 2px 0 0; font-size: 12.5px; color: var(--testo-tenue); }
+.riga-aggiornamento {
+  appearance: none; border: 0; font: inherit; cursor: pointer; text-align: left;
+  display: flex; align-items: center; gap: 8px; width: 100%; margin: 4px 0 12px; padding: 9px 12px;
+  border-radius: 12px; font-size: 13px; color: var(--testo-tenue);
+  background: color-mix(in srgb, var(--accento) 7%, transparent);
+}
+.riga-aggiornamento svg { flex: none; color: var(--accento); }
