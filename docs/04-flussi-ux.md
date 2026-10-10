@@ -133,6 +133,24 @@ riceve tocca la notifica e trova due tasti, *Tutto a posto* e *Ci sono
 problemi*; il server registra entrambe le risposte (vedi `docs/07-supabase.md`).
 Serve a capire se una notifica non arriva per colpa del server o del telefono.
 
+### Aggiornare i dati a mano
+Sull'iPhone, con l'app sulla Home, non c'è il pulsante di ricarica di Safari né il
+gesto di tirare giù: chi aspetta una risposta non aveva modo di chiedere se è
+arrivato qualcosa. Per questo, con il server collegato, un'**icona di
+aggiornamento** sta nella testata di Home (tra Priorità e «?»), Proposte e
+Bacheca. Il tocco scarica subito proposte, richieste e accordi (`aggiorna-dati`,
+la stessa sincronizzazione dell'apertura, senza il tetto di un minuto): l'icona gira
+e, se manca la rete, compare l'errore e i dati restano quelli di prima. Non tocca i
+turni: il calendario ha il suo tetto di un'ora e il suo tasto nel Profilo.
+
+L'**ora dell'ultimo aggiornamento** compare solo dopo cinque minuti
+(`RULES.aggiornamentoVisibileDopoMin`): in Home sotto il nome («Aggiornato alle
+14:32»), in Proposte e Bacheca come riga toccabile («Aggiornato alle 14:32 · tocca
+per aggiornare»). Prima, con i dati appena arrivati, sarebbe solo rumore. L'ora non
+si salva: all'apertura i dati si riscaricano, e quella di ieri direbbe il falso.
+I tre cerchi della Home (priorità, aggiorna, aiuto) sono da 38px invece dei 44 di
+tutta l'app, per fare spazio al terzo.
+
 ### Aggiorna l'app
 Nelle Impostazioni, sopra il numero di versione, il tasto *Aggiorna l'app*: prende
 l'ultima versione senza togliere l'icona dalla Home né reinstallare (nato da un
