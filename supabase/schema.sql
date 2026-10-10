@@ -139,6 +139,14 @@ create table if not exists public.proposte (
 -- database già in piedi la porta questo alter table, non il create qui sopra.
 alter table public.proposte add column if not exists promemoria_il timestamptz;
 
+-- Da dove è partita la proposta: 'aiuta' (la sezione Aiuta un collega) o
+-- 'altro' (bacheca, calendario, cambio rapido...). Conta per la priorità: solo
+-- un aiuto nato da Aiuta ne guadagna una (vedi `aiutiNelMese`). Vuoto per le
+-- proposte di prima, che continuano a contare come allora. Nata dopo la tabella.
+alter table public.proposte add column if not exists origine text;
+alter table public.proposte drop constraint if exists proposte_origine_check;
+alter table public.proposte add constraint proposte_origine_check check (origine in ('aiuta', 'altro'));
+
 -- `pausa_mezzora`: un Part Time che ha nel contratto la pausa pranzo di
 -- mezz'ora. I suoi turni durano mezz'ora in più (14:30–20:00 per 5 ore), e
 -- quella mezz'ora non è lavoro. Serve anche ai colleghi: quando prendono un

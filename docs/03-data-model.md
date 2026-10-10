@@ -97,6 +97,7 @@ lista, che è il genere di cosa che poi si paga.
 | `status` | `IN_ATTESA \| ACCORDO \| RIFIUTATA` | |
 | `cambioInserito` | bool | premuto "Cambio inserito" |
 | `confermataIl` | timestamp \| null | quando un telefono delle due parti ha visto lo scambio nel suo calendario dei turni (`confermata_il` sul server): avvisa l'altra parte |
+| `origine` | `'aiuta'` \| `'altro'` \| null | da dove è partita la proposta (`origine` sul server): solo `'aiuta'`, la sezione Aiuta un collega, dà una priorità quando UKG approva. Vuoto per le proposte di prima, che contano ancora |
 
 Niente chat: un messaggio per proposta, punto.
 

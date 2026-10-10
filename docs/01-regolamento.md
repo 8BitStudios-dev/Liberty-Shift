@@ -217,8 +217,13 @@ cercato. Sparisce da bacheca, calendario e match; resta nei dati.
 stesso mese, fino a 3. Dura 48 ore e si sceglie alla pubblicazione.
 
 **Assunzioni** (tutte in `RULES.priority`):
-- aiuta chi conclude un accordo sulla richiesta di un altro, chiunque dei due
-  abbia scritto la proposta; un accordo annullato non conta;
+- aiuta chi conclude un accordo sulla richiesta di un altro; un accordo
+  annullato non conta;
+- **la priorità la dà solo l'aiuto nato da «Aiuta un collega»**: la proposta
+  porta `origine: 'aiuta'`, scritta dal pulsante di quella sezione. Una proposta
+  fatta dalla bacheca, dal calendario o dal cambio rapido ha `origine: 'altro'`
+  e non dà priorità (il favore da ricambiare resta uguale). Quelle di prima di
+  questa regola, senza origine, continuano a contare come allora;
 - la priorità arriva solo quando UKG approva il cambio, e vale nel mese
   dell'approvazione: un accordo che poi non si fa non vale niente, e due
   amici non possono guadagnarne con scambi finti;

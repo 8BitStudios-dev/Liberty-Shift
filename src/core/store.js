@@ -24,7 +24,7 @@ import {
   rigaDaRichiesta, rigaDaProposta, rigaDaRingraziamento, serverDi, DAL_SERVER,
 } from './sincronia.js';
 import {
-  aiutiConclusi, aiutiNelMese, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
+  aiutiConclusi, aiutiNelMese, daiAiuta, prioritaDelMese, chiTiHaAiutato, chiHaiAiutato, occasioniDiAiuto,
 } from './karma.js';
 
 // La chiave conserva il vecchio nome anche dopo che l'app è diventata Liberty
@@ -383,7 +383,7 @@ export const store = {
   },
   /** Gli aiuti già concordati che UKG non ha ancora approvato. */
   aiutiInAttesa(userId = this.state.currentUserId) {
-    return aiutiConclusi(this.state).filter((a) => a.aiutante === userId && !a.approvatoIl).length;
+    return aiutiConclusi(this.state).filter((a) => a.aiutante === userId && !a.approvatoIl && daiAiuta(a)).length;
   },
   /** I colleghi che hai aiutato, con l'ultima volta: chi ti deve una mano. */
   chiHaiAiutato() {
@@ -804,7 +804,7 @@ export const store = {
     return this.state.profilo?.idServer === idServer ? this.me : this.user(idServer);
   },
 
-  proponiScambio({ requestId, shiftOffertoId, messaggio }) {
+  proponiScambio({ requestId, shiftOffertoId, messaggio, origine }) {
     const r = this.request(requestId);
     if (!r) return { errori: ['Richiesta non trovata: forse è stata chiusa o cancellata. Aggiorna la pagina.'] };
     const me = this.state.currentUserId;
@@ -849,6 +849,8 @@ export const store = {
       // vale anche quella di chi ha chiesto.
       accettataDa: diretto ? [me, r.userId] : [me],
       status: 'IN_ATTESA',
+      // Da dove è partita: solo "Aiuta un collega" dà una priorità (karma.js).
+      origine: origine === 'aiuta' ? 'aiuta' : 'altro',
       createdAt: new Date().toISOString(),
       cambioInserito: false,
     };

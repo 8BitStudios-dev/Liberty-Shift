@@ -621,7 +621,7 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
       <ul class="perche">${match.reasons.map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
       ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
-              data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}">
+              data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}"${aiuta ? ' data-origine="aiuta"' : ''}>
         ${tastoProponi(richiesta, match.shiftOffertoId)}
       </button>
     </article>`;

@@ -103,6 +103,7 @@ function propostaDaRiga(state, p) {
     annullataIl: p.annullata_il || null,
     cambioInserito: Boolean(p.cambio_inserito),
     confermataIl: p.confermata_il || null,
+    origine: p.origine || null,
     createdAt: p.creata_il,
     turnoOfferto: { data: p.turno_data, start: ora(p.turno_start), end: ora(p.turno_end) },
   };
@@ -183,6 +184,7 @@ export function rigaDaProposta(state, proposta, turno) {
     messaggio: proposta.messaggio || '',
     accettata_da: proposta.accettataDa.map((id) => serverDi(state, id)),
     stato: proposta.status,
+    origine: proposta.origine || null,
     creata_il: proposta.createdAt,
   };
 }

@@ -79,6 +79,20 @@ test('per la priorità conta solo l\'aiuto approvato su UKG, nel mese dell\'appr
   assert.equal(aiutiNelMese('giulia', stato, '2026-10'), 0);
 });
 
+test('solo l\'aiuto nato da "Aiuta un collega" vale una priorità; quelli di prima senza origine continuano a valere', () => {
+  const nuovo = (origine) => ({
+    requests: [{ id: 'r', userId: 'giulia', chiusaIl: '2026-10-05T10:00:00Z' }],
+    proposals: [{
+      id: 'p', requestId: 'r', daUserId: 'lorenzo', aUserId: 'giulia', status: 'ACCORDO', confermataIl: '2026-10-06T08:00:00Z', origine,
+    }],
+  });
+  assert.equal(aiutiNelMese('lorenzo', nuovo('aiuta'), '2026-10'), 1);
+  assert.equal(aiutiNelMese('lorenzo', nuovo('altro'), '2026-10'), 0, 'dalla bacheca o dal calendario non dà priorità');
+  assert.equal(aiutiNelMese('lorenzo', nuovo(undefined), '2026-10'), 1, 'senza origine: proposta di prima della regola');
+  // Il favore da ricambiare resta uguale, da qualunque sezione sia nato l'aiuto.
+  assert.equal(aiutiConclusi(nuovo('altro')).length, 1);
+});
+
 test('priorità: una di base, una per aiuto, mai oltre il tetto', () => {
   assert.equal(prioritaDelMese(0, 0), 1);
   assert.equal(prioritaDelMese(1, 0), 2);

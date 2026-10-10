@@ -108,6 +108,14 @@ si può proporre uno scambio in cui nessuno dei due cambierebbe orario: né il
 tasto Proponi né Aiuta lo offrono. Il Full Time che prende un turno corto non
 entra mai prima delle 08:00: l'11:00–16:00 diventa 11:00–20:00.
 
+### La priorità la dà solo Aiuta un collega
+Il pulsante *Proponi lo scambio* di Aiuta un collega scrive sulla proposta
+`origine: 'aiuta'` (`data-origine` sul pulsante, letta dal foglio di proposta);
+tutti gli altri la scrivono `'altro'`. Solo la prima, una volta approvata da UKG,
+vale una priorità in più (`aiutiNelMese` in `karma.js`). Chi propone da un'altra
+parte, dopo un accordo diretto, legge che la priorità si guadagna da Aiuta. Le
+proposte di prima, senza origine, valgono ancora.
+
 ### Prova notifiche (SuperAdmin)
 In Amministrazione, solo per il SuperAdmin: si scelgono le persone e si manda una
 notifica di prova. Accanto a ognuno c'è quanti dispositivi ha registrati, dopo

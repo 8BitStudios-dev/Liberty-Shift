@@ -1071,6 +1071,9 @@ const AZIONI = {
         : '<button class="btn secondario largo" data-chiudi>Chiudi</button>',
     });
     s.el.dataset.richiesta = richiesta.id;
+    // Solo i pulsanti di "Aiuta un collega" portano l'origine: da lì una
+    // proposta approvata da UKG vale una priorità.
+    s.el.dataset.origine = el.dataset.origine || '';
   },
 
   'conferma-proposta': (_, el) => {
@@ -1079,7 +1082,9 @@ const AZIONI = {
     if (!scelta) return toast('Non hai un turno da offrire su quel giorno: aggiorna i turni da Profilo, Sincronizza turni, o scegli un altro giorno');
     const shiftId = scelta.value;
     const messaggio = wrap.querySelector('[data-campo="messaggio"]').value;
-    const { errori, diretto } = store.proponiScambio({ requestId: wrap.dataset.richiesta, shiftOffertoId: shiftId, messaggio });
+    const { errori, diretto } = store.proponiScambio({
+      requestId: wrap.dataset.richiesta, shiftOffertoId: shiftId, messaggio, origine: wrap.dataset.origine,
+    });
     if (errori) return toast(errori[0]);
     wrap.querySelector('[data-chiudi]').click();
     if (diretto) {
@@ -1089,9 +1094,11 @@ const AZIONI = {
       sheet('Cambio fatto', html`
         <p><strong>${chi}</strong> ha ricevuto una notifica.</p>
         <p>Inserite il cambio su UKG: basta che lo faccia uno dei due.</p>
-        <p class="testo-tenue">${raw(icona('priorita', { px: 14 }))} Hai aiutato un collega. ${store.aiutiDelMese() * RULES.priority.perAiuto + RULES.priority.creditsPerMonth < RULES.priority.tetto
-    ? 'Quando UKG approva il cambio, ricevi una priorità in più.'
-    : 'Questo mese hai già tutte le priorità che si possono avere.'}</p>`, {
+        <p class="testo-tenue">${raw(icona('priorita', { px: 14 }))} Hai aiutato un collega. ${wrap.dataset.origine !== 'aiuta'
+    ? 'La priorità in più la guadagni aiutando da “Aiuta un collega”.'
+    : store.aiutiDelMese() * RULES.priority.perAiuto + RULES.priority.creditsPerMonth < RULES.priority.tetto
+      ? 'Quando UKG approva il cambio, ricevi una priorità in più.'
+      : 'Questo mese hai già tutte le priorità che si possono avere.'}</p>`, {
         azioni: '<button class="btn primario largo" data-chiudi>Ho capito</button>',
       });
     } else {

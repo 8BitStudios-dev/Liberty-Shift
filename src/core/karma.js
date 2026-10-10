@@ -65,6 +65,7 @@ export function aiutiConclusi({ proposals = [], requests = [] }) {
       aiutato: r.userId,
       quando: r.chiusaIl || p.confermataIl || p.createdAt,
       approvatoIl: p.confermataIl || null,
+      origine: p.origine || null,
       propostaId: p.id,
     });
   }
@@ -78,8 +79,16 @@ export function aiutiConclusi({ proposals = [], requests = [] }) {
  * guadagnarne con scambi finti.
  */
 export function aiutiNelMese(userId, stato, mese) {
-  return aiutiConclusi(stato).filter((a) => a.aiutante === userId && a.approvatoIl?.slice(0, 7) === mese).length;
+  return aiutiConclusi(stato).filter((a) => a.aiutante === userId && a.approvatoIl?.slice(0, 7) === mese
+    && daiAiuta(a)).length;
 }
+
+/**
+ * Vale una priorità solo l'aiuto nato da "Aiuta un collega". Le proposte di
+ * prima di questa regola non hanno l'origine scritta (`null`) e continuano a
+ * contare: toglierle sarebbe togliere una priorità già guadagnata.
+ */
+export const daiAiuta = (aiuto) => aiuto.origine == null || aiuto.origine === 'aiuta';
 
 /**
  * Le priorità del mese: una di base, più una per ogni aiuto, fino al tetto.
