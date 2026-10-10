@@ -114,7 +114,8 @@ Ogni priorità, mensile o da aiuto, vale un mese da quando è stata generata
 Il riquadro di Aiuta un collega dice quante ne hai e quando scade la prima
 («la prima scade il 12 novembre»); lo stesso fa il foglio «Come funziona la
 priorità». Quando ne usi una si consuma quella che scade prima. Il tetto di 3
-conta quelle da usare insieme, non quelle del mese.
+vale sia per quelle da usare insieme sia per quelle usate nell'ultimo mese: chi ne
+ha già usate tre vede quando potrà usarne un'altra.
 
 ### La priorità la dà solo Aiuta un collega
 Il pulsante *Proponi lo scambio* di Aiuta un collega scrive sulla proposta

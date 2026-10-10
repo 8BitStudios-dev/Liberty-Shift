@@ -217,7 +217,8 @@ cercato. Sparisce da bacheca, calendario e match; resta nei dati.
 approvato su UKG. **Ogni priorità scade dopo un mese da quando è stata
 generata**: quella mensile nasce ogni mese nel giorno dell'iscrizione e vale fino
 allo stesso giorno del mese dopo; quella di un aiuto nasce il giorno in cui UKG approva e vale fino allo
-stesso giorno del mese dopo. Al massimo 3 da usare insieme. Quando la si usa,
+stesso giorno del mese dopo. Al massimo 3 da usare insieme, e **al massimo 3
+usate nell'ultimo mese**, qualunque ne abbia guadagnate. Quando la si usa,
 la richiesta resta in cima per 48 ore, e si sceglie alla pubblicazione.
 
 Chi ne usa una consuma sempre quella che scade prima, così non se ne spreca

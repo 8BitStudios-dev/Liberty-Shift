@@ -117,8 +117,10 @@ function piuMesi(data, n) {
  * ancora libere adesso, fino al tetto, sono quelle da usare. Si conta tutto
  * da quello che sta sul server, non da un contatore sul telefono.
  *
- * Restituisce `{ disponibili, prossimaScadenza }`; la scadenza è quella della
- * prima a scadere fra le libere, `null` se non ce ne sono.
+ * Restituisce `{ disponibili, prossimaScadenza, usateNelMese, sbloccoIl }`: la
+ * scadenza è quella della prima a scadere fra le libere (`null` se non ce ne
+ * sono), `sbloccoIl` il giorno in cui si torna sotto il tetto di tre usate nel
+ * mese (`null` se non ci si è arrivati).
  */
 export function prioritaDisponibili(userId, stato, adesso = new Date()) {
   const { scadenzaMesi, tetto } = RULES.priority;
@@ -162,9 +164,17 @@ export function prioritaDisponibili(userId, stato, adesso = new Date()) {
   }
 
   const libere = gettoni.filter((g) => !g.usato && validoAl(g, adesso)).sort((a, b) => a.fino - b.fino);
+  // Al massimo `tetto` richieste con la priorità nell'ultimo mese, qualunque
+  // ne abbia guadagnate: chi ne ha già usate tre aspetta che la più vecchia
+  // esca dalla finestra.
+  const inFinestra = usi.filter((t) => t <= adesso && t > piuMesi(adesso, -scadenzaMesi));
+  const rimaste = Math.max(0, tetto - inFinestra.length);
   return {
-    disponibili: Math.min(tetto, libere.length),
+    disponibili: Math.min(rimaste, libere.length),
     prossimaScadenza: libere[0]?.fino || null,
+    usateNelMese: inFinestra.length,
+    // Quando torna la possibilità di usarne un'altra, se è il tetto a fermare.
+    sbloccoIl: inFinestra.length >= tetto ? piuMesi(inFinestra[inFinestra.length - tetto], scadenzaMesi) : null,
   };
 }
 

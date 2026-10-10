@@ -1453,10 +1453,11 @@ alter policy "si propone solo a proprio nome" on public.proposte
 -- Quante priorità può usare `utente` in `adesso`: una mensile ogni mese dal
 -- giorno dell'iscrizione, più una per ogni aiuto da "Aiuta un collega"
 -- approvato da UKG (`confermata_il`), ciascuna valida un mese; ogni richiesta
--- già pubblicata con la priorità ne ha consumata una, la prima a scadere; al
--- massimo 3 insieme. Il server è più largo di un giorno sulla scadenza: il
--- telefono conta nel suo fuso, e una persona in regola non deve essere
--- fermata per qualche ora di differenza.
+-- già pubblicata con la priorità ne ha consumata una, la prima a scadere. Al
+-- massimo 3 insieme, e al massimo 3 usate nell'ultimo mese qualunque ne abbia
+-- guadagnate. Il server è più largo di un giorno sulla scadenza: il telefono
+-- conta nel suo fuso, e una persona in regola non deve essere fermata per
+-- qualche ora di differenza.
 create or replace function public.priorita_disponibili(utente uuid, adesso timestamptz)
 returns integer
 language plpgsql
@@ -1476,6 +1477,7 @@ declare
   scelto integer;
   i integer;
   liberi integer := 0;
+  usate_mese integer;
   margine constant interval := interval '1 day';
 begin
   select creato_il into iscritto from public.profili where id = utente;
@@ -1530,21 +1532,34 @@ begin
       liberi := liberi + 1;
     end if;
   end loop;
-  return least(3, liberi);
+
+  -- Al massimo tre usate nell'ultimo mese, qualunque ne abbia guadagnate.
+  select count(*) into usate_mese from public.richieste
+    where autore_id = utente and priorita_fino_a is not null
+      and creata_il < adesso and creata_il > adesso - interval '1 month' + margine;
+  return greatest(0, least(3 - usate_mese, liberi));
 end;
 $$;
 
 -- Una richiesta pubblicata con la priorità senza averne una da usare la
 -- perde, non viene rifiutata: la coda del telefono si fermerebbe su un
 -- rifiuto, e la richiesta (che per il resto è in regola) non uscirebbe. La
--- priorità si sceglie alla pubblicazione e non si aggiunge dopo. Non vale per
--- `service_role` né per SQL Editor (dove `auth.role()` è nullo).
+-- priorità si sceglie alla pubblicazione e non si aggiunge dopo. Se la perde
+-- perché ne aveva già usate tre nell'ultimo mese, l'app non l'avrebbe
+-- permesso: è un client modificato o un'anomalia, e il SuperAdmin riceve una
+-- notifica con il nome (`send-push`, tipo PRIORITA_ECCESSIVA). Un guasto
+-- nell'avviso non impedisce di pubblicare. Non vale per `service_role` né per
+-- SQL Editor (dove `auth.role()` è nullo).
 create or replace function public.limita_priorita()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  segreto text;
+  quando timestamptz;
+  usate integer;
 begin
   if coalesce(auth.role(), 'service_role') not in ('anon', 'authenticated') then
     return new;
@@ -1556,8 +1571,28 @@ begin
     if old.priorita_fino_a is null then new.priorita_fino_a := null; end if;
     return new;
   end if;
-  if public.priorita_disponibili(new.autore_id, least(coalesce(new.creata_il, now()), now())) < 1 then
+
+  quando := least(coalesce(new.creata_il, now()), now());
+  if public.priorita_disponibili(new.autore_id, quando) < 1 then
     new.priorita_fino_a := null;
+    select count(*) into usate from public.richieste
+      where autore_id = new.autore_id and priorita_fino_a is not null
+        and creata_il < quando and creata_il > quando - interval '1 month' + interval '1 day';
+    if usate >= 3 then
+      select decrypted_secret into segreto from vault.decrypted_secrets where name = 'push_webhook';
+      if segreto is not null then
+        begin
+          perform net.http_post(
+            url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
+            body := jsonb_build_object('type', 'PRIORITA_ECCESSIVA', 'persona', new.autore_id, 'conteggio', usate),
+            headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto),
+            timeout_milliseconds := 20000
+          );
+        exception when others then
+          raise warning 'limita_priorita: %', sqlerrm;
+        end;
+      end if;
+    end if;
   end if;
   return new;
 end;
@@ -1571,48 +1606,7 @@ create trigger limita_priorita
   before insert or update of priorita_fino_a on public.richieste
   for each row execute function public.limita_priorita();
 
--- Chi usa più di quattro priorità in un mese lo sa il SuperAdmin: una notifica
--- con il nome (vedi `send-push`, tipo PRIORITA_ECCESSIVA). Parte una volta
--- sola, quando la quinta entra nell'ultimo mese. Conta le priorità rimaste
--- dopo `limita_priorita`, cioè quelle concesse davvero. Come per le altre
--- notifiche, un guasto qui non impedisce di pubblicare.
-create or replace function public.avvisa_priorita_eccessiva() returns trigger
-language plpgsql security definer set search_path = '' as $$
-declare
-  segreto text;
-  usate integer;
-begin
-  if new.priorita_fino_a is null then
-    return new;
-  end if;
-  select count(*) into usate from public.richieste
-    where autore_id = new.autore_id and priorita_fino_a is not null
-      and creata_il > new.creata_il - interval '1 month' and creata_il <= new.creata_il;
-  if usate <> 5 then
-    return new;
-  end if;
-
-  select decrypted_secret into segreto from vault.decrypted_secrets where name = 'push_webhook';
-  if segreto is null then
-    return new;
-  end if;
-
-  begin
-    perform net.http_post(
-      url := 'https://daerebtkibgmtyvznfvu.supabase.co/functions/v1/send-push',
-      body := jsonb_build_object('type', 'PRIORITA_ECCESSIVA', 'persona', new.autore_id, 'conteggio', usate),
-      headers := jsonb_build_object('Content-Type', 'application/json', 'x-webhook-secret', segreto),
-      timeout_milliseconds := 20000
-    );
-  exception when others then
-    raise warning 'avvisa_priorita_eccessiva: %', sqlerrm;
-  end;
-  return new;
-end $$;
-
-revoke all on function public.avvisa_priorita_eccessiva() from public, anon, authenticated;
-
+-- Il primo avviso (alla quinta priorità in un mese) è sostituito da quello qui
+-- sopra, che scatta al primo tentativo di superare le tre: non può più succedere.
 drop trigger if exists avvisa_priorita_eccessiva on public.richieste;
-create trigger avvisa_priorita_eccessiva
-  after insert on public.richieste
-  for each row execute function public.avvisa_priorita_eccessiva();
+drop function if exists public.avvisa_priorita_eccessiva();

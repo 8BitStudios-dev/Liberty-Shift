@@ -606,7 +606,7 @@ modifica va rilanciato lo schema e ripubblicata la funzione.
 **La priorità la fa rispettare anche il server.** Il trigger `limita_priorita`
 su `richieste` toglie `priorita_fino_a` a una richiesta pubblicata da chi non
 ha priorità da usare (la funzione `priorita_disponibili` è la copia in SQL di
-`prioritaDisponibili` di `karma.js`: tetto 3, scadenza a un mese, mensile dal
+`prioritaDisponibili` di `karma.js`: tetto 3 insieme e 3 usate nel mese, scadenza a un mese, mensile dal
 giorno dell'iscrizione, aiuto da `confermata_il` con `origine` vuota o `aiuta`),
 e non fa aggiungere la priorità a una richiesta già pubblicata. **Non rifiuta**
 la richiesta: un rifiuto fermerebbe la coda del telefono, e la richiesta per il
@@ -614,14 +614,13 @@ resto è in regola. Il server è largo un giorno sulla scadenza, per i fusi.
 Resta fuori dal controllo, perché lo decide il telefono, la conferma di UKG
 (`confermata_il`), che un client modificato potrebbe scrivere.
 
-**Avviso sull'uso eccessivo.** Quando una persona arriva a cinque richieste con la
-priorità nell'ultimo mese (più di quattro), il trigger `avvisa_priorita_eccessiva`
-chiama `send-push` con il tipo `PRIORITA_ECCESSIVA`, e ogni SuperAdmin attivo (ma
-non la persona stessa) riceve «Priorità usate più del solito»: «Nome C. ha usato 5
-priorità nell'ultimo mese.». Parte una sola volta, alla quinta, e conta le
-priorità concesse davvero, dopo `limita_priorita`. Non è per forza un abuso (chi
-aiuta molto può averne), ma è il segno da guardare. Tocca la notifica e si apre
-l'elenco iscritti.
+**Avviso su chi prova a superare il limite.** Al massimo tre priorità usate
+nell'ultimo mese: l'app non permette la quarta. Se arriva lo stesso (un client
+modificato o un'anomalia), `limita_priorita` la toglie e chiama `send-push` con il
+tipo `PRIORITA_ECCESSIVA`: ogni SuperAdmin attivo (non la persona stessa) riceve
+«Priorità oltre il limite», «Nome C. ha provato a usare una priorità oltre il
+limite: ne aveva già usate 3 nell'ultimo mese.». Parte a ogni tentativo, che in uso
+normale non dovrebbero esserci. Tocca la notifica e si apre l'elenco iscritti.
 
 **Il mittente VAPID** è l'indirizzo del sito, non un'email: il protocollo
 accetta entrambi, e così nessun indirizzo personale arriva ai servizi push.

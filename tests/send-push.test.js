@@ -266,7 +266,7 @@ test('lo schema fa rispettare la priorità con gli stessi numeri dell\'app', asy
   const funzione = schema.slice(schema.indexOf('create or replace function public.priorita_disponibili'));
   // Il tetto e la scadenza (un mese) sono scritti anche in SQL: se cambiano
   // in RULES, qui devono cambiare con loro.
-  assert.match(funzione, new RegExp(`return least\\(${RULES.priority.tetto}, liberi\\)`));
+  assert.match(funzione, new RegExp(`return greatest\\(0, least\\(${RULES.priority.tetto} - usate_mese, liberi\\)\\)`));
   assert.equal(RULES.priority.scadenzaMesi, 1);
   assert.match(funzione, /interval '1 month'/);
   // Solo un aiuto da "Aiuta un collega" (o di prima, senza origine) dà una priorità.
@@ -276,17 +276,18 @@ test('lo schema fa rispettare la priorità con gli stessi numeri dell\'app', asy
   assert.doesNotMatch(funzione.slice(funzione.indexOf('create or replace function public.limita_priorita')), /raise exception/);
 });
 
-test('più di quattro priorità in un mese: avviso al SuperAdmin con il nome, una volta sola', async () => {
+test('chi prova a usare una quarta priorità in un mese: avviso al SuperAdmin con il nome', async () => {
   const schema = await readFile(new URL('../supabase/schema.sql', import.meta.url), 'utf8');
-  const trigger = schema.slice(schema.indexOf('create or replace function public.avvisa_priorita_eccessiva'));
-  // Parte alla quinta, non a ogni richiesta dopo.
-  assert.match(trigger, /if usate <> 5 then/);
-  assert.match(trigger, /interval '1 month'/);
+  const trigger = schema.slice(schema.indexOf('create or replace function public.limita_priorita'));
+  // Scatta quando le usate sono già tre (il tetto di RULES) e la richiesta perde la priorità.
+  const { RULES } = await import('../src/core/rules.js');
+  assert.match(trigger, new RegExp(`if usate >= ${RULES.priority.tetto} then`));
+  assert.match(trigger, /new\.priorita_fino_a := null/);
   // Un guasto nell'avviso non impedisce di pubblicare.
   assert.match(trigger, /exception when others then/);
   const gestore = sorgente.slice(sorgente.indexOf("if (type === 'PRIORITA_ECCESSIVA')"), sorgente.indexOf("if (type === 'RICHIESTA')"));
-  // Lo riceve il SuperAdmin attivo, mai chi le ha usate, e dice nome e numero.
+  // Lo riceve il SuperAdmin attivo, mai chi ha provato, e dice nome e numero.
   assert.match(gestore, /super_admin=eq\.true/);
   assert.match(gestore, /x\.id !== persona/);
-  assert.match(gestore, /nomeBreve\(chi\)\} ha usato \$\{conteggio\} priorità/);
+  assert.match(gestore, /nomeBreve\(chi\)\} ha provato a usare una priorità oltre il limite/);
 });

@@ -91,7 +91,7 @@ export const GUIDE = {
       <p>
         Ogni collega che aiuti ti dà <strong>una priorità in più</strong> quando
         UKG approva il cambio. Dura un mese da quel giorno, e ne puoi avere
-        al massimo ${RULES.priority.tetto} insieme.
+        al massimo ${RULES.priority.tetto} insieme e usarne al massimo ${RULES.priority.tetto} in un mese.
       </p>
 
       <p class="testo-tenue">

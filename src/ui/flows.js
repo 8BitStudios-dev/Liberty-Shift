@@ -1121,7 +1121,9 @@ function riquadroRicompensa() {
   // arriva con l'approvazione di UKG e dura un mese da quel giorno.
   const conto = info.disponibili
     ? html` Ora ne hai <strong>${info.disponibili}</strong> da usare, la prima scade ${scadenzaPriorita(info.prossimaScadenza)}.`
-    : ' Ora non ne hai da usare.';
+    : info.sbloccoIl
+      ? html` Ne hai già usate ${RULES.priority.tetto} nell'ultimo mese: la prossima la potrai usare ${scadenzaPriorita(info.sbloccoIl)}.`
+      : ' Ora non ne hai da usare.';
   const testo = html`Ogni aiuto approvato da UKG ti dà una priorità in più, valida un mese.${attesa}${conto}`;
   return html`
     <div class="ricompensa-aiuto">

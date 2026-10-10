@@ -621,9 +621,9 @@ Deno.serve(async (req) => {
     }
     return json({ inviate, admin: admin.length });
   }
-  // Chi ha usato più di quattro priorità in un mese lo sa il SuperAdmin (vedi
-  // `avvisa_priorita_eccessiva` in schema.sql): non è per forza un abuso, ma è
-  // il segno da guardare. Chi le ha usate non riceve niente.
+  // Chi prova a usare una quarta priorità nell'ultimo mese lo sa il SuperAdmin
+  // (vedi `limita_priorita` in schema.sql): l'app non lo permette, quindi è un
+  // client modificato o un'anomalia. Chi ci ha provato non riceve niente.
   if (type === 'PRIORITA_ECCESSIVA') {
     if (typeof persona !== 'string' || !UUID.test(persona) || !Number.isInteger(conteggio)) {
       return json({ inviate: 0, motivo: 'riga incompleta' });
@@ -634,8 +634,8 @@ Deno.serve(async (req) => {
     let inviate = 0;
     for (const a of superAdmin.filter((x: { id: string }) => x.id !== persona)) {
       inviate += (await invia(a.id, {
-        title: 'Priorità usate più del solito',
-        body: `${nomeBreve(chi)} ha usato ${conteggio} priorità nell'ultimo mese.`,
+        title: 'Priorità oltre il limite',
+        body: `${nomeBreve(chi)} ha provato a usare una priorità oltre il limite: ne aveva già usate ${conteggio} nell'ultimo mese.`,
         url: '#/iscritti',
       })).inviate;
     }

@@ -118,6 +118,21 @@ test('priorità: una al mese, una per aiuto da Aiuta, mai oltre il tetto', () =>
   assert.equal(prioritaDisponibili('lorenzo', molti, quando('2026-10-15')).disponibili, 3, 'tetto di tre insieme');
 });
 
+test('priorità: al massimo tre usate nell\'ultimo mese, anche se se ne guadagnano di più', () => {
+  // Quattro aiuti approvati a inizio ottobre: ne avrebbe 3 (tetto) in mano.
+  const aiuti = unisci(approvato('2026-10-02'), approvato('2026-10-03'), approvato('2026-10-04'), approvato('2026-10-05'));
+  aiuti.proposals.forEach((p, i) => { p.id = `p${i}`; });
+  const tre = { ...aiuti, requests: [...aiuti.requests, usata('u1', '2026-10-06'), usata('u2', '2026-10-07'), usata('u3', '2026-10-08')] };
+  const dopo = prioritaDisponibili('lorenzo', tre, quando('2026-10-15'));
+  assert.equal(dopo.disponibili, 0, 'tre usate nel mese: la quarta no, anche con priorità libere');
+  assert.equal(dopo.usateNelMese, 3);
+  // La più vecchia (6 ottobre) esce dalla finestra il 6 novembre: da lì si può di nuovo.
+  assert.equal(dopo.sbloccoIl.getMonth(), 10);
+  assert.equal(dopo.sbloccoIl.getDate(), 6);
+  // Il 7 novembre ne resta una sola: la mensile di novembre (gli aiuti sono scaduti).
+  assert.equal(prioritaDisponibili('lorenzo', tre, quando('2026-11-07')).disponibili, 1);
+});
+
 test('priorità: la mensile scade il primo del mese dopo, quella di un aiuto un mese dopo l\'approvazione', () => {
   // Approvata il 25 settembre: il 15 ottobre vale ancora, il 26 ottobre no.
   const aiuto = approvato('2026-09-25');
