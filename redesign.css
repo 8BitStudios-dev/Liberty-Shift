@@ -1246,9 +1246,17 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 }
 .coppia.messaggio .riga-tu { display: flex; gap: 10px; align-items: baseline; margin: 0; padding: 2px 0; font-size: 15px; line-height: 1.35; }
 .coppia.messaggio .riga-tu .gg { flex: none; min-width: 74px; font-weight: 800; }
-.coppia.messaggio .riga-tu b.prendo { color: var(--prendo); }
+.coppia.messaggio .riga-tu b.prendo { color: var(--prendo); white-space: nowrap; }
 .coppia.messaggio .riga-tu b.cedo { color: var(--cedo); }
 .coppia.messaggio .riga-tu .stima-contratto { display: inline; margin-left: 4px; }
+.coppia.messaggio .riga-tu .tenue { color: var(--testo-tenue); }
+/* I giorni in cui saresti a casa, nel dettaglio: vicini, con una «o» piccola. */
+.coppia.messaggio .scelta-giorni { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 2px 0 4px; font-size: 13px; color: var(--testo-tenue); }
+.coppia.messaggio .chip-giorno {
+  font: inherit; font-size: 13px; white-space: nowrap; color: var(--cedo); background: none;
+  border: 1px solid var(--cedo); border-radius: 999px; padding: 1px 9px; line-height: 1.5;
+}
+.coppia.messaggio button.chip-giorno { cursor: pointer; }
 /* Senza messaggio (le proposte per la tua richiesta): il cerchio accanto alle righe. */
 .coppia.messaggio.solo-tu .tu { display: flex; gap: 12px; align-items: center; border-left: 0; padding: 0; }
 .coppia.messaggio.compatta .bolla p { font-size: 15px; }

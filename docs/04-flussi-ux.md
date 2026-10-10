@@ -299,10 +299,17 @@ Il blocco parla come il gruppo WhatsApp del negozio, dove la gente scrive
    - orario: «Mer 21/10 · fai 12–20 invece del tuo 10–19» (con «stimato per FT»
      quando si adatta al contratto);
    - OFF: «Ven 16/10 · lavori 14–20 al posto di Jesse» e «Mer 14/10 · sei a casa,
-     il tuo 10–19 lo fa Jesse». Con più giorni offerti in cui lavori, uno per riga
-     col turno vero: «Gio 29/10 · sei a casa, il tuo 10–19 lo fa Elisa», «Ven 30/10 ·
-     oppure sei a casa, il tuo 8–17 lo fa Elisa» (l'OFF che ricevi è uno solo); se non lavori nei giorni giusti lo dice («non lavori quel
-     giorno», «lavori già (11–20)») senza inventare un turno.
+     il tuo 10–19 lo fa Jesse». Nel dettaglio della
+     richiesta i giorni offerti in cui lavori diventano «In cambio · a casa» con un
+     pulsante piccolo per giorno, vicini e separati da una «o» (`Gio 29 · 12–21` o
+     `Ven 30 · 8–17`): il tocco apre «Proponi lo scambio» con quel turno già scelto.
+     Se non lavori nei giorni giusti lo dice («non lavori quel giorno», «lavori già
+     (11–20)») senza inventare un turno.
+3. **Nelle liste** (bacheca, foglio del giorno, match) un cambio OFF si accorcia a
+   due righe senza nome, che è già in cima alla card: «Lavori · Mar 27/10
+   9:30–18:30» e «A casa · Gio 29/10 o Ven 30/10», con i giorni in blu. Se quel
+   giorno sei già di turno o se sei già OFF nei giorni offerti, lo dice in grigio.
+   Una riga per giorno con «oppure» e il nome ripetuto si leggeva male.
 
 **Chi guarda:**
 | Chi guarda | Messaggio | Cosa faresti tu |

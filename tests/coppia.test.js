@@ -110,18 +110,28 @@ test('un cambio OFF: CERCO OFF e OFFRO OFF come nel gruppo, poi "lavori" e "sei 
   assert.match(t, new RegExp(`CERCO OFF ${formatDay(giorno).replace('/', '\\/')} \\(11:00–20:00\\)`));
   assert.match(t, new RegExp(`OFFRO OFF ${formatDay(offerto).replace('/', '\\/')}`));
   assert.match(t, /lavori 11:00–20:00 al posto di Lorenzo/);
-  assert.match(t, /sei a casa ?, il tuo 10:00–19:00 lo fa Lorenzo/);
+  assert.match(t, new RegExp(`In cambio a casa ${formatDay(offerto).replace(/\/\d+$/, '')} · 10:00–19:00`));
   assert.doesNotMatch(t, /\blasci\b|qualsiasi turno/);
 });
 
-test('un cambio OFF con più giorni in cui lavori: un giorno per riga, col suo turno', () => {
+test('un cambio OFF con più giorni in cui lavori, nel dettaglio: «a casa» e un pulsante per giorno', () => {
   const [uno, due, tre] = [addDays(giorno, 2), addDays(giorno, 3), addDays(giorno, 4)];
   const richiesta = scenaOff([uno, due, tre], { [uno]: ['10:00', '19:00'], [tre]: ['08:00', '17:00'] });
-  const t = testo(coppiaCedoCerco(richiesta));
-  assert.match(t, /sei a casa ?, il tuo 10:00–19:00 lo fa Lorenzo/);
-  assert.match(t, /oppure sei a casa ?, il tuo 08:00–17:00 lo fa Lorenzo/);
-  assert.doesNotMatch(t, /uno di questi/);
-  assert.equal(t.match(/sei a casa/g).length, 2, `${formatDay(due)} non lavori: non è un'opzione`);
+  const h = coppiaCedoCerco(richiesta);
+  const t = testo(h);
+  const corto = (d) => formatDay(d).replace(/\/\d+$/, '');
+  assert.match(t, new RegExp(`In cambio a casa ${corto(uno)} · 10:00–19:00 o ${corto(tre)} · 08:00–17:00`));
+  assert.doesNotMatch(t, /uno di questi|oppure|lo fa Lorenzo/);
+  assert.equal((h.match(/class="chip-giorno"/g) || []).length, 2, `${formatDay(due)} non lavori: non è un'opzione`);
+});
+
+test('nelle liste un cambio OFF dice solo «Lavori» e «A casa», senza nome', () => {
+  const [uno, tre] = [addDays(giorno, 2), addDays(giorno, 4)];
+  const richiesta = scenaOff([uno, tre], { [uno]: ['10:00', '19:00'], [tre]: ['08:00', '17:00'] });
+  const t = testo(coppiaCedoCerco(richiesta, { compatto: true, breve: true }));
+  assert.match(t, new RegExp(`Lavori ${formatDay(giorno).replace('/', '\\/')} 11:00–20:00`));
+  assert.match(t, new RegExp(`A casa ${formatDay(uno).replace('/', '\\/')} o ${formatDay(tre).replace('/', '\\/')}`));
+  assert.doesNotMatch(t, /Lorenzo \(|al posto di|lo fa/);
 });
 
 test('un cambio OFF in cui non lavori nei giorni offerti lo dice, senza inventare un turno', () => {

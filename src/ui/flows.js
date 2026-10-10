@@ -775,7 +775,7 @@ export function dettaglio(params) {
           <div class="meta">${RULES.contracts[autore.contratto].label}</div>
         </div>
       </header>
-      ${raw(coppiaCedoCerco(r))}
+      ${raw(coppiaCedoCerco(r, { scegli: !mio && !chiusaOAccordo && !hoGiaProposto }))}
       ${raw(r.cerco.note ? `<p class="nota-utente">“${r.cerco.note}”</p>` : '')}
       <div class="meta">${raw(badgeStato(r.status))} · pubblicata ${formatDay(r.createdAt.slice(0, 10))}</div>
       ${raw(r.chiusaDaAdmin
