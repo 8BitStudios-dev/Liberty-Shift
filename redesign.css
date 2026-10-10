@@ -475,6 +475,13 @@ h3 { font-size: 16px; margin: 20px 0 10px; }
 .tasto-ordine[aria-pressed="true"] { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
 .chip.attivo, .pill.attivo { background: var(--accento); border-color: var(--accento); color: var(--su-pieno); }
 .link-btn { font-size: 15px; min-height: var(--bersaglio); display: inline-flex; align-items: center; }
+/* Sotto i due tile della Home: l'ingresso per chi vuole pubblicare una richiesta sua.
+   Un link e non un terzo tile, perché è un'azione di ripiego. Porta al calendario del Profilo. */
+.link-richiesta {
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: 6px;
+  margin: 2px 0 0; font-size: 14px; color: var(--testo-tenue); text-align: center;
+}
+.link-richiesta .link-btn { color: var(--prendo); font-weight: 700; font-size: 14px; }
 
 .avatar { width: 40px; height: 40px; font-size: 15px; }
 .avatar.piccolo { width: 34px; height: 34px; font-size: 14px; }

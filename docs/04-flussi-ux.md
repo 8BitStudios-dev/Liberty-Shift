@@ -1028,6 +1028,14 @@ il giorno è lo stesso; per OFF dice i giorni. Gli stati: rosso "Ti aspetta una
 risposta", grigio "In attesa di…", verde "Concordato, manca UKG", giallo vivo "Aperta".
 Prima vengono i cambi che aspettano una tua risposta, poi gli altri.
 
+## Il link "Pubblica una richiesta"
+
+Sotto i due tile della Home (Cambio rapido e Aiuta un collega, che servono a
+rispondere alle richieste degli altri) c'è un link verde: "Non trovi quello che
+cerchi? **Pubblica una richiesta ›**". Porta al Profilo, dove sta il calendario:
+si tocca un giorno e si sceglie il tipo di cambio. È un link e non un terzo
+tile perché è un'azione di ripiego, e c'è solo in Home: in Bacheca non serve.
+
 ## Gli orari corti
 
 Gli orari si leggono corti in tutta l'app: le ore tonde senza i minuti

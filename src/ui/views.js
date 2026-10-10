@@ -176,6 +176,10 @@ export function home() {
         </span>
         <span class="chevron">›</span>
       </button>
+      <p class="link-richiesta">
+        Non trovi quello che cerchi?
+        <button class="link-btn" data-act="vai" data-to="#/profilo">Pubblica una richiesta ›</button>
+      </p>
     </section>
 
     <section class="sezione">
