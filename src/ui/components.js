@@ -268,27 +268,15 @@ const rigaLavori = (turno, mio) => ({ giorno: 'Lavori', testo: `${esc(formatDay(
 const O = ' <span class="tenue">o</span> ';
 
 /**
- * Un giorno in cui saresti a casa, come pulsante piccolo: nel dettaglio si
- * tocca e la proposta parte con quel turno già scelto. Dove non si può
- * proporre resta un'etichetta.
- */
-function chipGiorno(request, turno, cliccabile) {
-  const testo = `${esc(formatDay(turno.data).replace(/\/\d+$/, ''))} · ${esc(shiftLabel(turno))}`;
-  return cliccabile
-    ? `<button type="button" class="chip-giorno" data-act="proponi" data-user="${esc(request.userId)}" data-richiesta="${esc(request.id)}" data-shift="${esc(turno.id)}">${testo}</button>`
-    : `<span class="chip-giorno">${testo}</span>`;
-}
-
-/**
  * Chi legge una richiesta altrui senza aver ancora scelto un turno: i suoi
  * turni veri nei giorni in gioco. Se non lavora nei giorni giusti lo si dice,
  * senza inventare un turno.
  *
- * In un OFF i giorni in cui saresti a casa sono testo nelle liste («Gio 29/10
- * o Ven 30/10», in blu) e pulsanti piccoli nel dettaglio (`scegli`), col tuo
- * turno: il tocco apre la proposta con quel giorno già scelto.
+ * In un OFF i giorni in cui saresti a casa si scrivono come nelle liste, «Gio
+ * 29/10 o Ven 30/10» in blu, anche nel dettaglio: i pulsanti piccoli col turno
+ * erano un elemento in più da leggere, e il turno si sceglie nella proposta.
  */
-function righeTuSenzaScelta(request, { breve = false, scegli = false } = {}) {
+function righeTuSenzaScelta(request) {
   const cedo = store.shift(request.cedo.shiftId);
   const giorni = request.cerco.giorni || [];
   if (request.tipo !== TIPO_CAMBIO.OFF) {
@@ -304,18 +292,15 @@ function righeTuSenzaScelta(request, { breve = false, scegli = false } = {}) {
       ? { giorno: 'Lavori', testo: `${esc(formatDay(cedo.data))} <span class="tenue">sei già di turno</span>` }
       : rigaLavori(cedo, miei[0]));
   }
-  if (miei.length && breve) {
+  if (miei.length) {
     righe.push({ giorno: 'A casa', testo: miei.map((s) => `<b class="cedo">${esc(formatDay(s.data))}</b>`).join(O) });
-  } else if (miei.length) {
-    const offribili = new Set(scegli ? store.turniOfferibili(request).map((s) => s.id) : []);
-    righe.push({ giorno: 'A casa', testo: `<span class="scelta-giorni">${miei.map((s) => chipGiorno(request, s, offribili.has(s.id))).join('<span class="tenue">o</span>')}</span>` });
   } else if (giorni.length) {
     righe.push({ giorno: 'A casa', testo: `<span class="tenue">già OFF ${esc(giorniBrevi(giorni))}</span>` });
   }
   return righe;
 }
 
-export function coppiaCedoCerco(request, { compatto = false, breve = false, scegli = false, mioTurno = null, offerto = null } = {}) {
+export function coppiaCedoCerco(request, { compatto = false, mioTurno = null, offerto = null } = {}) {
   const cedo = store.shift(request.cedo.shiftId);
   const mia = request.userId === store.state.currentUserId;
   const messaggio = messaggioDi(request);
@@ -334,7 +319,7 @@ export function coppiaCedoCerco(request, { compatto = false, breve = false, sceg
   if (mioTurno) {
     return boxScambio(request.tipo, { messaggio, compatto, righe: righeTu(request.tipo, { prendi: cedo, lasci: mioTurno }) });
   }
-  return boxScambio(request.tipo, { messaggio, compatto, righe: righeTuSenzaScelta(request, { breve, scegli }) });
+  return boxScambio(request.tipo, { messaggio, compatto, righe: righeTuSenzaScelta(request) });
 }
 
 /**
@@ -468,7 +453,7 @@ export function cardRichiesta(request, giorno = null) {
         <span class="riga-titolo">
           ${raw(prio ? `${icona('priorita', { px: 14 })} ` : '')}${mia ? 'Tu' : nomeUtente(autore)}
         </span>
-        ${raw(coppiaCedoCerco(request, { compatto: true, breve: true }))}
+        ${raw(coppiaCedoCerco(request, { compatto: true }))}
       </span>
     </div>`;
 }
@@ -690,6 +675,18 @@ export function meseDelFavore(quando) {
 }
 
 /**
+ * «Vorresti essere OFF domenica» non è un perché del match ma un avviso: in
+ * mezzo ai motivi si leggeva come una frase qualsiasi. Diventa un'etichetta
+ * piccola sotto il blocco dello scambio.
+ */
+const CONTRO_VOGLIA = /^vorresti essere OFF /i;
+function etichettaControVoglia(reasons = []) {
+  const r = reasons.find((x) => CONTRO_VOGLIA.test(x));
+  if (!r) return '';
+  return `<p class="etichette-aiuto"><span class="tag contro-voglia">${esc(r.charAt(0).toUpperCase() + r.slice(1))}</span></p>`;
+}
+
+/**
  * Quello che una card di "Aiuta un collega" dice prima di tutto: se è
  * l'ultima chiamata e se è il tuo turno di ricambiare. Il costo non si scrive
  * più ("ti costa poco", "ti conviene"): bastano le percentuali, e il motivo si
@@ -731,10 +728,11 @@ export function cardOpportunita({ richiesta, match, costo, favore, ultimaChiamat
         ${raw(aiuta ? '' : `<span class="score">${match.score}%</span>`)}
       </header>
       ${raw(etichetteAiuto({ richiesta, costo, favore, ultimaChiamata }, aiuta))}
-      ${raw(coppiaCedoCerco(richiesta, { compatto: true, breve: true, mioTurno }))}
+      ${raw(coppiaCedoCerco(richiesta, { compatto: true, mioTurno }))}
+      ${raw(etichettaControVoglia(match.reasons))}
       ${raw(richiesta.cerco.note ? `<p class="nota-utente">“${esc(richiesta.cerco.note)}”</p>` : '')}
       ${raw(notaPausa([mioTurno, store.shift(richiesta.cedo.shiftId)]))}
-      <ul class="perche">${motiviUtili(match.reasons).map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
+      <ul class="perche">${motiviUtili(match.reasons).filter((r) => !CONTRO_VOGLIA.test(r)).map((r) => raw(`<li>${esc(r)}</li>`))}</ul>
       ${raw(match.avvisi.length ? `<div class="avviso">${icona('avviso', { px: 16 })} ${esc(match.avvisi.join(' '))}</div>` : '')}
       <button class="btn primario" data-act="proponi" data-user="${richiesta.userId}"
               data-richiesta="${richiesta.id}" data-shift="${match.shiftOffertoId}"${aiuta ? ' data-origine="aiuta"' : ''}>

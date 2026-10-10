@@ -1174,6 +1174,7 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
   --saetta: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13.6 3 6.6 13.6h4.6l-1 7.4 7.2-10.6h-4.4z' fill='none' stroke='black' stroke-width='1.9' stroke-linejoin='round'/%3E%3C/svg%3E");
   width: 16px; height: 16px; right: 30px; bottom: 10px; transform: rotate(14deg); opacity: .9;
 }
+.tag.contro-voglia { background: color-mix(in srgb, var(--ambra) 14%, transparent); color: var(--ambra); font-weight: 600; font-size: 12px; }
 .tag.ultima { background: color-mix(in srgb, var(--rosso) 16%, transparent); color: var(--rosso); font-weight: 700; }
 
 /* Problemi comuni: il messaggio è il titolo, il rimedio si apre sotto. */
@@ -1255,13 +1256,6 @@ input.testo:focus-visible, input[type="password"]:focus-visible, input[type="tim
 /* Il cambio orario ha una riga sola, «Fai»: niente colonna da allineare. */
 .coppia.messaggio[data-tipo="ORARIO"] .riga-tu .gg { min-width: 0; }
 .coppia.messaggio .riga-tu .tenue { color: var(--testo-tenue); }
-/* I giorni in cui saresti a casa, nel dettaglio: vicini, con una «o» piccola. */
-.coppia.messaggio .scelta-giorni { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 3px 5px; font-size: 13px; }
-.coppia.messaggio .chip-giorno {
-  font: inherit; font-size: 13px; white-space: nowrap; color: var(--cedo); background: none;
-  border: 1px solid var(--cedo); border-radius: 999px; padding: 0 7px; line-height: 1.5;
-}
-.coppia.messaggio button.chip-giorno { cursor: pointer; }
 /* Senza messaggio (le proposte per la tua richiesta): il cerchio accanto alle righe. */
 .coppia.messaggio.solo-tu .tu { display: flex; gap: 10px; align-items: center; border-left: 0; padding: 0; }
 .riga-richiesta .coppia.messaggio .msg { padding: 10px; }

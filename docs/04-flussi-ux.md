@@ -305,12 +305,10 @@ del gruppo e i nomi non si ripetono (sono già in cima alla card).
 2. **Cosa faresti tu**, una voce per riga:
    - orario: «Fai 12–20 invece del tuo 10–19». Un orario adattato al tuo
      contratto ha davanti «≈» (al tocco lungo dice «Orario stimato per FT»);
-   - OFF: «Lavori · Ven 16/10 14–20» e «A casa · Mer 14/10», con i giorni a casa
-     in blu. Nelle liste (bacheca, foglio del giorno, match) i giorni a casa sono
-     testo («Gio 29/10 o Ven 30/10»); nel dettaglio della richiesta sono
-     pulsanti piccoli col tuo turno, vicini e separati da una «o» (`Gio 29 ·
-     12–21` o `Ven 30 · 8–17`), e il tocco apre «Proponi lo scambio» con quel
-     turno già scelto.
+   - OFF: «Lavori · Ven 16/10 14–20» e «A casa · Gio 29/10 o Ven 30/10», con i
+     giorni a casa in blu, uguale nelle liste e nel dettaglio. Per un giro il
+     dettaglio ha avuto un pulsante piccolo per giorno col tuo turno: era una
+     cosa in più da leggere, e il turno si sceglie già nella proposta.
    - Se non lavori nei giorni giusti lo dice in grigio («non lavori quel
      giorno», «sei già di turno», «già OFF …») senza inventare un turno.
    Prima c'erano «lavori 14–20 al posto di Jesse», «sei a casa, il tuo 10–19 lo
@@ -338,6 +336,10 @@ invece del tuo 12–21» o «Mer 14/10 lavori · Ven 16/10 a casa» per una prop
 di un altro). Il Profilo scrive «Cerco OFF … · offro OFF …». Nel calendario i
 gruppi del giorno si chiamano «Cercano OFF» e «Offrono di lavorare», e la legenda
 del mese dice «qualcuno cerca OFF» / «qualcuno offre di lavorare».
+
+**«Vorresti essere OFF domenica»** non sta più fra i motivi del match: è
+un'etichetta piccola color ambra sotto il blocco, perché è un avviso (il match
+cade in un giorno che volevi libero) e non un motivo per accettarlo.
 
 **Le liste non ripetono la box.** Sotto una card restano solo i motivi che la box
 non dice già (`motiviUtili` in `components.js` toglie «Hai X quel giorno», «Fai il
